@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La brecha entre los jóvenes y la respuesta del Estado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#EEF2F4; --surface:#FFFFFF; --ink:#17212B; --muted:#55636F; --line:#CDD6DC;
+  --youth:#0B8F7E; --state:#5B4BD6; --cit:#C9830A; --good:#1F7A3F; --bad:#B3332B;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10171D; --surface:#18222B; --ink:#E8EEF2; --muted:#9BA9B4; --line:#2C3A45;
+    --youth:#3CC4B0; --state:#9A8CFF; --cit:#E5A93D; --good:#55C37A; --bad:#FF7B72;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10171D; --surface:#18222B; --ink:#E8EEF2; --muted:#9BA9B4; --line:#2C3A45;
+  --youth:#3CC4B0; --state:#9A8CFF; --cit:#E5A93D; --good:#55C37A; --bad:#FF7B72;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+.wrap{max-width:980px;margin:0 auto;padding:28px 20px 60px}
+h1{font-family:var(--head);font-weight:700;font-size:clamp(26px,4.6vw,42px);line-height:1.1;margin:0 0 12px;letter-spacing:-.01em;max-width:24ch}
+.lead{max-width:64ch;color:var(--muted);margin:0 0 24px}
+h2{font-family:var(--head);font-weight:700;font-size:22px;line-height:1.2;margin:0 0 10px}
+p{margin:0 0 12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+svg{display:block;width:100%;height:auto}
+.axis{stroke:var(--line);stroke-width:1}
+.tick{fill:var(--muted);font-size:14px;font-family:var(--body)}
+.axt{fill:var(--muted);font-size:14px;font-family:var(--body)}
+.l-youth{fill:none;stroke:var(--youth);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.l-state{fill:none;stroke:var(--state);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.l-ghost{fill:none;stroke:var(--state);stroke-width:2.5;stroke-dasharray:6 6;opacity:.55}
+.gap{fill:var(--cit);opacity:.2}
+.mk{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 4}
+.arr{stroke:var(--ink);stroke-width:2}
+.svt{fill:var(--ink);font-size:15px;font-weight:600;font-family:var(--body)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;margin:10px 0 0;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.sw{display:inline-block;width:22px;height:0;border-top:4px solid}
+.sw.y{border-color:var(--youth)} .sw.s{border-color:var(--state)}
+.sw.g{border-top:3px dashed var(--state);opacity:.6}
+.sw.c{height:12px;width:22px;border:0;background:var(--cit);opacity:.35;border-radius:3px}
+.controls{display:grid;gap:18px;margin-top:18px}
+@media (min-width:760px){.controls{grid-template-columns:1.1fr 1fr}}
+label.t,.ctl-h{display:block;font-weight:600;margin-bottom:6px}
+input[type=range]{width:100%;accent-color:var(--state)}
+.row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.tog{display:grid;gap:8px}
+.tg{font:inherit;text-align:left;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;line-height:1.4}
+.tg small{display:block;color:var(--muted)}
+.tg[aria-pressed="true"]{border-color:var(--youth);background:color-mix(in srgb,var(--youth) 13%,var(--surface))}
+.tg.fail[aria-pressed="true"]{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+.tg:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--state);outline-offset:2px}
+.read{border-left:5px solid var(--cit);padding:4px 0 4px 14px;margin:18px 0 0;font-size:17px}
+.read .note{display:block;font-size:15px;color:var(--muted);margin-top:6px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.stat b{display:block;font-family:var(--head);font-size:26px;line-height:1.1}
+.stat span{font-size:13px;color:var(--muted)}
+.cols{display:grid;gap:24px;margin-top:32px}
+@media (min-width:860px){.cols{grid-template-columns:1fr 1fr}}
+.table{width:100%;border-collapse:collapse;font-size:14px}
+.table th,.table td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.table th{font-weight:600}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+.fine{font-size:14px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Lo que los jóvenes ya pueden hacer y lo que la ciudadanía todavía recibe</h1>
+  <p class="lead">La capacidad tecnológica de los jóvenes se acelera. La respuesta del Estado, que es lo que la ciudadanía realmente recibe, avanza más despacio. La distancia entre ambas es la razón de ser del Centro de Traducción Tecnológica.</p>
+
+  <section class="card" aria-label="Gráfico interactivo de la brecha">
+    <svg id="chart" viewBox="0 0 640 380" role="img" aria-label="Curvas de capacidad de los jóvenes y respuesta del Estado a lo largo de diez años"></svg>
+    <div class="legend">
+      <span><i class="sw y"></i>Capacidad de los jóvenes</span>
+      <span><i class="sw s"></i>Respuesta del Estado a la ciudadanía</span>
+      <span id="lgGhost"><i class="sw g"></i>Respuesta sin traducción (referencia)</span>
+      <span><i class="sw c"></i>Lo que la ciudadanía podría recibir y aún no recibe</span>
+    </div>
+
+    <div class="controls">
+      <div>
+        <label class="t" for="year">Año que quieres examinar: <span id="yv">6</span></label>
+        <input type="range" id="year" min="0" max="10" step="0.5" value="6">
+        <div class="row"><span>Hoy</span><span>10 años</span></div>
+        <div class="read" aria-live="polite"><span id="readMain"></span><span class="note" id="readNote"></span></div>
+      </div>
+      <div>
+        <span class="ctl-h">¿Qué niveles de traducción tiene el Centro?</span>
+        <div class="tog" id="tog"></div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b id="stG">–</b><span>Brecha en el año examinado</span></div>
+      <div class="stat"><b id="stL">–</b><span>Años que tarda en llegar a la ciudadanía</span></div>
+      <div class="stat"><b id="stF">–</b><span>Brecha al año 10: sin traducción → con los niveles activos</span></div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section>
+      <h2>Por qué existe el código</h2>
+      <p>Los jóvenes aprenden, prototipan y comparten sin pedir permiso, así que su capacidad crece cada vez más rápido. El Estado necesita entender, aprobar, financiar y regular antes de responder, así que su curva sube con otro ritmo.</p>
+      <p>Esa distancia no es abstracta: es el tráfico que ya se podría ordenar, el aire que ya se podría medir, el agua que ya se podría cuidar. La ciudadanía espera esa respuesta.</p>
+      <p>El código convierte esa idea en un modelo. Cada nivel bien traducido (conceptual, experimental, estratégico) hace que más aprendizaje de los jóvenes llegue al Estado y que llegue antes. Por eso el puntaje del juego se llama eficacia de traducción.</p>
+      <p><strong>El valor del error.</strong> Activa «El prototipo de IA falla»: con dos o más niveles traducidos, el Estado sigue aprendiendo del fallo y la brecha casi no cambia. Sin traducción, el fallo se pierde.</p>
+    </section>
+    <section>
+      <h2>Qué parte del código es cada elemento</h2>
+      <table class="table">
+        <tr><th>En el gráfico</th><th>En el código Python</th></tr>
+        <tr><td>Curva de los jóvenes (se acelera)</td><td><code>avance_jovenes(ronda, ia_exito)</code></td></tr>
+        <tr><td>Curva del Estado</td><td><code>avance_estado(traduccion, ia_exito, valor_error)</code></td></tr>
+        <tr><td>Años que tarda en llegar</td><td><code>meses_reaccion(traduccion)</code></td></tr>
+        <tr><td>Niveles activos (0 a 3)</td><td>Aciertos de traducción de la ronda</td></tr>
+        <tr><td>«El prototipo de IA falla»</td><td><code>ia_exito = False</code> y <code>valor_error</code></td></tr>
+      </table>
+      <p class="fine" style="margin-top:12px">Es un modelo didáctico con números ilustrativos, no datos reales. Se conserva la proporción del código: la espera de 24, 14, 7 y 3 meses se reescala a 6; 3,5; 1,75 y 0,75 años para verla en un horizonte de diez años.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ---------- Modelo (misma lógica que el código en Python, reescalada) ---------- */
+var LAG = [6, 3.5, 1.75, 0.75];                        /* meses_reaccion 24/14/7/3 ÷ 4, en años */
+var ABS = [3, 8, 13, 18].map(function(v){return v/18;}); /* avance_estado = 3 + 5*traduccion, normalizado */
+var NIV = [
+  {n:"Conceptual", a:"La comunidad entiende qué se probó y por qué", c:"comunidad y escuela"},
+  {n:"Experimental", a:"Las instituciones lo prueban en el sandbox sin riesgo", c:"técnicos del sandbox"},
+  {n:"Estratégico", a:"Quienes deciden tienen evidencia, costos y norma", c:"políticos y decisores"}
+];
+var on=[false,false,false], fail=false, T=6;
+
+function youth(t,f){ return (f?0.85:1)*100/(1+Math.exp(-0.75*(t-4.2))); }
+function state(t,n,f){
+  var a=ABS[n]*(f ? (n>=2?0.95:0.6) : 1);
+  var v=6+0.94*a*youth(Math.max(t-LAG[n],0),f);
+  return Math.min(v, youth(t,f));
+}
+function count(){ return on.filter(Boolean).length; }
+function fmt(x,d){ return x.toFixed(d==null?0:d).replace(".",","); }
+function fl(x){ return fmt(x, x%1 ? (Math.round(x*100)%10 ? 2 : 1) : 0); }
+
+/* ---------- Gráfico ---------- */
+var W=640,H=380,L=48,R=20,T0=22,B=44;
+function X(t){return L+(W-L-R)*t/10;}
+function Y(v){return T0+(H-T0-B)*(1-v/100);}
+function pathOf(fn){ var d=""; for(var t=0;t<=10.001;t+=0.1){ d+=(d?"L":"M")+X(t).toFixed(1)+","+Y(fn(t)).toFixed(1); } return d; }
+
+function draw(){
+  var n=count(), s="";
+  [0,25,50,75,100].forEach(function(v){ s+='<line class="axis" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text class="tick" x="'+(L-8)+'" y="'+(Y(v)+5)+'" text-anchor="end">'+v+'</text>'; });
+  for(var i=0;i<=10;i+=2){ s+='<text class="tick" x="'+X(i)+'" y="'+(H-20)+'" text-anchor="middle">'+i+'</text>'; }
+  s+='<text class="axt" x="'+((L+W-R)/2)+'" y="'+(H-2)+'" text-anchor="middle">Años desde hoy</text>';
+  s+='<text class="axt" transform="translate(14,'+((T0+H-B)/2)+') rotate(-90)" text-anchor="middle">Capacidad tecnológica</text>';
+
+  /* área de brecha */
+  var up="",dn="";
+  for(var t=0;t<=10.001;t+=0.1){ up+=(up?"L":"M")+X(t).toFixed(1)+","+Y(youth(t,fail)).toFixed(1); }
+  for(var t2=10;t2>=-0.001;t2-=0.1){ dn+="L"+X(t2).toFixed(1)+","+Y(state(t2,n,fail)).toFixed(1); }
+  s+='<path class="gap" d="'+up+dn+'Z"/>';
+
+  if(n>0) s+='<path class="l-ghost" d="'+pathOf(function(t){return state(t,0,fail);})+'"/>';
+  s+='<path class="l-youth" d="'+pathOf(function(t){return youth(t,fail);})+'"/>';
+  s+='<path class="l-state" d="'+pathOf(function(t){return state(t,n,fail);})+'"/>';
+
+  /* marcador del año examinado */
+  var yj=youth(T,fail), ys=state(T,n,fail), x=X(T);
+  s+='<line class="mk" x1="'+x+'" x2="'+x+'" y1="'+Y(100)+'" y2="'+Y(0)+'"/>';
+
+  /* flecha de espera */
+  var Lg=LAG[n];
+  if(T>=Lg && Lg>0){
+    var yl=Y(youth(T-Lg,fail)), xa=X(T-Lg);
+    s+='<line class="arr" x1="'+xa+'" x2="'+(x-6)+'" y1="'+yl+'" y2="'+yl+'"/><polygon points="'+x+','+yl+' '+(x-8)+','+(yl-4)+' '+(x-8)+','+(yl+4)+'" fill="var(--ink)"/>';
+    s+='<circle cx="'+xa+'" cy="'+yl+'" r="4" fill="var(--ink)"/>';
+    s+='<text class="svt" x="'+((xa+x)/2)+'" y="'+(yl-8)+'" text-anchor="middle">espera: '+fl(Lg)+' años</text>';
+  }
+  /* flecha de brecha */
+  if(yj-ys>3){
+    s+='<line class="arr" x1="'+x+'" x2="'+x+'" y1="'+Y(ys)+'" y2="'+Y(yj)+'"/>';
+    var lab = (T>8) ? {x:x-10,a:"end"} : {x:x+10,a:"start"};
+    s+='<text class="svt" x="'+lab.x+'" y="'+((Y(ys)+Y(yj))/2+5)+'" text-anchor="'+lab.a+'">brecha '+fmt(yj-ys)+'</text>';
+  }
+  s+='<circle cx="'+x+'" cy="'+Y(yj)+'" r="6" fill="var(--youth)"/><circle cx="'+x+'" cy="'+Y(ys)+'" r="6" fill="var(--state)"/>';
+  document.getElementById("chart").innerHTML=s;
+  document.getElementById("lgGhost").style.display = n>0 ? "inline-flex" : "none";
+}
+
+/* ---------- Lectura ---------- */
+function read(){
+  var n=count(), yj=youth(T,fail), ys=state(T,n,fail), Lg=LAG[n];
+  document.getElementById("yv").textContent=fl(T);
+  var main = "En el año "+fl(T)+" los jóvenes alcanzan "+fmt(yj)+" de capacidad y el Estado le ofrece a la ciudadanía "+fmt(ys)+". ";
+  main += (T>=Lg && Lg>0)
+    ? "Lo que los jóvenes lograron en el año "+fl(T-Lg)+" recién llega a la ciudadanía ahora."
+    : "Todavía no llega nada de lo que se está probando.";
+  document.getElementById("readMain").textContent=main;
+  var note;
+  if(n===0) note="Sin traducción, lo que aprenden los jóvenes casi no se convierte en servicios para la ciudadanía.";
+  else if(n<3) note="Con "+n+" de 3 niveles, la espera baja a "+fl(Lg)+" años. Falta cubrir "+(3-n)+" audiencia"+(3-n>1?"s":"")+".";
+  else note="Con los tres niveles, lo que prueban los jóvenes llega casi de inmediato a la ciudadanía.";
+  if(fail) note += (n>=2) ? " El prototipo falló, pero el aprendizaje se comunicó y el Estado casi no se frena." : " El prototipo falló y, sin buena traducción, el Estado se frena todavía más.";
+  document.getElementById("readNote").textContent=note;
+
+  document.getElementById("stG").textContent=fmt(yj-ys);
+  document.getElementById("stL").textContent=fl(Lg);
+  var f0=youth(10,fail)-state(10,0,fail), f1=youth(10,fail)-state(10,n,fail);
+  document.getElementById("stF").textContent=fmt(f0)+" → "+fmt(f1);
+}
+
+/* ---------- Controles ---------- */
+function mk(tag,cls,txt){var e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e;}
+function buildToggles(){
+  var box=document.getElementById("tog");
+  NIV.forEach(function(nv,i){
+    var b=mk("button","tg",nv.n); b.type="button"; b.setAttribute("aria-pressed","false");
+    b.appendChild(mk("small",null,nv.a+" ("+nv.c+")"));
+    b.onclick=function(){ on[i]=!on[i]; b.setAttribute("aria-pressed",on[i]?"true":"false"); update(); };
+    box.appendChild(b);
+  });
+  var f=mk("button","tg fail","El prototipo de IA falla"); f.type="button"; f.setAttribute("aria-pressed","false");
+  f.appendChild(mk("small",null,"Muestra el valor del error: ¿se pierde o se aprende?"));
+  f.onclick=function(){ fail=!fail; f.setAttribute("aria-pressed",fail?"true":"false"); update(); };
+  box.appendChild(f);
+}
+function update(){ draw(); read(); }
+document.getElementById("year").addEventListener("input",function(e){ T=parseFloat(e.target.value); update(); });
+buildToggles(); update();
+</script>
+</body>
+</html>
