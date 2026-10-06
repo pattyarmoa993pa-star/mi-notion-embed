@@ -1,0 +1,730 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Lógica de Griffin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: escenario del grafo (franjas horizontales 4 a 0) a la izquierda, panel de controles a la derecha; en pantallas angostas todo en una columna. */
+:root {
+  --font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  --bg: #f4f3fb;
+  --surface: #ffffff;
+  --band-a: #ffffff;
+  --band-b: #f1effb;
+  --ink: #1d1b36;
+  --ink-2: #585674;
+  --line: #d6d2ea;
+  --node: #4d96ff;
+  --rombo: #ff6b6b;
+  --path: #2f9e4a;
+  --path-ink: #1b7432;
+  --linear: #77758f;
+  --ghost: #b3afd0;
+  --btn-bg: #1d1b36;
+  --btn-ink: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12112a;
+    --surface: #1a1938;
+    --band-a: #1a1938;
+    --band-b: #212046;
+    --ink: #ecebfa;
+    --ink-2: #a9a7c9;
+    --line: #38366a;
+    --node: #5ba3ff;
+    --rombo: #ff7b7b;
+    --path: #6bcb77;
+    --path-ink: #8fe39a;
+    --linear: #9694b8;
+    --ghost: #4a4880;
+    --btn-bg: #ecebfa;
+    --btn-ink: #12112a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12112a;
+  --surface: #1a1938;
+  --band-a: #1a1938;
+  --band-b: #212046;
+  --ink: #ecebfa;
+  --ink-2: #a9a7c9;
+  --line: #38366a;
+  --node: #5ba3ff;
+  --rombo: #ff7b7b;
+  --path: #6bcb77;
+  --path-ink: #8fe39a;
+  --linear: #9694b8;
+  --ghost: #4a4880;
+  --btn-bg: #ecebfa;
+  --btn-ink: #12112a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1180px; margin-inline: auto; display: flex; flex-direction: column; gap: 32px; }
+.eyebrow { font: 500 11px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 10px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.9rem, 4.6vw, 3rem); line-height: 1.05; letter-spacing: -0.02em; margin: 0 0 12px; text-wrap: balance; }
+.lede { margin: 0; max-width: 62ch; color: var(--ink-2); font-size: 1.05rem; }
+
+.lab { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+@media (max-width: 920px) { .lab { grid-template-columns: minmax(0, 1fr); } }
+.left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+.transport { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.btn { font: 600 14px var(--font-body); padding: 9px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn:hover { border-color: var(--ink-2); }
+.btn.primary { background: var(--btn-bg); color: var(--btn-ink); border-color: transparent; min-width: 118px; }
+.btn:focus-visible, .seg input:focus-visible + span, .switch input:focus-visible, input[type="range"]:focus-visible, select:focus-visible, .node.rombo:focus-visible { outline: 2px solid var(--node); outline-offset: 2px; }
+.spacer { flex: 1 1 auto; }
+.clock { font: 500 14px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+.clock small { color: var(--ink-2); font-size: 12px; }
+select { font: 500 13px var(--font-body); padding: 7px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+
+.stage { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow-x: auto; }
+.stage svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.note { margin: 0; font-size: 13px; color: var(--ink-2); max-width: 74ch; }
+
+.band-a { fill: var(--band-a); }
+.band-b { fill: var(--band-b); }
+.axis { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 5; }
+.franja-lab { font: 500 11px var(--font-mono); letter-spacing: 0.08em; fill: var(--ink-2); }
+.nlabel { font: 600 13px var(--font-body); fill: var(--ink); }
+.nlabel.sub { font-weight: 400; font-size: 12px; fill: var(--ink-2); }
+
+.edge { fill: none; }
+.edge-lin { stroke: var(--linear); stroke-width: 1.8; }
+.edge-added { stroke: var(--linear); stroke-width: 1.8; stroke-dasharray: 2 5; stroke-linecap: round; }
+.edge-jump { stroke: var(--path); stroke-width: 2.4; stroke-dasharray: 7 6; }
+.edge.off { opacity: 0.16; }
+.mk-gray { fill: var(--linear); }
+.mk-green { fill: var(--path); }
+
+.hint { fill: none; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; opacity: 0.22; }
+.trail { fill: none; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.hint.linear, .trail.linear { stroke: var(--linear); }
+.hint.griffin, .trail.griffin { stroke: var(--path); }
+
+.tag rect { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+.tag text { font: 500 11px var(--font-mono); fill: var(--ink-2); text-anchor: middle; }
+.tag.jump rect { stroke: var(--path); }
+.tag.jump text { fill: var(--path-ink); }
+.tag.off { opacity: 0.25; }
+
+.node .shape { fill: var(--node); stroke: var(--ink); stroke-width: 1.5; }
+.node.rombo .shape { fill: var(--rombo); }
+.node.rombo { cursor: pointer; }
+.node.ghost .shape { fill: none; stroke: var(--ghost); stroke-dasharray: 3 3; stroke-width: 1.5; }
+.node.rombo.off .shape { fill: var(--band-b); stroke: var(--rombo); stroke-dasharray: 4 3; }
+.node.rombo.off .nlabel { opacity: 0.55; }
+.node.v-linear .shape { stroke: var(--linear); stroke-width: 4; }
+.node.v-griffin .shape { stroke: var(--path); stroke-width: 4; }
+.node.v-linear.v-griffin .shape { stroke: var(--path); stroke-width: 4; }
+.node.ghost.v-linear .shape, .node.ghost.v-griffin .shape { fill: var(--surface); }
+.node .ring { fill: none; stroke: var(--path); stroke-width: 2; opacity: 0; }
+.node.landed .ring { opacity: 1; animation: pulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+.node.landed-miss .ring { opacity: 1; stroke: var(--rombo); animation: pulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pulse { 0% { transform: scale(0.92); opacity: 1; } 100% { transform: scale(1.35); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .node.landed .ring, .node.landed-miss .ring { animation: none; } }
+
+.pk-dot { stroke: var(--surface); stroke-width: 2.5; }
+.pk-halo { opacity: 0.28; }
+.pk-linear .pk-dot, .pk-linear .pk-halo { fill: var(--linear); }
+.pk-griffin .pk-dot, .pk-griffin .pk-halo { fill: var(--path); }
+
+.panel { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); display: flex; flex-direction: column; min-width: 0; }
+.panel > section, .panel > fieldset { padding: 16px; border: 0; border-top: 1px solid var(--line); margin: 0; min-width: 0; }
+.panel > :first-child { border-top: 0; }
+.h { font: 500 11px var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 10px; padding: 0; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.val { font: 500 14px var(--font-mono); font-variant-numeric: tabular-nums; }
+.help { margin: 8px 0 0; font-size: 13px; color: var(--ink-2); }
+input[type="range"] { width: 100%; accent-color: var(--path-ink); margin: 6px 0 0; }
+
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg label { display: block; }
+.seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.seg span { display: block; text-align: center; padding: 8px 4px; font-size: 13px; font-weight: 500; cursor: pointer; border-left: 1px solid var(--line); }
+.seg label:first-child span { border-left: 0; }
+.seg input:checked + span { background: var(--btn-bg); color: var(--btn-ink); }
+
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; font-weight: 500; }
+.switch input { appearance: none; -webkit-appearance: none; width: 40px; height: 22px; border-radius: 11px; background: var(--line); position: relative; cursor: pointer; margin: 0; flex: none; transition: background 0.15s; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); transition: transform 0.15s; }
+.switch input:checked { background: var(--rombo); }
+.switch input:checked::after { transform: translateX(18px); }
+.sw-lab { display: flex; align-items: center; gap: 8px; }
+.diamond-ic { width: 12px; height: 12px; background: var(--rombo); transform: rotate(45deg); flex: none; }
+
+.nudge { display: flex; gap: 6px; }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.strip { display: grid; grid-template-columns: repeat(101, 1fr); gap: 1px; height: 22px; margin-top: 10px; cursor: pointer; touch-action: none; }
+.strip i { background: var(--ghost); opacity: 0.55; border-radius: 1px; }
+.strip i.s { background: var(--path); opacity: 1; }
+.strip i.cur { outline: 2px solid var(--ink); outline-offset: 1px; position: relative; z-index: 1; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 8px 0 0; font-size: 12px; color: var(--ink-2); }
+.legend b { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+.res { padding: 4px 0 10px; }
+.res-head { display: flex; align-items: baseline; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; align-self: center; }
+.dot.linear { background: var(--linear); }
+.dot.griffin { background: var(--path); }
+.res-name { font-weight: 600; }
+.res-time { margin-left: auto; font: 500 14px var(--font-mono); font-variant-numeric: tabular-nums; }
+.bar { height: 8px; border-radius: 4px; background: var(--band-b); margin: 6px 0; overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 4px; transition: width 0.25s; }
+.bar i.linear { background: var(--linear); }
+.bar i.griffin { background: var(--path); }
+.res-sub { font-size: 13px; color: var(--ink-2); }
+.verdict { margin: 4px 0 0; font-weight: 500; }
+
+.log { max-height: 190px; overflow-y: auto; font: 400 12px var(--font-mono); display: flex; flex-direction: column; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.log li { display: grid; grid-template-columns: 38px 10px minmax(0, 1fr); gap: 6px; align-items: baseline; color: var(--ink); }
+.log li time { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.log .empty { color: var(--ink-2); display: block; }
+
+.explain { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 28px; padding-top: 28px; border-top: 1px solid var(--line); }
+.explain h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+.explain p { margin: 0; color: var(--ink-2); max-width: 46ch; }
+.how { margin: 0; padding-top: 4px; color: var(--ink-2); font-size: 14px; max-width: 80ch; }
+.how strong { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Laboratorio de grafos · Hombres de Negro 3</p>
+    <h1>Lógica de Griffin el Arcaniano</h1>
+    <p class="lede">Un mensaje baja desde el Meta-nivel hasta la Supervivencia. Los rombos traductores le abren atajos entre franjas. Compara la ruta lineal con la de Griffin y cambia las variables.</p>
+  </header>
+
+  <main class="lab">
+    <section class="left" aria-label="Simulación">
+      <div class="transport">
+        <button class="btn primary" id="btn-play" type="button">Reproducir</button>
+        <button class="btn" id="btn-step" type="button">Paso</button>
+        <button class="btn" id="btn-reset" type="button">Reiniciar</button>
+        <span class="spacer"></span>
+        <span class="clock" id="clock" aria-live="off">t = 0.0 <small>unidades</small></span>
+        <label class="sr-only" for="speed" style="position:absolute;left:-9999px">Velocidad</label>
+        <select id="speed" aria-label="Velocidad">
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+        </select>
+      </div>
+      <div class="stage"><svg id="svg" viewBox="0 0 700 650" role="img" aria-label="Grafo de cinco franjas con el Meta-nivel arriba y la Supervivencia abajo, dos rombos traductores y el mensaje viajando por la ruta lineal y por la ruta de Griffin."></svg></div>
+      <p class="note">Añadido a tu grafo original: la arista punteada Acción táctica → Supervivencia, para que la ruta lineal también llegue a la meta, y los cuatro futuros paralelos de la franja 0, para mostrar el efecto de la variable táctica. Toca un rombo para apagarlo.</p>
+    </section>
+
+    <aside class="panel" aria-label="Controles y resultados">
+      <fieldset>
+        <legend class="h">Ruta</legend>
+        <div class="seg" role="radiogroup" aria-label="Ruta">
+          <label><input type="radio" name="mode" value="both" checked><span>Comparar</span></label>
+          <label><input type="radio" name="mode" value="linear"><span>Lineal</span></label>
+          <label><input type="radio" name="mode" value="griffin"><span>Griffin</span></label>
+        </div>
+      </fieldset>
+
+      <section>
+        <h2 class="h">Costo de cada salto (Δ)</h2>
+        <div class="row"><label for="delta-range">Toda arista que toca un rombo</label><span class="val" id="delta-val">0.5 t</span></div>
+        <input type="range" id="delta-range" min="2" max="20" step="1" value="5">
+        <p class="help">Una arista normal cuesta 1 t por franja que cruza. Con Δ alto los atajos dejan de convenir.</p>
+      </section>
+
+      <section>
+        <h2 class="h">Rombos traductores</h2>
+        <label class="switch" for="sw-a"><span class="sw-lab"><span class="diamond-ic"></span>Traductor A</span><input type="checkbox" id="sw-a" checked></label>
+        <label class="switch" for="sw-b"><span class="sw-lab"><span class="diamond-ic"></span>Traductor B</span><input type="checkbox" id="sw-b" checked></label>
+      </section>
+
+      <section>
+        <h2 class="h">Variable táctica</h2>
+        <div class="row"><label for="d-range">Pequeño cambio en el presente</label><span class="val" id="d-val">0.12</span></div>
+        <input type="range" id="d-range" min="0" max="100" step="1" value="12">
+        <div class="row" style="margin-top:8px">
+          <span class="val" id="land-text" style="font-size:13px"></span>
+          <span class="nudge"><button class="btn small" id="d-minus" type="button" aria-label="Restar 0.01">−0.01</button><button class="btn small" id="d-plus" type="button" aria-label="Sumar 0.01">+0.01</button></span>
+        </div>
+        <div class="strip" id="strip" aria-hidden="true"></div>
+        <p class="legend"><span><b style="background:var(--path)"></b>Aterriza en Supervivencia</span><span><b style="background:var(--ghost)"></b>Otro futuro</span></p>
+        <p class="help" id="land-note"></p>
+      </section>
+
+      <section>
+        <h2 class="h">Resultado</h2>
+        <div class="res" id="res-linear">
+          <div class="res-head"><span class="dot linear"></span><span class="res-name">Ruta lineal</span><span class="res-time" id="t-linear"></span></div>
+          <div class="bar"><i class="linear" id="b-linear"></i></div>
+          <div class="res-sub" id="s-linear"></div>
+        </div>
+        <div class="res" id="res-griffin">
+          <div class="res-head"><span class="dot griffin"></span><span class="res-name">Ruta de Griffin</span><span class="res-time" id="t-griffin"></span></div>
+          <div class="bar"><i class="griffin" id="b-griffin"></i></div>
+          <div class="res-sub" id="s-griffin"></div>
+        </div>
+        <p class="verdict" id="verdict"></p>
+      </section>
+
+      <section>
+        <h2 class="h">Registro del mensaje</h2>
+        <ol class="log" id="log" aria-live="polite"><li class="empty"><span></span><span></span><span>Pulsa Reproducir o Paso.</span></li></ol>
+      </section>
+    </aside>
+  </main>
+
+  <section class="explain" aria-label="Explicación del modelo">
+    <div>
+      <h2>Cinco franjas</h2>
+      <p>Las líneas horizontales son la escala de realidades de la red. La franja 4 observa todos los futuros posibles. La franja 0 es la ejecución inmediata en el entorno.</p>
+    </div>
+    <div>
+      <h2>Dos rombos</h2>
+      <p>Traductor A y Traductor B son atajos lógicos. Una ruta normal baja un nivel por vez. Las aristas que tocan un rombo saltan varias franjas de una sola vez.</p>
+    </div>
+    <div>
+      <h2>La ruta verde</h2>
+      <p>Es el camino que elige Griffin. El mensaje pasa del plano conceptual al táctico por el primer rombo y entra al segundo, que lo deposita en Supervivencia. Un cambio pequeño en la variable táctica puede mover ese aterrizaje a otro futuro.</p>
+    </div>
+  </section>
+  <p class="how"><strong>Cómo se calcula.</strong> La ruta de Griffin es el camino más barato (Dijkstra) usando solo los rombos que estén encendidos. Solo con ambos rombos, los atajos ganan mientras Δ sea menor que 1. Con solo el A, mientras Δ sea menor que 1.5. Con solo el B, mientras Δ sea menor que 0.5. La ruta lineal avanza franja a franja y siempre llega a Supervivencia; el salto del Traductor B es el único que puede aterrizar en otro futuro.</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var UNIT = 900;                 // ms de animación por unidad de tiempo
+  var SURV = 3;                   // índice del futuro que es la Supervivencia
+  var FUT_X = [330, 405, 480, 555, 630];
+  var PERM = [0, 3, 1, 2, 4];
+  var LAYER_Y = { 4: 70, 3: 195, 2: 320, 1: 445, 0: 570 };
+  var BAND_H = 125;
+  var FRANJA = { 4: 'META-NIVEL', 3: 'TRADUCTORES', 2: 'ESTRATÉGICO', 1: 'TÁCTICO', 0: 'SUPERVIVENCIA' };
+  var NS = 'http://www.w3.org/2000/svg';
+
+  function rawIdx(d) { var s = Math.sin((d + 7) * 12.9898) * 43758.5453; var f = s - Math.floor(s); return Math.min(4, Math.floor(f * 5)); }
+  function landingOf(d) { return PERM[rawIdx(d)]; }
+
+  var N = {
+    Meta:  { x: 360, y: 70,  layer: 4, shape: 'c', r: 30, lab: ['Meta-nivel', '(Griffin)'], side: 'r', short: 'Meta-nivel' },
+    TradA: { x: 230, y: 195, layer: 3, shape: 'd', r: 36, lab: ['Traductor A', '(rombo 1)'], side: 'l', short: 'Traductor A' },
+    TradB: { x: 490, y: 195, layer: 3, shape: 'd', r: 36, lab: ['Traductor B', '(rombo 2)'], side: 'r', short: 'Traductor B' },
+    Est:   { x: 360, y: 320, layer: 2, shape: 'c', r: 30, lab: ['Línea temporal', 'estratégica'], side: 'r', short: 'Estratégica' },
+    Tac:   { x: 295, y: 445, layer: 1, shape: 'c', r: 30, lab: ['Acción', 'táctica'], side: 'l', short: 'Acción táctica' }
+  };
+  FUT_X.forEach(function (x, i) {
+    var meta = i === SURV;
+    N['F' + i] = { x: x, y: 570, layer: 0, shape: 'c', r: meta ? 30 : 16, lab: meta ? ['Supervivencia', '(meta)'] : ['Futuro ' + (i + 1)], side: 'b', short: meta ? 'Supervivencia' : 'Futuro ' + (i + 1), ghost: !meta };
+  });
+
+  var E = [
+    { id: 'e1', from: 'Meta', to: 'TradA', jump: true, trad: 'TradA', cp: [[310, 85], [240, 135]] },
+    { id: 'e2', from: 'TradA', to: 'Tac', jump: true, trad: 'TradA', cp: [[200, 290], [235, 380]] },
+    { id: 'e3', from: 'Tac', to: 'TradB', jump: true, trad: 'TradB', cp: [[390, 470], [560, 330]] },
+    { id: 'e4', from: 'TradB', to: 'F3', jump: true, trad: 'TradB', dyn: true },
+    { id: 'e5', from: 'Meta', to: 'Est', jump: false },
+    { id: 'e6', from: 'Est', to: 'Tac', jump: false },
+    { id: 'e7', from: 'Tac', to: 'F3', jump: false, added: true }
+  ];
+
+  var S = { mode: 'both', delta: 0.5, aOn: true, bOn: true, d: 12, speed: 1, t: 0, target: 0, playing: false, last: 0, land: 3 };
+  var geoms = {}, routes = {}, edgeEls = {}, tagEls = {}, nodeEls = {}, pkts = {};
+
+  function $(id) { return document.getElementById(id); }
+  function el(name, attrs, parent) {
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) { if (attrs.hasOwnProperty(k)) e.setAttribute(k, attrs[k]); }
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  /* ---------- geometría ---------- */
+  function bez(p0, c1, c2, p3, t) {
+    var u = 1 - t;
+    return [
+      u * u * u * p0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t * t * t * p3[0],
+      u * u * u * p0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * p3[1]
+    ];
+  }
+  function buildGeom(e, toId) {
+    var a = N[e.from], b = N[toId];
+    var p0 = [a.x, a.y], p3 = [b.x, b.y], c1, c2, i, n = 80;
+    if (e.dyn) { c1 = [580, 260]; c2 = [b.x, 450]; }
+    else if (e.cp) { c1 = e.cp[0]; c2 = e.cp[1]; }
+    else {
+      c1 = [p0[0] + (p3[0] - p0[0]) / 3, p0[1] + (p3[1] - p0[1]) / 3];
+      c2 = [p0[0] + 2 * (p3[0] - p0[0]) / 3, p0[1] + 2 * (p3[1] - p0[1]) / 3];
+    }
+    var pts = [], cum = [0];
+    for (i = 0; i <= n; i++) pts.push(bez(p0, c1, c2, p3, i / n));
+    for (i = 1; i <= n; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    var r0 = a.r + 3, r1 = b.r + 7, disp = [];
+    for (i = 0; i <= n; i++) {
+      var d0 = Math.hypot(pts[i][0] - p0[0], pts[i][1] - p0[1]);
+      var d1 = Math.hypot(pts[i][0] - p3[0], pts[i][1] - p3[1]);
+      if (d0 >= r0 && d1 >= r1) disp.push(pts[i]);
+    }
+    var dstr = '', dlen = 0;
+    for (i = 0; i < disp.length; i++) {
+      dstr += (i ? 'L' : 'M') + disp[i][0].toFixed(1) + ' ' + disp[i][1].toFixed(1) + ' ';
+      if (i) dlen += Math.hypot(disp[i][0] - disp[i - 1][0], disp[i][1] - disp[i - 1][1]);
+    }
+    return { pts: pts, cum: cum, len: cum[n], d: dstr, dlen: dlen };
+  }
+  function pointAt(g, p) {
+    var L = Math.max(0, Math.min(1, p)) * g.len, i = 1;
+    while (i < g.cum.length - 1 && g.cum[i] < L) i++;
+    var seg = g.cum[i] - g.cum[i - 1] || 1, f = (L - g.cum[i - 1]) / seg;
+    return [g.pts[i - 1][0] + (g.pts[i][0] - g.pts[i - 1][0]) * f, g.pts[i - 1][1] + (g.pts[i][1] - g.pts[i - 1][1]) * f];
+  }
+  function smooth(p) { return p * p * (3 - 2 * p); }
+
+  /* ---------- rutas ---------- */
+  function weight(e) { return e.jump ? S.delta : Math.abs(N[e.from].layer - N[e.to].layer); }
+  function allowed(e, kind) {
+    if (!e.jump) return true;
+    if (kind === 'linear') return false;
+    return e.trad === 'TradA' ? S.aOn : S.bOn;
+  }
+  function dijkstra(kind) {
+    var ids = ['Meta', 'TradA', 'TradB', 'Est', 'Tac', 'F3'], dist = {}, prev = {}, i, k;
+    ids.forEach(function (id) { dist[id] = Infinity; });
+    dist.Meta = 0;
+    for (k = 0; k < ids.length; k++) {
+      E.forEach(function (e) {
+        if (!allowed(e, kind)) return;
+        var nd = dist[e.from] + weight(e);
+        if (nd < dist[e.to] - 1e-9) { dist[e.to] = nd; prev[e.to] = e; }
+      });
+    }
+    var path = [], cur = 'F3';
+    while (cur !== 'Meta') { var pe = prev[cur]; path.unshift(pe); cur = pe.from; }
+    return path;
+  }
+  function makeRoute(kind) {
+    var path = dijkstra(kind), nodes = ['Meta'], times = [0], edges = [], t = 0, fr = 0;
+    path.forEach(function (e) {
+      var w = weight(e), to = e.id === 'e4' ? 'F' + S.land : e.to;
+      t += w; times.push(t); nodes.push(to);
+      fr += Math.abs(N[e.from].layer - N[to].layer);
+      edges.push({ e: e, w: w, geom: geoms[e.id], to: to });
+    });
+    var end = nodes[nodes.length - 1];
+    return { kind: kind, edges: edges, nodes: nodes, times: times, total: t, franjas: fr, end: end, ok: end === 'F' + SURV, logged: 0 };
+  }
+
+  /* ---------- dibujo ---------- */
+  var gEdges, gHint, gTrail, gNodes, gTags, gPk;
+
+  function initSvg() {
+    var svg = $('svg');
+    var defs = el('defs', {}, svg);
+    var m1 = el('marker', { id: 'ar-gray', viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '7', markerHeight: '7', orient: 'auto' }, defs);
+    el('path', { d: 'M0 0L10 5L0 10z', class: 'mk-gray' }, m1);
+    var m2 = el('marker', { id: 'ar-green', viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '7', markerHeight: '7', orient: 'auto' }, defs);
+    el('path', { d: 'M0 0L10 5L0 10z', class: 'mk-green' }, m2);
+
+    [4, 3, 2, 1, 0].forEach(function (L, idx) {
+      var cy = LAYER_Y[L], top = cy - BAND_H / 2;
+      el('rect', { x: 0, y: top, width: 700, height: BAND_H, class: idx % 2 ? 'band-b' : 'band-a' }, svg);
+      el('line', { x1: 0, y1: cy, x2: 700, y2: cy, class: 'axis' }, svg);
+      var t = el('text', { x: 14, y: top + 20, class: 'franja-lab' }, svg);
+      t.textContent = 'FRANJA ' + L + ' · ' + FRANJA[L];
+    });
+    gEdges = el('g', {}, svg);
+    gHint = el('g', {}, svg);
+    gTrail = el('g', {}, svg);
+    gNodes = el('g', {}, svg);
+    gTags = el('g', {}, svg);
+    gPk = el('g', {}, svg);
+
+    Object.keys(N).forEach(function (id) {
+      var n = N[id];
+      var cls = 'node' + (n.shape === 'd' ? ' rombo' : '') + (n.ghost ? ' ghost' : '');
+      var g = el('g', { class: cls, 'data-id': id }, gNodes);
+      el('circle', { cx: n.x, cy: n.y, r: n.r + 6, class: 'ring' }, g);
+      if (n.shape === 'd') {
+        el('polygon', { class: 'shape', points: [n.x + ',' + (n.y - n.r), (n.x + n.r) + ',' + n.y, n.x + ',' + (n.y + n.r), (n.x - n.r) + ',' + n.y].join(' ') }, g);
+        g.setAttribute('role', 'button');
+        g.setAttribute('tabindex', '0');
+      } else {
+        el('circle', { cx: n.x, cy: n.y, r: n.r, class: 'shape' }, g);
+      }
+      n.lab.forEach(function (line, i) {
+        var attrs, y;
+        if (n.side === 'b') { attrs = { x: n.x, y: n.y + n.r + 16 + i * 15, 'text-anchor': 'middle' }; }
+        else {
+          y = n.lab.length === 1 ? n.y + 4 : n.y - 2 + i * 15;
+          attrs = n.side === 'r' ? { x: n.x + n.r + 10, y: y, 'text-anchor': 'start' } : { x: n.x - n.r - 10, y: y, 'text-anchor': 'end' };
+        }
+        attrs.class = 'nlabel' + (i ? ' sub' : '');
+        var tx = el('text', attrs, g);
+        tx.textContent = line;
+      });
+      nodeEls[id] = g;
+    });
+    ['TradA', 'TradB'].forEach(function (id) {
+      var g = nodeEls[id];
+      g.addEventListener('click', function () { toggleTrad(id); });
+      g.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleTrad(id); } });
+    });
+
+    ['linear', 'griffin'].forEach(function (k) {
+      var g = el('g', { class: 'pk-' + k }, gPk);
+      el('circle', { r: 14, class: 'pk-halo' }, g);
+      el('circle', { r: 7.5, class: 'pk-dot' }, g);
+      pkts[k] = g;
+    });
+  }
+
+  function toggleTrad(id) {
+    var box = $(id === 'TradA' ? 'sw-a' : 'sw-b');
+    box.checked = !box.checked;
+    onControls();
+  }
+
+  function drawEdges() {
+    gEdges.innerHTML = ''; gTags.innerHTML = '';
+    E.forEach(function (e) {
+      var g = geoms[e.id];
+      var off = e.jump && (S.mode === 'linear' || (e.trad === 'TradA' ? !S.aOn : !S.bOn));
+      var cls = 'edge ' + (e.jump ? 'edge-jump' : (e.added ? 'edge-added' : 'edge-lin')) + (off ? ' off' : '');
+      el('path', { d: g.d, class: cls, 'marker-end': e.jump ? 'url(#ar-green)' : 'url(#ar-gray)' }, gEdges);
+      var mid = pointAt(g, 0.5);
+      var tg = el('g', { class: 'tag' + (e.jump ? ' jump' : '') + (off ? ' off' : ''), transform: 'translate(' + mid[0].toFixed(1) + ' ' + mid[1].toFixed(1) + ')' }, gTags);
+      el('rect', { x: -16, y: -9, width: 32, height: 18, rx: 5 }, tg);
+      var tx = el('text', { x: 0, y: 4 }, tg);
+      tx.textContent = e.jump ? S.delta.toFixed(1) : String(weight(e));
+    });
+  }
+
+  function drawRoutes() {
+    gHint.innerHTML = ''; gTrail.innerHTML = '';
+    ['linear', 'griffin'].forEach(function (k) {
+      var r = routes[k];
+      r.edges.forEach(function (ed) {
+        el('path', { d: ed.geom.d, class: 'hint ' + k, 'data-k': k }, gHint).style.display = (S.mode === 'both' || S.mode === k) ? '' : 'none';
+        var tr = el('path', { d: ed.geom.d, class: 'trail ' + k }, gTrail);
+        tr.style.display = (S.mode === 'both' || S.mode === k) ? '' : 'none';
+        tr.setAttribute('stroke-dasharray', ed.geom.dlen + ' ' + ed.geom.dlen);
+        tr.setAttribute('stroke-dashoffset', ed.geom.dlen);
+        ed.trail = tr;
+      });
+    });
+  }
+
+  /* ---------- simulación ---------- */
+  function active(k) { return S.mode === 'both' || S.mode === k; }
+  function maxTotal() {
+    var m = 0;
+    ['linear', 'griffin'].forEach(function (k) { if (active(k) && routes[k].total > m) m = routes[k].total; });
+    return m;
+  }
+  function finished() { return S.t >= maxTotal() - 1e-9; }
+
+  function addLog(kind, tm, text) {
+    var log = $('log');
+    var first = log.querySelector('.empty');
+    if (first) log.removeChild(first);
+    var li = document.createElement('li');
+    var t = document.createElement('time'); t.textContent = tm.toFixed(1);
+    var d = document.createElement('span'); d.className = 'dot ' + kind;
+    var s = document.createElement('span'); s.textContent = text;
+    li.appendChild(t); li.appendChild(d); li.appendChild(s);
+    log.appendChild(li);
+    log.scrollTop = log.scrollHeight;
+  }
+  function logText(r, i) {
+    var kindName = r.kind === 'linear' ? 'Lineal' : 'Griffin';
+    if (i === 0) return kindName + ': el mensaje sale del Meta-nivel';
+    var ed = r.edges[i - 1], to = r.nodes[i];
+    var k = Math.abs(N[ed.e.from].layer - N[to].layer);
+    var txt = N[ed.e.from].short + ' → ' + N[to].short + ' · ' + k + (k === 1 ? ' franja' : ' franjas') + (ed.e.jump ? ' · salto' : '');
+    if (i === r.nodes.length - 1) txt += r.ok ? ' · llegó a la meta' : ' · aterrizó en otro futuro';
+    return txt;
+  }
+  function resetLog() {
+    var log = $('log');
+    log.innerHTML = '<li class="empty"><span></span><span></span><span>Pulsa Reproducir o Paso.</span></li>';
+    ['linear', 'griffin'].forEach(function (k) { routes[k].logged = 0; });
+  }
+
+  function render() {
+    var vis = {};
+    ['linear', 'griffin'].forEach(function (k) {
+      var r = routes[k], pk = pkts[k], on = active(k);
+      pk.style.display = on ? '' : 'none';
+      if (!on) return;
+      var t = Math.min(S.t, r.total), i = 0, j;
+      while (i < r.edges.length - 1 && t >= r.times[i + 1] - 1e-9) i++;
+      var ed = r.edges[i], frac = ed.w > 0 ? Math.min(1, Math.max(0, (t - r.times[i]) / ed.w)) : 1;
+      var pos = pointAt(ed.geom, ed.e.jump ? smooth(frac) : frac);
+      pk.setAttribute('transform', 'translate(' + (pos[0] + (k === 'linear' ? -5 : 5)).toFixed(1) + ' ' + pos[1].toFixed(1) + ')');
+      for (j = 0; j < r.edges.length; j++) {
+        var e2 = r.edges[j];
+        var f2 = Math.min(1, Math.max(0, (t - r.times[j]) / e2.w));
+        var p2 = e2.e.jump ? smooth(f2) : f2;
+        e2.trail.setAttribute('stroke-dashoffset', (e2.geom.dlen * (1 - p2)).toFixed(1));
+      }
+      for (j = 0; j < r.nodes.length; j++) {
+        if (r.times[j] <= S.t + 1e-9) { (vis[r.nodes[j]] = vis[r.nodes[j]] || {})[k] = true; }
+      }
+      while (r.logged < r.nodes.length && r.times[r.logged] <= S.t + 1e-9) {
+        addLog(k, r.times[r.logged], logText(r, r.logged));
+        r.logged++;
+      }
+    });
+    Object.keys(nodeEls).forEach(function (id) {
+      var c = nodeEls[id].classList, v = vis[id] || {};
+      c.toggle('v-linear', !!v.linear); c.toggle('v-griffin', !!v.griffin);
+      c.remove('landed', 'landed-miss');
+    });
+    ['linear', 'griffin'].forEach(function (k) {
+      var r = routes[k];
+      if (active(k) && S.t >= r.total - 1e-9 && S.t > 0) nodeEls[r.end].classList.add(r.ok ? 'landed' : 'landed-miss');
+    });
+    $('clock').innerHTML = 't = ' + S.t.toFixed(1) + ' <small>unidades</small>';
+  }
+
+  function syncButtons() {
+    var b = $('btn-play');
+    b.textContent = S.playing ? 'Pausar' : (S.t > 0 && finished() ? 'Repetir' : (S.t > 0 ? 'Continuar' : 'Reproducir'));
+  }
+  function tick(now) {
+    if (!S.playing) return;
+    var dt = S.last ? now - S.last : 0;
+    S.last = now;
+    S.t = Math.min(S.target, S.t + dt * S.speed / UNIT);
+    render();
+    if (S.t >= S.target - 1e-9) { S.playing = false; S.last = 0; syncButtons(); return; }
+    requestAnimationFrame(tick);
+  }
+  function startLoop() { S.last = 0; syncButtons(); requestAnimationFrame(tick); }
+  function resetSim() {
+    S.t = 0; S.target = 0; S.playing = false; S.last = 0;
+    resetLog(); render(); syncButtons();
+  }
+  function play() {
+    if (S.playing) { S.playing = false; S.target = S.t; syncButtons(); return; }
+    if (finished()) resetSim();
+    S.target = maxTotal(); S.playing = true; startLoop();
+  }
+  function step() {
+    if (S.playing) { S.playing = false; }
+    if (finished()) resetSim();
+    var next = Infinity;
+    ['linear', 'griffin'].forEach(function (k) {
+      if (!active(k)) return;
+      routes[k].times.forEach(function (tm) { if (tm > S.t + 1e-9 && tm < next) next = tm; });
+    });
+    if (next === Infinity) return;
+    S.target = next; S.playing = true; startLoop();
+  }
+
+  /* ---------- resultados ---------- */
+  function fmt(x) { return x.toFixed(1) + ' t'; }
+  function updateResults() {
+    var L = routes.linear, G = routes.griffin, mx = Math.max(L.total, G.total, 0.1);
+    ['linear', 'griffin'].forEach(function (k) {
+      var r = routes[k];
+      $('res-' + k).hidden = !active(k);
+      $('t-' + k).textContent = fmt(r.total);
+      $('b-' + k).style.width = (r.total / mx * 100).toFixed(0) + '%';
+      var dest = r.ok ? 'llega a Supervivencia' : 'aterriza en ' + N[r.end].short + ', no es la meta';
+      $('s-' + k).textContent = r.edges.length + ' aristas · ' + r.franjas + ' franjas cruzadas · ' + dest;
+    });
+    var v = '';
+    if (S.mode === 'both') {
+      var diff = L.total - G.total;
+      if (Math.abs(diff) <= 0.05) v = 'Las dos rutas tardan lo mismo.';
+      else if (diff > 0) v = 'Griffin llega ' + diff.toFixed(1) + ' t antes (' + Math.round(diff / L.total * 100) + ' % menos).';
+      else v = 'La ruta lineal llega ' + (-diff).toFixed(1) + ' t antes. Con este Δ los rombos no convienen.';
+    }
+    $('verdict').textContent = v;
+
+    var d = S.d, idx = S.land;
+    $('d-val').textContent = (d / 100).toFixed(2);
+    $('land-text').textContent = 'Aterriza en: ' + (idx === SURV ? 'Supervivencia' : 'Futuro ' + (idx + 1));
+    var usesB = G.edges.some(function (ed) { return ed.e.id === 'e4'; });
+    $('land-note').textContent = usesB
+      ? 'Mueve la variable 0.01 y mira cómo cambia el futuro donde aterriza el salto del Traductor B.'
+      : 'La ruta de Griffin actual no cruza el Traductor B, así que esta variable no cambia el destino.';
+    var cells = $('strip').children;
+    for (var i = 0; i < cells.length; i++) cells[i].classList.toggle('cur', i === d);
+  }
+
+  /* ---------- controles ---------- */
+  function rebuild() {
+    S.land = landingOf(S.d);
+    geoms = {};
+    E.forEach(function (e) { geoms[e.id] = buildGeom(e, e.id === 'e4' ? 'F' + S.land : e.to); });
+    routes = { linear: makeRoute('linear'), griffin: makeRoute('griffin') };
+    drawEdges(); drawRoutes();
+    ['TradA', 'TradB'].forEach(function (id) {
+      var on = id === 'TradA' ? S.aOn : S.bOn;
+      nodeEls[id].classList.toggle('off', !on);
+      nodeEls[id].setAttribute('aria-pressed', String(on));
+      nodeEls[id].setAttribute('aria-label', N[id].short + ': ' + (on ? 'encendido' : 'apagado') + '. Pulsa para cambiar.');
+    });
+    updateResults();
+    resetSim();
+  }
+  function onControls() {
+    S.mode = document.querySelector('input[name="mode"]:checked').value;
+    S.delta = parseInt($('delta-range').value, 10) / 10;
+    $('delta-val').textContent = S.delta.toFixed(1) + ' t';
+    S.aOn = $('sw-a').checked; S.bOn = $('sw-b').checked;
+    S.d = parseInt($('d-range').value, 10);
+    rebuild();
+  }
+  function setD(v) {
+    v = Math.max(0, Math.min(100, v));
+    $('d-range').value = v;
+    onControls();
+  }
+
+  function init() {
+    initSvg();
+    var strip = $('strip');
+    for (var i = 0; i <= 100; i++) {
+      var c = document.createElement('i');
+      if (landingOf(i) === SURV) c.className = 's';
+      strip.appendChild(c);
+    }
+    function fromPointer(ev) {
+      var rect = strip.getBoundingClientRect();
+      setD(Math.round((ev.clientX - rect.left) / rect.width * 100 - 0.5));
+    }
+    strip.addEventListener('pointerdown', function (ev) { strip.setPointerCapture(ev.pointerId); fromPointer(ev); });
+    strip.addEventListener('pointermove', function (ev) { if (ev.buttons) fromPointer(ev); });
+
+    document.querySelectorAll('input[name="mode"]').forEach(function (r) { r.addEventListener('change', onControls); });
+    ['delta-range', 'sw-a', 'sw-b', 'd-range'].forEach(function (id) { $(id).addEventListener('input', onControls); });
+    $('d-minus').addEventListener('click', function () { setD(S.d - 1); });
+    $('d-plus').addEventListener('click', function () { setD(S.d + 1); });
+    $('speed').addEventListener('change', function () { S.speed = parseFloat($('speed').value); });
+    $('btn-play').addEventListener('click', play);
+    $('btn-step').addEventListener('click', step);
+    $('btn-reset').addEventListener('click', resetSim);
+    onControls();
+  }
+  init();
+})();
+</script>
+
+</body></html>
