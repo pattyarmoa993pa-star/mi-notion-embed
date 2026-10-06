@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vibrar en varios niveles: una red que se puede simular</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eef1f6; --panel:#ffffff; --ink:#101828; --muted:#5b6578; --line:#d5dbe6;
+  --edge:#8d97aa; --accent:#0f766e; --accent-ink:#ffffff; --soft:#e4e9f2;
+  --l1:#d4452f; --l2:#d9960a; --l3:#2f9e6e; --l4:#2563eb; --l5:#7c3aed;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1420; --panel:#161e2e; --ink:#e8edf6; --muted:#9aa6bd; --line:#2a3550;
+    --edge:#5f6c88; --accent:#2dd4bf; --accent-ink:#06201d; --soft:#1d273b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1420; --panel:#161e2e; --ink:#e8edf6; --muted:#9aa6bd; --line:#2a3550;
+  --edge:#5f6c88; --accent:#2dd4bf; --accent-ink:#06201d; --soft:#1d273b;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans)}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 18px 56px}
+h1{font:600 clamp(28px,5vw,44px)/1.1 var(--serif);margin:0 0 12px;letter-spacing:-.01em}
+h2{font:600 22px/1.25 var(--serif);margin:0 0 10px}
+p{margin:0 0 12px}
+.lead{max-width:62ch;color:var(--muted);font-size:17px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+section{margin-top:26px}
+.hero{display:grid;gap:18px;margin-top:22px}
+.hero svg{width:100%;height:auto;display:block;border-radius:6px}
+.caption{color:var(--muted);font-size:14px;margin:10px 0 0;max-width:80ch}
+
+.controls{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));align-items:end}
+.ctl label{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);margin-bottom:4px}
+.ctl output{color:var(--ink);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+button{font:inherit;font-size:15px;padding:9px 16px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button:focus-visible,input:focus-visible,canvas:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.switch{display:flex;gap:8px;align-items:center;font-size:15px;cursor:pointer}
+.switch input{width:18px;height:18px;accent-color:var(--accent)}
+
+.lab{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:920px){.lab{grid-template-columns:minmax(0,1fr) 290px}}
+.stage{padding:10px}
+canvas{display:block;width:100%;height:clamp(380px,60vw,500px);border-radius:6px;cursor:pointer;touch-action:manipulation}
+.status{font-size:14px;color:var(--muted);margin:10px 6px 2px;min-height:44px}
+.status strong{color:var(--ink)}
+.side{display:grid;gap:14px;align-content:start}
+.kpi{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding:7px 0;font-size:15px}
+.kpi:last-child{border-bottom:0}
+.kpi b{font:600 20px var(--serif);font-variant-numeric:tabular-nums}
+.bars{display:grid;gap:7px;margin-top:6px}
+.bar{display:grid;grid-template-columns:92px 1fr 40px;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--soft);overflow:hidden}
+.bar i span{display:block;height:100%;width:0;transition:width .3s}
+.bar em{font-style:normal;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.compare div{background:var(--soft);border-radius:8px;padding:10px;font-size:13px;color:var(--muted)}
+.compare b{display:block;font:600 24px var(--serif);color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-top:12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.ring{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);display:inline-block}
+.dash{width:22px;border-top:2px dashed var(--edge);display:inline-block}
+
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;width:30%}
+td{color:var(--muted)}
+.table-wrap{overflow-x:auto}
+ol.try{padding-left:20px;margin:0}
+ol.try li{margin-bottom:8px}
+@media (prefers-reduced-motion: reduce){.bar i span{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Vibrar en varios niveles</h1>
+  <p class="lead">Cada persona es un nodo, cada relación es una arista, y cada nodo opera en un nivel de abstracción distinto. Esta página te deja emitir un mensaje y ver hasta dónde llega la red, con y sin nodos que sepan traducir entre niveles.</p>
+</header>
+
+<div class="hero card">
+  <svg viewBox="0 0 720 376" role="img" aria-label="Ilustración de una red de cinco niveles. Un mensaje baja desde el meta-nivel hasta la supervivencia pasando por dos nodos traductores en forma de rombo.">
+    <rect x="0" y="4" width="720" height="72" fill="var(--l5)" opacity=".13"/>
+    <rect x="0" y="76" width="720" height="72" fill="var(--l4)" opacity=".13"/>
+    <rect x="0" y="148" width="720" height="72" fill="var(--l3)" opacity=".13"/>
+    <rect x="0" y="220" width="720" height="72" fill="var(--l2)" opacity=".13"/>
+    <rect x="0" y="292" width="720" height="72" fill="var(--l1)" opacity=".13"/>
+    <g font-family="system-ui,sans-serif" font-size="12" fill="var(--muted)">
+      <text x="12" y="22">Nivel 5: meta-nivel</text>
+      <text x="12" y="94">Nivel 4: construcción</text>
+      <text x="12" y="166">Nivel 3: comprensión</text>
+      <text x="12" y="238">Nivel 2: funcionamiento</text>
+      <text x="12" y="310">Nivel 1: supervivencia</text>
+    </g>
+    <g stroke="var(--edge)" stroke-width="1.5" fill="none" opacity=".85">
+      <path d="M300 44H470"/>
+      <path d="M300 44L230 116M470 44L540 116"/>
+      <path d="M230 116H380M380 116H540"/>
+      <path d="M230 116L180 188M230 116L330 188M380 116L330 188M540 116L470 188M540 116L610 188"/>
+      <path d="M180 188H330M330 188H470M470 188H610"/>
+      <path d="M180 188L150 260M330 188L290 260M470 188L430 260M610 188L580 260"/>
+      <path d="M150 260H290M290 260H430M430 260H580"/>
+      <path d="M150 260L210 332M290 260L360 332M290 260L210 332M580 260L640 332"/>
+      <path d="M210 332H360M360 332H500M500 332H640"/>
+    </g>
+    <g stroke="var(--accent)" stroke-width="3.5" fill="none" stroke-linecap="round">
+      <path d="M300 44L380 116"/>
+      <path d="M380 116L430 260" stroke-dasharray="7 6"/>
+      <path d="M430 260L500 332"/>
+    </g>
+    <g stroke="var(--panel)" stroke-width="2">
+      <circle cx="300" cy="44" r="10" fill="var(--l5)"/>
+      <circle cx="470" cy="44" r="10" fill="var(--l5)"/>
+      <circle cx="230" cy="116" r="10" fill="var(--l4)"/>
+      <circle cx="540" cy="116" r="10" fill="var(--l4)"/>
+      <circle cx="180" cy="188" r="10" fill="var(--l3)"/>
+      <circle cx="330" cy="188" r="10" fill="var(--l3)"/>
+      <circle cx="470" cy="188" r="10" fill="var(--l3)"/>
+      <circle cx="610" cy="188" r="10" fill="var(--l3)"/>
+      <circle cx="150" cy="260" r="10" fill="var(--l2)"/>
+      <circle cx="290" cy="260" r="10" fill="var(--l2)"/>
+      <circle cx="580" cy="260" r="10" fill="var(--l2)"/>
+      <circle cx="210" cy="332" r="10" fill="var(--l1)"/>
+      <circle cx="360" cy="332" r="10" fill="var(--l1)"/>
+      <circle cx="500" cy="332" r="10" fill="var(--l1)"/>
+      <circle cx="640" cy="332" r="10" fill="var(--l1)"/>
+    </g>
+    <g stroke="var(--ink)" stroke-width="2.5">
+      <path d="M380 100L396 116L380 132L364 116Z" fill="var(--l4)"/>
+      <path d="M430 244L446 260L430 276L414 260Z" fill="var(--l2)"/>
+    </g>
+    <circle cx="300" cy="44" r="17" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+    <g font-family="system-ui,sans-serif" font-size="12" fill="var(--ink)">
+      <text x="322" y="30">emisor</text>
+      <text x="404" y="112">traductor</text>
+      <text x="454" y="256">traductor</text>
+      <text x="516" y="352">receptor lejano</text>
+    </g>
+    <g font-family="system-ui,sans-serif" font-size="11" fill="var(--muted)">
+      <text x="402" y="196" transform="rotate(66 402 196)">arista larga</text>
+    </g>
+  </svg>
+  <p class="caption">Las aristas entre niveles vecinos son fáciles de cruzar. Los rombos son traductores: nodos con una arista que salta varios niveles. Sin ellos, el mensaje del meta-nivel nunca llega abajo con el mismo sentido.</p>
+</div>
+
+<section>
+  <h2>Laboratorio</h2>
+  <div class="card">
+    <div class="controls">
+      <div class="ctl"><label for="nNodes">Personas en la red <output id="oN">48</output></label><input id="nNodes" type="range" min="24" max="80" value="48"></div>
+      <div class="ctl"><label for="pTrans">Traductores <output id="oT">12%</output></label><input id="pTrans" type="range" min="0" max="30" value="12"></div>
+      <div class="ctl"><label for="stab">Núcleo estable <output id="oS">35%</output></label><input id="stab" type="range" min="0" max="100" value="35"></div>
+      <div class="ctl"><label for="speed">Velocidad <output id="oV">3</output></label><input id="speed" type="range" min="1" max="5" value="3"></div>
+    </div>
+    <div class="row">
+      <label class="switch"><input id="translate" type="checkbox"> Traducir entre niveles</label>
+      <button id="go" class="primary">Emitir mensaje</button>
+      <button id="both">Comparar sin y con traducción</button>
+      <button id="reset">Reiniciar</button>
+      <button id="fresh">Nueva red</button>
+    </div>
+  </div>
+
+  <div class="lab" style="margin-top:16px">
+    <div class="card stage">
+      <canvas id="cv" tabindex="0" aria-label="Red de personas organizada por niveles. Haz clic en un nodo para emitir un mensaje desde él."></canvas>
+      <div class="status" id="status" aria-live="polite">Haz clic en cualquier nodo para emitir un mensaje desde su nivel.</div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--l1)"></i>Supervivencia</span>
+        <span><i class="dot" style="background:var(--l2)"></i>Funcionamiento</span>
+        <span><i class="dot" style="background:var(--l3)"></i>Comprensión</span>
+        <span><i class="dot" style="background:var(--l4)"></i>Construcción</span>
+        <span><i class="dot" style="background:var(--l5)"></i>Meta-nivel</span>
+        <span><i class="ring"></i>Traductor</span>
+        <span><i class="dash"></i>Arista entre niveles lejanos</span>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <h2>Resultado</h2>
+        <div class="kpi"><span>Personas alcanzadas</span><b id="kReach">0%</b></div>
+        <div class="kpi"><span>Pasos de propagación</span><b id="kTick">0</b></div>
+        <div class="kpi"><span>Traductores agotados</span><b id="kBurn">0</b></div>
+        <div class="kpi"><span>Aristas entre niveles lejanos</span><b id="kBridge">0</b></div>
+        <div class="bars" id="bars"></div>
+      </div>
+      <div class="card">
+        <h2>Comparación</h2>
+        <div class="compare">
+          <div><b id="cOff">—</b>sin traducción</div>
+          <div><b id="cOn">—</b>con traducción</div>
+        </div>
+        <p class="caption" style="margin-top:10px">Cada corrida tiene azar, así que los números cambian un poco.</p>
+      </div>
+      <div class="card" id="info" style="font-size:14px;color:var(--muted)">Pasa el cursor por un nodo para ver su nivel, sus conexiones y su desgaste.</div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Qué hace cada pieza del modelo</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Nodo</th><td>Una persona. Su color y su franja indican el nivel en el que está operando ahora.</td></tr>
+    <tr><th>Arista</th><td>Una relación. Si une niveles a dos o más de distancia se dibuja punteada: comunicarse por ahí cuesta.</td></tr>
+    <tr><th>Homofilia</th><td>La tendencia a relacionarte con quien está en tu nivel. Por eso la red se agrupa en franjas.</td></tr>
+    <tr><th>Subgrafo</th><td>Cada franja es un subgrafo que se entiende bien por dentro. El mensaje se queda atrapado en él si nadie lo saca.</td></tr>
+    <tr><th>Nodo puente o traductor</th><td>Conecta franjas lejanas y reescribe el mensaje para el vecino. En teoría de grafos es un nodo con alta centralidad de intermediación.</td></tr>
+    <tr><th>Camino</th><td>La ruta que sigue el mensaje. Su longitud son los pasos de propagación.</td></tr>
+    <tr><th>Alcance</th><td>El porcentaje de nodos a los que llega el mensaje. Con pocos puentes la red sigue conectada, pero deja de ser transitable.</td></tr>
+    <tr><th>Núcleo estable</th><td>Lo que protege al traductor del desgaste. Con núcleo bajo, traducir demasiado lo agota y el nodo deja de servir como puente.</td></tr>
+  </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Cuatro experimentos</h2>
+  <ol class="try">
+    <li>Haz clic en un nodo morado o azul sin activar la traducción. El mensaje se queda en su zona.</li>
+    <li>Activa «Traducir entre niveles» y emite otra vez. Los rombos llevan el mensaje a las franjas de abajo.</li>
+    <li>Baja el núcleo estable a 0% y emite con traducción. Los traductores se agotan y se ponen grises: es el costo de bajar y subir sin un centro propio.</li>
+    <li>Pon los traductores en 0% y emite con traducción. Nadie puede traducir, así que la red vuelve a quedar fragmentada.</li>
+  </ol>
+  <p class="caption" style="margin-top:12px">No hace falta convertir a todos al mismo nivel. Hace falta que existan caminos por los que el mensaje pueda cambiar de nivel, y que quien los recorre conserve su nodo central.</p>
+</section>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+var NAMES={1:"Supervivencia",2:"Funcionamiento",3:"Comprensión",4:"Construcción",5:"Meta-nivel"};
+var RETRY=3;
+var $=function(id){return document.getElementById(id)};
+var canvas=$("cv"),ctx=canvas.getContext("2d");
+var cs=getComputedStyle(document.documentElement);
+function C(v){return cs.getPropertyValue(v).trim()}
+
+var nodes=[],edges=[],adj=[],seed=11,src=null,running=false,timer=null,tickN=0,chain=null,hover=null;
+var results={off:null,on:null};
+var W=0,H=0;
+
+function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+
+function build(){
+  var R=rng(seed);
+  var N=+$("nNodes").value, pT=+$("pTrans").value/100;
+  var weights=[.24,.28,.2,.16,.12];
+  nodes=[];edges=[];adj=[];
+  for(var i=0;i<N;i++){
+    var r=R(),acc=0,lv=5;
+    for(var k=0;k<5;k++){acc+=weights[k];if(r<=acc){lv=k+1;break}}
+    nodes.push({id:i,level:lv,flex:0,x:R(),yoff:(R()-.5)*.8,deg:0,reached:false,enc:lv,active:0,wear:0,burned:false});
+  }
+  var order=nodes.map(function(n){return n.id});
+  for(var a=order.length-1;a>0;a--){var b=Math.floor(R()*(a+1));var t=order[a];order[a]=order[b];order[b]=t}
+  var nT=Math.round(N*pT);
+  for(var q=0;q<nT;q++){nodes[order[q]].flex=R()<.5?2:1}
+
+  for(var L=1;L<=5;L++){
+    var g=nodes.filter(function(n){return n.level===L}).sort(function(p,q){return p.x-q.x});
+    var minGap=Math.min(.045,.95/Math.max(1,g.length));
+    for(var pass=0;pass<40;pass++){
+      for(var j=1;j<g.length;j++){
+        var d=g[j].x-g[j-1].x;
+        if(d<minGap){var s=(minGap-d)/2;g[j].x+=s;g[j-1].x-=s}
+      }
+      g.forEach(function(n){n.x=clamp(n.x,0,1)});
+    }
+  }
+
+  var set={};
+  function key(a,b){return a<b?a+"-"+b:b+"-"+a}
+  function addE(a,b){
+    if(a===b)return false;var k=key(a,b);if(set[k])return false;
+    set[k]=1;edges.push({a:a,b:b,used:0,far:Math.abs(nodes[a].level-nodes[b].level)>=2});return true;
+  }
+  function pick(i,hn,ht,xp){
+    var ni=nodes[i],ws=[],tot=0;
+    for(var j=0;j<nodes.length;j++){
+      var w=0;
+      if(j!==i){
+        var m=nodes[j],dl=Math.abs(m.level-ni.level);
+        var h=(ni.flex>0||m.flex>0)?ht:hn;
+        w=Math.exp(-h*dl)*Math.exp(-xp*Math.abs(m.x-ni.x));
+      }
+      ws.push(w);tot+=w;
+    }
+    var r=R()*tot;
+    for(var j2=0;j2<ws.length;j2++){r-=ws[j2];if(r<=0)return j2}
+    return ws.length-1;
+  }
+  for(var i2=0;i2<N;i2++){
+    var kk=2+(R()<.35?1:0);
+    for(var t2=0;t2<kk;t2++){for(var tr=0;tr<4;tr++){if(addE(i2,pick(i2,1.6,.5,3.5)))break}}
+    if(nodes[i2].flex>0){for(var t3=0;t3<2;t3++){for(var tr2=0;tr2<4;tr2++){if(addE(i2,pick(i2,1.6,.3,1.5)))break}}}
+  }
+  var par=nodes.map(function(_,i){return i});
+  function f(x){while(par[x]!==x){par[x]=par[par[x]];x=par[x]}return x}
+  edges.forEach(function(e){par[f(e.a)]=f(e.b)});
+  for(;;){
+    var best=null,bc=1e9;
+    for(var u=0;u<N;u++)for(var v=u+1;v<N;v++){
+      if(f(u)===f(v))continue;
+      var cost=Math.abs(nodes[u].level-nodes[v].level)+Math.abs(nodes[u].x-nodes[v].x)*2-((nodes[u].flex>0||nodes[v].flex>0)?.8:0);
+      if(cost<bc){bc=cost;best=[u,v]}
+    }
+    if(!best)break;
+    addE(best[0],best[1]);par[f(best[0])]=f(best[1]);
+  }
+  for(var n2=0;n2<N;n2++)adj.push([]);
+  edges.forEach(function(e){adj[e.a].push({to:e.b,e:e});adj[e.b].push({to:e.a,e:e});nodes[e.a].deg++;nodes[e.b].deg++});
+
+  var cand=nodes.filter(function(n){return n.level===4&&n.flex===0});
+  src=cand.length?cand[0]:nodes[0];
+  results={off:null,on:null};
+  resetRun();
+  updateCompare();
+}
+
+function resetRun(){
+  stopTimer();
+  nodes.forEach(function(n){n.reached=false;n.enc=n.level;n.active=0;n.wear=0;n.burned=false});
+  edges.forEach(function(e){e.used=0});
+  tickN=0;running=false;
+  if(src){src.reached=true}
+  updateStats();
+  setStatus("Haz clic en cualquier nodo para emitir un mensaje desde su nivel.");
+}
+
+function stopTimer(){if(timer){clearInterval(timer);timer=null}}
+function delay(){return [0,1100,650,420,280,170][+$("speed").value]}
+
+function start(){
+  resetRun();
+  running=true;
+  src.active=RETRY;
+  var mode=$("translate").checked?"con":"sin";
+  setStatus("Mensaje emitido desde el nivel <strong>"+src.level+" ("+NAMES[src.level]+")</strong>, "+mode+" traducción.");
+  timer=setInterval(step,delay());
+}
+
+function step(){
+  tickN++;
+  var translate=$("translate").checked;
+  var stab=+$("stab").value/100;
+  var eff=function(n){return(translate&&!n.burned)?n.flex:0};
+  var carriers=nodes.filter(function(n){return n.active>0});
+  var pending={};
+  carriers.forEach(function(c){
+    adj[c.id].forEach(function(o){
+      var r=nodes[o.to];
+      if(r.reached)return;
+      var g=Math.abs(c.enc-r.level);
+      var uc=Math.min(eff(c),g);
+      var ur=Math.min(eff(r),g-uc);
+      var g2=g-uc-ur;
+      if(uc>0)c.wear+=uc*5*(1-.85*stab);
+      if(ur>0)r.wear+=ur*5*(1-.85*stab);
+      var p=Math.max(.02,1-.5*g2);
+      if(Math.random()<p&&!pending[r.id]){
+        var dir=r.level>c.enc?1:-1;
+        pending[r.id]={r:r,e:o.e,enc:c.enc+dir*Math.min(g,uc+ur)};
+      }
+    });
+  });
+  nodes.forEach(function(n){if(!n.burned&&n.wear>=100){n.burned=true}});
+  carriers.forEach(function(c){c.active--});
+  Object.keys(pending).forEach(function(k){
+    var s=pending[k];
+    s.r.reached=true;s.r.enc=s.enc;s.r.active=RETRY;s.e.used=1;
+  });
+  updateStats();
+  var any=nodes.some(function(n){return n.active>0});
+  if(!any)finish();
+}
+
+function finish(){
+  stopTimer();running=false;
+  var N=nodes.length,got=nodes.filter(function(n){return n.reached}).length;
+  var pct=Math.round(got/N*100);
+  results[$("translate").checked?"on":"off"]=pct;
+  updateCompare();
+  var far=[];
+  for(var L=1;L<=5;L++){
+    var tot=nodes.filter(function(n){return n.level===L}).length;
+    var ok=nodes.filter(function(n){return n.level===L&&n.reached}).length;
+    if(tot>0&&ok/tot<.5)far.push(L);
+  }
+  var msg="La propagación terminó: llegó al <strong>"+pct+"%</strong> de la red en "+tickN+" pasos.";
+  if(far.length)msg+=" Quedaron sin recibirlo, sobre todo, los niveles "+far.join(", ")+".";
+  var burned=nodes.filter(function(n){return n.burned}).length;
+  if(burned)msg+=" "+burned+(burned===1?" traductor se agotó":" traductores se agotaron")+" en el camino.";
+  setStatus(msg);
+  if(chain==="off-on"){
+    chain=null;$("translate").checked=true;
+    setTimeout(start,500);
+  }
+}
+
+function setStatus(h){$("status").innerHTML=h}
+
+function updateStats(){
+  var N=nodes.length||1;
+  var got=nodes.filter(function(n){return n.reached}).length;
+  $("kReach").textContent=Math.round(got/N*100)+"%";
+  $("kTick").textContent=tickN;
+  $("kBurn").textContent=nodes.filter(function(n){return n.burned}).length;
+  $("kBridge").textContent=edges.filter(function(e){return e.far}).length;
+  var html="";
+  for(var L=5;L>=1;L--){
+    var tot=nodes.filter(function(n){return n.level===L}).length;
+    var ok=nodes.filter(function(n){return n.level===L&&n.reached}).length;
+    var p=tot?Math.round(ok/tot*100):0;
+    html+='<div class="bar"><span>Nivel '+L+'</span><i><span style="width:'+p+'%;background:var(--l'+L+')"></span></i><em>'+p+'%</em></div>';
+  }
+  $("bars").innerHTML=html;
+}
+function updateCompare(){
+  $("cOff").textContent=results.off==null?"—":results.off+"%";
+  $("cOn").textContent=results.on==null?"—":results.on+"%";
+}
+
+function resize(){
+  var dpr=window.devicePixelRatio||1;
+  W=canvas.clientWidth;H=canvas.clientHeight;
+  canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function pos(n){
+  var padL=W<560?30:128,padR=18,bandH=H/5,idx=5-n.level;
+  return{x:padL+n.x*(W-padL-padR),y:idx*bandH+bandH*(.5+n.yoff*.5)};
+}
+function radius(n){return 5+Math.min(n.deg,6)*.8}
+function lc(L){return C("--l"+L)}
+
+function draw(){
+  cs=getComputedStyle(document.documentElement);
+  var t=performance.now()/1000;
+  ctx.clearRect(0,0,W,H);
+  var bandH=H/5;
+  for(var L=5;L>=1;L--){
+    var y0=(5-L)*bandH;
+    ctx.globalAlpha=.11;ctx.fillStyle=lc(L);ctx.fillRect(0,y0,W,bandH);
+    ctx.globalAlpha=1;
+    ctx.fillStyle=C("--muted");ctx.font="12px system-ui,sans-serif";ctx.textBaseline="top";
+    ctx.fillText(W<560?String(L):("Nivel "+L+": "+NAMES[L]),8,y0+6);
+  }
+  var msgCol=src?lc(src.level):C("--accent");
+  edges.forEach(function(e){
+    var a=pos(nodes[e.a]),b=pos(nodes[e.b]);
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+    if(e.used){ctx.strokeStyle=msgCol;ctx.lineWidth=3;ctx.globalAlpha=.95;ctx.setLineDash([])}
+    else{ctx.strokeStyle=C("--edge");ctx.lineWidth=1.2;ctx.globalAlpha=.55;ctx.setLineDash(e.far?[5,4]:[])}
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);ctx.globalAlpha=1;
+  nodes.forEach(function(n){
+    var p=pos(n),r=radius(n);
+    var col=lc(n.level);
+    if(n.burned){col="#8a90a0"}
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,6.2832);
+    ctx.fillStyle=n.reached?col:C("--panel");ctx.fill();
+    ctx.lineWidth=2;ctx.strokeStyle=col;ctx.stroke();
+    if(n.flex>0){
+      ctx.beginPath();ctx.arc(p.x,p.y,r+4,0,6.2832);
+      ctx.lineWidth=n.burned?1:2;ctx.strokeStyle=n.burned?"#8a90a0":C("--ink");
+      ctx.setLineDash(n.burned?[3,3]:[]);ctx.stroke();ctx.setLineDash([]);
+    }
+    if(n.active>0&&running){
+      ctx.beginPath();ctx.arc(p.x,p.y,r+7+3*Math.sin(t*6),0,6.2832);
+      ctx.lineWidth=2;ctx.strokeStyle=msgCol;ctx.globalAlpha=.8;ctx.stroke();ctx.globalAlpha=1;
+    }
+    if(n.burned){
+      ctx.strokeStyle=C("--panel");ctx.lineWidth=2;ctx.beginPath();
+      ctx.moveTo(p.x-3,p.y-3);ctx.lineTo(p.x+3,p.y+3);ctx.moveTo(p.x+3,p.y-3);ctx.lineTo(p.x-3,p.y+3);ctx.stroke();
+    }
+    if(n===src){
+      ctx.beginPath();ctx.arc(p.x,p.y,r+9,0,6.2832);
+      ctx.lineWidth=2.5;ctx.strokeStyle=C("--ink");ctx.stroke();
+    }
+    if(n===hover){
+      ctx.beginPath();ctx.arc(p.x,p.y,r+12,0,6.2832);
+      ctx.lineWidth=1.5;ctx.strokeStyle=C("--accent");ctx.stroke();
+    }
+  });
+  requestAnimationFrame(draw);
+}
+
+function hit(ev){
+  var rc=canvas.getBoundingClientRect();
+  var x=ev.clientX-rc.left,y=ev.clientY-rc.top,best=null,bd=1e9;
+  nodes.forEach(function(n){
+    var p=pos(n),d=Math.hypot(p.x-x,p.y-y);
+    if(d<bd&&d<Math.max(16,radius(n)+10)){bd=d;best=n}
+  });
+  return best;
+}
+function showInfo(n){
+  var el=$("info");
+  if(!n){el.textContent="Pasa el cursor por un nodo para ver su nivel, sus conexiones y su desgaste.";return}
+  var far=adj[n.id].filter(function(o){return o.e.far}).length;
+  var s="<strong style='color:var(--ink)'>Persona "+(n.id+1)+"</strong>: nivel "+n.level+" ("+NAMES[n.level]+"), "+n.deg+" conexiones";
+  if(far)s+=", "+far+" hacia niveles lejanos";
+  s+=".";
+  if(n.flex>0)s+=" Es traductora (flexibilidad "+n.flex+"), desgaste "+Math.min(100,Math.round(n.wear))+"%"+(n.burned?", agotada":"")+".";
+  el.innerHTML=s;
+}
+canvas.addEventListener("pointermove",function(ev){hover=hit(ev);showInfo(hover)});
+canvas.addEventListener("pointerleave",function(){hover=null;showInfo(null)});
+canvas.addEventListener("pointerdown",function(ev){
+  var n=hit(ev);
+  if(!n)return;
+  chain=null;src=n;hover=n;showInfo(n);start();
+});
+
+["nNodes","pTrans"].forEach(function(id){
+  $(id).addEventListener("input",function(){
+    $("oN").textContent=$("nNodes").value;
+    $("oT").textContent=$("pTrans").value+"%";
+    build();
+  });
+});
+$("stab").addEventListener("input",function(){$("oS").textContent=$("stab").value+"%"});
+$("speed").addEventListener("input",function(){
+  $("oV").textContent=$("speed").value;
+  if(running){stopTimer();timer=setInterval(step,delay())}
+});
+$("go").addEventListener("click",function(){chain=null;start()});
+$("both").addEventListener("click",function(){chain="off-on";$("translate").checked=false;start()});
+$("reset").addEventListener("click",function(){chain=null;resetRun()});
+$("fresh").addEventListener("click",function(){chain=null;seed=Math.floor(Math.random()*100000)+1;build()});
+window.addEventListener("resize",resize);
+
+resize();
+build();
+requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

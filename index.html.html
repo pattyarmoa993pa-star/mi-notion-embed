@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orden en el caos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0A0A10;
+    --panel: #101018;
+    --border: #24242F;
+    --ink: #EDEAE2;
+    --ink-dim: #9C97A8;
+    --gold: #D9B25C;
+    --gold-soft: rgba(217,178,92,0.16);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family:'Inter', system-ui, sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding: 32px 16px 56px;
+  }
+  .wrap{ width:100%; max-width: 640px; }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size: clamp(28px, 6vw, 38px);
+    line-height:1.08;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .sub{
+    color: var(--ink-dim);
+    font-size: 14.5px;
+    line-height:1.5;
+    margin: 0 0 22px;
+    max-width: 46ch;
+  }
+
+  .stage{
+    position:relative;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow:hidden;
+  }
+  canvas{ display:block; width:100%; height:auto; }
+
+  .hud{
+    position:absolute;
+    top: 14px; left:16px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    line-height:1.6;
+    pointer-events:none;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  }
+  .hud .state{ color: var(--gold); font-weight:600; }
+  .hud .num{ color: var(--ink); }
+
+  .controls{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 2px 0;
+  }
+  .toggle{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: var(--bg);
+    background: var(--gold);
+    border: none;
+    border-radius: 3px;
+    padding: 10px 16px;
+    cursor:pointer;
+    font-weight: 600;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  .toggle:hover{ filter: brightness(1.08); }
+  .toggle:active{ transform: scale(0.98); }
+  .toggle:focus-visible{ outline: 2px solid var(--gold); outline-offset: 3px; }
+  .phase-label{
+    font-size: 13px;
+    color: var(--ink-dim);
+  }
+  .phase-label b{ color: var(--ink); font-weight:600; }
+
+  .note{
+    margin-top: 26px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 14.5px;
+    line-height:1.65;
+    color: var(--ink-dim);
+  }
+  .note p{ margin: 0 0 12px; }
+  .note b{ color: var(--ink); font-weight:600; }
+  .note .tag{
+    display:inline-block;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--gold);
+    background: var(--gold-soft);
+    border-radius: 3px;
+    padding: 2px 7px;
+    margin-right: 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Orden en el caos</h1>
+  <p class="sub">Una simulación de por qué aparecen los gobiernos: cuando cada quien persigue solo su interés, el sistema colisiona consigo mismo — y una autoridad que coordina reduce ese costo.</p>
+
+  <div class="stage">
+    <canvas id="c" width="640" height="420"></canvas>
+    <div class="hud">
+      <div><span class="state" id="stateLabel">ESTADO DE NATURALEZA</span></div>
+      <div>colisiones/seg: <span class="num" id="collisions">0</span></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span class="phase-label">Fase actual: <b id="phaseText">caos</b></span>
+    <button class="toggle" id="toggleBtn">Imponer el Estado →</button>
+  </div>
+
+  <div class="note">
+    <p><span class="tag">01</span><b>Sin coordinación</b>, cada individuo actúa según su propio interés inmediato. Las trayectorias se cruzan, chocan, compiten por el mismo espacio — nadie planeó el choque, pero es inevitable cuando nadie cede nada.</p>
+    <p><span class="tag">02</span><b>El gobierno no elimina a los individuos</b>: reorganiza sus trayectorias. Impone reglas de tránsito comunes — leyes, turnos, límites — a cambio de que cada quien resigne una porción de su libertad de movimiento.</p>
+    <p><span class="tag">03</span><b>El resultado no es armonía espontánea</b>, es orden administrado: menos colisiones, más previsibilidad, cooperación posible a escala — el argumento clásico detrás de por qué preferimos un Estado a la ausencia total de uno.</p>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const N = 70;
+const CX = W/2, CY = H/2;
+
+const palette = ['#E3735E','#5EA3E3','#7ED17E','#E3C25E','#B27EE3','#E37EC0','#5EE3D3'];
+
+function rand(min,max){ return Math.random()*(max-min)+min; }
+
+let particles = [];
+for(let i=0;i<N;i++){
+  particles.push({
+    x: rand(20, W-20),
+    y: rand(20, H-20),
+    vx: rand(-1.4, 1.4),
+    vy: rand(-1.4, 1.4),
+    r: rand(3, 5.5),
+    color: palette[i % palette.length],
+    // ordered-state target (concentric rings around a center "state" node)
+    ring: 0,
+    angle: 0
+  });
+}
+
+// assign ring/angle for ordered formation
+{
+  const ringsCount = 4;
+  let idx = 0;
+  for(let ring=1; ring<=ringsCount; ring++){
+    const countInRing = ring === 1 ? 6 : Math.round(N/ringsCount) + 2;
+    for(let k=0; k<countInRing && idx < N; k++, idx++){
+      particles[idx].ring = ring;
+      particles[idx].angle = (k / countInRing) * Math.PI * 2;
+    }
+  }
+  while(idx < N){
+    particles[idx].ring = ringsCount;
+    particles[idx].angle = rand(0, Math.PI*2);
+    idx++;
+  }
+}
+
+let ordered = false;
+let transition = 0; // 0 = chaos, 1 = order
+let collisionCount = 0;
+let collisionsPerSec = 0;
+let lastSecond = performance.now();
+let rotationT = 0;
+
+const stateLabel = document.getElementById('stateLabel');
+const phaseText = document.getElementById('phaseText');
+const collisionsEl = document.getElementById('collisions');
+const toggleBtn = document.getElementById('toggleBtn');
+
+function setOrdered(v){
+  ordered = v;
+  stateLabel.textContent = v ? 'ORDEN INSTITUCIONAL' : 'ESTADO DE NATURALEZA';
+  phaseText.textContent = v ? 'orden' : 'caos';
+  toggleBtn.textContent = v ? '← Volver al caos' : 'Imponer el Estado →';
+}
+
+toggleBtn.addEventListener('click', () => setOrdered(!ordered));
+
+function step(){
+  transition += (ordered ? 1 : -1) * 0.035;
+  transition = Math.max(0, Math.min(1, transition));
+  rotationT += 0.006;
+
+  // chaos physics (always computed, blended out as transition -> 1)
+  for(let p of particles){
+    p.x += p.vx;
+    p.y += p.vy;
+    if(p.x < p.r || p.x > W-p.r) p.vx *= -1;
+    if(p.y < p.r || p.y > H-p.r) p.vy *= -1;
+    p.x = Math.max(p.r, Math.min(W-p.r, p.x));
+    p.y = Math.max(p.r, Math.min(H-p.r, p.y));
+  }
+  // naive collision check (sampled, not every pair every frame, cheap enough for N=70)
+  for(let i=0;i<particles.length;i++){
+    for(let j=i+1;j<particles.length;j++){
+      const a = particles[i], b = particles[j];
+      const dx = a.x-b.x, dy = a.y-b.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if(dist < a.r + b.r + 1){
+        const angle = Math.atan2(dy,dx);
+        a.vx = Math.cos(angle) * 1.2; a.vy = Math.sin(angle) * 1.2;
+        b.vx = -Math.cos(angle) * 1.2; b.vy = -Math.sin(angle) * 1.2;
+        if(transition < 0.3) collisionCount++;
+      }
+    }
+  }
+
+  const now = performance.now();
+  if(now - lastSecond > 1000){
+    collisionsPerSec = Math.round(collisionCount * (1 - transition));
+    collisionCount = 0;
+    lastSecond = now;
+    collisionsEl.textContent = collisionsPerSec;
+  }
+
+  ctx.clearRect(0,0,W,H);
+
+  // center "state" node, fades in with order
+  if(transition > 0.05){
+    ctx.beginPath();
+    ctx.arc(CX, CY, 6 + transition*2, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(217,178,92,${0.85*transition})`;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(CX, CY, 16 + transition*4, 0, Math.PI*2);
+    ctx.strokeStyle = `rgba(217,178,92,${0.25*transition})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  for(let p of particles){
+    const ringR = 34 + p.ring * 42;
+    const targetAngle = p.angle + rotationT * (1 / p.ring);
+    const tx = CX + Math.cos(targetAngle) * ringR;
+    const ty = CY + Math.sin(targetAngle) * ringR;
+
+    const drawX = p.x + (tx - p.x) * transition;
+    const drawY = p.y + (ty - p.y) * transition;
+
+    const chaosColor = p.color;
+    const orderColor = '#D9B25C';
+    ctx.beginPath();
+    ctx.arc(drawX, drawY, p.r, 0, Math.PI*2);
+    ctx.fillStyle = transition < 0.5 ? chaosColor : orderColor;
+    ctx.globalAlpha = 0.55 + transition*0.35;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    if(transition > 0.15){
+      ctx.beginPath();
+      ctx.moveTo(CX, CY);
+      ctx.lineTo(drawX, drawY);
+      ctx.strokeStyle = `rgba(217,178,92,${0.06*transition})`;
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+requestAnimationFrame(step);
+</script>
+</body>
+</html>
