@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAMEPAGE — export AMBIENT_TONE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0D1117;
+    --panel: #12181F;
+    --panel-2: #161D26;
+    --border: #232B34;
+    --text: #E6EDF3;
+    --text-dim: #8B949E;
+    --text-faint: #5B6672;
+    --green: #3FB950;
+    --amber: #E3B341;
+
+    --c-hot: #F778BA;
+    --c-extra: #58A6FF;
+    --c-root: #3FB950;
+    --c-iam: #F0883E;
+    --c-half: #A371F7;
+    --c-ireboot: #79C0FF;
+    --c-pypilot: #2EE6D6;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#0D1117; --panel:#12181F; --panel-2:#161D26; --border:#232B34; --text:#E6EDF3; --text-dim:#8B949E; --text-faint:#5B6672;
+    }
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    display:flex;
+    justify-content:center;
+    padding: 28px 16px 48px;
+    min-height:100vh;
+  }
+  .frame{
+    width:100%;
+    max-width: 680px;
+  }
+
+  /* Terminal chrome header */
+  .winbar{
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    padding: 10px 14px;
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+  .dots{ display:flex; gap:6px; }
+  .dot{ width:11px; height:11px; border-radius:50%; }
+  .dot.r{ background:#FF5F57; }
+  .dot.y{ background:#FEBC2E; }
+  .dot.g{ background:#28C840; }
+  .winbar .label{
+    margin-left: 6px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-faint);
+    letter-spacing: 0.2px;
+  }
+
+  .titlebar{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: none;
+    padding: 16px 18px 18px;
+  }
+  .prompt-line{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    overflow-x:auto;
+    white-space: nowrap;
+  }
+  .prompt-line .sigil{ color: var(--green); }
+  .prompt-line .cmd{ color: var(--text-dim); }
+  .prompt-line .key{ color: #7EE787; }
+  .prompt-line .val{ color: var(--amber); }
+  .room{
+    margin-top: 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .room-name{
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  .room-sub{
+    font-size: 12px;
+    color: var(--text-faint);
+  }
+  .live-dot{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--green);
+    box-shadow: 0 0 0 0 rgba(63,185,80,0.6);
+    animation: pulse 2s infinite;
+    flex:none;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(63,185,80,0.55); }
+    70%{ box-shadow:0 0 0 7px rgba(63,185,80,0); }
+    100%{ box-shadow:0 0 0 0 rgba(63,185,80,0); }
+  }
+
+  /* Feed */
+  .feed{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    padding: 6px 14px 8px;
+    min-height: 200px;
+  }
+  .msg{
+    display:flex;
+    gap: 12px;
+    padding: 11px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.035);
+    opacity: 0;
+    transform: translateY(6px);
+    animation: rise 0.35s ease forwards;
+  }
+  .msg:last-child{ border-bottom:none; }
+  @keyframes rise{
+    to{ opacity:1; transform: translateY(0); }
+  }
+  .avatar{
+    flex:none;
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size: 13px;
+    color: #0D1117;
+    margin-top: 2px;
+  }
+  .body{ min-width:0; flex:1; }
+  .meta{
+    display:flex;
+    align-items:baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .nick{
+    font-weight: 700;
+    font-size: 13.5px;
+  }
+  .idx{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  .text{
+    margin-top: 3px;
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--text);
+    word-wrap: break-word;
+  }
+  .mono-line .text{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #7EE787;
+    background: rgba(63,185,80,0.06);
+    border: 1px solid rgba(63,185,80,0.18);
+    border-radius: 6px;
+    padding: 7px 10px;
+    display:inline-block;
+    line-height:1.5;
+  }
+  .mention{
+    color: #58A6FF;
+    font-weight: 600;
+  }
+  .img-chip{
+    margin-top: 6px;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 6px 10px;
+  }
+  .img-chip svg{ width:14px; height:14px; flex:none; opacity:0.8; }
+
+  /* Footer / controls */
+  .footbar{
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 12px 14px;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .footbar .fake-input{
+    flex:1;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: var(--text-faint);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 9px 12px;
+  }
+  .replay-btn{
+    flex:none;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: var(--bg);
+    background: var(--green);
+    border: none;
+    border-radius: 7px;
+    padding: 9px 14px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: filter 0.15s ease;
+  }
+  .replay-btn:hover{ filter: brightness(1.08); }
+  .replay-btn:active{ filter: brightness(0.94); }
+  .replay-btn:focus-visible, a:focus-visible{
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .msg{ animation: none; opacity:1; transform:none; }
+    .live-dot{ animation: none; }
+  }
+
+  @media (max-width: 480px){
+    body{ padding: 16px 8px 32px; }
+    .avatar{ width:30px; height:30px; font-size:12px; }
+    .text{ font-size:14px; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <div class="winbar">
+    <div class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+    <span class="label">samepage — comments</span>
+  </div>
+
+  <div class="titlebar">
+    <div class="prompt-line">
+      <span class="sigil">$</span> <span class="cmd">export</span> <span class="key">AMBIENT_TONE</span>=<span class="val">"raw_tech_underground_vibe"</span>
+    </div>
+    <div class="room">
+      <span class="live-dot"></span>
+      <span class="room-name">#sección-comentarios</span>
+      <span class="room-sub">· 15 mensajes</span>
+    </div>
+  </div>
+
+  <div class="feed" id="feed"></div>
+
+  <div class="footbar">
+    <div class="fake-input">Escribe un comentario…</div>
+    <button class="replay-btn" id="replayBtn">▶ Reproducir</button>
+  </div>
+
+</div>
+
+<script>
+const messages = [
+  { nick:"Hot_popular_girl", initials:"HP", color:"var(--c-hot)",
+    text:'Voy a usar github como repositorio social para que alguien escriba el código por mí. Duh' },
+  { nick:"Extra_helper", initials:"EH", color:"var(--c-extra)",
+    text:"You are the popular, hot girl because you are the only girl in your group. I've already been there" },
+  { nick:"RootAnalyst", initials:"RA", color:"var(--c-root)", mono:true,
+    text:'$ [ "linux_history" == "tu_ingenieria_social" ] &amp;&amp; echo "Same energy, different code." || exit' },
+  { nick:"iAmAll", initials:"iA", color:"var(--c-iam)",
+    text:"Being a manager takes more effort than just using AI to code an entire presentation. Lit did it all in a month" },
+  { nick:"Half_man", initials:"Hm", color:"var(--c-half)",
+    text:"Good luck with that. I'm automating my technicians. You have to be a pro at creating prompts" },
+  { nick:"iReboot", initials:"iR", color:"var(--c-ireboot)",
+    text:"To the kid with the 'Breaking Bad' nickname: dude, the dark web is just a bunch of broken links. Relax" },
+  { nick:"iAmAll", initials:"iA", color:"var(--c-iam)",
+    text:"Google's job is just to make connections. We do that all the time on the dark web, just in an artistic way, because our message is too complex and we don't know when we're going to be in jail" },
+  { nick:"iAmAll", initials:"iA", color:"var(--c-iam)",
+    text:"No tengo nada que perder. Tampoco tengo nada que ganar: Activista... Que alguien me pregunte como me pagan" },
+  { nick:"Half_man", initials:"Hm", color:"var(--c-half)",
+    text:'¿Cómo te pagan <span class="mention">@iAmAll</span>?' },
+  { nick:"iAmAll", initials:"iA", color:"var(--c-iam)",
+    text:"El gobierno está adoquinando nuestras calles. Costo=0 ; Rentabilidad: máxima" },
+  { nick:"PyPilot", initials:"Py", color:"var(--c-pypilot)",
+    text:"My team is turning into a relevant community. Big things are coming (or we're just drinking too much coffee)" },
+  { nick:"Half_man", initials:"Hm", color:"var(--c-half)",
+    text:"El gobierno paga a personajes de menor rango para descifrar nuestra información. ¿No es más fácil y barato pagar al autor para aclarar sus dibujos? Es solo ponerles contexto." },
+  { nick:"PyPilot", initials:"Py", color:"var(--c-pypilot)",
+    text:"yo trabajo en promedio como 20 minutos por día. AI-generated images (free version, just one picture once in a while). I'm poor" },
+  { nick:"PyPilot", initials:"Py", color:"var(--c-pypilot)",
+    text:'creo que el <span class="mention">@RootAnalyst</span> quiere una foto. Aquí tienes…',
+    image:true },
+  { nick:"PyPilot", initials:"Py", color:"var(--c-pypilot)",
+    text:"Ese es el chiste que te tocó esta semana just for being so cute" },
+  { nick:"Hot_popular_girl", initials:"HP", color:"var(--c-hot)",
+    text:"mi idea original no va a funcionar porque nadie entiende mi punto. Ya se me ocurrirá algo… para trabajar menos." }
+];
+
+const feed = document.getElementById('feed');
+const replayBtn = document.getElementById('replayBtn');
+const imgIconSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+
+let timers = [];
+let running = false;
+
+function renderInstant(){
+  feed.innerHTML = '';
+  messages.forEach(m => feed.appendChild(buildMsg(m, false)));
+}
+
+function buildMsg(m, animate){
+  const row = document.createElement('div');
+  row.className = 'msg' + (m.mono ? ' mono-line' : '');
+  if(!animate){ row.style.animation = 'none'; row.style.opacity = '1'; row.style.transform = 'none'; }
+
+  const av = document.createElement('div');
+  av.className = 'avatar';
+  av.style.background = m.color;
+  av.textContent = m.initials;
+
+  const body = document.createElement('div');
+  body.className = 'body';
+
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  const nick = document.createElement('span');
+  nick.className = 'nick';
+  nick.style.color = m.color;
+  nick.textContent = m.nick;
+  const idx = document.createElement('span');
+  idx.className = 'idx';
+  idx.textContent = '#' + String(messages.indexOf(m) + 1).padStart(2,'0');
+  meta.appendChild(nick);
+  meta.appendChild(idx);
+
+  const text = document.createElement('div');
+  text.className = 'text';
+  text.innerHTML = m.text;
+
+  body.appendChild(meta);
+  body.appendChild(text);
+
+  if(m.image){
+    const chip = document.createElement('div');
+    chip.className = 'img-chip';
+    chip.innerHTML = imgIconSVG + '<span>imagen.png · adjunto</span>';
+    body.appendChild(chip);
+  }
+
+  row.appendChild(av);
+  row.appendChild(body);
+  return row;
+}
+
+function playSequence(){
+  if(running) return;
+  running = true;
+  replayBtn.disabled = true;
+  replayBtn.textContent = '● reproduciendo…';
+  feed.innerHTML = '';
+  timers.forEach(t => clearTimeout(t));
+  timers = [];
+
+  messages.forEach((m, i) => {
+    const t = setTimeout(() => {
+      const row = buildMsg(m, true);
+      feed.appendChild(row);
+      feed.scrollIntoView({ block:'nearest' });
+      if(i === messages.length - 1){
+        running = false;
+        replayBtn.disabled = false;
+        replayBtn.textContent = '↺ Reproducir de nuevo';
+      }
+    }, i * 420);
+    timers.push(t);
+  });
+}
+
+replayBtn.addEventListener('click', playSequence);
+
+const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(prefersReduced){
+  renderInstant();
+  replayBtn.textContent = '↺ Reproducir de nuevo';
+} else {
+  playSequence();
+}
+</script>
+</body>
+</html>

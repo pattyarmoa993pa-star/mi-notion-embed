@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Desde la cuna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#EFE3C8;
+    --surface:#F7F1E3;
+    --ink:#2B2620;
+    --ink-soft:#5A5142;
+    --terracotta:#A8432B;
+    --green:#4B6644;
+    --gold:#B98A34;
+    --line:#D8C9A3;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --cream:#211D16;
+      --surface:#2A251C;
+      --ink:#EFE6D2;
+      --ink-soft:#C7BBA0;
+      --line:#463D2C;
+    }
+  }
+  :root[data-theme="dark"]{
+    --cream:#211D16;
+    --surface:#2A251C;
+    --ink:#EFE6D2;
+    --ink-soft:#C7BBA0;
+    --line:#463D2C;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--cream);}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:680px;margin:0 auto;padding:64px 28px 96px;}
+  h1,h2{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    letter-spacing:-0.01em;
+    margin:0;
+    color:var(--ink);
+  }
+  h1{font-size:clamp(38px,7vw,56px);line-height:1.08;font-weight:400;}
+  h2{font-size:26px;line-height:1.25;margin-bottom:18px;}
+  p{margin:0 0 16px;font-size:16.5px;color:var(--ink-soft);max-width:58ch;}
+  .lede{font-size:18px;color:var(--ink);font-family:'Fraunces',serif;font-weight:400;font-style:italic;line-height:1.5;max-width:52ch;}
+  .hero{padding-bottom:8px;}
+  .hero-diagram{margin:40px 0 8px;}
+  section{margin-top:88px;}
+  .divider{border:none;border-top:1px solid var(--line);margin:0 0 56px;}
+  .cap{
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-size:15px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    max-width:46ch;
+  }
+  blockquote{
+    margin:32px 0;
+    padding:2px 0 2px 22px;
+    border-left:2px solid var(--terracotta);
+    font-family:'Fraunces',serif;
+    font-size:21px;
+    line-height:1.45;
+    color:var(--ink);
+    font-weight:400;
+  }
+  .list-flow{margin:28px 0;padding:0;list-style:none;}
+  .list-flow li{
+    position:relative;
+    padding-left:26px;
+    margin-bottom:14px;
+    font-size:16px;
+    color:var(--ink-soft);
+    max-width:56ch;
+  }
+  .list-flow li::before{
+    content:'';
+    position:absolute;
+    left:0;
+    top:9px;
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:var(--green);
+  }
+  .list-flow strong{color:var(--ink);font-weight:500;}
+  .diagram-box{margin:32px 0;}
+  .diagram-box svg{width:100%;height:auto;display:block;}
+  .footline{
+    margin-top:96px;
+    padding-top:32px;
+    border-top:1px solid var(--line);
+  }
+  .footline p{font-size:15px;}
+  .tag{
+    display:inline-block;
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-size:15px;
+    color:var(--terracotta);
+    margin-bottom:14px;
+  }
+  @media (max-width:480px){
+    .wrap{padding:48px 20px 72px;}
+    blockquote{font-size:19px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>Desde la cuna</h1>
+    <p class="lede" style="margin-top:22px;">Concepción lleva en su nombre el origen: el punto donde comienza una vida. Asunción, la capital, es quien asumió cuidarla — y con ello, cuidar al resto del país que gira a su alrededor.</p>
+
+    <div class="hero-diagram">
+      <svg viewBox="0 0 680 220" role="img" aria-label="Diagrama de dos círculos conectados: Concepción como cuna y Asunción como guardiana">
+        <title>Concepción y Asunción</title>
+        <desc>Un círculo pequeño representando la cuna de Concepción, conectado por una línea a un círculo mayor que representa a Asunción como guardiana.</desc>
+        <circle cx="150" cy="110" r="44" fill="none" stroke="var(--line)" stroke-width="1"/>
+        <circle cx="150" cy="110" r="30" fill="none" stroke="var(--line)" stroke-width="1"/>
+        <circle cx="150" cy="110" r="16" fill="var(--terracotta)"/>
+        <path d="M194 110 C 320 110, 380 110, 470 110" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="1 6" stroke-linecap="round"/>
+        <circle cx="520" cy="110" r="62" fill="none" stroke="var(--green)" stroke-width="1.2"/>
+        <circle cx="520" cy="110" r="10" fill="var(--green)"/>
+        <text x="150" y="176" text-anchor="middle" font-family="Fraunces, serif" font-size="15" fill="var(--ink)">Concepción</text>
+        <text x="150" y="196" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="var(--ink-soft)" font-style="italic">la cuna</text>
+        <text x="520" y="192" text-anchor="middle" font-family="Fraunces, serif" font-size="15" fill="var(--ink)">Asunción</text>
+        <text x="520" y="212" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="var(--ink-soft)" font-style="italic">quien asume cuidarla</text>
+      </svg>
+    </div>
+    <p class="cap">Un país centralizado repite, a escala nacional, algo que ya ocurre puertas adentro: alguien nace en la cuna, y alguien más asume el rol de cuidarla.</p>
+  </div>
+
+  <hr class="divider">
+
+  <section>
+    <span class="tag">I. La familia numerosa</span>
+    <h2>Un sistema que fluye en dos direcciones</h2>
+    <p>En una familia numerosa, el cuidado no baja en una sola dirección. No son solo los mayores quienes dan y los menores quienes reciben: cada generación sostiene a las demás.</p>
+
+    <div class="diagram-box">
+      <svg viewBox="0 0 680 300" role="img" aria-label="Triángulo de tres generaciones con flechas en ambos sentidos">
+        <title>Flujo intergeneracional</title>
+        <desc>Tres nodos — abuelos, padres, hijos — dispuestos en triángulo, unidos por flechas que apuntan en ambas direcciones entre cada par.</desc>
+        <defs>
+          <marker id="ar1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="var(--ink-soft)" stroke-width="1.4"/>
+          </marker>
+        </defs>
+        <line x1="220" y1="75" x2="460" y2="75" stroke="var(--ink-soft)" stroke-width="1" marker-end="url(#ar1)" marker-start="url(#ar1)"/>
+        <line x1="200" y1="105" x2="300" y2="220" stroke="var(--ink-soft)" stroke-width="1" marker-end="url(#ar1)" marker-start="url(#ar1)"/>
+        <line x1="480" y1="105" x2="380" y2="220" stroke="var(--ink-soft)" stroke-width="1" marker-end="url(#ar1)" marker-start="url(#ar1)"/>
+
+        <circle cx="170" cy="60" r="38" fill="var(--surface)" stroke="var(--terracotta)" stroke-width="1"/>
+        <circle cx="510" cy="60" r="38" fill="var(--surface)" stroke="var(--green)" stroke-width="1"/>
+        <circle cx="340" cy="248" r="38" fill="var(--surface)" stroke="var(--gold)" stroke-width="1"/>
+
+        <text x="170" y="65" text-anchor="middle" font-family="Fraunces, serif" font-size="13" fill="var(--ink)">Abuelos</text>
+        <text x="510" y="65" text-anchor="middle" font-family="Fraunces, serif" font-size="13" fill="var(--ink)">Padres</text>
+        <text x="340" y="253" text-anchor="middle" font-family="Fraunces, serif" font-size="13" fill="var(--ink)">Hijos</text>
+      </svg>
+    </div>
+
+    <ul class="list-flow">
+      <li><strong>Los mayores</strong> cuidan, acompañan y enseñan a los menores.</li>
+      <li><strong>Los menores</strong> aportan experiencias, ideas y aprendizajes nuevos.</li>
+      <li><strong>Padres y abuelos</strong> también aprenden de sus hijos y nietos.</li>
+    </ul>
+
+    <blockquote>No solo dieron vida: la permanencia y la presencia de los hijos también le da sentido y continuidad a la vida de quienes los criaron.</blockquote>
+  </section>
+
+  <hr class="divider">
+
+  <section>
+    <span class="tag">II. De la casa a la sociedad</span>
+    <h2>La familia como primera comunidad</h2>
+    <p>Ahí, en la casa, se aprende por primera vez algo que después se lleva a todos lados: que la vida de uno depende de la vida de los demás. Esa capacidad se traslada después a la escuela, al barrio, al trabajo, a la sociedad entera.</p>
+
+    <div class="diagram-box">
+      <svg viewBox="0 0 680 320" role="img" aria-label="Círculos concéntricos: familia, comunidad y sociedad">
+        <title>Familia, comunidad, sociedad</title>
+        <desc>Tres círculos concéntricos que crecen de adentro hacia afuera: familia en el centro, comunidad alrededor, sociedad como círculo mayor.</desc>
+        <circle cx="340" cy="165" r="145" fill="none" stroke="var(--line)" stroke-width="1"/>
+        <circle cx="340" cy="165" r="95" fill="none" stroke="var(--line)" stroke-width="1"/>
+        <circle cx="340" cy="165" r="46" fill="var(--terracotta)" opacity="0.9"/>
+        <text x="340" y="170" text-anchor="middle" font-family="Fraunces, serif" font-size="14" fill="#fff">Familia</text>
+        <text x="340" y="58" text-anchor="middle" font-family="Fraunces, serif" font-size="13" fill="var(--ink)">Comunidad</text>
+        <text x="340" y="10" text-anchor="middle" font-family="Fraunces, serif" font-size="13" fill="var(--ink)">Sociedad</text>
+      </svg>
+    </div>
+
+    <p>Es la misma lógica que sostenía a las comunidades indígenas y a los primeros asentamientos coloniales: la comunidad nace como una red de interdependencia, no como una suma de individuos aislados. Vale la pena diferenciar ahí dos momentos históricos distintos — la sociedad guaraní precolonial, organizada según su propia lógica comunitaria, y las estructuras que se construyeron después sobre ella.</p>
+  </section>
+
+  <hr class="divider">
+
+  <section>
+    <span class="tag">III. Continuidad</span>
+    <h2>La mujer como agente de continuidad</h2>
+    <p>En los estudios sobre sociedades indígenas se documenta el papel de las mujeres en sostener la vida social a través del tiempo. En Paraguay hay evidencia histórica concreta de esto: fueron mujeres indígenas quienes transmitieron el guaraní a las siguientes generaciones.</p>
+    <p>No se trata de la idea de que "la mujer pertenece al hogar", sino de algo distinto: la mujer como quien sostiene el hilo que une una generación con la siguiente — sin reducir ese papel únicamente a la maternidad.</p>
+    <blockquote>Una sociedad conserva su vida, sus conocimientos y su identidad a través de las generaciones.</blockquote>
+  </section>
+
+  <div class="footline">
+    <p>Concepción, la cuna. Asunción, quien asumió cuidarla. Entre las dos, la misma pregunta que sostiene a una familia numerosa: cómo se cuida lo que da vida, y cómo lo que recibe vida devuelve, a su vez, sentido a quien lo cuidó.</p>
+  </div>
+
+</div>
+</body>
+</html>
