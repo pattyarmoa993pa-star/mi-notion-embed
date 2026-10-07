@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Improvisar · Simulación del Semillero Técnico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e8ecef; --ink:#16202b; --muted:#4d5a67; --card:#f7f9fa; --line:#c9d1d8;
+  --alert:#d64933; --ok:#2f7d4b; --amber:#e8a33d;
+  --sil:#120e0c; --win:#f6c07c; --off:#5b4a3f; --rim:#4a3a2f;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f141a; --ink:#e6ebf0; --muted:#9aa7b4; --card:#18212b; --line:#2b3744; --ok:#6fc08a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f141a; --ink:#e6ebf0; --muted:#9aa7b4; --card:#18212b; --line:#2b3744; --ok:#6fc08a;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Archivo,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+main{max-width:980px;margin:0 auto;padding:22px 16px 48px}
+h1{font-size:clamp(1.7rem,4.2vw,2.7rem);font-weight:800;letter-spacing:-.02em;line-height:1.1;margin:0 0 8px}
+.lead{margin:0 0 20px;color:var(--muted);max-width:62ch}
+h2{font-size:1.05rem;font-weight:800;margin:0 0 10px}
+
+/* ---------- Escena ---------- */
+.stage{position:relative;aspect-ratio:16/8;min-height:250px;border-radius:14px;overflow:hidden;
+  background:linear-gradient(180deg,#1f2a54 0%,#6b3f6b 42%,#e07a3c 76%,#f3b676 100%)}
+.sun{position:absolute;left:60%;bottom:16%;width:15%;aspect-ratio:1;border-radius:50%;background:#ffd9a0;opacity:.95}
+.hills{position:absolute;left:0;right:0;bottom:10%;width:100%;height:32%}
+.road{position:absolute;left:0;right:0;bottom:0;height:12%;background:#0e0b0a}
+.road::after{content:"";position:absolute;left:0;right:0;top:48%;height:3px;
+  background:repeating-linear-gradient(90deg,#f3b676 0 28px,transparent 28px 64px)}
+.stage.running .road::after{animation:road .5s linear infinite}
+@keyframes road{to{background-position:-64px 0}}
+.veh{position:absolute;right:4%;bottom:9%;width:60%;height:auto;overflow:visible}
+.veh .win{fill:var(--win)}
+.veh.broken .win{fill:var(--off)}
+.veh.broken{animation:shake .25s linear infinite}
+@keyframes shake{0%,100%{transform:translateX(0)}50%{transform:translateX(-1.5px)}}
+.veh.running{animation:bob .5s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+.veh.running .w{animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.smoke circle{fill:#a6a6a6;transform-box:fill-box;transform-origin:center;animation:rise 1.8s ease-out infinite}
+@keyframes rise{from{transform:translateY(0) scale(.6);opacity:.9}to{transform:translateY(-36px) scale(1.9);opacity:0}}
+.spark{animation:blink .5s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+.drip{animation:fall 1s ease-in infinite}
+@keyframes fall{from{transform:translateY(0);opacity:1}to{transform:translateY(26px);opacity:0}}
+
+.alert{position:absolute;top:12px;left:12px;max-width:min(78%,520px);padding:8px 12px;border-radius:8px;
+  background:rgba(18,14,12,.82);color:#f3e9d2;border-left:5px solid var(--amber);font-size:.95rem;font-weight:600}
+.alert[data-s="ok"],.alert[data-s="fixed"]{border-left-color:#6fc08a}
+.alert[data-s="fault"]{border-left-color:var(--alert)}
+
+.neighbor{position:absolute;left:4%;bottom:9%;width:24%;opacity:0;transition:opacity .6s}
+.neighbor.show{opacity:1}
+.neighbor svg{width:100%;height:auto;display:block}
+.neighbor svg .win{fill:var(--win)}
+.bubble{position:absolute;left:3%;bottom:36%;max-width:30%;padding:7px 10px;border-radius:10px;font-size:.82rem;font-weight:600;
+  background:#f3e9d2;color:#1b1410;opacity:0;transition:opacity .6s .3s}
+.bubble.show{opacity:1}
+
+/* ---------- Selector de vehículos ---------- */
+.picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0 18px}
+.pick{appearance:none;background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:10px;padding:8px 8px 10px;
+  cursor:pointer;font:inherit;text-align:left}
+.pick svg{width:100%;height:auto;display:block;--sil:currentColor;--win:var(--card);--rim:var(--card)}
+.pick span{display:block;font-size:.85rem;font-weight:600;margin-top:4px}
+.pick[aria-pressed="true"]{border-color:var(--ink)}
+.pick:disabled{opacity:.45;cursor:not-allowed}
+.pick:focus-visible,.btn:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+/* ---------- Paneles ---------- */
+.grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.btn{appearance:none;border:2px solid var(--ink);background:var(--ink);color:var(--bg);font:inherit;font-weight:600;
+  padding:9px 14px;border-radius:8px;cursor:pointer}
+.btn.alt{background:transparent;color:var(--ink)}
+.btn.go{background:var(--alert);border-color:var(--alert);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.choices{display:grid;gap:8px;margin:10px 0}
+.choices .btn{text-align:left}
+.choices small{display:block;font-weight:400;opacity:.85}
+.map{font-size:.85rem;color:var(--muted);margin:10px 0 0}
+.map code{background:var(--line);padding:1px 5px;border-radius:4px;font-size:.82rem;color:var(--ink)}
+
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.steps li{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);opacity:.55}
+.steps li b{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--line);font-size:.85rem}
+.steps li em{display:block;font-style:normal;font-weight:800;font-size:.9rem}
+.steps li span{font-size:.88rem;color:var(--muted)}
+.steps li.active{opacity:1;border-color:var(--amber)}
+.steps li.active b{background:var(--amber);color:#1b1410}
+.steps li.done{opacity:1;border-color:var(--ok)}
+.steps li.done b{background:var(--ok);color:#fff}
+
+.meter{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:14px 0 4px}
+.meter i{height:12px;border-radius:3px;background:var(--line)}
+.meter i.on{background:var(--ok)}
+.meter-label{font-weight:800}
+.log{list-style:none;margin:0;padding:0;max-height:210px;overflow:auto;font-size:.88rem;display:grid;gap:6px}
+.log li{padding-left:10px;border-left:3px solid var(--line)}
+.log li.bad{border-left-color:var(--alert)}
+.log li.good{border-left-color:var(--ok)}
+.log li.share{border-left-color:var(--amber)}
+.takeaway{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:760px){.takeaway{grid-template-columns:1fr}}
+.takeaway p{margin:0;color:var(--muted);font-size:.93rem}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Improvisar: la falla que enseña</h1>
+  <p class="lead">Elegí un vehículo, provocale una falla y mirá cómo la restricción se convierte en conocimiento que se queda en la comunidad.</p>
+
+  <section class="stage" id="stage" aria-label="Escena con la silueta del vehículo">
+    <div class="sun"></div>
+    <svg class="hills" viewBox="0 0 900 120" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 80 Q120 30 260 70 T520 60 T760 74 T900 56 V120 H0Z" fill="#3b2c45"/>
+      <path d="M0 100 Q160 64 330 96 T640 92 T900 88 V120 H0Z" fill="#241a2b"/>
+    </svg>
+    <div class="alert" id="alert" role="status" aria-live="polite" data-s="ok"></div>
+    <div class="bubble" id="bubble">Mirá, vecino: el truco es este.</div>
+    <div class="neighbor" id="neighbor"><svg id="neighborSvg" viewBox="0 0 300 140" aria-hidden="true"></svg></div>
+    <svg class="veh" id="veh" viewBox="0 0 300 140" role="img" aria-label="Silueta del vehículo seleccionado"></svg>
+    <div class="road"></div>
+  </section>
+
+  <div class="picker" id="picker" role="group" aria-label="Elegí el vehículo"></div>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="h-ciclo">
+      <h2 id="h-ciclo">El ciclo resolutivo</h2>
+      <div class="actions">
+        <button class="btn go" id="btnFalla">Provocar una falla</button>
+        <button class="btn alt" id="btnAzar">Vehículo al azar</button>
+        <button class="btn alt" id="btnReset" hidden>Probar con otro vehículo</button>
+      </div>
+      <div class="choices" id="choices" hidden>
+        <button class="btn alt" id="btnTaller">Esperar un taller oficial o una grúa<small>Restricción de acceso: caro y lejos.</small></button>
+        <button class="btn" id="btnMano">Improvisar<small>Aplicar el ADN resolutivo paraguayo.</small></button>
+      </div>
+      <ol class="steps" id="steps"></ol>
+      <div class="meter" id="meter" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="meter-label" id="meterLabel">Autonomía técnica: 0%</div>
+      <p class="map">Cada parte es el código en movimiento: <code>sufrir_falla()</code> al provocar la falla, <code>bucle_resolutivo()</code> al improvisar y <code>transmision_horizontal()</code> al final.</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-bitacora">
+      <h2 id="h-bitacora">Bitácora del taller</h2>
+      <ol class="log" id="log" aria-live="polite"></ol>
+    </section>
+  </div>
+
+  <section class="card takeaway" aria-label="Ideas clave">
+    <p><strong>Romper la barrera psicológica.</strong> La lógica que usan para arreglar una moto (diagnóstico, hipótesis, prueba, solución) es el mismo algoritmo de la informática y la electrónica. «Eso es para ingenieros» deja de ser cierto.</p>
+    <p><strong>Necesidad controlada.</strong> El semillero no da clases magistrales: arma averías simuladas en un programa o en un circuito, y la necesidad despierta la autonomía.</p>
+  </section>
+</main>
+
+<script>
+(function(){
+  /* ---------- Dibujo de siluetas ---------- */
+  function W(cx, cy, r, lugs){
+    var s = '<g class="w" style="transform-origin:'+cx+'px '+cy+'px">'+
+      '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="var(--sil)" stroke="var(--rim)" stroke-width="2"/>';
+    if(lugs){ s += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r-4)+'" fill="none" stroke="var(--rim)" stroke-width="4" stroke-dasharray="6 5"/>'; }
+    s += '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r*0.3)+'" fill="var(--rim)"/>'+
+      '<line x1="'+(cx-r*0.78)+'" y1="'+cy+'" x2="'+(cx+r*0.78)+'" y2="'+cy+'" stroke="var(--rim)" stroke-width="2"/>'+
+      '<line x1="'+cx+'" y1="'+(cy-r*0.78)+'" x2="'+cx+'" y2="'+(cy+r*0.78)+'" stroke="var(--rim)" stroke-width="2"/></g>';
+    return s;
+  }
+  function MW(cx, cy, r){
+    return '<g class="w" style="transform-origin:'+cx+'px '+cy+'px">'+
+      '<circle cx="'+cx+'" cy="'+cy+'" r="'+(r-3)+'" fill="none" stroke="var(--sil)" stroke-width="6"/>'+
+      '<line x1="'+(cx-r+6)+'" y1="'+cy+'" x2="'+(cx+r-6)+'" y2="'+cy+'" stroke="var(--rim)" stroke-width="1.6"/>'+
+      '<line x1="'+cx+'" y1="'+(cy-r+6)+'" x2="'+cx+'" y2="'+(cy+r-6)+'" stroke="var(--rim)" stroke-width="1.6"/>'+
+      '<line x1="'+(cx-r*0.65)+'" y1="'+(cy-r*0.65)+'" x2="'+(cx+r*0.65)+'" y2="'+(cy+r*0.65)+'" stroke="var(--rim)" stroke-width="1.6"/></g>';
+  }
+
+  var bus =
+    '<path d="M14 40Q14 28 28 28H262Q282 28 288 52L292 96Q292 104 284 104H18Q10 104 10 96Z" fill="var(--sil)"/>'+
+    '<rect x="40" y="21" width="42" height="8" rx="2" fill="var(--sil)"/>'+
+    '<g class="win"><rect x="26" y="38" width="30" height="22" rx="3"/><rect x="62" y="38" width="30" height="22" rx="3"/>'+
+    '<rect x="98" y="38" width="30" height="22" rx="3"/><rect x="134" y="38" width="30" height="22" rx="3"/>'+
+    '<rect x="170" y="38" width="30" height="22" rx="3"/><rect x="206" y="38" width="30" height="22" rx="3"/>'+
+    '<polygon points="246,38 266,38 281,60 246,60"/><circle cx="285" cy="86" r="4"/></g>'+
+    W(70,112,19)+W(232,112,19);
+
+  var tractor =
+    '<rect x="128" y="62" width="122" height="34" rx="8" fill="var(--sil)"/>'+
+    '<rect x="206" y="36" width="6" height="30" rx="2" fill="var(--sil)"/>'+
+    '<rect x="70" y="76" width="170" height="16" fill="var(--sil)"/>'+
+    '<rect x="58" y="54" width="72" height="28" fill="var(--sil)"/>'+
+    '<rect x="56" y="6" width="76" height="7" rx="2" fill="var(--sil)"/>'+
+    '<rect x="60" y="12" width="5" height="44" fill="var(--sil)"/><rect x="123" y="12" width="5" height="44" fill="var(--sil)"/>'+
+    '<rect class="win" x="66" y="16" width="56" height="36" rx="3"/>'+
+    '<circle class="win" cx="246" cy="78" r="4"/>'+
+    W(92,92,39,true)+W(236,112,19);
+
+  var truck =
+    '<rect x="6" y="20" width="182" height="78" rx="3" fill="var(--sil)"/>'+
+    '<rect x="6" y="96" width="282" height="10" rx="2" fill="var(--sil)"/>'+
+    '<rect x="192" y="12" width="5" height="42" rx="2" fill="var(--sil)"/>'+
+    '<path d="M196 98V54Q196 42 208 42H250Q260 42 266 54L284 80Q288 86 288 94V98Z" fill="var(--sil)"/>'+
+    '<path class="win" d="M206 50H248L260 70H206Z"/><circle class="win" cx="284" cy="90" r="3.5"/>'+
+    '<rect x="100" y="98" width="40" height="12" rx="3" fill="var(--sil)"/>'+
+    W(40,114,17)+W(78,114,17)+W(214,114,17)+W(262,114,17);
+
+  var van =
+    '<path d="M16 104V46Q16 36 28 36H176L204 68L262 80Q276 84 276 100V104Z" fill="var(--sil)"/>'+
+    '<rect x="40" y="30" width="110" height="4" fill="var(--sil)"/>'+
+    '<rect class="win" x="28" y="46" width="30" height="20" rx="3"/>'+
+    '<path class="win" d="M170 45H178L199 66H170Z"/><circle class="win" cx="270" cy="92" r="4"/>'+
+    W(66,114,17)+W(226,114,17);
+
+  var moto =
+    '<path d="M62 70Q76 62 92 68L86 78H60Z" fill="var(--sil)"/>'+
+    '<path d="M80 72Q104 62 130 68L128 78H78Z" fill="var(--sil)"/>'+
+    '<path d="M126 62Q152 48 184 60L178 78H126Z" fill="var(--sil)"/>'+
+    '<rect x="108" y="80" width="58" height="24" rx="6" fill="var(--sil)"/>'+
+    '<path d="M82 105L120 92" stroke="var(--sil)" stroke-width="6" stroke-linecap="round" fill="none"/>'+
+    '<path d="M222 105L200 54" stroke="var(--sil)" stroke-width="6" stroke-linecap="round" fill="none"/>'+
+    '<path d="M198 50L186 44L174 46" stroke="var(--sil)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'+
+    '<circle class="win" cx="203" cy="60" r="6"/>'+
+    '<path d="M112 70Q120 34 150 30L168 46L148 66Z" fill="var(--sil)"/>'+
+    '<circle cx="156" cy="19" r="10" fill="var(--sil)"/>'+
+    '<path d="M158 40L186 46" stroke="var(--sil)" stroke-width="6" stroke-linecap="round" fill="none"/>'+
+    '<path d="M130 70L150 98L138 101" stroke="var(--sil)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'+
+    MW(82,105,26)+MW(222,105,26);
+
+  var VEH = [
+    {tipo:'Colectivo / Bus',       nombre:'Línea 30 - El Matador',   svg:bus,     hot:{x:282,y:70}},
+    {tipo:'Tractor',               nombre:'Valtra del Abuelo',       svg:tractor, hot:{x:209,y:34}},
+    {tipo:'Camión de Gran Porte',  nombre:'Scania Transganado',      svg:truck,   hot:{x:194,y:10}},
+    {tipo:'Furgón Utilitario',     nombre:'El Repartidor',           svg:van,     hot:{x:238,y:72}},
+    {tipo:'Motocicleta',           nombre:'Taiga 125 cobradora',     svg:moto,    hot:{x:176,y:58}}
+  ];
+
+  var FALLAS = [
+    {t:'Filtro de gasoil tapado por impurezas', fx:'smoke'},
+    {t:'Falso contacto en el alternador por vibración de la ruta', fx:'spark'},
+    {t:'Pérdida de presión en la manguera hidráulica', fx:'drip'},
+    {t:'Fallo de bujía / corto en el sistema eléctrico', fx:'spark'}
+  ];
+
+  var PASOS = [
+    {p:'Diagnóstico', t:'Preguntar al tío, amigo o al mecánico del barrio por WhatsApp.'},
+    {p:'Hipótesis',   t:'Improvisar: desarmar con lo que hay en la guantera y observar el síntoma.'},
+    {p:'Prueba',      t:'Improvisar una solución temporal: el famoso «atado con alambre» o una limpieza rápida.'},
+    {p:'Solución',    t:'Prueba y error: equivocarse, corregir y entender cómo funciona el ciclo.'}
+  ];
+
+  /* ---------- Efectos sobre la silueta ---------- */
+  function fx(kind, x, y){
+    if(kind==='smoke'){
+      return '<g class="smoke"><circle cx="'+x+'" cy="'+y+'" r="5"/>'+
+        '<circle cx="'+(x+8)+'" cy="'+(y+2)+'" r="4" style="animation-delay:.6s"/>'+
+        '<circle cx="'+(x-6)+'" cy="'+(y+3)+'" r="4" style="animation-delay:1.2s"/></g>';
+    }
+    if(kind==='spark'){
+      return '<path class="spark" fill="#ffd447" d="M'+x+' '+(y-14)+' l-8 16 h7 l-3 14 l11-19 h-7 z"/>';
+    }
+    return '<ellipse class="drip" cx="'+x+'" cy="'+y+'" rx="3" ry="5" fill="#5fa8d3"/>'+
+      '<ellipse class="drip" cx="'+(x+10)+'" cy="'+(y-4)+'" rx="3" ry="5" fill="#5fa8d3" style="animation-delay:.5s"/>';
+  }
+  function wrench(x, y){
+    return '<g transform="translate('+x+','+y+')"><g>'+
+      '<animateTransform attributeName="transform" type="rotate" values="-30 0 18;30 0 18;-30 0 18" dur="0.8s" repeatCount="indefinite"/>'+
+      '<rect x="-3" y="-4" width="6" height="26" rx="2" fill="#f3e9d2"/>'+
+      '<circle cx="0" cy="-8" r="8" fill="#f3e9d2"/>'+
+      '<rect x="-3" y="-18" width="6" height="9" fill="#2a2030"/></g></g>';
+  }
+
+  /* ---------- Estado ---------- */
+  var $ = function(s){ return document.querySelector(s); };
+  var state='idle', cur=0, falla=null, stepsDone=0, waited=false, neighborIdx=null, timers=[];
+  function later(fn, ms){ timers.push(setTimeout(fn, ms)); }
+  function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
+  function log(msg, cls){
+    var li=document.createElement('li'); li.textContent=msg; if(cls) li.className=cls;
+    var l=$('#log'); l.appendChild(li); l.scrollTop=l.scrollHeight;
+  }
+
+  /* ---------- Construcción inicial ---------- */
+  var picker=$('#picker');
+  VEH.forEach(function(v,i){
+    var b=document.createElement('button');
+    b.className='pick'; b.type='button';
+    b.innerHTML='<svg viewBox="0 0 300 140" aria-hidden="true">'+v.svg+'</svg><span>'+v.tipo+'</span>';
+    b.addEventListener('click', function(){ if(state!=='repairing') reset(i); });
+    picker.appendChild(b);
+  });
+  var stepsEl=$('#steps');
+  PASOS.forEach(function(p,i){
+    var li=document.createElement('li');
+    li.innerHTML='<b>'+(i+1)+'</b><div><em>'+p.p+'</em><span>'+p.t+'</span></div>';
+    stepsEl.appendChild(li);
+  });
+
+  /* ---------- Render ---------- */
+  function render(){
+    var V=VEH[cur];
+    var broken = state==='fault';
+    var run = state==='fixed' || state==='shared';
+    var extra='';
+    if(broken && falla) extra += fx(falla.fx, V.hot.x, V.hot.y);
+    if(state==='repairing') extra += wrench(V.hot.x-10, V.hot.y+14);
+    var svg=$('#veh');
+    svg.innerHTML = V.svg + extra;
+    svg.classList.toggle('broken', broken);
+    svg.classList.toggle('running', run);
+    $('#stage').classList.toggle('running', run);
+
+    var a=$('#alert'), txt, s;
+    if(state==='idle'){ s='ok'; txt=V.tipo+' ('+V.nombre+'): funcionando perfectamente.'; }
+    else if(state==='fault'){ s='fault'; txt= waited ? 'Esperando taller o grúa. El '+V.tipo.toLowerCase()+' sigue parado.' : 'Percance: '+falla.t; }
+    else if(state==='repairing'){ s='work'; txt='Improvisando: '+falla.t; }
+    else { s='fixed'; txt='Reparado: funcionando con ingenio paraguayo.'; }
+    a.textContent=txt; a.setAttribute('data-s', s);
+
+    document.querySelectorAll('.pick').forEach(function(b,i){
+      b.setAttribute('aria-pressed', i===cur ? 'true':'false');
+      b.disabled = state==='repairing';
+    });
+    $('#btnFalla').hidden = state!=='idle';
+    $('#btnAzar').hidden  = state!=='idle';
+    $('#choices').hidden  = state!=='fault';
+    $('#btnReset').hidden = !(state==='fault' || state==='fixed' || state==='shared');
+
+    document.querySelectorAll('#steps li').forEach(function(li,i){
+      li.classList.toggle('done', i<stepsDone);
+      li.classList.toggle('active', i===stepsDone && state==='repairing');
+    });
+    document.querySelectorAll('#meter i').forEach(function(m,i){ m.classList.toggle('on', i<stepsDone); });
+    $('#meterLabel').textContent='Autonomía técnica: '+(stepsDone*25)+'%';
+
+    var showN = state==='shared' && neighborIdx!==null;
+    $('#neighbor').classList.toggle('show', showN);
+    $('#bubble').classList.toggle('show', showN);
+    if(showN) $('#neighborSvg').innerHTML = VEH[neighborIdx].svg;
+  }
+
+  /* ---------- Flujo ---------- */
+  function reset(i){
+    clearTimers();
+    cur=i; state='idle'; falla=null; stepsDone=0; waited=false; neighborIdx=null;
+    $('#log').innerHTML='';
+    log('Elegí un vehículo y provocale una falla.');
+    render();
+  }
+  function provocar(){
+    falla = FALLAS[Math.floor(Math.random()*FALLAS.length)];
+    state='fault'; waited=false;
+    log('[ALERTA] El '+VEH[cur].tipo+' ('+VEH[cur].nombre+') tuvo un percance: «'+falla.t+'».','bad');
+    render();
+  }
+  function taller(){
+    waited=true;
+    log('Opción 1: no hay saldo o el taller queda lejos. El vehículo sigue parado y no se aprendió nada. Autonomía: 0%.','bad');
+    render();
+  }
+  function meterMano(){
+    state='repairing'; stepsDone=0; waited=false;
+    log('Opción 2: se elige improvisar.');
+    render();
+    siguientePaso();
+  }
+  function siguientePaso(){
+    later(function(){
+      log('Paso '+(stepsDone+1)+' ('+PASOS[stepsDone].p+'): '+PASOS[stepsDone].t, 'good');
+      stepsDone++;
+      if(stepsDone<4){ render(); siguientePaso(); }
+      else { terminar(); }
+    }, 1500);
+  }
+  function terminar(){
+    state='fixed';
+    log('[REPARADO] Funcionando con ingenio paraguayo.','good');
+    log('Conocimiento ganado por la restricción: +100% de autonomía técnica.','good');
+    render();
+    later(function(){
+      var otros=[]; VEH.forEach(function(_,i){ if(i!==cur) otros.push(i); });
+      neighborIdx = otros[Math.floor(Math.random()*otros.length)];
+      state='shared';
+      log('[Transmisión técnica horizontal] El conductor le enseña el truco a su vecino. El conocimiento informal se queda en la comunidad.','share');
+      render();
+    }, 1800);
+  }
+
+  $('#btnFalla').addEventListener('click', provocar);
+  $('#btnAzar').addEventListener('click', function(){ reset(Math.floor(Math.random()*VEH.length)); });
+  $('#btnTaller').addEventListener('click', taller);
+  $('#btnMano').addEventListener('click', meterMano);
+  $('#btnReset').addEventListener('click', function(){ reset((cur+1)%VEH.length); });
+
+  reset(0);
+})();
+</script>
+</body>
+</html>
