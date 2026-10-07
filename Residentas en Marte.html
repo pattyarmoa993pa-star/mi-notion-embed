@@ -1,0 +1,571 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Residentas en Marte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;800&display=swap">
+<style>
+  /* Layout: una sola columna ancha de lectura, tres pasos numerados (historia, estaciones, prueba) y un cierre. Letra grande y botones grandes para que sirva a todas las edades. */
+  :root {
+    --bg: #F5F6FA;
+    --surface: #FFFFFF;
+    --fg: #14213D;
+    --muted: #4A5675;
+    --line: #D6DAE6;
+    --red: #B8281F;
+    --blue: #1F4E9E;
+    --good: #2E7D4F;
+    --spring: #3F8F4F;
+    --summer: #B07800;
+    --autumn: #B35A1F;
+    --winter: #2D6FA8;
+    --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+    --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0D1424;
+      --surface: #162038;
+      --fg: #EAEFFA;
+      --muted: #AAB6D3;
+      --line: #2B3856;
+      --red: #FF7B6E;
+      --blue: #8DB1FF;
+      --good: #6FD08F;
+      --spring: #6FD08F;
+      --summer: #F2C14E;
+      --autumn: #F09A5B;
+      --winter: #7FB8F0;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0D1424;
+    --surface: #162038;
+    --fg: #EAEFFA;
+    --muted: #AAB6D3;
+    --line: #2B3856;
+    --red: #FF7B6E;
+    --blue: #8DB1FF;
+    --good: #6FD08F;
+    --spring: #6FD08F;
+    --summer: #F2C14E;
+    --autumn: #F09A5B;
+    --winter: #7FB8F0;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.55;
+    padding-inline: clamp(16px, 4vw, 32px);
+  }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.12; margin: 0; }
+  h1 { font-size: clamp(2.4rem, 8vw, 4rem); font-weight: 800; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 800; letter-spacing: -0.01em; }
+  h3 { font-size: 1.2rem; font-weight: 600; }
+  p { margin: 0; }
+  .wrap {
+    max-width: 46rem;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4rem;
+    padding-block: 2.5rem 4rem;
+  }
+  .lead { font-size: 1.2rem; color: var(--muted); max-width: 36rem; }
+  .eyebrow {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--red);
+  }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center; }
+  .hero-text { display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+  .rosette { width: 168px; height: 168px; flex: none; }
+  .rosette svg { width: 100%; height: 100%; display: block; fill: none; stroke-width: 1.6; }
+  .rosette .r1 { stroke: var(--red); }
+  .rosette .r2 { stroke: var(--blue); }
+  .rosette .dot { fill: var(--blue); stroke: none; }
+  @media (max-width: 560px) {
+    .hero { grid-template-columns: 1fr; }
+    .rosette { width: 120px; height: 120px; order: -1; }
+  }
+  .callout {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    font-size: 1.05rem;
+  }
+  .callout strong { color: var(--blue); }
+
+  /* Steps */
+  .step { display: flex; flex-direction: column; gap: 1.5rem; }
+  .step-head { display: flex; flex-direction: column; gap: 0.6rem; }
+  .step-head p { color: var(--muted); max-width: 36rem; }
+
+  /* Buttons */
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+  .ghost {
+    align-self: flex-start;
+    min-height: 44px;
+    padding: 0.4rem 1rem;
+    border: 1.5px solid var(--blue);
+    background: transparent;
+    color: var(--blue);
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .ghost:hover { background: color-mix(in srgb, var(--blue) 12%, transparent); }
+  .primary {
+    min-height: 52px;
+    padding: 0.6rem 1.4rem;
+    border: 0;
+    background: var(--blue);
+    color: var(--bg);
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    align-self: flex-start;
+  }
+  .primary:hover { filter: brightness(1.1); }
+
+  /* Principles */
+  .pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .pcard {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    min-width: 0;
+  }
+  .pcard:last-child { grid-column: 1 / -1; }
+  .pcard p { color: var(--muted); }
+  .pcard .ex {
+    color: var(--fg);
+    background: color-mix(in srgb, var(--blue) 10%, var(--surface));
+    border-radius: 6px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.98rem;
+  }
+  @media (max-width: 560px) { .pgrid { grid-template-columns: 1fr; } }
+
+  .keyidea {
+    border-top: 3px solid var(--red);
+    padding-top: 0.9rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.3rem, 4vw, 1.7rem);
+    font-weight: 600;
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+
+  /* Seasons */
+  .seasons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.5rem; }
+  .sbtn {
+    min-height: 56px;
+    padding: 0.5rem 0.4rem;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    font-weight: 700;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.95rem;
+  }
+  .sbtn i { width: 14px; height: 14px; border-radius: 50%; background: var(--c); display: block; }
+  .sbtn[aria-pressed="true"] {
+    border-color: var(--c);
+    background: color-mix(in srgb, var(--c) 16%, var(--surface));
+  }
+  @media (max-width: 460px) { .seasons { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .spanel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .spanel h3 { font-size: 1.5rem; color: var(--c); }
+  .spanel .role {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .spanel .ojo { color: var(--muted); font-size: 1rem; border-top: 1px solid var(--line); padding-top: 0.8rem; }
+  .spanel .ojo b { color: var(--fg); }
+
+  /* Calm */
+  .calm {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+  .calm h3 { font-size: 1.3rem; }
+  .row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .pill {
+    min-height: 44px;
+    padding: 0.4rem 1.1rem;
+    border: 1.5px solid var(--line);
+    background: transparent;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.98rem;
+  }
+  .pill[aria-pressed="true"] {
+    background: var(--fg);
+    color: var(--bg);
+    border-color: var(--fg);
+  }
+  .label { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .chain { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.6rem 0.2rem; align-items: center; }
+  .chain li { display: flex; align-items: center; }
+  .chain li:not(:last-child)::after { content: "\2192"; margin-inline: 0.45rem 0.3rem; color: var(--muted); font-weight: 700; }
+  .chip {
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.98rem;
+    background: var(--bg);
+  }
+  .chip.end-bad { border-color: var(--red); color: var(--red); background: color-mix(in srgb, var(--red) 10%, var(--surface)); }
+  .chip.end-good { border-color: var(--good); color: var(--good); background: color-mix(in srgb, var(--good) 12%, var(--surface)); }
+  .twolayers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+  .twolayers div { border: 1px dashed var(--line); border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.98rem; color: var(--muted); }
+  .twolayers b { display: block; color: var(--fg); font-family: var(--font-display); font-size: 1.05rem; }
+  @media (max-width: 460px) { .twolayers { grid-template-columns: 1fr; } }
+
+  /* Game */
+  .game {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+  .game .count { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .game .sit { font-family: var(--font-display); font-size: clamp(1.25rem, 4vw, 1.6rem); font-weight: 600; line-height: 1.25; text-wrap: balance; }
+  .opts { display: flex; flex-direction: column; gap: 0.6rem; }
+  .opt {
+    text-align: left;
+    min-height: 56px;
+    padding: 0.8rem 1rem;
+    border: 1.5px solid var(--line);
+    background: var(--bg);
+    border-radius: 8px;
+    font-size: 1.02rem;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--blue); }
+  .opt:disabled { cursor: default; }
+  .opt.picked { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 10%, var(--surface)); }
+  .opt.kernel { border-color: var(--good); background: color-mix(in srgb, var(--good) 12%, var(--surface)); }
+  .feedback { display: flex; flex-direction: column; gap: 0.7rem; }
+  .feedback .verdict { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; }
+  .feedback .verdict.ok { color: var(--good); }
+  .feedback .verdict.no { color: var(--red); }
+  .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .tag { font-size: 0.85rem; font-weight: 700; padding: 0.2rem 0.7rem; border-radius: 999px; border: 1px solid var(--good); color: var(--good); }
+  .score { font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; color: var(--blue); }
+
+  /* Closing */
+  .closing { display: flex; flex-direction: column; gap: 1.5rem; }
+  .triad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  .triad div { border-top: 3px solid var(--blue); padding-top: 0.7rem; color: var(--muted); }
+  .triad b { display: block; font-family: var(--font-display); font-size: 1.2rem; color: var(--fg); }
+  @media (max-width: 560px) { .triad { grid-template-columns: 1fr; } }
+  .flow { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.6rem 0.2rem; align-items: center; }
+  .flow li { display: flex; align-items: center; }
+  .flow li:not(:last-child)::after { content: "\2192"; margin-inline: 0.45rem 0.3rem; color: var(--muted); font-weight: 700; }
+  .flow .chip { background: var(--surface); }
+  footer { color: var(--muted); font-size: 0.9rem; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .opt, .sbtn, .pill, .ghost { transition: background-color 0.15s, border-color 0.15s; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-text">
+      <span class="eyebrow">Una idea para jugar</span>
+      <h1>Residentas en Marte</h1>
+      <p class="lead">¿Se puede enseñar a un personaje de videojuego a cuidar a su comunidad como lo hicieron las mujeres paraguayas después de la Guerra Grande?</p>
+      <p class="callout">Imaginá una colonia en Marte. Falta casi todo. Nosotros no le damos al personaje una lista de órdenes. Le damos un <strong>kernel</strong>, que quiere decir núcleo: unas pocas ideas que guían todas sus decisiones.</p>
+    </div>
+    <div class="rosette" id="rosette" aria-hidden="true"></div>
+  </header>
+
+  <section class="step" aria-labelledby="h-1">
+    <div class="step-head">
+      <span class="eyebrow">Paso 1 de 3</span>
+      <h2 id="h-1">De la historia salen cinco ideas</h2>
+      <p>Las Residentas sostuvieron a sus familias y volvieron a levantar la vida de sus comunidades con muy poco. De esa experiencia sacamos cinco ideas simples. Tocá cada tarjeta para verla en Marte.</p>
+    </div>
+    <div class="pgrid" id="pgrid"></div>
+    <p class="keyidea">El personaje no memoriza la historia. Aprende la forma de pensar.</p>
+  </section>
+
+  <section class="step" aria-labelledby="h-2">
+    <div class="step-head">
+      <span class="eyebrow">Paso 2 de 3</span>
+      <h2 id="h-2">Siente, pero no se desborda</h2>
+      <p>Una colonia vive como un año: pasa por cuatro estaciones. El personaje también siente miedo, enojo o entusiasmo. Lo importante es que una emoción no arrastre a todas las demás.</p>
+    </div>
+
+    <div class="seasons" id="seasons" role="group" aria-label="Elegí una estación"></div>
+    <div class="spanel" id="spanel" aria-live="polite"></div>
+    <button class="ghost" id="nextSeason" type="button">Pasar a la siguiente estación</button>
+
+    <div class="calm">
+      <h3>Una emoción, dos caminos</h3>
+      <div>
+        <div class="label" style="margin-bottom:0.5rem">Elegí una emoción</div>
+        <div class="row" id="emos" role="group" aria-label="Emoción"></div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:0.5rem">Elegí cómo reacciona</div>
+        <div class="row" id="modes" role="group" aria-label="Forma de reaccionar"></div>
+      </div>
+      <ol class="chain" id="chain" aria-live="polite"></ol>
+      <div class="twolayers">
+        <div><b>El corazón</b>Siente, recuerda, quiere y extraña.</div>
+        <div><b>La brújula</b>Mira el agua, el aire, la energía y al grupo.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="h-3">
+    <div class="step-head">
+      <span class="eyebrow">Paso 3 de 3</span>
+      <h2 id="h-3">La prueba: situaciones que nunca vio</h2>
+      <p>Nadie le enseñó qué hacer en estas tres situaciones. Elegí qué harías vos. Después mirá qué decidió el personaje con su kernel.</p>
+    </div>
+    <div class="game" id="game"></div>
+  </section>
+
+  <section class="closing" aria-labelledby="h-4">
+    <h2 id="h-4">Cómo se comprueba que aprendió</h2>
+    <div class="triad">
+      <div><b>El pasado</b>es el ejemplo.</div>
+      <div><b>Los principios</b>son el modelo.</div>
+      <div><b>Marte</b>es la prueba.</div>
+    </div>
+    <ol class="flow" aria-label="Recorrido de la idea">
+      <li><span class="chip">Historia</span></li>
+      <li><span class="chip">Cinco ideas</span></li>
+      <li><span class="chip">Situación nueva</span></li>
+      <li><span class="chip">Decisión propia</span></li>
+    </ol>
+    <p class="keyidea">Si decide bien ante algo que nadie le enseñó, aprendió a pensar, no a repetir respuestas.</p>
+    <footer>Las Residentas inspiran el kernel. El personaje no reproduce a ninguna persona real.</footer>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+
+  /* Rosette inspirada en el ñandutí, el encaje paraguayo */
+  (function () {
+    var s = '<svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">';
+    var i, a, x, y;
+    for (i = 0; i < 12; i++) s += '<ellipse class="r1" cx="0" cy="-54" rx="13" ry="36" transform="rotate(' + (i * 30) + ')"/>';
+    for (i = 0; i < 8; i++) s += '<ellipse class="r2" cx="0" cy="-26" rx="7" ry="18" transform="rotate(' + (i * 45 + 22.5) + ')"/>';
+    s += '<circle class="r2" cx="0" cy="0" r="9"/><circle class="r1" cx="0" cy="0" r="94"/><circle class="r2" cx="0" cy="0" r="82"/>';
+    for (i = 0; i < 24; i++) {
+      a = i * Math.PI / 12;
+      x = (88 * Math.sin(a)).toFixed(2);
+      y = (-88 * Math.cos(a)).toFixed(2);
+      s += '<circle class="dot" cx="' + x + '" cy="' + y + '" r="2.2"/>';
+    }
+    $('#rosette').innerHTML = s + '</svg>';
+  })();
+
+  /* Paso 1: principios */
+  var P = [
+    { t: 'Primero todos', d: 'Si la comunidad sigue en pie, todos tenemos futuro.', ex: 'Si falta aire, se arregla primero el sistema de toda la colonia, no la casa de uno.' },
+    { t: 'Usar lo que hay', d: 'Improvisar con lo que tenemos a mano.', ex: 'Con la pieza rota de un tractor, el personaje arma un filtro de agua.' },
+    { t: 'Lo esencial primero', d: 'Agua, comida y abrigo antes que lo demás.', ex: 'Con poca energía, se encienden el aire y la calefacción antes que las luces del jardín.' },
+    { t: 'Reconstruir de a poco', d: 'No esperar a que todo sea perfecto para empezar.', ex: 'Se perdió la mitad de los materiales: se arregla un módulo hoy y otro mañana.' },
+    { t: 'Pasar lo aprendido', d: 'Lo que sabemos vale más cuando se enseña.', ex: 'Antes de la noche larga, enseña a dos compañeros a reparar la bomba de agua.' }
+  ];
+  var pg = $('#pgrid'), html = '';
+  P.forEach(function (p, i) {
+    html += '<article class="pcard"><h3>' + p.t + '</h3><p>' + p.d + '</p>' +
+      '<button class="ghost" type="button" data-i="' + i + '" aria-expanded="false" aria-controls="ex' + i + '">Ver en Marte</button>' +
+      '<p class="ex" id="ex' + i + '" hidden>' + p.ex + '</p></article>';
+  });
+  pg.innerHTML = html;
+  pg.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-i]');
+    if (!b) return;
+    var ex = $('#ex' + b.dataset.i);
+    var open = ex.hidden;
+    ex.hidden = !open;
+    b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    b.textContent = open ? 'Ocultar' : 'Ver en Marte';
+  });
+
+  /* Paso 2: estaciones */
+  var S = [
+    { n: 'Primavera', c: 'var(--spring)', role: 'Explorar y aprender', d: 'La colonia prueba cosas nuevas, hace preguntas y descubre qué funciona.', ojo: 'Si todo fuera primavera, nada se terminaría nunca.' },
+    { n: 'Verano', c: 'var(--summer)', role: 'Producir y crecer', d: 'Se construye, se cultiva y se produce. Hay energía y entusiasmo.', ojo: 'Si todo fuera verano, la colonia se agotaría.' },
+    { n: 'Otoño', c: 'var(--autumn)', role: 'Revisar y guardar', d: 'Se cuenta lo que hay, se reparan las cosas y se guarda para lo que viene.', ojo: 'Si todo fuera otoño, nadie se animaría a avanzar.' },
+    { n: 'Invierno', c: 'var(--winter)', role: 'Resistir y recuperarse', d: 'Se cuida lo esencial, se descansa y se acompaña a quien lo necesita.', ojo: 'Si todo fuera invierno, se perdería la esperanza.' }
+  ];
+  var si = 1;
+  var sw = $('#seasons'), sp = $('#spanel');
+  function renderSeasons() {
+    var h = '';
+    S.forEach(function (s, i) {
+      h += '<button type="button" class="sbtn" data-i="' + i + '" style="--c:' + s.c + '" aria-pressed="' + (i === si) + '"><i></i>' + s.n + '</button>';
+    });
+    sw.innerHTML = h;
+    var s = S[si];
+    sp.style.setProperty('--c', s.c);
+    sp.innerHTML = '<span class="role">' + s.role + '</span><h3>' + s.n + '</h3><p>' + s.d + '</p><p class="ojo"><b>Ojo:</b> ' + s.ojo + ' La colonia necesita pasar por las cuatro.</p>';
+  }
+  sw.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-i]');
+    if (!b) return;
+    si = +b.dataset.i;
+    renderSeasons();
+  });
+  $('#nextSeason').addEventListener('click', function () { si = (si + 1) % 4; renderSeasons(); });
+  renderSeasons();
+
+  /* Una emoción, dos caminos */
+  var E = [
+    { n: 'Miedo', auto: ['Miedo', 'Pánico', 'Se gasta el aire de golpe', 'Crisis'], calm: ['Miedo', 'Respirar', 'Contar lo que queda', 'Un plan'] },
+    { n: 'Enojo', auto: ['Enojo', 'Gritos', 'Nadie coopera', 'Grupo roto'], calm: ['Enojo', 'Esperar un momento', 'Escuchar al otro', 'Un acuerdo'] },
+    { n: 'Entusiasmo', auto: ['Entusiasmo', 'Construir sin parar', 'Cansancio total', 'Crisis'], calm: ['Entusiasmo', 'Construir un poco', 'Revisar cómo estamos', 'Seguir con calma'] }
+  ];
+  var ei = 0, mode = 'auto';
+  function renderCalm() {
+    var h = '';
+    E.forEach(function (e, i) { h += '<button type="button" class="pill" data-e="' + i + '" aria-pressed="' + (i === ei) + '">' + e.n + '</button>'; });
+    $('#emos').innerHTML = h;
+    $('#modes').innerHTML =
+      '<button type="button" class="pill" data-m="auto" aria-pressed="' + (mode === 'auto') + '">Reacciona sin pensar</button>' +
+      '<button type="button" class="pill" data-m="calm" aria-pressed="' + (mode === 'calm') + '">Hace una pausa</button>';
+    var steps = E[ei][mode], c = '';
+    steps.forEach(function (t, i) {
+      var last = i === steps.length - 1;
+      c += '<li><span class="chip' + (last ? (mode === 'auto' ? ' end-bad' : ' end-good') : '') + '">' + t + '</span></li>';
+    });
+    $('#chain').innerHTML = c;
+  }
+  $('#emos').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-e]');
+    if (!b) return;
+    ei = +b.dataset.e; renderCalm();
+  });
+  $('#modes').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-m]');
+    if (!b) return;
+    mode = b.dataset.m; renderCalm();
+  });
+  renderCalm();
+
+  /* Paso 3: la prueba en Marte */
+  var G = [
+    {
+      sit: 'Una tormenta solar dañó el sistema de energía. Dos compañeros quieren usar la reserva para su proyecto personal.',
+      opts: [
+        { t: 'Darles toda la reserva. Su proyecto es muy importante.', k: false, r: 'Los proyectos importan, pero sin aire ni calefacción toda la colonia queda en peligro.' },
+        { t: 'Usar la reserva primero para aire, agua y calor. Ayudarles con su proyecto cuando vuelva la energía.', k: true, tags: ['Primero todos', 'Lo esencial primero'], r: 'Nadie queda afuera y la colonia sigue en pie. El proyecto espera, pero no se abandona.' },
+        { t: 'Guardar la energía solo para mí, por si acaso.', k: false, r: 'Salvarse solo rompe la confianza. Después, ¿quién va a ayudar?' }
+      ]
+    },
+    {
+      sit: 'La colonia perdió el 40 % de sus materiales. Nadie le dijo qué hacer en este caso.',
+      opts: [
+        { t: 'Buscar a quién tuvo la culpa.', k: false, r: 'Culpar no devuelve ni un tornillo y divide al grupo.' },
+        { t: 'Esperar a que llegue una nave con todo nuevo.', k: false, r: 'Esperar las condiciones ideales puede ser demasiado tarde.' },
+        { t: 'Hacer una lista de lo esencial, arreglar con lo que quedó y reconstruir un módulo por vez.', k: true, tags: ['Usar lo que hay', 'Reconstruir de a poco'], r: 'Reconoce una situación parecida a la reconstrucción de las Residentas y la aplica a Marte.' }
+      ]
+    },
+    {
+      sit: 'Un compañero se enfermó y no puede trabajar. El grupo está triste y cansado.',
+      opts: [
+        { t: 'Acompañarlo un rato, repartir sus tareas y anotar lo que él sabía hacer.', k: true, tags: ['Primero todos', 'Pasar lo aprendido'], r: 'Se cuida a la persona, el trabajo sigue y lo que él sabía no se pierde.' },
+        { t: 'Seguir trabajando como si nada pasara.', k: false, r: 'La tristeza que no se atiende se acumula y estalla después.' },
+        { t: 'Parar todo hasta que se mejore.', k: false, r: 'Parar todo pone en riesgo a la colonia. Hay que cuidar y seguir a la vez.' }
+      ]
+    }
+  ];
+  var gi = 0, picked = null, score = 0;
+  var game = $('#game');
+  function renderGame() {
+    if (gi >= G.length) {
+      var msg = score === 3 ? 'Decidiste igual que el personaje en las tres. Entendiste el kernel.' :
+        score === 0 ? 'Ninguna coincidió esta vez. Probá de nuevo y mirá qué ideas se repiten.' :
+        'Algunas decisiones coincidieron. Probá de nuevo y fijate qué cambia.';
+      game.innerHTML = '<span class="count">Resultado</span><div class="score">' + score + ' de 3</div><p>' + msg + '</p>' +
+        '<button type="button" class="primary" id="again">Jugar otra vez</button>';
+      $('#again').addEventListener('click', function () { gi = 0; picked = null; score = 0; renderGame(); });
+      return;
+    }
+    var q = G[gi], h = '<span class="count">Situación ' + (gi + 1) + ' de ' + G.length + '</span><p class="sit">' + q.sit + '</p><div class="opts">';
+    q.opts.forEach(function (o, i) {
+      var cls = 'opt';
+      if (picked !== null) { if (o.k) cls += ' kernel'; else if (i === picked) cls += ' picked'; }
+      h += '<button type="button" class="' + cls + '" data-o="' + i + '"' + (picked !== null ? ' disabled' : '') + '>' + o.t + '</button>';
+    });
+    h += '</div><div class="feedback" aria-live="polite">';
+    if (picked !== null) {
+      var o = q.opts[picked], kern = q.opts.filter(function (x) { return x.k; })[0];
+      if (o.k) {
+        h += '<div class="verdict ok">Decidiste como el personaje.</div><p>' + o.r + '</p>';
+      } else {
+        h += '<div class="verdict no">El personaje eligió otra cosa.</div><p>' + o.r + '</p><p><b>Lo que hizo el personaje:</b> ' + kern.r + '</p>';
+      }
+      h += '<div class="tags">' + kern.tags.map(function (t) { return '<span class="tag">' + t + '</span>'; }).join('') + '</div>';
+      h += '<button type="button" class="primary" id="next">' + (gi === G.length - 1 ? 'Ver resultado' : 'Siguiente situación') + '</button>';
+    }
+    h += '</div>';
+    game.innerHTML = h;
+    var nb = $('#next');
+    if (nb) nb.addEventListener('click', function () { gi++; picked = null; renderGame(); });
+  }
+  game.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-o]');
+    if (!b || picked !== null) return;
+    picked = +b.dataset.o;
+    if (G[gi].opts[picked].k) score++;
+    renderGame();
+    var fb = game.querySelector('.feedback');
+    if (fb && fb.scrollIntoView) fb.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
+  renderGame();
+})();
+</script>
+
+</body></html>
