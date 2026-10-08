@@ -1,0 +1,832 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Red del Semillero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Concepto: una mesa de laboratorio. El sistema vivo en el centro, la red de personas alrededor, el entorno en el borde. */
+:root {
+  --bg: #EDF1F3; --surface: #F8FAFB; --surface2: #E3EAEE;
+  --ink: #13242C; --muted: #52646D; --faint: #8396A0; --line: #C5D1D7;
+  --accent: #0B6E69; --accent-ink: #FFFFFF; --crit: #B4232C; --link: #2B64C8;
+  --t0: #A86A0C; --t1: #6A45C2; --t2: #B8306A; --t3: #2B64C8; --t4: #2A8450; --t5: #B8521F;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1A20; --surface: #14252D; --surface2: #1B313B;
+    --ink: #E4EEF1; --muted: #9BB0B8; --faint: #6E858F; --line: #2B414B;
+    --accent: #4CC9BC; --accent-ink: #06211F; --crit: #FF7A7A; --link: #7CAEF7;
+    --t0: #E5B04A; --t1: #AE94F2; --t2: #F083AC; --t3: #7CAEF7; --t4: #6BD196; --t5: #F2955F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1A20; --surface: #14252D; --surface2: #1B313B;
+  --ink: #E4EEF1; --muted: #9BB0B8; --faint: #6E858F; --line: #2B414B;
+  --accent: #4CC9BC; --accent-ink: #06211F; --crit: #FF7A7A; --link: #7CAEF7;
+  --t0: #E5B04A; --t1: #AE94F2; --t2: #F083AC; --t3: #7CAEF7; --t4: #6BD196; --t5: #F2955F;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; padding-inline: 16px; padding-block: 28px 56px; }
+.wrap { max-width: 1180px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.12; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(1.7rem, 4.2vw, 2.7rem); max-width: 22ch; }
+h2 { font-size: 1.25rem; }
+p { margin: 0; }
+.kicker, .mono, .lbl { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.top { display: flex; flex-direction: column; gap: 12px; }
+.lede { max-width: 68ch; color: var(--muted); font-size: 1.05rem; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); gap: 20px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.canvas-box { position: relative; width: 100%; max-width: 760px; aspect-ratio: 1; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; touch-action: manipulation; }
+canvas { display: block; width: 100%; height: 100%; }
+.over { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 24px; background: color-mix(in srgb, var(--bg) 82%, transparent); }
+.over h3 { font-size: 1.5rem; color: var(--crit); }
+.over p { max-width: 36ch; color: var(--muted); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.9rem; }
+.chip { display: inline-flex; align-items: center; gap: 7px; }
+.dia { width: 11px; height: 11px; transform: rotate(45deg); background: var(--c); flex: none; }
+.dia.hollow { background: transparent; border: 2px dashed var(--muted); }
+.ring { width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--c, var(--ink)); flex: none; }
+.key { font-size: 0.88rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.who { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; font-size: 0.95rem; min-height: 4.2em; }
+.who b { font-family: var(--display); }
+
+.panel { display: flex; flex-direction: column; gap: 18px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; }
+.group { display: flex; flex-direction: column; gap: 12px; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+button { font: inherit; font-size: 0.92rem; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 4px; padding: 7px 12px; cursor: pointer; min-height: 38px; }
+button:hover { border-color: var(--muted); }
+button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button.solid { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+button:disabled { opacity: 0.55; cursor: progress; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ctl { display: flex; flex-direction: column; gap: 4px; }
+.ctl .row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.ctl label, .ctl .name { font-weight: 600; }
+.val { font-family: var(--mono); font-size: 0.85rem; color: var(--muted); }
+.hint { font-size: 0.85rem; color: var(--muted); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.switch { display: flex; gap: 10px; align-items: flex-start; }
+.switch input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+
+.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; margin: 0; }
+.metrics div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.metrics dt { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.metrics dd { margin: 0; font-family: var(--display); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.metrics .wide { grid-column: 1 / -1; }
+.hbar { height: 10px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.hbar i { display: block; height: 100%; width: 100%; background: var(--accent); transition: width 0.2s; }
+.hbar.low i { background: var(--crit); }
+
+.lower { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 20px; align-items: start; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.log li { display: grid; grid-template-columns: 3.2em 10px minmax(0, 1fr); gap: 8px; align-items: baseline; font-size: 0.92rem; }
+.log .lt { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.log .mk { width: 8px; height: 8px; background: var(--faint); align-self: center; }
+.log .k-ok .mk { background: var(--accent); }
+.log .k-crit .mk { background: var(--crit); }
+.log .k-link .mk { background: var(--link); border-radius: 50%; }
+.log .k-see .mk { background: var(--ink); transform: rotate(45deg); }
+.log .k-dim { color: var(--muted); }
+.log .k-crit .lx { color: var(--crit); }
+.empty { color: var(--muted); font-size: 0.92rem; }
+
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.best td { font-weight: 600; }
+.bar { display: inline-block; width: 70px; height: 8px; background: var(--surface2); border-radius: 2px; overflow: hidden; vertical-align: middle; margin-right: 8px; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.prog { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--accent); }
+.map td:first-child { font-weight: 600; width: 30%; min-width: 9rem; }
+.map td:last-child { min-width: 14rem; }
+.read { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.read p { color: var(--muted); }
+.read h3 { font-size: 1rem; margin-bottom: 6px; color: var(--ink); }
+
+@media (max-width: 920px) {
+  .stage, .lower { grid-template-columns: minmax(0, 1fr); }
+  .read { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .hbar i { transition: none; } }
+</style>
+
+<main class="wrap">
+  <header class="top">
+    <p class="kicker">Semillero Técnico · Principio de conexión adaptativa</p>
+    <h1>Una red sobrevive cuando cada persona ve una amenaza distinta</h1>
+    <p class="lede">Cada círculo es una persona. Su anillo de color marca la amenaza que nota primero. Las amenazas avanzan hacia el centro y, si llegan, el sistema pierde salud. Nadie conoce de antemano la respuesta correcta. La red la encuentra si sus miradas son distintas y sus herramientas se pueden combinar.</p>
+  </header>
+
+  <section class="stage" aria-label="Simulación">
+    <div class="col">
+      <div class="canvas-box">
+        <canvas id="cv" role="img" aria-label="Red de 24 personas conectadas que notan amenazas, combinan herramientas y protegen un sistema central"></canvas>
+        <div class="over" id="over" hidden>
+          <h3 id="overT">El sistema colapsó</h3>
+          <p id="overP"></p>
+          <button class="solid" id="again" type="button">Reiniciar con los mismos ajustes</button>
+        </div>
+      </div>
+      <div class="legend" id="legend" aria-label="Tipos de amenaza"></div>
+      <div class="key">
+        <span class="chip"><span class="dia hollow"></span>amenaza que nadie nota aún</span>
+        <span class="chip"><span class="dia" style="--c: var(--muted)"></span>amenaza en la que alguien trabaja</span>
+        <span class="chip"><span class="ring"></span>mirada principal de la persona</span>
+      </div>
+      <div class="who" id="who" aria-live="polite">Toca o pasa el cursor sobre una persona para ver su mirada y sus herramientas.</div>
+    </div>
+
+    <aside class="panel">
+      <div class="group">
+        <span class="lbl">Escenario</span>
+        <div class="seg">
+          <button type="button" id="pTrad" aria-pressed="false">Aula tradicional</button>
+          <button type="button" id="pSem" aria-pressed="true">Semillero</button>
+        </div>
+        <div class="ctl">
+          <div class="row"><label for="div">Diversidad de miradas</label><span class="val" id="divV">80%</span></div>
+          <input type="range" id="div" min="0" max="100" step="10" value="80">
+          <p class="hint">Con 0%, todas las personas aprendieron a mirar las mismas dos amenazas. Con 100%, cada una nota cosas distintas.</p>
+        </div>
+        <div class="ctl">
+          <label class="switch" for="reuse"><input type="checkbox" id="reuse" checked><span><span class="name">Compartir y reutilizar herramientas</span><br><span class="hint">Activado: se prestan herramientas, comparten lo que funciona y se conectan con quien miró el mismo problema. Desactivado: cada persona trabaja sola con las suyas.</span></span></label>
+        </div>
+        <div class="ctl">
+          <div class="row"><label for="deg">Vínculos iniciales por persona</label><span class="val" id="degV">4</span></div>
+          <input type="range" id="deg" min="2" max="6" step="2" value="4">
+        </div>
+        <div class="ctl">
+          <div class="row"><label for="rate">Presión del entorno</label><span class="val" id="rateV">12 por minuto</span></div>
+          <input type="range" id="rate" min="8" max="20" step="2" value="12">
+          <p class="hint">Amenazas que llegan por minuto.</p>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="seg">
+          <button type="button" id="pause">Pausar</button>
+          <button type="button" id="novel">Lanzar amenaza nueva</button>
+          <button type="button" id="reset">Reiniciar</button>
+        </div>
+        <div class="seg" role="group" aria-label="Velocidad">
+          <button type="button" data-speed="1" aria-pressed="true">1×</button>
+          <button type="button" data-speed="2" aria-pressed="false">2×</button>
+          <button type="button" data-speed="4" aria-pressed="false">4×</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <span class="lbl">Estado del sistema</span>
+        <dl class="metrics">
+          <div class="wide"><dt>Salud</dt><dd><span id="hv">100</span></dd><span class="hbar" id="hbar"><i id="hfill"></i></span></div>
+          <div><dt>Tiempo vivo</dt><dd id="mTime">0:00</dd></div>
+          <div><dt>Amenazas notadas</dt><dd id="mSeen">0 de 0</dd></div>
+          <div><dt>Resueltas</dt><dd id="mSolved">0</dd></div>
+          <div><dt>Impactos</dt><dd id="mHit">0</dd></div>
+          <div><dt>Respuestas distintas</dt><dd id="mDisc">0 de 6</dd></div>
+          <div><dt>Vínculos</dt><dd id="mLinks">0</dd></div>
+          <div><dt>Respuestas reutilizadas</dt><dd id="mReuse">0</dd></div>
+          <div><dt>Herramienta en otra necesidad</dt><dd id="mXfer">0</dd></div>
+        </dl>
+      </div>
+    </aside>
+  </section>
+
+  <section class="lower">
+    <div class="box">
+      <h2>Bitácora de la red</h2>
+      <ul class="log" id="log"></ul>
+    </div>
+    <div class="box">
+      <h2>Comparar los cuatro escenarios</h2>
+      <p class="hint">Cada escenario se simula 20 veces con las mismas semillas, con los vínculos y la presión que tengas ahora. Una simulación termina si el sistema colapsa o al llegar a 200 segundos.</p>
+      <div class="seg"><button type="button" class="solid" id="cmp">Comparar escenarios</button></div>
+      <div class="prog" id="prog" hidden><i id="progI"></i></div>
+      <div class="scroll" id="cmpOut"></div>
+    </div>
+  </section>
+
+  <section class="box">
+    <h2>Cómo se corresponde con el modelo del Semillero</h2>
+    <div class="scroll">
+      <table class="map">
+        <thead><tr><th>En el documento</th><th>En la simulación</th></tr></thead>
+        <tbody>
+          <tr><td>Entorno y necesidad</td><td>Las amenazas llegan desde el borde y avanzan hacia el sistema. Cada una es una necesidad que la red debe cubrir antes de que llegue.</td></tr>
+          <tr><td>Pregunta o meta</td><td>La persona que nota una amenaza empieza a pensar cómo frenarla.</td></tr>
+          <tr><td>Conocimiento, memoria, experiencia</td><td>Sus herramientas, las respuestas que ya aprendió y las combinaciones fallidas que quedaron anotadas.</td></tr>
+          <tr><td>Hipótesis y herramienta</td><td>Elige dos herramientas para combinar. Puede usar solo las suyas o, si se comparte, pedir una prestada a un vecino.</td></tr>
+          <tr><td>Experimentar, éxito o fallo</td><td>Prueba la combinación. Si funciona, la amenaza se resuelve y sube la salud. Si no, esa combinación se descarta.</td></tr>
+          <tr><td>Retroalimentación y nueva conexión</td><td>La respuesta se propaga a los vecinos. Quienes miraron el mismo problema se conectan. Los vínculos que no se usan se debilitan.</td></tr>
+          <tr><td>Nueva posibilidad</td><td>Una herramienta que ya servía para una necesidad se prueba en otra. El contador “Herramienta en otra necesidad” cuenta esos casos.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="read">
+      <div><h3>La diversidad decide qué se ve</h3><p>Una amenaza que nadie nota no se puede resolver. Cuando todas las personas miran lo mismo, el resto del entorno queda sin vigilancia. Con miradas distintas, cada amenaza tiene al menos a alguien que la advierte.</p></div>
+      <div><h3>La conexión decide qué se puede hacer</h3><p>Una persona sola casi nunca tiene las dos herramientas que la respuesta exige. Al prestarse recursos y compartir lo que funciona, las combinaciones posibles se multiplican y cada hallazgo queda disponible para todas.</p></div>
+      <div><h3>Las dos cosas se necesitan</h3><p>Con los ajustes iniciales, cada factor por separado deja a la red lejos de sostenerse. El Semillero propone el entorno donde ambos coinciden: situaciones que obligan a descubrir, y la costumbre de reutilizar lo descubierto.</p></div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ===== Motor de la simulación (sin DOM) ===== */
+const TYPES = [
+  { name: 'Sequía', code: 'SE' },
+  { name: 'Apagón', code: 'AP' },
+  { name: 'Contaminación', code: 'CO' },
+  { name: 'Desinformación', code: 'DE' },
+  { name: 'Plaga', code: 'PL' },
+  { name: 'Congestión', code: 'CG' }
+];
+const TOOLS = ['Sensor', 'Código', 'Mapa', 'Cálculo', 'Filtro', 'Radio', 'Cultivo', 'Soldadura'];
+// Cada amenaza se resuelve con una combinación oculta de dos herramientas.
+// Sensor, Código, Mapa y Cálculo aparecen en dos recetas distintas: el mismo recurso sirve a necesidades distintas.
+const RECIPE = [[0, 4], [7, 3], [0, 1], [5, 1], [6, 2], [2, 3]];
+const ARRIVE = 16;     // segundos que tarda una amenaza en alcanzar al sistema
+const STEP = 0.05;     // paso de simulación
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function rng(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const ekey = (a, b) => (a < b ? a + '-' + b : b + '-' + a);
+const pkey = (a, b) => (a < b ? a * 8 + b : b * 8 + a);
+
+class Sim {
+  constructor(p) {
+    this.p = Object.assign({ n: 24, div: 0.8, reuse: true, deg: 4, interval: 5, seed: 1, quiet: false }, p);
+    const r = (this.r = rng(this.p.seed));
+    const n = this.p.n;
+    this.t = 0; this.health = 100; this.over = false; this.endT = null; this.flash = 0;
+    this.people = []; this.edges = new Map(); this.adj = [];
+    this.threats = []; this.fx = []; this.log = [];
+    this.known = Array(6).fill(false);
+    this.proven = Array(8).fill(0);
+    this.failedShared = Array.from({ length: 6 }, () => new Set());
+    this.st = { spawned: 0, detected: 0, solved: 0, hit: 0, attempts: 0, fails: 0, reuses: 0, transfers: 0, newLinks: 0, discovered: 0 };
+    this.nextSpawn = 2.5; this.tid = 0;
+
+    for (let i = 0; i < n; i++) {
+      const tools = [];
+      while (tools.length < 3) { const x = (r() * 8) | 0; if (!tools.includes(x)) tools.push(x); }
+      const lens = Array(6).fill(0.05);
+      // Con poca diversidad todos fueron "enseñados" a mirar las mismas dos amenazas.
+      const primary = r() < this.p.div ? (r() * 6) | 0 : (r() * 2) | 0;
+      lens[primary] = 0.95;
+      let secondary = -1;
+      if (r() < this.p.div) { secondary = (primary + 1 + ((r() * 5) | 0)) % 6; lens[secondary] = 0.6; }
+      this.people.push({
+        id: i, tools, lens, primary, secondary,
+        knows: Array(6).fill(false),
+        failed: Array.from({ length: 6 }, () => new Set()),
+        task: null
+      });
+      this.adj.push(new Set());
+    }
+    const half = this.p.deg / 2;
+    for (let i = 0; i < n; i++) {
+      for (let k = 1; k <= half; k++) {
+        let j = (i + k) % n;
+        if (r() < 0.2) { let m; do { m = (r() * n) | 0; } while (m === i); j = m; }
+        this.addEdge(i, j, 0.3, true);
+      }
+    }
+  }
+
+  addEdge(a, b, w, base) {
+    if (a === b) return false;
+    const k = ekey(a, b);
+    if (this.edges.has(k)) return false;
+    this.edges.set(k, { a: Math.min(a, b), b: Math.max(a, b), w, base: !!base, born: this.t });
+    this.adj[a].add(b); this.adj[b].add(a);
+    return true;
+  }
+  removeEdge(k) {
+    const e = this.edges.get(k); if (!e) return;
+    this.edges.delete(k); this.adj[e.a].delete(e.b); this.adj[e.b].delete(e.a);
+  }
+  addLog(kind, text) {
+    if (this.p.quiet) return;
+    this.logN = (this.logN || 0) + 1;
+    this.log.push({ t: this.t, kind, text });
+    if (this.log.length > 60) this.log.shift();
+  }
+  addFx(o) { if (!this.p.quiet) this.fx.push(o); }
+  who(pr) { return 'Persona ' + LETTERS[pr.id]; }
+
+  spawn(type) {
+    const r = this.r;
+    const ty = type === undefined ? (r() * 6) | 0 : type;
+    this.threats.push({ id: this.tid++, type: ty, eta: ARRIVE, total: ARRIVE, angle: r() * Math.PI * 2, state: 'active', seen: new Set(), detected: false, fade: 0 });
+    this.st.spawned++;
+    return ty;
+  }
+  injectNovel() {
+    const unknown = [];
+    for (let i = 0; i < 6; i++) if (!this.known[i]) unknown.push(i);
+    const pool = unknown.length ? unknown : [0, 1, 2, 3, 4, 5];
+    const ty = pool[(this.r() * pool.length) | 0];
+    this.spawn(ty);
+    this.addLog('info', 'Llega una amenaza nueva: ' + TYPES[ty].name + '.');
+    return ty;
+  }
+
+  detect(pr, th) {
+    const r = this.r;
+    th.seen.add(pr.id);
+    pr.task = { th, until: this.t + 1.1 + r() * 0.9, tries: 0 };
+    if (!th.detected) {
+      th.detected = true; this.st.detected++;
+      this.addLog('see', this.who(pr) + ' nota ' + TYPES[th.type].name + '.');
+    }
+    this.addFx({ k: 'line', from: pr.id, th: th.id, type: th.type, ttl: 0.9, max: 0.9 });
+  }
+
+  attempt(pr) {
+    const r = this.r, th = pr.task.th, ty = th.type, reuse = this.p.reuse;
+    if (th.state !== 'active') { pr.task = null; return; }
+    const nb = [...this.adj[pr.id]];
+
+    // 1) ¿Ya existe una respuesta conocida por la persona o por alguien cercano?
+    let holder = null;
+    if (pr.knows[ty]) holder = pr;
+    else if (reuse) { const j = nb.find(j => this.people[j].knows[ty]); if (j !== undefined) holder = this.people[j]; }
+    if (holder) {
+      if (r() < 0.97) { this.solve(pr, th, RECIPE[ty], holder === pr ? null : holder, true); return; }
+      pr.task.until = this.t + 1; return;
+    }
+
+    // 2) Hipótesis: combinar herramientas propias y, si se comparte, las de un vecino.
+    let pool = pr.tools.slice(), lender = null;
+    if (reuse && nb.length && r() < 0.75) {
+      let tot = 0;
+      const w = nb.map(j => { const x = 0.2 + this.edges.get(ekey(pr.id, j)).w; tot += x; return x; });
+      let q = r() * tot, idx = 0;
+      while (q > w[idx] && idx < w.length - 1) { q -= w[idx]; idx++; }
+      lender = this.people[nb[idx]];
+      for (const t of lender.tools) if (!pool.includes(t)) pool.push(t);
+    }
+    const failed = reuse ? this.failedShared[ty] : pr.failed[ty];
+    const cands = []; let tw = 0;
+    for (let a = 0; a < pool.length; a++) for (let b = a + 1; b < pool.length; b++) {
+      const k = pkey(pool[a], pool[b]);
+      if (failed.has(k)) continue;
+      const w = reuse ? 1 + 1.5 * (this.proven[pool[a]] > 0) + 1.5 * (this.proven[pool[b]] > 0) : 1;
+      cands.push([pool[a], pool[b], k, w]); tw += w;
+    }
+    if (!cands.length) {
+      pr.task.tries++;
+      if (reuse && pr.task.tries < 6) { pr.task.until = this.t + 0.6; return; }
+      pr.task = null; return;
+    }
+    let q = r() * tw, c = cands[0];
+    for (const x of cands) { if (q <= x[3]) { c = x; break; } q -= x[3]; }
+    this.st.attempts++;
+    const R = RECIPE[ty];
+    if (c[2] === pkey(R[0], R[1])) {
+      const usedLender = lender && (!pr.tools.includes(c[0]) || !pr.tools.includes(c[1])) ? lender : null;
+      this.solve(pr, th, R, usedLender, false);
+    } else {
+      failed.add(c[2]); this.st.fails++;
+      this.addFx({ k: 'x', th: th.id, ttl: 0.7, max: 0.7 });
+      this.addLog('dim', this.who(pr) + ' prueba ' + TOOLS[c[0]] + ' + ' + TOOLS[c[1]] + ' contra ' + TYPES[ty].name + ': no funciona. Queda anotado.');
+      pr.task.until = this.t + 1.0 + r() * 0.6;
+    }
+  }
+
+  solve(pr, th, pair, helper, reused) {
+    const r = this.r, ty = th.type;
+    th.state = 'solved'; th.fade = 1.1;
+    this.st.solved++; this.health = Math.min(100, this.health + 3);
+    if (reused) this.st.reuses++;
+    const first = !this.known[ty];
+    pr.knows[ty] = true; this.known[ty] = true;
+    let msg;
+    if (first) {
+      this.st.discovered++;
+      const transfer = pair.some(t => this.proven[t] > 0);
+      if (transfer) this.st.transfers++;
+      this.proven[pair[0]]++; this.proven[pair[1]]++;
+      msg = this.who(pr) + ' encuentra la respuesta a ' + TYPES[ty].name + ': ' + TOOLS[pair[0]] + ' + ' + TOOLS[pair[1]] + '.' + (transfer ? ' Reutiliza una herramienta que ya servía para otra necesidad.' : ' Nadie la había considerado.');
+      this.addLog(transfer ? 'link' : 'ok', msg);
+    } else if (reused) {
+      this.addLog('ok', this.who(pr) + ' aplica lo aprendido y resuelve ' + TYPES[ty].name + ' casi de inmediato.');
+    } else {
+      this.addLog('ok', this.who(pr) + ' resuelve ' + TYPES[ty].name + ' por su cuenta con ' + TOOLS[pair[0]] + ' + ' + TOOLS[pair[1]] + '.');
+    }
+    this.addFx({ k: 'burst', th: th.id, ttl: 1.0, max: 1.0, good: true });
+    if (this.p.reuse) {
+      if (helper) {
+        helper.knows[ty] = true;
+        const e = this.edges.get(ekey(pr.id, helper.id));
+        if (e) e.w = Math.min(1, e.w + 0.2);
+        this.addFx({ k: 'tie', a: helper.id, b: pr.id, ttl: 1.0, max: 1.0 });
+      }
+      for (const j of this.adj[pr.id]) if (r() < 0.6) this.people[j].knows[ty] = true;
+      let added = 0;
+      for (const id of th.seen) {
+        if (id === pr.id || added >= 2) continue;
+        if (this.addEdge(pr.id, id, 0.3, false)) {
+          added++; this.st.newLinks++;
+          this.addFx({ k: 'tie', a: pr.id, b: id, ttl: 1.2, max: 1.2, fresh: true });
+        }
+      }
+      if (added) this.addLog('link', 'Quienes miraron ' + TYPES[ty].name + ' se conectan con ' + this.who(pr) + ': ' + added + ' vínculo' + (added > 1 ? 's' : '') + ' nuevo' + (added > 1 ? 's' : '') + '.');
+    }
+    for (const q of this.people) if (q.task && q.task.th === th) q.task = null;
+  }
+
+  hit(th) {
+    th.state = 'hit'; th.fade = 1.2;
+    this.st.hit++; this.health -= 14; this.flash = 0.6;
+    this.addFx({ k: 'burst', th: th.id, ttl: 1.0, max: 1.0, good: false });
+    this.addLog('crit', th.detected
+      ? TYPES[th.type].name + ' alcanzó al sistema: se la notó, pero no se encontró respuesta a tiempo.'
+      : TYPES[th.type].name + ' alcanzó al sistema: nadie la había notado.');
+    for (const q of this.people) if (q.task && q.task.th === th) q.task = null;
+  }
+
+  step(dt) {
+    if (this.over) return;
+    const r = this.r;
+    this.t += dt; this.flash = Math.max(0, this.flash - dt);
+    this.nextSpawn -= dt;
+    if (this.nextSpawn <= 0) { this.spawn(); this.nextSpawn = Math.max(1, -Math.log(1 - r()) * this.p.interval); }
+
+    for (const pr of this.people) if (pr.task && this.t >= pr.task.until) this.attempt(pr);
+
+    for (const th of this.threats) {
+      if (th.state !== 'active') continue;
+      for (const pr of this.people) {
+        if (pr.task || th.seen.has(pr.id)) continue;
+        const l = pr.lens[th.type];
+        if (r() < 0.3 * l * l * dt) this.detect(pr, th);
+      }
+    }
+    for (const th of this.threats) {
+      if (th.state === 'active') { th.eta -= dt; if (th.eta <= 0) this.hit(th); }
+      else th.fade -= dt;
+    }
+    this.threats = this.threats.filter(th => th.state === 'active' || th.fade > 0);
+
+    // Las conexiones que no se usan se debilitan; las de origen se conservan con un mínimo.
+    if (this.p.reuse) {
+      for (const [k, e] of [...this.edges]) {
+        e.w -= 0.006 * dt;
+        if (e.base) e.w = Math.max(0.15, e.w);
+        else if (e.w < 0.06) this.removeEdge(k);
+      }
+    }
+    if (!this.p.quiet) {
+      for (const f of this.fx) f.ttl -= dt;
+      this.fx = this.fx.filter(f => f.ttl > 0);
+    }
+    this.health = Math.min(100, this.health + 0.25 * dt);
+    if (this.health <= 0) { this.health = 0; this.over = true; this.endT = this.t; this.addLog('crit', 'El sistema colapsó.'); }
+  }
+}
+
+function runHeadless(params, seed, maxT) {
+  const s = new Sim(Object.assign({}, params, { seed, quiet: true }));
+  while (!s.over && s.t < maxT) s.step(0.1);
+  return { survived: !s.over, t: s.over ? s.endT : maxT, solved: s.st.solved, spawned: s.st.spawned, hit: s.st.hit, known: s.known.filter(Boolean).length, links: s.edges.size };
+}
+
+</script>
+<script>
+/* ===== Interfaz y dibujo ===== */
+(function () {
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d');
+  const W = 720, CX = 360, CY = 360, RING = 205, CORE = 50, OUT = 335;
+  let C = {}, sim, paused = false, speed = 1, acc = 0, last = 0, sel = -1, logSeen = -1, metricT = 0, frames = 0;
+
+  const fmt = s => { s = Math.floor(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement);
+    const g = n => cs.getPropertyValue(n).trim();
+    C = { surface: g('--surface'), surface2: g('--surface2'), ink: g('--ink'), muted: g('--muted'), faint: g('--faint'), line: g('--line'), accent: g('--accent'), crit: g('--crit'), link: g('--link') };
+    for (let i = 0; i < 6; i++) C['t' + i] = g('--t' + i);
+  }
+
+  /* ---------- Leyenda ---------- */
+  $('legend').innerHTML = TYPES.map((t, i) =>
+    `<span class="chip"><span class="dia" style="--c: var(--t${i})"></span>${t.name} <span class="mono">${t.code}</span></span>`).join('');
+
+  /* ---------- Parámetros y reinicio ---------- */
+  function params() {
+    return { div: +$('div').value / 100, reuse: $('reuse').checked, deg: +$('deg').value, interval: 60 / +$('rate').value, seed: (Math.random() * 1e9) | 0 };
+  }
+  function syncLabels() {
+    $('divV').textContent = $('div').value + '%';
+    $('degV').textContent = $('deg').value;
+    $('rateV').textContent = $('rate').value + ' por minuto';
+  }
+  function syncPreset() {
+    const d = +$('div').value, r = $('reuse').checked;
+    $('pTrad').setAttribute('aria-pressed', String(d === 0 && !r));
+    $('pSem').setAttribute('aria-pressed', String(d === 80 && r));
+  }
+  function restart() {
+    sim = new Sim(params());
+    acc = 0; logSeen = -1; sel = -1;
+    $('over').hidden = true;
+    syncLabels(); syncPreset(); renderWho(); renderLog(true); updateMetrics();
+  }
+  for (const id of ['div', 'deg', 'rate']) {
+    $(id).addEventListener('input', syncLabels);
+    $(id).addEventListener('change', restart);
+  }
+  $('reuse').addEventListener('change', restart);
+  $('pTrad').addEventListener('click', () => { $('div').value = 0; $('reuse').checked = false; restart(); });
+  $('pSem').addEventListener('click', () => { $('div').value = 80; $('reuse').checked = true; restart(); });
+  $('reset').addEventListener('click', restart);
+  $('again').addEventListener('click', restart);
+  $('novel').addEventListener('click', () => { if (!sim.over) sim.injectNovel(); });
+  $('pause').addEventListener('click', () => {
+    paused = !paused; $('pause').textContent = paused ? 'Seguir' : 'Pausar';
+  });
+  document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => {
+    speed = +b.dataset.speed;
+    document.querySelectorAll('[data-speed]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+
+  /* ---------- Selección de personas ---------- */
+  function ppos(i) {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / sim.p.n;
+    return [CX + RING * Math.cos(a), CY + RING * Math.sin(a), a];
+  }
+  function tpos(th) {
+    const f = Math.max(0, th.eta) / th.total;
+    const r = CORE + 14 + (OUT - CORE - 14) * f;
+    return [CX + r * Math.cos(th.angle), CY + r * Math.sin(th.angle)];
+  }
+  function pick(e) {
+    const rc = cv.getBoundingClientRect();
+    const x = (e.clientX - rc.left) / rc.width * W, y = (e.clientY - rc.top) / rc.height * W;
+    let best = -1, bd = 26;
+    for (let i = 0; i < sim.p.n; i++) {
+      const p = ppos(i), d = Math.hypot(p[0] - x, p[1] - y);
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  }
+  cv.addEventListener('pointermove', e => { const i = pick(e); if (i >= 0 && i !== sel) { sel = i; renderWho(); } });
+  cv.addEventListener('pointerdown', e => { sel = pick(e); renderWho(); });
+
+  function renderWho() {
+    const el = $('who');
+    if (sel < 0) { el.textContent = 'Toca o pasa el cursor sobre una persona para ver su mirada y sus herramientas.'; return; }
+    const p = sim.people[sel];
+    const sees = TYPES[p.primary].name + (p.secondary >= 0 ? ' y ' + TYPES[p.secondary].name : '');
+    const tools = p.tools.map(t => TOOLS[t]).join(', ');
+    const knows = TYPES.filter((t, i) => p.knows[i]).map(t => t.name);
+    el.innerHTML = `<b>Persona ${LETTERS[sel]}</b> nota primero: ${sees}. Herramientas: ${tools}. ` +
+      (knows.length ? 'Sabe resolver: ' + knows.join(', ') + '.' : 'Todavía no sabe resolver ninguna amenaza.') +
+      ` Vínculos: ${sim.adj[sel].size}.`;
+  }
+
+  /* ---------- Métricas y bitácora ---------- */
+  function updateMetrics() {
+    const s = sim.st;
+    $('hv').textContent = Math.round(sim.health);
+    $('hfill').style.width = sim.health + '%';
+    $('hbar').classList.toggle('low', sim.health < 30);
+    $('mTime').textContent = fmt(sim.over ? sim.endT : sim.t);
+    $('mSeen').textContent = s.detected + ' de ' + s.spawned;
+    $('mSolved').textContent = s.solved;
+    $('mHit').textContent = s.hit;
+    $('mDisc').textContent = sim.known.filter(Boolean).length + ' de 6';
+    $('mLinks').textContent = sim.edges.size + (sim.p.reuse && s.newLinks ? ' (+' + s.newLinks + ')' : '');
+    $('mReuse').textContent = s.reuses;
+    $('mXfer').textContent = s.transfers;
+    if (sel >= 0) renderWho();
+  }
+  function renderLog(force) {
+    const n = sim.logN || 0;
+    if (!force && n === logSeen) return;
+    logSeen = n;
+    const items = sim.log.slice(-9).reverse();
+    $('log').innerHTML = items.length
+      ? items.map(l => `<li class="k-${l.kind}"><span class="lt">${fmt(l.t)}</span><span class="mk"></span><span class="lx">${l.text}</span></li>`).join('')
+      : '<li class="empty">La bitácora se llena cuando llega la primera amenaza.</li>';
+  }
+
+  /* ---------- Dibujo ---------- */
+  function diamond(x, y, s) {
+    ctx.beginPath(); ctx.moveTo(x, y - s); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s); ctx.lineTo(x - s, y); ctx.closePath();
+  }
+  function draw(time) {
+    const k = cv.width / W;
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    ctx.fillStyle = C.surface; ctx.fillRect(0, 0, W, W);
+    ctx.lineWidth = 1; ctx.strokeStyle = C.line; ctx.setLineDash([2, 6]);
+    for (const r of [OUT + 8, RING]) { ctx.beginPath(); ctx.arc(CX, CY, r, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.setLineDash([]);
+    ctx.font = '500 10px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.fillStyle = C.faint;
+    ctx.fillText('ENTORNO', CX, 13);
+
+    // vínculos
+    const reuse = sim.p.reuse;
+    for (const e of sim.edges.values()) {
+      const a = ppos(e.a), b = ppos(e.b);
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      const cx = mx + (CX - mx) * 0.4, cy = my + (CY - my) * 0.4;
+      const hot = sel >= 0 && (e.a === sel || e.b === sel);
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.quadraticCurveTo(cx, cy, b[0], b[1]);
+      if (reuse) {
+        ctx.setLineDash([]);
+        ctx.strokeStyle = e.base ? C.muted : C.accent;
+        ctx.globalAlpha = Math.min(1, 0.22 + 0.6 * e.w + (hot ? 0.3 : 0));
+        ctx.lineWidth = 0.6 + 2.4 * e.w;
+      } else {
+        ctx.setLineDash([2, 5]); ctx.strokeStyle = hot ? C.ink : C.faint;
+        ctx.globalAlpha = hot ? 0.8 : 0.4; ctx.lineWidth = 1;
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1; ctx.setLineDash([]);
+
+    // personas trabajando en una amenaza
+    for (const pr of sim.people) {
+      if (!pr.task) continue;
+      const a = ppos(pr.id), t = tpos(pr.task.th);
+      ctx.strokeStyle = C['t' + pr.task.th.type]; ctx.globalAlpha = 0.45; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(t[0], t[1]); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // efectos de línea
+    for (const f of sim.fx) {
+      const al = Math.max(0, f.ttl / f.max);
+      if (f.k === 'line') {
+        const th = sim.threats.find(x => x.id === f.th); if (!th) continue;
+        const a = ppos(f.from), t = tpos(th);
+        ctx.strokeStyle = C['t' + f.type]; ctx.globalAlpha = al; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(t[0], t[1]); ctx.stroke();
+      } else if (f.k === 'tie') {
+        const a = ppos(f.a), b = ppos(f.b);
+        ctx.strokeStyle = C.accent; ctx.globalAlpha = al; ctx.lineWidth = f.fresh ? 4 : 3;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // sistema central
+    const hf = sim.health / 100;
+    ctx.beginPath(); ctx.arc(CX, CY, CORE, 0, Math.PI * 2);
+    ctx.fillStyle = C.surface2; ctx.fill();
+    ctx.lineWidth = sim.flash > 0 ? 4 : 1.5; ctx.strokeStyle = sim.flash > 0 ? C.crit : C.line; ctx.stroke();
+    ctx.lineWidth = 7; ctx.strokeStyle = C.line;
+    ctx.beginPath(); ctx.arc(CX, CY, CORE + 9, 0, Math.PI * 2); ctx.stroke();
+    if (hf > 0) {
+      ctx.strokeStyle = hf < 0.3 ? C.crit : C.accent;
+      ctx.beginPath(); ctx.arc(CX, CY, CORE + 9, -Math.PI / 2, -Math.PI / 2 + hf * Math.PI * 2); ctx.stroke();
+    }
+    ctx.fillStyle = C.muted; ctx.font = '500 9px "JetBrains Mono", monospace'; ctx.fillText('SISTEMA', CX, CY - 8);
+    ctx.fillStyle = sim.over ? C.crit : C.ink; ctx.font = '700 22px "Bricolage Grotesque", sans-serif';
+    ctx.fillText(String(Math.round(sim.health)), CX, CY + 15);
+
+    // amenazas
+    for (const th of sim.threats) {
+      const p = tpos(th), col = C['t' + th.type];
+      const f = Math.max(0, th.eta) / th.total;
+      const fade = th.state === 'active' ? 1 : Math.max(0, th.fade / 1.1);
+      const s = 8 + 5 * (1 - f);
+      ctx.globalAlpha = fade;
+      diamond(p[0], p[1], s);
+      if (th.detected) { ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.surface; ctx.stroke(); }
+      else { ctx.setLineDash([3, 3]); ctx.lineWidth = 2; ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]); }
+      ctx.fillStyle = C.ink; ctx.font = '500 10px "JetBrains Mono", monospace';
+      ctx.fillText(TYPES[th.type].code, p[0], p[1] - s - 5);
+      ctx.globalAlpha = 1;
+    }
+
+    // personas
+    ctx.textBaseline = 'middle';
+    for (const pr of sim.people) {
+      const [x, y, a] = ppos(pr.id), col = C['t' + pr.primary];
+      if (pr.task) {
+        ctx.strokeStyle = col; ctx.globalAlpha = 0.35 + 0.25 * Math.sin(time * 6 + pr.id); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(x, y, 20 + 1.5 * Math.sin(time * 6 + pr.id), 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2);
+      ctx.fillStyle = C.surface; ctx.fill();
+      ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.stroke();
+      if (pr.secondary >= 0) {
+        ctx.beginPath(); ctx.arc(x + 20 * Math.cos(a), y + 20 * Math.sin(a), 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = C['t' + pr.secondary]; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = C.surface; ctx.stroke();
+      }
+      if (pr.id === sel) { ctx.lineWidth = 2; ctx.strokeStyle = C.ink; ctx.beginPath(); ctx.arc(x, y, 18.5, 0, Math.PI * 2); ctx.stroke(); }
+      ctx.fillStyle = C.ink; ctx.font = '500 11px "JetBrains Mono", monospace';
+      ctx.fillText(LETTERS[pr.id], x, y + 0.5);
+    }
+    ctx.textBaseline = 'alphabetic';
+
+    // estallidos
+    for (const f of sim.fx) {
+      if (f.k !== 'burst' && f.k !== 'x') continue;
+      const th = sim.threats.find(x => x.id === f.th); if (!th) continue;
+      const p = tpos(th), q = 1 - f.ttl / f.max;
+      if (f.k === 'burst') {
+        ctx.strokeStyle = f.good ? C.accent : C.crit; ctx.globalAlpha = 1 - q; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(p[0], p[1], 8 + 30 * q, 0, Math.PI * 2); ctx.stroke();
+      } else {
+        ctx.strokeStyle = C.muted; ctx.globalAlpha = 1 - q; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(p[0] - 6, p[1] - 6); ctx.lineTo(p[0] + 6, p[1] + 6); ctx.moveTo(p[0] + 6, p[1] - 6); ctx.lineTo(p[0] - 6, p[1] + 6); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* ---------- Bucle ---------- */
+  function frame(ts) {
+    const dt = Math.min(0.1, (ts - last) / 1000); last = ts;
+    if (!paused && !sim.over) {
+      acc += dt * speed;
+      while (acc >= STEP) { sim.step(STEP); acc -= STEP; }
+    }
+    if (++frames % 90 === 0) readColors();
+    draw(ts / 1000);
+    if (ts - metricT > 160) {
+      metricT = ts; updateMetrics(); renderLog(false);
+      if (sim.over && $('over').hidden) {
+        $('overT').textContent = 'El sistema colapsó a los ' + fmt(sim.endT);
+        $('overP').textContent = 'Resolvió ' + sim.st.solved + ' de ' + sim.st.spawned + ' amenazas y encontró ' + sim.known.filter(Boolean).length + ' de 6 respuestas distintas.';
+        $('over').hidden = false;
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function resize() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(240, Math.round(cv.clientWidth * dpr));
+    if (cv.width !== w) { cv.width = w; cv.height = w; }
+  }
+  new ResizeObserver(resize).observe(cv);
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mq.addEventListener) mq.addEventListener('change', readColors);
+  new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  /* ---------- Comparación ---------- */
+  const CONDS = [
+    ['Aula tradicional', { div: 0, reuse: false }],
+    ['Solo miradas distintas', { div: 0.8, reuse: false }],
+    ['Solo herramientas compartidas', { div: 0, reuse: true }],
+    ['Semillero', { div: 0.8, reuse: true }]
+  ];
+  const RUNS = 20, HORIZON = 200;
+  $('cmp').addEventListener('click', async () => {
+    const btn = $('cmp'); btn.disabled = true; btn.textContent = 'Simulando…';
+    $('prog').hidden = false; $('cmpOut').innerHTML = '';
+    const base = { deg: +$('deg').value, interval: 60 / +$('rate').value };
+    const rows = [];
+    let done = 0;
+    for (const [name, c] of CONDS) {
+      const res = [];
+      for (let s = 1; s <= RUNS; s++) {
+        res.push(runHeadless(Object.assign({}, base, c), s * 7919, HORIZON));
+        done++; $('progI').style.width = (done / (RUNS * CONDS.length) * 100) + '%';
+        await new Promise(r => setTimeout(r, 0));
+      }
+      const avg = f => res.reduce((a, r) => a + f(r), 0) / RUNS;
+      rows.push({ name, surv: Math.round(avg(r => r.survived ? 1 : 0) * 100), t: avg(r => r.t), solved: Math.round(avg(r => r.solved / Math.max(1, r.spawned)) * 100), known: avg(r => r.known) });
+    }
+    const bestSurv = Math.max(...rows.map(r => r.surv));
+    $('cmpOut').innerHTML = '<table><thead><tr><th>Escenario</th><th>Sobrevive ' + HORIZON + ' s</th><th>Tiempo medio</th><th>Amenazas resueltas</th><th>Respuestas distintas</th></tr></thead><tbody>' +
+      rows.map(r => `<tr class="${r.surv === bestSurv ? 'best' : ''}"><td>${r.name}</td><td class="num"><span class="bar"><i style="width:${r.surv}%"></i></span>${r.surv}%</td><td class="num">${fmt(r.t)}</td><td class="num">${r.solved}%</td><td class="num">${r.known.toFixed(1)} de 6</td></tr>`).join('') +
+      '</tbody></table>';
+    $('prog').hidden = true; $('progI').style.width = '0';
+    btn.disabled = false; btn.textContent = 'Comparar de nuevo';
+  });
+
+  readColors(); resize(); restart();
+  requestAnimationFrame(t => { last = t; frame(t); });
+})();
+
+</script>
+
+</body></html>
