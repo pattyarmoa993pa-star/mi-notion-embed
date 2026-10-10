@@ -1,0 +1,499 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mapa de Fricción</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Concepto: una sola lámina técnica. El mapa manda a la izquierda, con la lectura paso a paso debajo;
+   la leyenda va a la derecha; la explicación (gráfico del salto, daño dirigido vs. volumétrico, traducción del juego) cierra la página. */
+:root {
+  --bg: #F2F4F7;
+  --surface: #FFFFFF;
+  --fg: #141C27;
+  --muted: #505D6E;
+  --line: #D5DBE3;
+  --soft: #E8ECF1;
+  --fa: #2358D4;
+  --fb: #0A8499;
+  --on-f: #FFFFFF;
+  --zero: #E3E8EE;
+  --on-zero: #6A7686;
+  --low-lo: #FFF1B0;
+  --low-hi: #FFD24A;
+  --on-low: #1D1A10;
+  --crit-lo: #FDB867;
+  --crit-hi: #F26F1F;
+  --on-crit: #1E1308;
+  --epi-lo: #E23B30;
+  --epi-hi: #8C0B22;
+  --on-epi: #FFFFFF;
+  --stroke-low: #B88A00;
+  --stroke-hi: #C4252A;
+  --ring: #141C27;
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E141C; --surface: #161E29; --fg: #E8EDF3; --muted: #9BA8B8; --line: #273242; --soft: #1E2835;
+    --fa: #6F9DFF; --fb: #3CC8DB; --on-f: #08111E;
+    --zero: #1C2530; --on-zero: #7C8998;
+    --low-lo: #F3E6A0; --low-hi: #F5C93D;
+    --stroke-low: #F2C94C; --stroke-hi: #FF6F61;
+    --ring: #E8EDF3;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E141C; --surface: #161E29; --fg: #E8EDF3; --muted: #9BA8B8; --line: #273242; --soft: #1E2835;
+  --fa: #6F9DFF; --fb: #3CC8DB; --on-f: #08111E;
+  --zero: #1C2530; --on-zero: #7C8998;
+  --low-lo: #F3E6A0; --low-hi: #F5C93D;
+  --stroke-low: #F2C94C; --stroke-hi: #FF6F61;
+  --ring: #E8EDF3;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-inline: clamp(16px, 4vw, 32px);
+  padding-block: clamp(20px, 4vw, 44px);
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: clamp(36px, 6vw, 64px); }
+p { margin: 0; }
+
+.eyebrow { font: 500 12px/1.3 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 {
+  font-family: var(--font-display); font-weight: 800; font-variation-settings: "wdth" 125;
+  font-size: clamp(34px, 6.4vw, 62px); line-height: 1; letter-spacing: -.01em;
+  margin: 12px 0 16px; text-wrap: balance;
+}
+.lede { max-width: 64ch; font-size: clamp(17px, 2vw, 19px); }
+h2 {
+  font-family: var(--font-display); font-weight: 700; font-variation-settings: "wdth" 112;
+  font-size: clamp(22px, 3vw, 28px); line-height: 1.15; margin: 0 0 12px; text-wrap: balance;
+}
+.sub { color: var(--muted); max-width: 60ch; }
+
+/* ---------- mapa + lectura ---------- */
+.main { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 48px); align-items: start; }
+@media (max-width: 880px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+.map { position: relative; width: 100%; max-width: 700px; aspect-ratio: 1 / 1; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
+.grid { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); grid-template-rows: repeat(15, minmax(0, 1fr)); gap: 2px; width: 100%; height: 100%; }
+.grid:focus-visible { outline: 2px solid var(--fa); outline-offset: 4px; }
+.c {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  font: 500 var(--fs, 12px)/1 var(--font-mono); font-variant-numeric: tabular-nums;
+  border-radius: 2px; user-select: none; -webkit-user-select: none;
+}
+.c .n { display: none; }
+.nums .c .n { display: block; }
+.c[data-z="zero"] { background: var(--zero); color: var(--on-zero); }
+.c[data-z="low"]  { background: color-mix(in srgb, var(--low-hi) calc(var(--t) * 100%), var(--low-lo)); color: var(--on-low); }
+.c[data-z="crit"] { background: color-mix(in srgb, var(--crit-hi) calc(var(--t) * 100%), var(--crit-lo)); color: var(--on-crit); }
+.c[data-z="epi"]  { background: color-mix(in srgb, var(--epi-hi) calc(var(--t) * 100%), var(--epi-lo)); color: var(--on-epi); }
+@media (prefers-reduced-motion: no-preference) { .c { transition: background-color .18s; } }
+.c.sel { outline: 2px solid var(--ring); outline-offset: 1px; z-index: 2; }
+
+.mk, .mk-s {
+  display: grid; place-items: center; border-radius: 50%; color: var(--on-f);
+  font-family: var(--font-display); font-weight: 800; border: 2px solid var(--surface);
+}
+.mk { position: absolute; inset: 12%; z-index: 1; font-size: clamp(10px, 2.6vw, 16px); line-height: 1; }
+.mk.a, .mk-s.a { background: var(--fa); }
+.mk.b, .mk-s.b { background: var(--fb); }
+.mk-s { display: inline-grid; width: 22px; height: 22px; font-size: 12px; font-style: normal; flex: none; }
+
+.call {
+  position: absolute; right: 3.2%; bottom: 3.2%; width: 38%; padding: 6px 8px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 4px; pointer-events: none;
+}
+.call b { display: block; font: 800 clamp(9px, 1.5vw, 12px)/1.2 var(--font-display); letter-spacing: .04em; text-transform: uppercase; }
+.call small { display: block; margin-top: 2px; font: 400 clamp(9px, 1.4vw, 12px)/1.25 var(--font-body); color: var(--muted); }
+
+.cap { font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: center; }
+.cap .key { display: inline-flex; gap: 8px; align-items: center; color: var(--fg); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+.fiche { display: grid; gap: 14px; }
+.steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; margin: 0; }
+.steps div { min-width: 0; }
+.steps dt { font: 500 11px/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.steps dd { margin: 4px 0 0; font: 500 15px/1.35 var(--font-mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.verdict { display: flex; gap: 10px; align-items: flex-start; padding-top: 12px; border-top: 1px solid var(--line); }
+.verdict .sw { margin-top: 5px; }
+.verdict .nm { font-weight: 600; }
+.verdict .tx2 { color: var(--muted); font-size: 15px; }
+
+.sw { flex: none; width: 16px; height: 16px; border-radius: 3px; display: block; }
+.sw[data-z="zero"] { background: var(--zero); box-shadow: inset 0 0 0 1px var(--line); }
+.sw[data-z="low"]  { background: linear-gradient(90deg, var(--low-lo), var(--low-hi)); }
+.sw[data-z="crit"] { background: linear-gradient(90deg, var(--crit-lo), var(--crit-hi)); }
+.sw[data-z="epi"]  { background: linear-gradient(90deg, var(--epi-lo), var(--epi-hi)); }
+
+.ctl { display: grid; gap: 8px; }
+.ctl-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.ctl label { font-weight: 600; }
+.ctl output { font: 500 22px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.ctl input[type="range"] { width: 100%; accent-color: var(--fa); margin: 6px 0 0; min-height: 28px; }
+.ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.ctl-foot { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+#stat { font-size: 15px; }
+.btn { background: transparent; border: 1px solid var(--line); color: var(--fg); padding: 6px 12px; border-radius: 4px; cursor: pointer; font: 500 14px/1.2 var(--font-body); }
+.btn:hover { border-color: var(--muted); }
+.btn:focus-visible { outline: 2px solid var(--fa); outline-offset: 2px; }
+
+/* ---------- leyenda ---------- */
+.lg { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lg li { display: flex; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+.lg li:last-child { border-bottom: 1px solid var(--line); }
+.lg .sw { margin-top: 4px; width: 22px; height: 22px; }
+.lg .nm { font-weight: 600; }
+.lg .ct { display: block; font: 400 12.5px/1.4 var(--font-mono); color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.lg .ds { margin-top: 6px; font-size: 15px; }
+.lg li.empty { opacity: .5; }
+.lg-note { font-size: 14px; color: var(--muted); margin-top: 14px; }
+
+/* ---------- secciones de explicación ---------- */
+.sec { border-top: 1px solid var(--line); padding-top: clamp(24px, 4vw, 36px); display: grid; gap: 24px; }
+.two { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 44px); align-items: center; }
+@media (max-width: 880px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.chart { min-width: 0; }
+.chart svg { display: block; max-width: 100%; }
+.tx { font: 12px var(--font-mono); fill: var(--muted); }
+.lbl { font: 600 12px var(--font-body); fill: var(--fg); }
+.gl { stroke: var(--line); stroke-width: 1; }
+.ax { stroke: var(--muted); stroke-width: 1; }
+.th { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 4; }
+.jump { stroke: var(--fg); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.text-col { display: grid; gap: 14px; min-width: 0; }
+.text-col p { max-width: 58ch; }
+.hl { font-weight: 600; }
+
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 640px) { .pair { grid-template-columns: minmax(0, 1fr); } }
+.fig { display: grid; gap: 10px; }
+.fig svg { width: 100%; height: auto; display: block; }
+.fig h3 { margin: 0; font: 700 16px/1.3 var(--font-display); font-variation-settings: "wdth" 110; }
+.fig p { font-size: 15px; color: var(--muted); }
+.dot-off { fill: var(--muted); }
+.dot-hit { fill: var(--stroke-hi); }
+.zone { fill: var(--stroke-hi); fill-opacity: .16; stroke: var(--stroke-hi); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.xh { fill: none; stroke: var(--fg); stroke-width: 1.5; }
+.legal { max-width: 70ch; }
+.dotkey { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 14px; color: var(--muted); }
+.dotkey span { display: inline-flex; align-items: center; gap: 8px; }
+.dotkey i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+.scroll { overflow-x: auto; }
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { text-align: left; font: 500 12px/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 12px 8px 0; border-bottom: 1px solid var(--muted); }
+.tbl td { vertical-align: top; padding: 12px 12px 12px 0; border-bottom: 1px solid var(--line); }
+.tbl td:first-child { font-weight: 600; width: 38%; }
+.note { font-size: 14px; color: var(--muted); max-width: 80ch; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Modelo didáctico · Derecho de los conflictos armados</p>
+    <h1>Mapa de fricción</h1>
+    <p class="lede">Dos facciones tienen intereses opuestos sobre el mismo territorio. Cada una proyecta una influencia que se debilita con la distancia. Donde las dos se encuentran, la tensión crece. Si supera un umbral, se dispara una trampa que daña todo a su alrededor.</p>
+  </header>
+
+  <main class="main">
+    <div class="col">
+      <div class="map">
+        <div class="grid" id="grid" tabindex="0" aria-label="Mapa de fricción de 15 por 15 bloques. Use las flechas del teclado para recorrer los bloques." aria-describedby="fiche"></div>
+        <div class="call" id="call" aria-hidden="true"><b></b><small></small></div>
+      </div>
+      <p class="cap">
+        <span class="key"><i class="mk-s a">A</i> Detonador de la Facción A</span>
+        <span class="key"><i class="mk-s b">B</i> Detonador de la Facción B</span>
+        <span>Cada cuadro es un bloque del territorio. El número es su fricción acumulada.</span>
+      </p>
+
+      <div class="card fiche" id="fiche" aria-live="polite">
+        <dl class="steps">
+          <div><dt>Distancia (bloques)</dt><dd id="s-dist"></dd></div>
+          <div><dt>Señal (15 − distancia)</dt><dd id="s-sig"></dd></div>
+          <div><dt>Fricción (A × B)</dt><dd id="s-fr"></dd></div>
+          <div><dt>Resultado</dt><dd id="s-res"></dd></div>
+        </dl>
+        <div class="verdict">
+          <i class="sw" id="v-sw" data-z="epi"></i>
+          <div>
+            <p class="nm" id="v-nm"></p>
+            <p class="tx2" id="v-tx"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card ctl">
+        <div class="ctl-top">
+          <label for="umbral">Umbral de fricción</label>
+          <output id="uval" for="umbral">30</output>
+        </div>
+        <input id="umbral" type="range" min="0" max="50" step="1" value="30">
+        <div class="ends"><span>0 · la trampa se dispara con poco</span><span>50 · nunca se dispara</span></div>
+        <div class="ctl-foot">
+          <p id="stat"></p>
+          <button class="btn" id="reset" type="button">Volver a 30</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="col" aria-labelledby="lg-h">
+      <div>
+        <h2 id="lg-h">Cómo leer los colores</h2>
+        <p class="sub">Pase el cursor o toque un bloque para ver cómo se calcula su valor. Mueva el umbral para ver cuántos bloques cruzan la línea.</p>
+      </div>
+      <ul class="lg">
+        <li data-k="zero"><i class="sw" data-z="zero"></i><div><p class="nm">Sin contacto</p><span class="ct"></span><p class="ds">Llega la señal de una sola facción, o de ninguna. No hay choque de intereses.</p></div></li>
+        <li data-k="low"><i class="sw" data-z="low"></i><div><p class="nm">Fricción baja</p><span class="ct"></span><p class="ds">Las dos señales llegan, pero débiles. Pierden 1 nivel por cada bloque de distancia, así que las facciones siguen separadas.</p></div></li>
+        <li data-k="crit"><i class="sw" data-z="crit"></i><div><p class="nm">Fricción crítica</p><span class="ct"></span><p class="ds">Las señales se cruzan y los comparadores las leen a la vez. Se superó el umbral y la trampa queda armada.</p></div></li>
+        <li data-k="epi"><i class="sw" data-z="epi"></i><div><p class="nm">Epicentro: crimen de guerra</p><span class="ct"></span><p class="ds">La tensión multiplicada supera el umbral con holgura. El pulso activa la trampa y el daño cubre todo el radio, sin distinguir objetivos.</p></div></li>
+      </ul>
+      <p class="lg-note">La señal de redstone, el cable de Minecraft, va de 0 a 15. Un bloque a 4 pasos de una facción recibe de ella una señal de 11.</p>
+    </section>
+  </main>
+
+  <section class="sec" aria-labelledby="h-salto">
+    <div>
+      <h2 id="h-salto">Qué pasa al cruzar el umbral</h2>
+      <p class="sub">El daño no crece de a poco. Hay un punto donde se multiplica de golpe.</p>
+    </div>
+    <div class="two">
+      <div class="chart" id="chart"></div>
+      <div class="text-col">
+        <p>Mientras la fricción queda bajo el umbral, el valor sigue a la fricción: sube poco a poco. Al superarlo, el valor se multiplica por 3,5 en un solo paso.</p>
+        <p class="hl" id="jump-tx"></p>
+        <p>Por eso el mapa no tiene colores intermedios entre el amarillo y el naranja. Cruzada la línea, no hay vuelta atrás.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="h-crimen">
+    <div>
+      <h2 id="h-crimen">Por qué el rojo es un crimen de guerra</h2>
+      <p class="sub">La diferencia está en a quién alcanza el daño.</p>
+    </div>
+    <div class="pair">
+      <figure class="fig" style="margin:0">
+        <svg viewBox="0 0 240 150" role="img" aria-label="Siete puntos agrupados; solo uno, marcado con una mira, es alcanzado.">
+          <g class="dot-off">
+            <circle class="dot-off" cx="60" cy="50" r="6"/><circle class="dot-off" cx="100" cy="38" r="6"/>
+            <circle class="dot-off" cx="184" cy="70" r="6"/><circle class="dot-off" cx="80" cy="100" r="6"/>
+            <circle class="dot-off" cx="130" cy="112" r="6"/><circle class="dot-off" cx="175" cy="105" r="6"/>
+          </g>
+          <circle class="dot-hit" cx="150" cy="48" r="6"/>
+          <circle class="xh" cx="150" cy="48" r="14"/>
+          <path class="xh" d="M150 22v8M150 66v8M124 48h8M168 48h8"/>
+        </svg>
+        <h3>Daño dirigido</h3>
+        <p>Alcanza al objetivo militar y deja fuera a los demás. Distingue.</p>
+      </figure>
+      <figure class="fig" style="margin:0">
+        <svg viewBox="0 0 240 150" role="img" aria-label="Los mismos siete puntos dentro de un gran círculo; todos son alcanzados.">
+          <circle class="zone" cx="120" cy="75" r="72"/>
+          <circle class="dot-hit" cx="60" cy="50" r="6"/><circle class="dot-hit" cx="100" cy="38" r="6"/>
+          <circle class="dot-hit" cx="150" cy="48" r="6"/><circle class="dot-hit" cx="184" cy="70" r="6"/>
+          <circle class="dot-hit" cx="80" cy="100" r="6"/><circle class="dot-hit" cx="130" cy="112" r="6"/>
+          <circle class="dot-hit" cx="175" cy="105" r="6"/>
+        </svg>
+        <h3>Daño volumétrico</h3>
+        <p>Alcanza todo el radio por igual. No distingue entre quién es objetivo y quién no.</p>
+      </figure>
+    </div>
+    <div class="dotkey"><span><i class="dot-hit" style="background:var(--stroke-hi)"></i> Alcanzado</span><span><i style="background:var(--muted)"></i> No alcanzado</span></div>
+    <p class="legal">El derecho internacional humanitario (Convenios de Ginebra y su Protocolo Adicional I) exige distinguir entre objetivos militares y personas o bienes civiles, y que el daño no sea excesivo frente a la ventaja militar buscada. Una trampa que castiga todo el radio por igual incumple las dos exigencias: viola el principio de distinción y el de proporcionalidad.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="h-trad">
+    <div>
+      <h2 id="h-trad">Del juego a la realidad</h2>
+      <p class="sub">Cada pieza de Minecraft representa una idea del conflicto.</p>
+    </div>
+    <div class="scroll">
+      <table class="tbl">
+        <thead><tr><th scope="col">En Minecraft</th><th scope="col">En el conflicto</th></tr></thead>
+        <tbody>
+          <tr><td>Palanca o placa de presión</td><td>El interés de cada facción sobre el territorio.</td></tr>
+          <tr><td>Señal de redstone, nivel 0 a 15</td><td>La influencia de cada facción. Pierde 1 nivel por bloque de distancia.</td></tr>
+          <tr><td>Comparador en modo resta</td><td>La regla que decide cuándo la tensión ya es demasiada.</td></tr>
+          <tr><td>Dispensador de TNT o lava</td><td>Un arma que daña toda un área sin distinguir objetivos.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Modelo didáctico, no una medición. Parámetros del código: señal máxima 15, pérdida de 1 por bloque, umbral 30, multiplicador 2,5. La banda naranja abarca hasta 10 puntos por encima del umbral; es una convención de presentación.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+/*MODEL*/
+var N = 15, SIG = 15, MULT = 2.5, BAND = 10, FA = [3, 3], FB = [11, 11];
+function model(x, y, T) {
+  var dA = Math.abs(x - FA[0]) + Math.abs(y - FA[1]);
+  var dB = Math.abs(x - FB[0]) + Math.abs(y - FB[1]);
+  var sA = Math.max(SIG - dA, 0), sB = Math.max(SIG - dB, 0);
+  var f = sA * sB;
+  var trig = f > T;
+  var v = f + (trig ? f * MULT : 0);
+  var z = 'zero';
+  if (f > 0) z = !trig ? 'low' : (f <= T + BAND ? 'crit' : 'epi');
+  return { dA: dA, dB: dB, sA: sA, sB: sB, f: f, trig: trig, v: v, z: z };
+}
+function rhe(v) { var fl = Math.floor(v), d = v - fl; if (d < 0.5) return fl; if (d > 0.5) return fl + 1; return fl % 2 === 0 ? fl : fl + 1; }
+function grid(T) { var g = []; for (var x = 0; x < N; x++) { var r = []; for (var y = 0; y < N; y++) r.push(model(x, y, T)); g.push(r); } return g; }
+/*ENDMODEL*/
+
+var $ = function (s) { return document.querySelector(s); };
+var gridEl = $('#grid'), slider = $('#umbral');
+var cells = [], G, T = 30, sel = [7, 7], prev = null;
+var FMAX = 0;
+grid(0).forEach(function (r) { r.forEach(function (m) { if (m.f > FMAX) FMAX = m.f; }); });
+var ZN = { zero: 'Sin contacto', low: 'Fricción baja', crit: 'Fricción crítica', epi: 'Epicentro: crimen de guerra' };
+function fmt(n) { return String(Math.round(n * 10) / 10).replace('.', ','); }
+
+for (var x = 0; x < N; x++) {
+  cells.push([]);
+  for (var y = 0; y < N; y++) {
+    var d = document.createElement('div');
+    d.className = 'c'; d.dataset.x = x; d.dataset.y = y;
+    var n = document.createElement('span'); n.className = 'n'; d.appendChild(n);
+    if (x === FA[0] && y === FA[1]) { var ka = document.createElement('span'); ka.className = 'mk a'; ka.textContent = 'A'; d.appendChild(ka); }
+    if (x === FB[0] && y === FB[1]) { var kb = document.createElement('span'); kb.className = 'mk b'; kb.textContent = 'B'; d.appendChild(kb); }
+    gridEl.appendChild(d); cells[x].push(d);
+  }
+}
+
+function verdictText(m) {
+  if (m.z === 'zero') return (m.sA === 0 && m.sB === 0) ? 'No llega la señal de ninguna facción.' : 'Solo llega la señal de la Facción ' + (m.sA > 0 ? 'A' : 'B') + '. Sin choque de intereses no hay fricción.';
+  if (m.z === 'low') return 'La fricción (' + m.f + ') queda bajo el umbral (' + T + '). La trampa no se dispara.';
+  if (m.z === 'crit') return 'La fricción (' + m.f + ') supera el umbral (' + T + ') por poco. La trampa queda armada y el valor se multiplica por 3,5.';
+  return 'La fricción (' + m.f + ') supera el umbral (' + T + ') con holgura. La trampa se activa y el daño cubre todo el radio.';
+}
+
+function showCell(x, y) {
+  if (prev) prev.classList.remove('sel');
+  sel = [x, y]; prev = cells[x][y]; prev.classList.add('sel');
+  var m = G[x][y];
+  $('#s-dist').textContent = 'A ' + m.dA + ' · B ' + m.dB;
+  $('#s-sig').textContent = 'A ' + m.sA + ' · B ' + m.sB;
+  $('#s-fr').textContent = m.sA + ' × ' + m.sB + ' = ' + m.f;
+  $('#s-res').textContent = m.trig ? m.f + ' + ' + m.f + ' × 2,5 = ' + fmt(m.v) : m.f + (m.f ? ', sin multiplicar' : '');
+  $('#v-sw').dataset.z = m.z;
+  $('#v-nm').textContent = ZN[m.z];
+  $('#v-tx').textContent = verdictText(m);
+}
+
+function drawChart() {
+  var el = $('#chart');
+  var W = Math.max(el.clientWidth, 260), H = Math.round(Math.min(Math.max(W * 0.64, 230), 340));
+  var m = { l: 52, r: 18, t: 32, b: 50 };
+  var xs = function (v) { return m.l + (W - m.l - m.r) * v / 50; };
+  var ys = function (v) { return H - m.b - (H - m.t - m.b) * v / 180; };
+  var s = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Gráfico: hasta el umbral el valor sube de a poco; al superarlo salta a 3,5 veces la fricción.">';
+  [0, 50, 100, 150].forEach(function (v) {
+    s += '<line class="gl" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + ys(v) + '" y2="' + ys(v) + '"/><text class="tx" x="' + (m.l - 8) + '" y="' + (ys(v) + 4) + '" text-anchor="end">' + v + '</text>';
+  });
+  [0, 10, 20, 30, 40, 50].forEach(function (v) {
+    s += '<text class="tx" x="' + xs(v) + '" y="' + (H - m.b + 18) + '" text-anchor="middle">' + v + '</text>';
+  });
+  s += '<line class="ax" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + ys(0) + '" y2="' + ys(0) + '"/>';
+  s += '<line class="th" x1="' + xs(T) + '" x2="' + xs(T) + '" y1="' + m.t + '" y2="' + ys(0) + '"/>';
+  if (T > 0) s += '<line x1="' + xs(0) + '" y1="' + ys(0) + '" x2="' + xs(T) + '" y2="' + ys(T) + '" stroke="var(--stroke-low)" stroke-width="3" stroke-linecap="round"/>';
+  if (T < 50) {
+    s += '<line class="jump" x1="' + xs(T) + '" y1="' + ys(T) + '" x2="' + xs(T) + '" y2="' + ys(3.5 * T) + '"/>';
+    s += '<line x1="' + xs(T) + '" y1="' + ys(3.5 * T) + '" x2="' + xs(50) + '" y2="' + ys(175) + '" stroke="var(--stroke-hi)" stroke-width="3" stroke-linecap="round"/>';
+    s += '<circle cx="' + xs(T) + '" cy="' + ys(3.5 * T) + '" r="5" fill="var(--stroke-hi)" stroke="var(--surface)" stroke-width="2"/>';
+    if (T >= 6) {
+      var right = xs(T) > W * 0.7;
+      s += '<text class="lbl" x="' + (xs(T) + (right ? -10 : 10)) + '" y="' + ((ys(T) + ys(3.5 * T)) / 2 + 4) + '" text-anchor="' + (right ? 'end' : 'start') + '">× 3,5</text>';
+    }
+  }
+  s += '<circle cx="' + xs(T) + '" cy="' + ys(T) + '" r="5" fill="var(--stroke-low)" stroke="var(--surface)" stroke-width="2"/>';
+  var lx = Math.min(Math.max(xs(T), m.l + 24), W - m.r - 24);
+  s += '<text class="lbl" x="' + lx + '" y="' + (m.t - 12) + '" text-anchor="middle">umbral ' + T + '</text>';
+  s += '<text class="tx" x="' + ((m.l + W - m.r) / 2) + '" y="' + (H - 6) + '" text-anchor="middle">Fricción del bloque (señal A × señal B)</text>';
+  s += '<text class="tx" transform="translate(13,' + ((m.t + H - m.b) / 2) + ') rotate(-90)" text-anchor="middle">Fricción acumulada</text>';
+  s += '</svg>';
+  el.innerHTML = s;
+}
+
+function update() {
+  T = +slider.value;
+  $('#uval').textContent = T;
+  G = grid(T);
+  var st = { zero: { n: 0, min: Infinity, max: -Infinity }, low: { n: 0, min: Infinity, max: -Infinity }, crit: { n: 0, min: Infinity, max: -Infinity }, epi: { n: 0, min: Infinity, max: -Infinity } };
+  var below = 0, minTrig = Infinity;
+  for (var x = 0; x < N; x++) for (var y = 0; y < N; y++) {
+    var m = G[x][y], el = cells[x][y];
+    el.dataset.z = m.z;
+    var t = 0;
+    if (m.z === 'low') t = T > 0 ? Math.min(m.f / T, 1) : 0;
+    else if (m.z === 'crit') t = (m.f - T) / BAND;
+    else if (m.z === 'epi') { var den = FMAX - (T + BAND); t = den > 0 ? (m.f - (T + BAND)) / den : 1; }
+    el.style.setProperty('--t', Math.max(0, Math.min(1, t)).toFixed(3));
+    el.firstChild.textContent = rhe(m.v);
+    var s = st[m.z]; s.n++; if (m.v < s.min) s.min = m.v; if (m.v > s.max) s.max = m.v;
+    if (m.f > 0 && !m.trig && m.v > below) below = m.v;
+    if (m.trig && m.v < minTrig) minTrig = m.v;
+  }
+  ['zero', 'low', 'crit', 'epi'].forEach(function (k) {
+    var li = document.querySelector('.lg li[data-k="' + k + '"]'), s = st[k];
+    li.classList.toggle('empty', s.n === 0);
+    li.querySelector('.ct').textContent = s.n === 0 ? 'ningún bloque con este umbral'
+      : s.n + (s.n === 1 ? ' bloque' : ' bloques') + ' · ' + (k === 'zero' ? 'valor 0' : (rhe(s.min) === rhe(s.max) ? 'valor ' + rhe(s.min) : 'valores ' + rhe(s.min) + ' a ' + rhe(s.max)));
+  });
+  var trigN = st.crit.n + st.epi.n;
+  $('#stat').textContent = trigN ? trigN + ' de ' + (N * N) + ' bloques (' + Math.round(trigN / (N * N) * 100) + '%) disparan la trampa.'
+    : 'Con este umbral la trampa nunca se dispara. La fricción más alta del mapa es ' + FMAX + '.';
+  var call = $('#call'), b = call.querySelector('b'), sm = call.querySelector('small');
+  if (st.epi.n) { b.textContent = '↖ Zona de crimen'; sm.textContent = 'Despliegue masivo, daño en todo el radio'; }
+  else if (trigN) { b.textContent = '↖ Trampa armada'; sm.textContent = 'Umbral superado en el centro'; }
+  else { b.textContent = 'Sin disparo'; sm.textContent = 'La fricción no llega al umbral'; }
+  $('#jump-tx').textContent = (below && isFinite(minTrig))
+    ? 'En este mapa, con el umbral en ' + T + ', el bloque más tenso que no dispara vale ' + rhe(below) + ' y el primero que dispara vale ' + rhe(minTrig) + '.'
+    : (trigN ? 'Con el umbral en ' + T + ', todos los bloques con fricción ya disparan la trampa.' : 'Con el umbral en ' + T + ', ningún bloque llega a disparar la trampa.');
+  showCell(sel[0], sel[1]);
+  drawChart();
+}
+
+gridEl.addEventListener('pointerover', function (e) {
+  var c = e.target.closest ? e.target.closest('.c') : null;
+  if (c && G) showCell(+c.dataset.x, +c.dataset.y);
+});
+gridEl.addEventListener('keydown', function (e) {
+  var dx = 0, dy = 0;
+  if (e.key === 'ArrowUp') dx = -1; else if (e.key === 'ArrowDown') dx = 1;
+  else if (e.key === 'ArrowLeft') dy = -1; else if (e.key === 'ArrowRight') dy = 1; else return;
+  e.preventDefault();
+  showCell(Math.max(0, Math.min(N - 1, sel[0] + dx)), Math.max(0, Math.min(N - 1, sel[1] + dy)));
+});
+slider.addEventListener('input', update);
+$('#reset').addEventListener('click', function () { slider.value = 30; update(); });
+
+function fit() {
+  var w = gridEl.clientWidth / N;
+  gridEl.classList.toggle('nums', w >= 28);
+  gridEl.style.setProperty('--fs', Math.max(9, Math.min(14, w * 0.34)).toFixed(1) + 'px');
+}
+if (window.ResizeObserver) {
+  new ResizeObserver(fit).observe(gridEl);
+  new ResizeObserver(function () { if (G) drawChart(); }).observe($('#chart'));
+} else { window.addEventListener('resize', function () { fit(); if (G) drawChart(); }); }
+fit();
+update();
+})();
+</script>
+
+</body></html>
