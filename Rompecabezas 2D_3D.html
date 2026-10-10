@@ -1,0 +1,495 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Rompecabezas 2D/3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: banco de trabajo tipo plano. Izquierda arma las piezas, derecha ve el resultado y el código que genera. */
+:root {
+  --bg: #eef3f6;
+  --surface: #ffffff;
+  --ink: #14212b;
+  --muted: #566877;
+  --line: #d0dbe3;
+  --c2d: #2a6f9e;
+  --c3d: #d9581f;
+  --ok: #2b7a4b;
+  --warn: #b24f14;
+  --code-bg: #0e1a22;
+  --code-fg: #d5e5ee;
+  --code-dim: #7f97a6;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --font-body: "Figtree", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c151c; --surface: #131f28; --ink: #e5eef3; --muted: #93a6b3; --line: #263846;
+    --c2d: #5db3ea; --c3d: #ff8b50; --ok: #62d28e; --warn: #ffb068;
+    --code-bg: #08111a; --code-fg: #d5e5ee; --code-dim: #6f8797;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c151c; --surface: #131f28; --ink: #e5eef3; --muted: #93a6b3; --line: #263846;
+  --c2d: #5db3ea; --c3d: #ff8b50; --ok: #62d28e; --warn: #ffb068;
+  --code-bg: #08111a; --code-fg: #d5e5ee; --code-dim: #6f8797;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: -1px -1px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1080px; margin-inline: auto; display: flex; flex-direction: column; gap: 22px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.1; }
+h1 { font-size: clamp(2rem, 6vw, 3.2rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 1.35rem; font-weight: 800; }
+p { margin: 0; }
+.lead { max-width: 62ch; color: var(--muted); font-size: 1.05rem; }
+.lead b { color: var(--ink); font-weight: 600; }
+.tag { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+header { display: flex; flex-direction: column; gap: 12px; padding-top: 6px; }
+.rule-box {
+  display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 12px 16px; font-family: var(--font-mono); font-size: 0.9rem;
+}
+.rule-box .d2 { color: var(--c2d); font-weight: 600; }
+.rule-box .d3 { color: var(--c3d); font-weight: 600; }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 860px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.hint { color: var(--muted); font-size: 0.9rem; }
+
+/* piezas */
+.pieces { display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.piece {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px;
+  border: 1.5px solid var(--line); border-left: 6px solid var(--accent, var(--c2d));
+  border-radius: 8px; padding: 12px; background: var(--bg);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.piece.is-3d { --accent: var(--c3d); }
+.piece.is-2d { --accent: var(--c2d); }
+.piece.active { transform: translateX(6px); border-color: var(--accent); box-shadow: 0 4px 0 var(--accent); }
+.piece.done { opacity: .72; }
+.piece-name { font-weight: 600; overflow-wrap: anywhere; }
+.piece-top { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.real { text-align: right; font-family: var(--font-mono); display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.real strong { font-size: 1.7rem; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent); }
+.real span { font-size: 0.72rem; color: var(--muted); }
+.cells-wrap { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.cells { display: grid; gap: 3px; }
+.cell { width: 15px; height: 15px; border-radius: 3px; background: var(--accent); }
+.cells-note { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--c3d); outline-offset: 2px; }
+.chip {
+  font-family: var(--font-mono); font-weight: 600; font-size: 0.82rem;
+  border: 1.5px solid var(--accent); color: var(--accent); background: transparent;
+  border-radius: 999px; padding: 4px 12px; min-height: 34px;
+}
+.chip:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.step { display: inline-flex; align-items: center; border: 1.5px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.step button { width: 34px; height: 34px; border: 0; background: transparent; font-weight: 600; font-size: 1.1rem; }
+.step button:hover { background: var(--line); }
+.step output { min-width: 34px; text-align: center; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.step-label { font-size: 0.8rem; color: var(--muted); }
+.icon-btn { border: 0; background: transparent; color: var(--muted); width: 34px; height: 34px; border-radius: 8px; font-size: 1.1rem; }
+.icon-btn:hover { background: var(--line); color: var(--ink); }
+
+.empty { border: 1.5px dashed var(--line); border-radius: 8px; padding: 22px; text-align: center; color: var(--muted); }
+
+/* formulario */
+.add { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 10px; align-items: end; }
+@media (max-width: 600px) { .add { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .add .f-name { grid-column: 1 / -1; } }
+.f { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.f label { font-size: 0.78rem; color: var(--muted); }
+.f input, .f select { border: 1.5px solid var(--line); background: var(--bg); border-radius: 8px; padding: 7px 10px; min-height: 40px; width: 100%; }
+.btn { border: 0; background: var(--ink); color: var(--bg); font-weight: 600; border-radius: 8px; padding: 9px 16px; min-height: 40px; }
+.btn:hover { filter: brightness(1.15); }
+.btn.run { background: var(--c3d); color: #fff; font-size: 1.02rem; padding: 12px 20px; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* resultado */
+.meter { position: relative; height: 34px; border-radius: 8px; background: var(--bg); border: 1.5px solid var(--line); overflow: hidden; }
+.meter-fill { height: 100%; width: 0; display: flex; transition: width .45s ease; }
+.seg { height: 100%; transition: width .45s ease; }
+.seg.s2 { background: var(--c2d); }
+.seg.s3 { background: var(--c3d); }
+.threshold { position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 2.5px dashed var(--ink); }
+.meter-scale { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); position: relative; height: 18px; }
+.meter-scale .lim { position: absolute; transform: translateX(-50%); white-space: nowrap; color: var(--ink); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--bg); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat strong { font-family: var(--font-mono); font-size: 1.45rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat span { font-size: 0.78rem; color: var(--muted); }
+.verdict { border-radius: 8px; padding: 12px 14px; font-weight: 600; border: 1.5px solid; }
+.verdict.hi { color: var(--warn); border-color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+.verdict.lo { color: var(--ok); border-color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+.verdict small { display: block; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.formula { font-family: var(--font-mono); font-size: 0.85rem; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.formula .p2 { color: var(--c2d); font-weight: 600; }
+.formula .p3 { color: var(--c3d); font-weight: 600; }
+
+.challenge { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; border: 1.5px dashed var(--line); border-radius: 8px; padding: 12px 14px; }
+.challenge .badge { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; border: 1.5px solid var(--muted); color: var(--muted); }
+.challenge.win { border-style: solid; border-color: var(--ok); }
+.challenge.win .badge { border-color: var(--ok); color: var(--ok); }
+
+/* consola y código */
+.console, .code {
+  background: var(--code-bg); color: var(--code-fg); border-radius: 10px;
+  font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;
+  padding: 14px 16px; overflow-x: auto; margin: 0;
+}
+.console { min-height: 150px; max-height: 280px; overflow-y: auto; white-space: pre; }
+.console .dim { color: var(--code-dim); }
+.console .hl { color: #ffd479; }
+.code { white-space: pre; }
+.code .k { color: #8fd0ff; }
+.code .s { color: #ffb783; }
+.code .c { color: var(--code-dim); }
+.code .n { color: #b9e6a0; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .piece, .meter-fill, .seg { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="tag">Python · POO · Clases y objetos</span>
+    <h1>Rompecabezas 2D/3D</h1>
+    <p class="lead">Un <b>Modulo</b> es una pieza con una dimensión. Un <b>SistemaDiseño</b> junta las piezas y suma su complejidad. Armá tu proyecto, cambiá piezas de 2D a 3D y mirá qué pasa con el resultado.</p>
+    <div class="rule-box" aria-label="Regla del código">
+      <span>if dimension == <span class="d3">'3D'</span>: base <span class="d3">× 3</span></span>
+      <span>else: base <span class="d2">× 1</span></span>
+      <span>diagnóstico: total <b>&gt; 25</b> → alta complejidad</span>
+    </div>
+  </header>
+
+  <div class="cols">
+    <div class="col">
+      <section class="panel" aria-labelledby="h-piezas">
+        <div class="panel-head">
+          <h2 id="h-piezas">1. Tus piezas</h2>
+          <span class="hint">Tocá el chip para cambiar 2D ↔ 3D</span>
+        </div>
+        <ul class="pieces" id="pieces"></ul>
+
+        <form class="add" id="addForm">
+          <div class="f f-name"><label for="newName">Nombre de la pieza</label><input id="newName" type="text" maxlength="40" placeholder="Ej: Plano de techo" required></div>
+          <div class="f"><label for="newDim">Dimensión</label><select id="newDim"><option value="2D">2D</option><option value="3D">3D</option></select></div>
+          <div class="f"><label for="newBase">Base (1–10)</label><input id="newBase" type="number" min="1" max="10" value="3"></div>
+          <button class="btn" type="submit" id="addBtn">Agregar</button>
+        </form>
+        <p class="hint" id="addMsg" role="status"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="h-sim">
+        <div class="panel-head">
+          <h2 id="h-sim">2. Simulá el ensamble</h2>
+          <span class="hint">Es el método <code>simular_ensamble()</code></span>
+        </div>
+        <div class="row">
+          <button class="btn run" id="runBtn" type="button">▶ Ensamblar</button>
+          <button class="btn ghost" id="clearBtn" type="button">Limpiar consola</button>
+        </div>
+        <pre class="console" id="console" aria-live="polite"><span class="dim">La consola imprime lo mismo que tu script. Apretá Ensamblar.</span></pre>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel" aria-labelledby="h-res">
+        <div class="panel-head">
+          <h2 id="h-res">3. El resultado es la suma</h2>
+          <span class="hint">Se actualiza solo</span>
+        </div>
+        <div>
+          <div class="meter" id="meter" role="img" aria-label="Complejidad acumulada">
+            <div class="meter-fill" id="meterFill"></div>
+            <div class="threshold" id="thr"></div>
+          </div>
+          <div class="meter-scale" id="scale"><span>0</span><span class="lim" id="limLabel">25 (límite)</span><span id="maxLabel"></span></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><strong id="stPieces">0</strong><span>piezas</span></div>
+          <div class="stat"><strong id="stTotal">0</strong><span>complejidad total</span></div>
+          <div class="stat"><strong id="stTime">0.0</strong><span>esfuerzo (total × 0.1)</span></div>
+        </div>
+        <div class="formula" id="formula"></div>
+        <div class="verdict" id="verdict"></div>
+        <div class="challenge" id="challenge">
+          <span class="badge" id="chBadge">Desafío</span>
+          <span id="chText">Lográ el diagnóstico ✅ usando al menos 2 piezas 3D.</span>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-code">
+        <div class="panel-head">
+          <h2 id="h-code">4. Tu proyecto en código</h2>
+          <button class="btn ghost" id="copyBtn" type="button">Copiar</button>
+        </div>
+        <p class="hint">Este bloque se genera con las piezas que armaste. Pegalo debajo de las clases y ejecutalo.</p>
+        <pre class="code" id="code"></pre>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var LIMIT = 25, MULT = 3, TIME_K = 0.1, MAX_PIECES = 8;
+  var pieces = [
+    { id: 1, nombre: "Plano de Cimientos", dim: "2D", base: 2 },
+    { id: 2, nombre: "Distribución de Paredes", dim: "2D", base: 3 },
+    { id: 3, nombre: "Maqueta de Fachada", dim: "3D", base: 4 },
+    { id: 4, nombre: "Diseño de Interiores Interactivo", dim: "3D", base: 5 }
+  ];
+  var nextId = 5;
+  var running = false;
+  var activeId = null;
+  var doneIds = {};
+  var shown = null; // null = muestra todo; si no, ids ya sumados al medidor durante la simulación
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    pieces: $("pieces"), meterFill: $("meterFill"), thr: $("thr"), limLabel: $("limLabel"), maxLabel: $("maxLabel"),
+    stPieces: $("stPieces"), stTotal: $("stTotal"), stTime: $("stTime"), formula: $("formula"), verdict: $("verdict"),
+    challenge: $("challenge"), chBadge: $("chBadge"), chText: $("chText"), code: $("code"), console: $("console"),
+    runBtn: $("runBtn"), clearBtn: $("clearBtn"), copyBtn: $("copyBtn"), addForm: $("addForm"), addMsg: $("addMsg")
+  };
+
+  function real(p) { return p.dim === "3D" ? p.base * MULT : p.base; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function pyStr(s) { return '"' + String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"'; }
+  function label(p) { return (p.dim === "2D" ? "🧩 [2D Plane] " : "📦 [3D Volumetric] ") + p.nombre + " (Complejidad: " + real(p) + ")"; }
+
+  function cellsHTML(p) {
+    var rows = p.dim === "3D" ? MULT : 1;
+    var out = '<div class="cells" style="grid-template-columns:repeat(' + p.base + ',15px)">';
+    for (var i = 0; i < rows * p.base; i++) out += '<div class="cell"></div>';
+    out += "</div>";
+    return out;
+  }
+
+  function renderPieces() {
+    var focusKey = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.key : null;
+    if (!pieces.length) {
+      el.pieces.innerHTML = '<li class="empty">No hay piezas. Agregá una abajo y mirá cómo se arma el resultado.</li>';
+      return;
+    }
+    el.pieces.innerHTML = pieces.map(function (p) {
+      var cls = "piece " + (p.dim === "3D" ? "is-3d" : "is-2d") + (p.id === activeId ? " active" : "") + (doneIds[p.id] ? " done" : "");
+      var note = p.dim === "3D"
+        ? p.base + " × 3 filas (ejes X, Y, Z) = " + real(p) + " bloques"
+        : p.base + " × 1 fila (plano) = " + real(p) + " bloques";
+      return '<li class="' + cls + '" data-id="' + p.id + '">' +
+        '<div class="piece-top">' +
+          '<span class="piece-name">' + esc(p.nombre) + '</span>' +
+          '<div class="controls">' +
+            '<button type="button" class="chip" data-act="dim" data-key="dim-' + p.id + '" aria-label="Cambiar dimensión de ' + esc(p.nombre) + ', ahora ' + p.dim + '">' + p.dim + '</button>' +
+            '<span class="step-label">base</span>' +
+            '<span class="step">' +
+              '<button type="button" data-act="minus" data-key="minus-' + p.id + '" aria-label="Bajar base">−</button>' +
+              '<output>' + p.base + '</output>' +
+              '<button type="button" data-act="plus" data-key="plus-' + p.id + '" aria-label="Subir base">+</button>' +
+            '</span>' +
+            '<button type="button" class="icon-btn" data-act="del" data-key="del-' + p.id + '" aria-label="Quitar ' + esc(p.nombre) + '">✕</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="real"><strong>' + real(p) + '</strong><span>real</span></div>' +
+        '<div class="cells-wrap">' + cellsHTML(p) + '<span class="cells-note">' + note + '</span></div>' +
+      '</li>';
+    }).join("");
+    if (focusKey) {
+      var f = el.pieces.querySelector('[data-key="' + focusKey + '"]');
+      if (f) f.focus();
+    }
+  }
+
+  function renderResult() {
+    var list = shown === null ? pieces : pieces.filter(function (p) { return shown.indexOf(p.id) !== -1; });
+    var total = 0, t2 = 0, t3 = 0;
+    pieces.forEach(function (p) { total += real(p); });
+    list.forEach(function (p) { if (p.dim === "3D") t3 += real(p); else t2 += real(p); });
+    var shownTotal = t2 + t3;
+    var scaleMax = Math.max(40, Math.ceil(total / 10) * 10);
+
+    el.meterFill.innerHTML = '<div class="seg s2" style="width:' + (t2 / scaleMax * 100) + '%"></div><div class="seg s3" style="width:' + (t3 / scaleMax * 100) + '%"></div>';
+    el.meterFill.style.width = "100%";
+    el.thr.style.left = (LIMIT / scaleMax * 100) + "%";
+    el.limLabel.style.left = (LIMIT / scaleMax * 100) + "%";
+    el.maxLabel.textContent = scaleMax;
+
+    el.stPieces.textContent = list.length;
+    el.stTotal.textContent = shownTotal;
+    el.stTime.textContent = (shownTotal * TIME_K).toFixed(1);
+
+    var parts = list.map(function (p) {
+      return '<span class="' + (p.dim === "3D" ? "p3" : "p2") + '">' + real(p) + "</span>";
+    });
+    el.formula.innerHTML = list.length
+      ? "total = " + parts.join(" + ") + " = <b>" + shownTotal + "</b>"
+      : "total = 0";
+
+    var alta = total > LIMIT;
+    if (shown === null || shown.length === pieces.length) {
+      el.verdict.className = "verdict " + (alta ? "hi" : "lo");
+      el.verdict.innerHTML = alta
+        ? "⚠️ ALTA complejidad visual (predomina 3D)<small>Total " + total + " &gt; " + LIMIT + ". Requiere renders pesados.</small>"
+        : "✅ Complejidad baja o media (predomina 2D)<small>Total " + total + " ≤ " + LIMIT + ". Fácil de maquetar.</small>";
+    } else {
+      el.verdict.className = "verdict";
+      el.verdict.style.cssText = "";
+      el.verdict.innerHTML = "Ensamblando… <small>Todavía faltan piezas por encajar.</small>";
+    }
+
+    var n3 = pieces.filter(function (p) { return p.dim === "3D"; }).length;
+    var win = n3 >= 2 && total <= LIMIT;
+    el.challenge.className = "challenge" + (win ? " win" : "");
+    el.chBadge.textContent = win ? "Desafío cumplido" : "Desafío";
+    el.chText.textContent = win
+      ? "Tenés " + n3 + " piezas 3D y total " + total + ". Diagnóstico ✅."
+      : "Lográ el diagnóstico ✅ usando al menos 2 piezas 3D. Ahora: " + n3 + " piezas 3D, total " + total + ".";
+  }
+
+  function renderCode() {
+    var lines = [];
+    lines.push('<span class="c"># Proyecto armado en esta página</span>');
+    lines.push('proyecto = SistemaDiseño(<span class="s">"Mi Rompecabezas"</span>)');
+    pieces.forEach(function (p) {
+      lines.push('proyecto.agregar_modulo(Modulo(<span class="s">' + esc(pyStr(p.nombre)) + '</span>, dimension=<span class="s">"' + p.dim + '"</span>, complejidad_base=<span class="n">' + p.base + '</span>))');
+    });
+    lines.push("proyecto.simular_ensamble()");
+    el.code.innerHTML = lines.join("\n");
+  }
+  function codeText() {
+    var t = ["# Proyecto armado en esta página", 'proyecto = SistemaDiseño("Mi Rompecabezas")'];
+    pieces.forEach(function (p) { t.push("proyecto.agregar_modulo(Modulo(" + pyStr(p.nombre) + ', dimension="' + p.dim + '", complejidad_base=' + p.base + "))"); });
+    t.push("proyecto.simular_ensamble()");
+    return t.join("\n");
+  }
+
+  function renderAll() { renderPieces(); renderResult(); renderCode(); }
+
+  // eventos de piezas
+  el.pieces.addEventListener("click", function (e) {
+    if (running) return;
+    var b = e.target.closest("button[data-act]");
+    if (!b) return;
+    var li = b.closest("li[data-id]");
+    var id = Number(li.dataset.id);
+    var p = pieces.filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    var act = b.dataset.act;
+    if (act === "dim") p.dim = p.dim === "2D" ? "3D" : "2D";
+    else if (act === "plus") p.base = Math.min(10, p.base + 1);
+    else if (act === "minus") p.base = Math.max(1, p.base - 1);
+    else if (act === "del") { pieces = pieces.filter(function (x) { return x.id !== id; }); }
+    doneIds = {}; shown = null; activeId = null;
+    renderAll();
+  });
+
+  el.addForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (running) return;
+    var name = $("newName").value.trim();
+    var base = Math.max(1, Math.min(10, parseInt($("newBase").value, 10) || 1));
+    if (!name) { el.addMsg.textContent = "Escribí un nombre para la pieza."; return; }
+    if (pieces.length >= MAX_PIECES) { el.addMsg.textContent = "Máximo " + MAX_PIECES + " piezas. Quitá una para agregar otra."; return; }
+    pieces.push({ id: nextId++, nombre: name, dim: $("newDim").value, base: base });
+    $("newName").value = "";
+    el.addMsg.textContent = "Pieza agregada.";
+    doneIds = {}; shown = null; activeId = null;
+    renderAll();
+  });
+
+  // consola
+  function log(html) {
+    if (el.console.dataset.empty !== "0") { el.console.innerHTML = ""; el.console.dataset.empty = "0"; }
+    el.console.insertAdjacentHTML("beforeend", html + "\n");
+    el.console.scrollTop = el.console.scrollHeight;
+  }
+  var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  el.clearBtn.addEventListener("click", function () {
+    el.console.innerHTML = '<span class="dim">La consola imprime lo mismo que tu script. Apretá Ensamblar.</span>';
+    el.console.dataset.empty = "1";
+  });
+
+  el.runBtn.addEventListener("click", async function () {
+    if (running) return;
+    if (!pieces.length) { log('<span class="dim">No hay piezas para ensamblar.</span>'); return; }
+    running = true; doneIds = {}; shown = [];
+    el.runBtn.disabled = true; el.addForm.querySelectorAll("input,select,button").forEach(function (n) { n.disabled = true; });
+    log("=== INICIANDO SIMULACIÓN DE ENSAMBLE: MI ROMPECABEZAS ===");
+    log('<span class="dim">Combinando módulos para formar el resultado final...</span>\n');
+    renderAll();
+    var total = 0, tiempo = 0;
+    for (var i = 0; i < pieces.length; i++) {
+      var p = pieces[i];
+      activeId = p.id;
+      var c = real(p);
+      total += c; tiempo += c * TIME_K;
+      shown.push(p.id);
+      log("Paso " + (i + 1) + ": Encajando " + esc(label(p)) + "...");
+      renderAll();
+      await sleep(reduce ? 80 : 650);
+      doneIds[p.id] = true;
+    }
+    activeId = null; shown = null;
+    log("\n" + "=".repeat(46));
+    log("📊 RESULTADO DEL DISEÑO EN CASCADA:");
+    log("• Total de piezas procesadas: " + pieces.length);
+    log("• Índice de Complejidad Acumulada: " + total + " pts");
+    log("• Esfuerzo de Visualización Estimado: " + tiempo.toFixed(2) + " unidades de tiempo");
+    log(total > LIMIT
+      ? '<span class="hl">⚠️ DIAGNÓSTICO: ALTA complejidad visual (Predominio 3D). Requiere renders pesados.</span>'
+      : '<span class="hl">✅ DIAGNÓSTICO: COMPLEJIDAD BAJA/MEDIA (Predominio 2D). Fácil de maquetar.</span>');
+    log("=".repeat(46));
+    doneIds = {};
+    running = false;
+    el.runBtn.disabled = false; el.addForm.querySelectorAll("input,select,button").forEach(function (n) { n.disabled = false; });
+    renderAll();
+  });
+
+  el.copyBtn.addEventListener("click", function () {
+    var txt = codeText();
+    var done = function () { el.copyBtn.textContent = "Copiado"; setTimeout(function () { el.copyBtn.textContent = "Copiar"; }, 1500); };
+    var fallback = function () {
+      var r = document.createRange(); r.selectNodeContents(el.code);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      el.copyBtn.textContent = "Seleccionado: Ctrl+C";
+      setTimeout(function () { el.copyBtn.textContent = "Copiar"; }, 2500);
+    };
+    try { navigator.clipboard.writeText(txt).then(done, fallback); } catch (err) { fallback(); }
+  });
+
+  el.console.dataset.empty = "1";
+  renderAll();
+})();
+</script>
+
+</body></html>
