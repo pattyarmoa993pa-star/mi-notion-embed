@@ -1,0 +1,527 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Pozo y tanques</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Concepto: dos pueblos lado a lado bajo el mismo ataque; el agua es el hilo visual (teal = servicio, arcilla = pozo único, rojo = ataque). */
+:root {
+  --bg: #F1F5F4;
+  --surface: #FFFFFF;
+  --ink: #12302F;
+  --muted: #536E6B;
+  --line: #D2DDDB;
+  --water: #12899C;
+  --water-soft: #CFEBEF;
+  --clay: #B8581F;
+  --attack: #D3402A;
+  --attack-soft: #FBE2DB;
+  --warn: #C48A10;
+  --code-bg: #0F2625;
+  --code-ink: #D9EEEA;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B1A1B; --surface: #122526; --ink: #E3F0EE; --muted: #8DA9A6; --line: #264141;
+    --water: #3EC4D8; --water-soft: #123B42; --clay: #F08A4B; --attack: #FF7A5C; --attack-soft: #432219;
+    --warn: #E5B73F; --code-bg: #091514; --code-ink: #D9EEEA;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B1A1B; --surface: #122526; --ink: #E3F0EE; --muted: #8DA9A6; --line: #264141;
+  --water: #3EC4D8; --water-soft: #123B42; --clay: #F08A4B; --attack: #FF7A5C; --attack-soft: #432219;
+  --warn: #E5B73F; --code-bg: #091514; --code-ink: #D9EEEA;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.55; padding-inline: 16px; padding-block: 28px 56px; }
+.wrap { max-width: 980px; margin-inline: auto; display: flex; flex-direction: column; gap: 36px; }
+h1, h2 { font-family: var(--font-display); line-height: 1.1; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
+p { margin: 0; }
+.eyebrow { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--water); }
+.lead { max-width: 62ch; font-size: 1.12rem; color: var(--ink); }
+.head { display: flex; flex-direction: column; gap: 12px; }
+
+/* controles */
+.controls { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button { font: inherit; font-weight: 600; font-size: 0.95rem; min-height: 44px; padding: 8px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+button:hover { border-color: var(--water); }
+button.primary { background: var(--water); border-color: var(--water); color: #04181B; }
+button.primary:hover { filter: brightness(1.06); }
+button.preset { font-weight: 500; }
+button.preset[aria-pressed="true"] { border-color: var(--water); background: var(--water-soft); }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--water); outline-offset: 2px; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 24px; }
+.slider label { display: flex; justify-content: space-between; gap: 8px; font-size: 0.92rem; font-weight: 600; margin-bottom: 4px; }
+.slider output { font-family: var(--font-mono); font-weight: 500; color: var(--water); }
+input[type="range"] { width: 100%; accent-color: var(--water); min-height: 28px; }
+.balance { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; }
+.bal { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bal span { font-size: 0.8rem; color: var(--muted); }
+.bal b { font-family: var(--font-mono); font-weight: 500; font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.bal.a b { color: var(--clay); }
+.bal.b b { color: var(--water); }
+.bal.x b { color: var(--attack); }
+.verdict { font-size: 0.95rem; color: var(--muted); }
+
+/* pueblos */
+.towns { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.town { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.town header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.town h3 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; }
+.town .sub { font-size: 0.88rem; color: var(--muted); }
+.pct { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 500; font-variant-numeric: tabular-nums; }
+.town.a .pct { color: var(--clay); }
+.town.b .pct { color: var(--water); }
+.town svg { width: 100%; height: auto; display: block; }
+.town .legend { font-size: 0.85rem; color: var(--muted); }
+
+/* svg */
+.s-frame { fill: none; stroke: var(--line); stroke-width: 2; }
+.s-water { fill: var(--water); }
+.s-warn { fill: var(--warn); }
+.s-full { fill: var(--attack); }
+.s-clay { fill: var(--clay); }
+.s-empty { fill: var(--water-soft); }
+.s-atk { fill: var(--attack); }
+.s-house-ok { fill: var(--water); }
+.s-house-no { fill: var(--attack-soft); stroke: var(--attack); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.s-text { fill: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+.s-text-atk { fill: var(--attack); font-family: var(--font-mono); font-size: 11px; }
+
+.status { background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--water); border-radius: 10px; padding: 14px 16px; min-height: 4.2em; }
+.status.bad { border-left-color: var(--attack); }
+
+/* gráfico */
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.chart svg { width: 100%; height: auto; display: block; }
+.c-grid { stroke: var(--line); stroke-width: 1; }
+.c-axis { fill: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+.c-a { fill: none; stroke: var(--clay); stroke-width: 3; stroke-linejoin: round; }
+.c-b { fill: none; stroke: var(--water); stroke-width: 3; stroke-linejoin: round; }
+.c-atk { stroke: var(--attack); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.c-lab-a { fill: var(--clay); font-family: var(--font-body); font-weight: 600; font-size: 12px; }
+.c-lab-b { fill: var(--water); font-family: var(--font-body); font-weight: 600; font-size: 12px; }
+.c-lab-x { fill: var(--attack); font-family: var(--font-body); font-size: 12px; }
+
+/* contenido */
+.section { display: flex; flex-direction: column; gap: 14px; }
+.prose { max-width: 66ch; display: flex; flex-direction: column; gap: 12px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 460px; }
+th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; }
+.lesson { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.codewrap { position: relative; }
+pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 12px; padding: 18px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.55; }
+.fixnote { font-size: 0.95rem; color: var(--muted); max-width: 66ch; }
+.fixnote code { font-family: var(--font-mono); font-size: 0.88em; color: var(--ink); background: var(--water-soft); padding: 1px 6px; border-radius: 5px; }
+details summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; }
+footer { font-size: 0.88rem; color: var(--muted); max-width: 66ch; }
+@media (prefers-reduced-motion: no-preference) { .s-water, .s-warn, .s-full, .s-clay { transition: height .3s; } }
+</style>
+
+<div class="wrap">
+
+<div class="head">
+  <div class="eyebrow">Redundancia contra ataques DDoS</div>
+  <h1>Pozo y tanques</h1>
+  <p class="lead">Dos pueblos reciben el mismo ataque. Uno depende de un solo pozo. El otro tiene un tanque de reserva en cada barrio. Pulsa Iniciar y mira cuál se queda sin agua.</p>
+</div>
+
+<section class="controls" aria-label="Controles de la simulación">
+  <div class="row">
+    <button id="btnPlay" class="primary" type="button">Iniciar</button>
+    <button id="btnReset" type="button">Reiniciar</button>
+    <button id="presetOrig" class="preset" type="button" aria-pressed="false">Tu código: 5 tanques</button>
+    <button id="presetWide" class="preset" type="button" aria-pressed="true">Malla ancha: 20 tanques</button>
+  </div>
+  <div class="sliders">
+    <div class="slider">
+      <label for="rngN">Tanques en el pueblo B <output id="outN">20</output></label>
+      <input id="rngN" type="range" min="1" max="40" value="20">
+    </div>
+    <div class="slider">
+      <label for="rngI">Peticiones falsas por segundo <output id="outI">100</output></label>
+      <input id="rngI" type="range" min="20" max="400" step="10" value="100">
+    </div>
+  </div>
+  <div class="balance" aria-live="off">
+    <div class="bal a"><span>El pozo desagota por segundo</span><b id="balA">20</b></div>
+    <div class="bal b"><span>La malla desagota por segundo</span><b id="balB">160</b></div>
+    <div class="bal x"><span>El ataque trae por segundo</span><b id="balX">100</b></div>
+  </div>
+  <p class="verdict" id="verdict"></p>
+</section>
+
+<section class="towns" aria-label="Los dos pueblos">
+  <article class="town a">
+    <header>
+      <div>
+        <h3>Pueblo A: un solo pozo</h3>
+        <div class="sub">Servidor central, sin copias</div>
+      </div>
+      <div class="pct" id="pctA">100%</div>
+    </header>
+    <svg id="svgA" viewBox="0 0 340 250" role="img" aria-label="Pozo central y diez casas"></svg>
+    <div class="legend">Casas azules con agua. Casas punteadas sin agua.</div>
+  </article>
+  <article class="town b">
+    <header>
+      <div>
+        <h3>Pueblo B: tanques por barrio</h3>
+        <div class="sub">CDN: copias repartidas</div>
+      </div>
+      <div class="pct" id="pctB">100%</div>
+    </header>
+    <svg id="svgB" viewBox="0 0 340 250" role="img" aria-label="Tanques de reserva y diez casas"></svg>
+    <div class="legend">Cada tanque se llena con el ataque. Rojo es tanque desbordado.</div>
+  </article>
+</section>
+
+<div class="status" id="status" role="status" aria-live="polite">Todo listo. Cada segundo, diez vecinos piden agua en cada pueblo. A partir del segundo 3 llega el ataque.</div>
+
+<section class="chart" aria-label="Agua disponible por segundo">
+  <h2>Vecinos con agua, segundo a segundo</h2>
+  <svg id="chart" viewBox="0 0 640 230" role="img" aria-label="Gráfico de disponibilidad de ambos pueblos"></svg>
+</section>
+
+<section class="section">
+  <h2>Del barrio a la red</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>En el pueblo</th><th>En internet</th></tr></thead>
+      <tbody>
+        <tr><td>El pozo central</td><td>El servidor de origen, donde vive la página</td></tr>
+        <tr><td>Un tanque en cada barrio</td><td>Un nodo de una CDN (Cloudflare, Akamai) con una copia de la página</td></tr>
+        <tr><td>El agua guardada en el tanque</td><td>La caché: contenido que ya está copiado cerca del usuario</td></tr>
+        <tr><td>El vecino que saca agua</td><td>Una persona que abre la página</td></tr>
+        <tr><td>Miles de baldes bloqueando el pozo</td><td>El ataque DDoS: peticiones falsas que agotan ancho de banda, memoria y procesador</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="prose">
+    <p>Quien vive con cortes de agua conoce la diferencia. La casa con tanque en el techo sigue con ducha cuando se corta el servicio. La casa sin tanque espera al camión.</p>
+    <p>Con los servicios en línea pasa igual. Si un trámite, una billetera móvil o el sitio del colegio depende de un solo servidor y ese servidor cae, nadie puede hacer nada ese día.</p>
+  </div>
+</section>
+
+<section class="lesson">
+  <h2>Los tanques también se secan</h2>
+  <div class="prose">
+    <p>Pulsa <strong>Tu código: 5 tanques</strong>. Con cinco tanques el pueblo B aguanta unos segundos más que el pozo, pero cae igual. Cinco tanques desagotan 40 peticiones por segundo y el ataque trae unas 100.</p>
+    <p>Ahora pulsa <strong>Malla ancha: 20 tanques</strong>. La malla desagota 160 por segundo, más de lo que llega, y los vecinos siguen con agua. La redundancia no detiene el ataque. Le quita al atacante la forma de asfixiar el servicio, siempre que la malla sea lo bastante ancha.</p>
+    <p>Hay planes gratuitos de CDN, así que un sitio pequeño también puede tener sus tanques.</p>
+  </div>
+</section>
+
+<section class="section">
+  <h2>El código</h2>
+  <p class="fixnote">Tu código tenía una errata que lo hacía fallar al arrancar: la variable se creaba como <code>ataque_activo</code> pero se leía como <code>ataque_activa</code>. Aquí está corregido. Cambia <code>SistemaCDN()</code> por <code>SistemaCDN(num_tanques=20)</code> para ver la malla ancha.</p>
+  <div class="row"><button id="btnCopy" type="button">Copiar código</button><span id="copyMsg" class="verdict" role="status"></span></div>
+  <details open>
+    <summary>Ver código Python</summary>
+    <div class="codewrap"><pre id="code"><code>import time
+import random
+
+class ServidorCentral:
+    def __init__(self, capacidad_maxima=100):
+        self.capacidad_maxima = capacidad_maxima
+        self.carga_actual = 0
+
+    def procesar_peticion(self, es_ataque=False):
+        self.carga_actual += 1
+        if self.carga_actual > self.capacidad_maxima:
+            return False  # El servidor colapsó (Pozo seco / Bloqueado)
+        return True
+
+    def liberar_carga(self):
+        # El servidor procesa y libera recursos constantemente
+        self.carga_actual = max(0, self.carga_actual - 20)
+
+
+class SistemaCDN:
+    def __init__(self, num_tanques=5, capacidad_tanque=30):
+        self.tanques_cache = [0] * num_tanques  # Carga actual de cada nodo CDN
+        self.capacidad_tanque = capacidad_tanque
+
+    def procesar_peticion(self, es_ataque=False):
+        # En un DDoS, el tráfico se dispersa entre los tanques de reserva (CDN)
+        nodo_aleatorio = random.randint(0, len(self.tanques_cache) - 1)
+
+        if es_ataque:
+            self.tanques_cache[nodo_aleatorio] += 1
+        else:
+            # Los usuarios legítimos consumen rápido de la caché local
+            self.tanques_cache[nodo_aleatorio] += 0.2
+
+        # Verificar si el nodo específico se saturó
+        if self.tanques_cache[nodo_aleatorio] > self.capacidad_tanque:
+            return False  # Este nodo cayó, pero los otros siguen activos
+        return True
+
+    def liberar_carga(self):
+        # Los nodos CDN mitigan y limpian el tráfico malicioso rápidamente
+        self.tanques_cache = [max(0, carga - 8) for carga in self.tanques_cache]
+
+
+# --- SIMULACIÓN DIRECTA ---
+def simular_escenario(tipo_sistema):
+    print(f"\n=== INICIANDO SIMULACIÓN: Sistema con {tipo_sistema} ===")
+
+    if tipo_sistema == "Un solo Pozo Central (Sin Redundancia)":
+        sistema = ServidorCentral()
+    else:
+        sistema = SistemaCDN()  # Prueba: SistemaCDN(num_tanques=20)
+
+    ataque_activo = False
+
+    for segundo in range(1, 11):
+        if segundo == 3:
+            ataque_activo = True
+            print("\n⚠️ ¡COMIENZA EL ATAQUE DDOS! (Miles de peticiones maliciosas inundan el sistema)")
+
+        # Generar tráfico (corregido: ataque_activo)
+        peticiones_ataque = random.randint(80, 120) if ataque_activo else 0
+        peticiones_legitimas = 10  # Vecinos intentando sacar agua
+
+        exitos_legitimos = 0
+
+        # Procesar tráfico legítimo
+        for _ in range(peticiones_legitimas):
+            if sistema.procesar_peticion(es_ataque=False):
+                exitos_legitimos += 1
+
+        # Procesar tráfico de ataque
+        for _ in range(peticiones_ataque):
+            sistema.procesar_peticion(es_ataque=True)
+
+        # Mostrar estado
+        tasa_servicio = (exitos_legitimos / peticiones_legitimas) * 100
+        print(f"[Segundo {segundo}] Disponibilidad del servicio para usuarios: {tasa_servicio}%")
+
+        if tasa_servicio == 0:
+            print("❌ EL SISTEMA HA COLAPSADO por completo. Los ciudadanos no tienen agua.")
+            break
+
+        # El sistema respira y procesa
+        sistema.liberar_carga()
+        time.sleep(0.5)
+
+# Ejecución de los dos escenarios analógicos
+simular_escenario("Un solo Pozo Central (Sin Redundancia)")
+time.sleep(1)
+simular_escenario("Tanques Redundantes / CDN (Malla de Resistencia)")
+</code></pre></div>
+  </details>
+</section>
+
+<footer>La simulación de esta página usa las mismas reglas del código: el pozo aguanta 100 y desagota 20 por segundo; cada tanque aguanta 30 y desagota 8. Los números son de juguete para enseñar la idea. Una CDN real tiene miles de nodos.</footer>
+
+</div>
+
+<script>
+(function () {
+  var TOTAL = 20, ATTACK_FROM = 3, LEGIT = 10;
+  var POZO_CAP = 100, POZO_DRAIN = 20, TANK_CAP = 30, TANK_DRAIN = 8;
+  var N = 20, I = 100;
+  var sec, pozo, tanks, houseA, houseB, atkNow, histA, histB, timer, running;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var svgA = $('svgA'), svgB = $('svgB'), chart = $('chart');
+
+  function reset() {
+    clearInterval(timer); running = false;
+    sec = 0; pozo = 0; tanks = []; for (var i = 0; i < N; i++) tanks.push(0);
+    houseA = []; houseB = []; for (var j = 0; j < LEGIT; j++) { houseA.push(true); houseB.push(true); }
+    atkNow = 0; histA = []; histB = [];
+    $('btnPlay').textContent = 'Iniciar';
+    $('pctA').textContent = '100%'; $('pctB').textContent = '100%';
+    var st = $('status'); st.className = 'status';
+    st.textContent = 'Todo listo. Cada segundo, diez vecinos piden agua en cada pueblo. A partir del segundo ' + ATTACK_FROM + ' llega el ataque.';
+    draw(); updateBalance();
+  }
+
+  function rand(a, b) { return Math.floor(a + Math.random() * (b - a + 1)); }
+
+  function step() {
+    sec++;
+    var atk = sec >= ATTACK_FROM ? rand(Math.round(I * 0.8), Math.round(I * 1.2)) : 0;
+    atkNow = atk;
+    var okA = 0, okB = 0, k, i;
+    // Pueblo A: primero los vecinos, luego el ataque
+    for (k = 0; k < LEGIT; k++) { pozo += 1; var a = pozo <= POZO_CAP; houseA[k] = a; if (a) okA++; }
+    pozo += atk;
+    // Pueblo B
+    for (k = 0; k < LEGIT; k++) { i = rand(0, N - 1); tanks[i] += 0.2; var b = tanks[i] <= TANK_CAP; houseB[k] = b; if (b) okB++; }
+    for (k = 0; k < atk; k++) { i = rand(0, N - 1); tanks[i] += 1; }
+    var pa = okA / LEGIT * 100, pb = okB / LEGIT * 100;
+    histA.push(pa); histB.push(pb);
+    var sat = tanks.filter(function (t) { return t > TANK_CAP; }).length;
+    $('pctA').textContent = Math.round(pa) + '%';
+    $('pctB').textContent = Math.round(pb) + '%';
+    narrate(sec, atk, pa, pb, sat);
+    draw();
+    // el sistema respira
+    pozo = Math.max(0, pozo - POZO_DRAIN);
+    tanks = tanks.map(function (t) { return Math.max(0, t - TANK_DRAIN); });
+    if (sec >= TOTAL) { finish(); }
+  }
+
+  function narrate(s, atk, pa, pb, sat) {
+    var st = $('status'), txt;
+    if (s < ATTACK_FROM) {
+      txt = 'Segundo ' + s + ': todo normal. Los diez vecinos sacan agua en los dos pueblos.';
+    } else {
+      txt = 'Segundo ' + s + ': llegan ' + atk + ' peticiones falsas a cada pueblo. ' +
+        'Pueblo A: ' + Math.round(pa) + '% de los vecinos con agua' + (pa === 0 ? ', el pozo está bloqueado. ' : '. ') +
+        'Pueblo B: ' + Math.round(pb) + '% con agua, ' + sat + ' de ' + N + ' tanques desbordados.';
+    }
+    st.textContent = txt;
+    st.className = 'status' + (s >= ATTACK_FROM && (pa < 100 || pb < 100) ? ' bad' : '');
+  }
+
+  function finish() {
+    clearInterval(timer); running = false;
+    $('btnPlay').textContent = 'Repetir';
+    var ea = histA[histA.length - 1], eb = histB[histB.length - 1];
+    var firstA = histA.findIndex(function (v, i) { return i + 1 >= ATTACK_FROM && v < 100; });
+    var firstB = histB.findIndex(function (v, i) { return i + 1 >= ATTACK_FROM && v < 100; });
+    var msg = 'Fin a los ' + TOTAL + ' segundos. ';
+    msg += firstA >= 0 ? 'El pueblo A perdió agua desde el segundo ' + (firstA + 1) + ' y terminó con ' + Math.round(ea) + '%. ' : 'El pueblo A resistió. ';
+    msg += firstB >= 0 ? 'El pueblo B perdió agua desde el segundo ' + (firstB + 1) + ' y terminó con ' + Math.round(eb) + '%.' : 'El pueblo B nunca perdió el servicio.';
+    $('status').textContent = msg;
+  }
+
+  function updateBalance() {
+    var bA = POZO_DRAIN, bB = TANK_DRAIN * N;
+    $('balA').textContent = bA; $('balB').textContent = bB; $('balX').textContent = I;
+    var v;
+    if (bB >= I * 1.2) v = 'La malla desagota más de lo que llega: debería aguantar.';
+    else if (bB >= I * 0.8) v = 'La malla está justo en el límite del ataque: puede caer o no.';
+    else v = 'El ataque trae más de lo que la malla desagota: va a caer, aunque más tarde que el pozo.';
+    $('verdict').textContent = v;
+    $('presetOrig').setAttribute('aria-pressed', String(N === 5 && I === 100));
+    $('presetWide').setAttribute('aria-pressed', String(N === 20 && I === 100));
+  }
+
+  // ---------- dibujo ----------
+  function houses(arr) {
+    var out = '', x0 = 17, step = 31;
+    for (var i = 0; i < LEGIT; i++) {
+      var x = x0 + i * step, ok = arr[i];
+      out += '<g><polygon points="' + x + ',182 ' + (x + 13) + ',168 ' + (x + 26) + ',182" class="' + (ok ? 's-house-ok' : 's-house-no') + '"/>' +
+             '<rect x="' + (x + 3) + '" y="182" width="20" height="18" class="' + (ok ? 's-house-ok' : 's-house-no') + '"/></g>';
+    }
+    return out;
+  }
+  function atkTicks(x1, x2) {
+    var n = Math.min(24, Math.round(atkNow / 10)), out = '';
+    for (var i = 0; i < n; i++) {
+      var x = n === 1 ? (x1 + x2) / 2 : x1 + (x2 - x1) * i / (n - 1);
+      out += '<rect x="' + (x - 2) + '" y="6" width="4" height="12" rx="1" class="s-atk"/>';
+    }
+    return out + '<text x="170" y="34" text-anchor="middle" class="s-text-atk">' + (atkNow ? atkNow + ' peticiones falsas' : 'sin ataque') + '</text>';
+  }
+  function drawA() {
+    var f = Math.min(pozo, POZO_CAP) / POZO_CAP, h = 100 * f, over = pozo > POZO_CAP;
+    var s = atkTicks(120, 220);
+    s += '<rect x="120" y="50" width="100" height="100" rx="10" class="s-empty"/>';
+    s += '<rect x="120" y="' + (150 - h) + '" width="100" height="' + h + '" rx="6" class="' + (over ? 's-full' : 's-clay') + '"/>';
+    s += '<rect x="120" y="50" width="100" height="100" rx="10" class="s-frame"/>';
+    s += '<text x="170" y="164" text-anchor="middle" class="s-text">pozo ' + Math.round(pozo) + ' / ' + POZO_CAP + '</text>';
+    s += houses(houseA);
+    s += '<text x="170" y="228" text-anchor="middle" class="s-text">10 vecinos piden agua</text>';
+    svgA.innerHTML = s;
+  }
+  function drawB() {
+    var gap = N > 24 ? 1.5 : 3, w = Math.min(28, (320 - gap * (N - 1)) / N), total = w * N + gap * (N - 1), x0 = (340 - total) / 2;
+    var s = atkTicks(10, 330), sat = 0;
+    for (var i = 0; i < N; i++) {
+      var t = tanks[i], f = Math.min(t, TANK_CAP) / TANK_CAP, h = 100 * f, x = x0 + i * (w + gap);
+      var cls = t > TANK_CAP ? 's-full' : (f > 0.6 ? 's-warn' : 's-water');
+      if (t > TANK_CAP) sat++;
+      s += '<rect x="' + x + '" y="50" width="' + w + '" height="100" rx="' + Math.min(4, w / 3) + '" class="s-empty"/>';
+      s += '<rect x="' + x + '" y="' + (150 - h) + '" width="' + w + '" height="' + h + '" class="' + cls + '"/>';
+    }
+    s += '<text x="170" y="164" text-anchor="middle" class="s-text">' + N + ' tanques · ' + sat + ' desbordados</text>';
+    s += houses(houseB);
+    s += '<text x="170" y="228" text-anchor="middle" class="s-text">10 vecinos piden agua</text>';
+    svgB.innerHTML = s;
+  }
+  function drawChart() {
+    var L = 44, R = 600, T = 14, B = 190, W = R - L, H = B - T;
+    function X(s) { return L + W * s / TOTAL; }
+    function Y(p) { return B - H * p / 100; }
+    var s = '';
+    [0, 50, 100].forEach(function (p) {
+      s += '<line x1="' + L + '" x2="' + R + '" y1="' + Y(p) + '" y2="' + Y(p) + '" class="c-grid"/>';
+      s += '<text x="' + (L - 8) + '" y="' + (Y(p) + 4) + '" text-anchor="end" class="c-axis">' + p + '%</text>';
+    });
+    [0, 5, 10, 15, 20].forEach(function (t) {
+      s += '<text x="' + X(t) + '" y="' + (B + 18) + '" text-anchor="middle" class="c-axis">' + t + ' s</text>';
+    });
+    s += '<line x1="' + X(ATTACK_FROM - 1) + '" x2="' + X(ATTACK_FROM - 1) + '" y1="' + T + '" y2="' + B + '" class="c-atk"/>';
+    s += '<text x="' + (X(ATTACK_FROM - 1) + 6) + '" y="' + (T + 12) + '" class="c-lab-x">empieza el ataque</text>';
+    function line(h, cls) {
+      if (!h.length) return '';
+      var pts = h.map(function (v, i) { return X(i + 1) + ',' + Y(v); }).join(' ');
+      return '<polyline points="' + pts + '" class="' + cls + '"/>';
+    }
+    s += line(histA, 'c-a') + line(histB, 'c-b');
+    if (histA.length) {
+      var lx = X(histA.length) + 8;
+      var ya = Y(histA[histA.length - 1]), yb = Y(histB[histB.length - 1]);
+      if (Math.abs(ya - yb) < 14) { if (ya >= yb) ya += 8; else ya -= 8; yb += (ya >= yb ? -8 : 8); }
+      if (lx > R - 6) lx = R - 6;
+      s += '<text x="' + lx + '" y="' + (ya + 4) + '" class="c-lab-a" text-anchor="' + (lx >= R - 6 ? 'end' : 'start') + '">A</text>';
+      s += '<text x="' + lx + '" y="' + (yb + 4) + '" class="c-lab-b" text-anchor="' + (lx >= R - 6 ? 'end' : 'start') + '">B</text>';
+    }
+    s += '<text x="' + (R + 4) + '" y="' + (B + 18) + '" class="c-axis"></text>';
+    chart.innerHTML = s;
+  }
+  function draw() { drawA(); drawB(); drawChart(); }
+
+  // ---------- eventos ----------
+  function play() {
+    if (running) { clearInterval(timer); running = false; $('btnPlay').textContent = 'Seguir'; return; }
+    if (sec >= TOTAL) reset();
+    running = true; $('btnPlay').textContent = 'Pausar';
+    timer = setInterval(step, 800);
+  }
+  $('btnPlay').addEventListener('click', play);
+  $('btnReset').addEventListener('click', reset);
+  function setParams(n, i, autoplay) {
+    N = n; I = i; $('rngN').value = n; $('rngI').value = i; $('outN').textContent = n; $('outI').textContent = i;
+    reset(); if (autoplay) play();
+  }
+  $('presetOrig').addEventListener('click', function () { setParams(5, 100, true); });
+  $('presetWide').addEventListener('click', function () { setParams(20, 100, true); });
+  $('rngN').addEventListener('input', function (e) { setParams(+e.target.value, I, false); });
+  $('rngI').addEventListener('input', function (e) { setParams(N, +e.target.value, false); });
+
+  $('btnCopy').addEventListener('click', function () {
+    var text = $('code').textContent, msg = $('copyMsg');
+    function fallback() {
+      var r = document.createRange(); r.selectNodeContents($('code'));
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      msg.textContent = 'Código seleccionado. Cópialo con Ctrl+C.';
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () { msg.textContent = 'Código copiado.'; }, fallback);
+    } catch (e) { fallback(); }
+  });
+
+  reset();
+})();
+</script>
+
+</body></html>
