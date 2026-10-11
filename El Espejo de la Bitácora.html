@@ -1,0 +1,586 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>El Espejo de la Bitácora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Concepto: cuaderno de a bordo. Una sola columna de lectura, con un laboratorio en dos paneles (dibujo de piezas + registro que se escribe solo). */
+  :root {
+    --bg: #EEF2F1;
+    --surface: #F9FBFA;
+    --ink: #11242C;
+    --muted: #4A6069;
+    --line: #CBD8D6;
+    --accent: #0B7A75;
+    --accent-ink: #FFFFFF;
+    --self: #B5135F;
+    --on-self: #FFFFFF;
+    --log-bg: #0E1A1F;
+    --log-ink: #A8F0DD;
+    --log-dim: #6F9AA3;
+    --log-self: #FF6FB0;
+    --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+    --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "Courier New", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0C171B;
+      --surface: #13242A;
+      --ink: #E3EEF0;
+      --muted: #8DA7AF;
+      --line: #25414A;
+      --accent: #3FD1C4;
+      --accent-ink: #06211F;
+      --self: #FF6FB0;
+      --on-self: #1A0612;
+      --log-bg: #060D10;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0C171B;
+    --surface: #13242A;
+    --ink: #E3EEF0;
+    --muted: #8DA7AF;
+    --line: #25414A;
+    --accent: #3FD1C4;
+    --accent-ink: #06211F;
+    --self: #FF6FB0;
+    --on-self: #1A0612;
+    --log-bg: #060D10;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.6;
+    padding-inline: clamp(16px, 4vw, 32px);
+    padding-block: 32px 64px;
+  }
+  .wrap { max-width: 1080px; margin-inline: auto; display: flex; flex-direction: column; gap: clamp(44px, 7vw, 76px); }
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.1; letter-spacing: -0.015em; }
+  h1 { font-size: clamp(2.1rem, 6.4vw, 3.6rem); font-weight: 800; max-width: 18ch; }
+  h2 { font-size: clamp(1.45rem, 3.6vw, 2.05rem); font-weight: 800; }
+  h3 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0; }
+  p { margin: 0; max-width: 64ch; }
+  .eyebrow { font-family: var(--font-mono); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+  .lead { font-size: clamp(1.05rem, 2.4vw, 1.22rem); color: var(--ink); }
+  .muted { color: var(--muted); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .hero { display: flex; flex-direction: column; gap: 20px; }
+  .glosario { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 0; margin: 8px 0 0; border-top: 1px solid var(--line); }
+  .glosario > div { padding: 16px 20px 4px 0; min-width: 0; }
+  .glosario dt { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; }
+  .glosario dd { margin: 4px 0 0; color: var(--muted); font-size: 0.95rem; }
+
+  .seccion { display: flex; flex-direction: column; gap: 18px; }
+  .seccion > p { color: var(--muted); }
+
+  .lab { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: clamp(16px, 3vw, 28px); }
+  .lab-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  @media (min-width: 900px) { .lab-grid { grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr); gap: 36px; } }
+  .col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .etiqueta { font-family: var(--font-mono); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font: inherit; font-size: 0.92rem; font-weight: 500; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+  #grafo { width: 100%; height: auto; display: block; max-width: 520px; margin-inline: auto; }
+  .e { stroke: var(--muted); stroke-opacity: 0.32; stroke-width: 1; }
+  .e.self { stroke: var(--self); stroke-opacity: 0.6; stroke-width: 1.4; }
+  .e.new { animation: aparecer 0.8s ease-out; }
+  @keyframes aparecer { from { stroke-opacity: 0; stroke-width: 4; } }
+  .node { cursor: pointer; outline: none; }
+  .node circle { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+  .node.espejo circle { fill: var(--self); stroke: var(--self); }
+  .node:focus-visible circle, .node:hover circle, .node.sel circle { stroke-width: 4; }
+  .node .ini { font-family: var(--font-display); font-weight: 800; font-size: 14px; fill: var(--accent); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .node.espejo .ini { fill: var(--on-self); }
+  .node .nom { font-family: var(--font-body); font-size: 12px; font-weight: 500; fill: var(--ink); pointer-events: none; }
+  .info { min-height: 3.2em; font-size: 0.95rem; color: var(--muted); }
+  .info strong { color: var(--ink); font-weight: 600; }
+
+  .metricas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .metrica { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .metrica .label { font-size: 0.78rem; color: var(--muted); line-height: 1.25; }
+  .metrica .valor { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.7rem, 5vw, 2.3rem); line-height: 1; font-variant-numeric: tabular-nums; }
+  .metrica.nivel .valor { color: var(--self); }
+  .metrica .valor.pop { animation: pop 0.35s ease-out; }
+  @keyframes pop { 40% { transform: translateY(-3px); } }
+
+  .barras { display: flex; flex-direction: column; gap: 8px; }
+  .barra { display: grid; grid-template-columns: 92px minmax(0, 1fr) 32px; gap: 10px; align-items: center; font-size: 0.85rem; }
+  .barra .num { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; }
+  .pista { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
+  .relleno { height: 100%; border-radius: 5px; transition: width 0.5s ease; }
+  .relleno.m { background: var(--accent); }
+  .relleno.c { background: var(--self); }
+  .pista-nota { font-size: 0.88rem; color: var(--muted); }
+
+  .pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .paso { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 0.85rem; line-height: 1.35; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .paso b { display: block; font-family: var(--font-display); font-size: 0.95rem; }
+  .paso.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .vuelta { font-size: 0.8rem; color: var(--muted); margin-top: -6px; }
+
+  .consola { background: var(--log-bg); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .consola-head { padding: 6px 12px; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; color: var(--log-dim); border-bottom: 1px solid var(--line); }
+  .consola-body { padding: 12px; height: 230px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.55; color: var(--log-ink); }
+  .log-line { margin-bottom: 7px; overflow-wrap: anywhere; }
+  .log-line .tag { color: var(--log-dim); font-weight: 500; }
+  .log-line .tag.self { color: var(--log-self); font-weight: 500; }
+  .log-line.self-line { color: var(--log-self); }
+
+  .acciones { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn { font: inherit; font-weight: 600; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--accent); }
+
+  .diario { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); max-width: 760px; }
+  .diario li { padding: 14px 0; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
+  .diario .cab { display: flex; justify-content: space-between; gap: 12px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+  .diario .cab time { font-variant-numeric: tabular-nums; }
+  .diario p { max-width: none; }
+
+  .tablist { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tab { font: inherit; font-weight: 500; font-size: 0.95rem; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 24px 40px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .panel > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 16px; }
+  .panel p { color: var(--ink); }
+
+  .doble { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 28px 48px; }
+  .doble ul { margin: 12px 0 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 8px; max-width: 54ch; }
+  .doble li::marker { color: var(--accent); }
+  .doble .meta li::marker { color: var(--self); }
+  .pie { font-size: 0.88rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; max-width: 70ch; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .e.new, .metrica .valor.pop { animation: none; }
+    .relleno, .paso { transition: none; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Bitácora modular · demostración interactiva</p>
+    <h1>Un blog que se mira al espejo y anota lo que ve</h1>
+    <p class="lead">El Espejo de la Bitácora es una pieza que se asoma a la página donde vive, cuenta cuántas piezas tiene y escribe un registro sobre eso. Si el blog cambia, el registro cambia solo. Abajo lo podés probar sin escribir una línea de código.</p>
+    <dl class="glosario">
+      <div><dt>Módulo</dt><dd>Una pieza del blog: la portada, los comentarios, el buscador.</dd></div>
+      <div><dt>Conexión</dt><dd>Una manera posible de que dos piezas trabajen juntas.</dd></div>
+      <div><dt>Autorreferencia</dt><dd>Cuando algo habla de sí mismo, como la frase «esta frase tiene cinco palabras».</dd></div>
+    </dl>
+  </header>
+
+  <section class="seccion" id="laboratorio" aria-labelledby="h-lab">
+    <h2 id="h-lab">Armá tu blog y mirá cómo se describe</h2>
+    <p>Encendé y apagá piezas. El espejo siempre está presente, y cada cambio lo obliga a mirarse de nuevo y escribir otra entrada.</p>
+
+    <div class="lab">
+      <div class="lab-grid">
+
+        <div class="col">
+          <div>
+            <div class="etiqueta" id="et-piezas">Piezas del blog</div>
+            <div class="chips" id="chips" role="group" aria-labelledby="et-piezas" style="margin-top:10px"></div>
+          </div>
+          <svg id="grafo" viewBox="0 0 460 410" role="img" aria-label="Dibujo de las piezas del blog unidas entre sí por líneas"></svg>
+          <div class="info" id="info" aria-live="polite">Tocá una pieza del dibujo para ver qué hace.</div>
+        </div>
+
+        <div class="col">
+          <div class="metricas" aria-live="polite">
+            <div class="metrica"><span class="label">Módulos activos</span><span class="valor" id="v-mod">0</span></div>
+            <div class="metrica"><span class="label">Conexiones posibles</span><span class="valor" id="v-con">0</span></div>
+            <div class="metrica nivel"><span class="label">Nivel de conciencia*</span><span class="valor" id="v-niv">0%</span></div>
+          </div>
+
+          <div class="barras">
+            <div class="barra"><span>Piezas</span><div class="pista"><div class="relleno m" id="b-mod"></div></div><span class="num" id="n-mod">0</span></div>
+            <div class="barra"><span>Conexiones</span><div class="pista"><div class="relleno c" id="b-con"></div></div><span class="num" id="n-con">0</span></div>
+            <p class="pista-nota" id="nota-sig"></p>
+          </div>
+
+          <div>
+            <div class="etiqueta" style="margin-bottom:8px">El ciclo del espejo</div>
+            <div class="pasos" id="pasos">
+              <div class="paso" data-paso="0"><b>1. Mirarse</b>Busca qué piezas tiene.</div>
+              <div class="paso" data-paso="1"><b>2. Contar</b>Calcula cuántas se pueden conectar.</div>
+              <div class="paso" data-paso="2"><b>3. Escribir</b>Anota en su diario lo que vio.</div>
+            </div>
+            <p class="vuelta" style="margin-top:8px">Al terminar vuelve al paso 1, cada vez que algo cambia.</p>
+          </div>
+
+          <div class="consola">
+            <div class="consola-head">LOG AUTORREFERENCIAL_</div>
+            <div class="consola-body" id="consola" aria-live="off"></div>
+          </div>
+
+          <div class="acciones">
+            <button class="btn" id="btn-bucle" type="button">Forzar bucle de retroalimentación</button>
+          </div>
+          <p class="pista-nota">* «Nivel de conciencia» es un apodo para medir qué tan conectado está el blog. Más abajo se explica qué significa de verdad.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="diario-sec" aria-labelledby="h-diario">
+    <h2 id="h-diario">El diario que se escribe solo</h2>
+    <p>Cada vez que cambiás una pieza, el blog anota qué pasó. Esta lista es el relato de cómo se fue armando, sin que nadie lo redacte.</p>
+    <ol class="diario" id="diario"></ol>
+  </section>
+
+  <section class="seccion" id="utilidad" aria-labelledby="h-util">
+    <h2 id="h-util">¿Para qué sirve?</h2>
+    <p>Elegí un caso para ver qué problema cotidiano resuelve una página que se conoce a sí misma.</p>
+    <div class="tablist" role="tablist" id="tablist" aria-label="Casos de uso"></div>
+    <div class="panel" id="panel" role="tabpanel" aria-live="polite"></div>
+  </section>
+
+  <section class="seccion" id="verdad" aria-labelledby="h-verdad">
+    <h2 id="h-verdad">Qué hace de verdad y qué es una forma de hablar</h2>
+    <div class="doble">
+      <div>
+        <h3>Lo que hace de verdad</h3>
+        <ul>
+          <li>Cuenta los elementos que existen en la página en ese momento.</li>
+          <li>Calcula cuántas parejas de piezas se pueden formar con esa cantidad.</li>
+          <li>Escribe un texto con esos números y lo muestra en pantalla.</li>
+          <li>Si agregás o quitás una pieza y volvés a mirar, los números cambian solos.</li>
+        </ul>
+      </div>
+      <div class="meta">
+        <h3>Lo que es una forma de hablar</h3>
+        <ul>
+          <li>La «conciencia» es un apodo. El blog no siente nada: solo compara un conteo con una escala.</li>
+          <li>Las conexiones son posibles, no comprobadas. Dos piezas pueden estar en la misma página sin hablarse.</li>
+          <li>La escala del 100% se eligió a mano (28 conexiones o más). Con otro número, el porcentaje sería otro.</li>
+          <li>El código original suma 3 piezas fijas al conteo para que la simulación nunca arranque en cero.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="pie">Basado en el componente «El Espejo de la Bitácora» (HTML, CSS y JavaScript). En esta demostración las piezas se encienden a mano. En el componente original, el código las cuenta solo desde la propia página.</p>
+  </section>
+
+</div>
+
+<script>
+  (function () {
+    var POOL = [
+      { id: 'portada', name: 'Portada', desc: 'La primera pantalla que ve quien llega al blog.' },
+      { id: 'articulos', name: 'Artículos', desc: 'Las entradas de la bitácora, una por una.' },
+      { id: 'comentarios', name: 'Comentarios', desc: 'El espacio donde los lectores responden.' },
+      { id: 'lateral', name: 'Lateral', desc: 'La barra del costado, con enlaces y avisos.' },
+      { id: 'buscador', name: 'Buscador', desc: 'Encuentra entradas por palabra.' },
+      { id: 'galeria', name: 'Galería', desc: 'Fotos y dibujos del proyecto.' },
+      { id: 'suscripcion', name: 'Suscripción', desc: 'Permite recibir avisos de entradas nuevas.' },
+      { id: 'etiquetas', name: 'Etiquetas', desc: 'Agrupa las entradas por tema.' },
+      { id: 'calendario', name: 'Calendario', desc: 'Muestra en qué fechas se escribió cada entrada.' }
+    ];
+    var ESPEJO = { id: 'espejo', name: 'Espejo', desc: 'El módulo que mira a todos los demás, incluso a sí mismo. Es el que escribe el registro.' };
+    var MAXN = POOL.length + 1;
+    var MAXC = MAXN * (MAXN - 1) / 2;
+
+    var active = new Set(['portada', 'articulos', 'comentarios', 'lateral']);
+    var entries = [];
+    var token = 0;
+    var lastAdded = null;
+    var selected = null;
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var $ = function (id) { return document.getElementById(id); };
+    var SVGNS = 'http://www.w3.org/2000/svg';
+
+    function pl(n, uno, varios) { return n + ' ' + (n === 1 ? uno : varios); }
+    function nodes() { return [ESPEJO].concat(POOL.filter(function (p) { return active.has(p.id); })); }
+    function calc() {
+      var n = nodes().length;
+      var c = n * (n - 1) / 2;
+      return { n: n, c: c, pct: Math.min(100, Math.round(c / 25 * 100)) };
+    }
+    function listaNombres(arr) {
+      var names = arr.map(function (x) { return x.name; });
+      if (names.length <= 1) return names.join('');
+      return names.slice(0, -1).join(', ') + ' y ' + names[names.length - 1];
+    }
+
+    /* ---------- Chips ---------- */
+    function renderChips() {
+      var box = $('chips');
+      box.innerHTML = '';
+      POOL.forEach(function (p) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'chip';
+        b.id = 'chip-' + p.id;
+        b.textContent = p.name;
+        b.setAttribute('aria-pressed', active.has(p.id) ? 'true' : 'false');
+        b.addEventListener('click', function () { toggle(p); });
+        box.appendChild(b);
+      });
+    }
+
+    /* ---------- Dibujo de piezas ---------- */
+    function el(tag, attrs) {
+      var e = document.createElementNS(SVGNS, tag);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      return e;
+    }
+    function renderGraph() {
+      var svg = $('grafo');
+      svg.innerHTML = '';
+      var list = nodes();
+      var n = list.length;
+      var cx = 230, cy = 205, R = 135;
+      var pos = list.map(function (item, i) {
+        if (n === 1) return { x: cx, y: cy, cos: 0, sin: 1 };
+        var a = -Math.PI / 2 + 2 * Math.PI * i / n;
+        return { x: cx + R * Math.cos(a), y: cy + R * Math.sin(a), cos: Math.cos(a), sin: Math.sin(a) };
+      });
+      var gE = el('g', {});
+      for (var i = 0; i < n; i++) {
+        for (var j = i + 1; j < n; j++) {
+          var cls = 'e';
+          if (list[i].id === 'espejo' || list[j].id === 'espejo') cls += ' self';
+          if (lastAdded && (list[i].id === lastAdded || list[j].id === lastAdded)) cls += ' new';
+          gE.appendChild(el('line', { 'class': cls, x1: pos[i].x.toFixed(1), y1: pos[i].y.toFixed(1), x2: pos[j].x.toFixed(1), y2: pos[j].y.toFixed(1) }));
+        }
+      }
+      svg.appendChild(gE);
+      list.forEach(function (item, i) {
+        var p = pos[i];
+        var g = el('g', { 'class': 'node' + (item.id === 'espejo' ? ' espejo' : '') + (selected === item.id ? ' sel' : ''), tabindex: '0', role: 'button', 'data-id': item.id, 'aria-label': item.name + ': ' + item.desc });
+        g.appendChild(el('circle', { cx: p.x.toFixed(1), cy: p.y.toFixed(1), r: 17 }));
+        var ini = el('text', { 'class': 'ini', x: p.x.toFixed(1), y: p.y.toFixed(1) });
+        ini.textContent = item.name.charAt(0);
+        g.appendChild(ini);
+        var anchor = p.cos > 0.3 ? 'start' : (p.cos < -0.3 ? 'end' : 'middle');
+        var nom = el('text', { 'class': 'nom', x: (p.x + p.cos * 26).toFixed(1), y: (p.y + p.sin * 26 + 4).toFixed(1), 'text-anchor': anchor });
+        nom.textContent = item.name;
+        g.appendChild(nom);
+        svg.appendChild(g);
+      });
+    }
+    function showInfo(id) {
+      var item = id === 'espejo' ? ESPEJO : POOL.filter(function (p) { return p.id === id; })[0];
+      if (!item) return;
+      selected = id;
+      var cx = nodes().length - 1;
+      $('info').innerHTML = '<strong></strong> <span></span>';
+      $('info').firstChild.textContent = item.name + '.';
+      $('info').lastChild.textContent = item.desc + ' Puede conectarse con otras ' + cx + (cx === 1 ? ' pieza.' : ' piezas.');
+      var nodesEls = $('grafo').querySelectorAll('.node');
+      for (var i = 0; i < nodesEls.length; i++) nodesEls[i].classList.toggle('sel', nodesEls[i].getAttribute('data-id') === id);
+    }
+    $('grafo').addEventListener('click', function (e) {
+      var g = e.target.closest ? e.target.closest('.node') : null;
+      if (g) showInfo(g.getAttribute('data-id'));
+    });
+    $('grafo').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var g = e.target.closest ? e.target.closest('.node') : null;
+      if (g) { e.preventDefault(); showInfo(g.getAttribute('data-id')); }
+    });
+    $('grafo').addEventListener('focusin', function (e) {
+      var g = e.target.closest ? e.target.closest('.node') : null;
+      if (g) showInfo(g.getAttribute('data-id'));
+    });
+
+    /* ---------- Métricas ---------- */
+    function setVal(id, text) {
+      var e = $(id);
+      if (e.textContent !== text) {
+        e.textContent = text;
+        e.classList.remove('pop');
+        void e.offsetWidth;
+        e.classList.add('pop');
+      }
+    }
+    function renderMetrics() {
+      var d = calc();
+      setVal('v-mod', String(d.n));
+      setVal('v-con', String(d.c));
+      setVal('v-niv', d.pct + '%');
+      $('b-mod').style.width = (d.n / MAXN * 100).toFixed(1) + '%';
+      $('b-con').style.width = (d.c / MAXC * 100).toFixed(1) + '%';
+      $('n-mod').textContent = d.n;
+      $('n-con').textContent = d.c;
+      $('nota-sig').textContent = d.n >= MAXN
+        ? 'Ya encendiste todas las piezas.'
+        : 'Una pieza más sumaría ' + pl(d.n, 'conexión nueva', 'conexiones nuevas') + ': se conecta con cada una de las que ya están.';
+    }
+
+    /* ---------- Registro que se escribe solo ---------- */
+    function setStep(i) {
+      var ps = $('pasos').querySelectorAll('.paso');
+      for (var k = 0; k < ps.length; k++) ps[k].classList.toggle('on', k === i);
+    }
+    function buildLines() {
+      var d = calc();
+      var list = nodes();
+      var secciones = document.querySelectorAll('section').length;
+      var botones = document.querySelectorAll('button').length;
+      return [
+        { step: 0, tag: 'SISTEMA', text: 'Empiezo a mirarme. Busco qué piezas tengo encendidas.' },
+        { step: 0, tag: 'SINERGIA', text: 'Encontré ' + pl(d.n, 'pieza', 'piezas') + ': ' + listaNombres(list) + '.' },
+        { step: 1, tag: 'CONEXIÓN', text: d.n === 1
+            ? 'Con una sola pieza no hay con quién conversar.'
+            : 'Entre ' + d.n + ' piezas hay ' + pl(d.c, 'conversación posible', 'conversaciones posibles') + ', porque cada una puede hablar con las otras ' + (d.n - 1) + '.' },
+        { step: 1, tag: 'NIVEL', text: 'Mi «nivel de conciencia» es ' + d.pct + '%. Es un apodo: mide qué tan conectado estoy, nada más.' },
+        { step: 2, tag: 'AUTORREFERENCIA', self: true, text: 'Estoy escribiendo esta línea para contarte que me estoy mirando.' },
+        { step: 2, tag: 'ESTA PÁGINA', text: 'Mientras leés esto conté en vivo ' + pl(secciones, 'sección', 'secciones') + ' y ' + pl(botones, 'botón', 'botones') + ' de esta misma página.' },
+        { step: 2, tag: 'ESTADO', text: 'Anoté este cambio en el diario de más abajo. Si sumás o quitás una pieza, vuelvo a escribirlo distinto.' }
+      ];
+    }
+    function addLine(line) {
+      var c = $('consola');
+      var div = document.createElement('div');
+      div.className = 'log-line' + (line.self ? ' self-line' : '');
+      var tag = document.createElement('span');
+      tag.className = 'tag' + (line.self ? ' self' : '');
+      tag.textContent = '[' + line.tag + '] ';
+      div.appendChild(tag);
+      div.appendChild(document.createTextNode(line.text));
+      c.appendChild(div);
+      c.scrollTop = c.scrollHeight;
+    }
+    function runLoop() {
+      token++;
+      var my = token;
+      var lines = buildLines();
+      $('consola').innerHTML = '';
+      if (reduced) {
+        lines.forEach(addLine);
+        setStep(-1);
+        return;
+      }
+      lines.forEach(function (line, i) {
+        setTimeout(function () {
+          if (my !== token) return;
+          setStep(line.step);
+          addLine(line);
+          if (i === lines.length - 1) setTimeout(function () { if (my === token) setStep(-1); }, 700);
+        }, i * 650);
+      });
+    }
+
+    /* ---------- Diario ---------- */
+    function pushEntry(text) {
+      entries.unshift({ n: entries.length + 1, time: new Date(), text: text });
+      renderDiary();
+    }
+    function renderDiary() {
+      var ol = $('diario');
+      ol.innerHTML = '';
+      entries.slice(0, 8).forEach(function (en) {
+        var li = document.createElement('li');
+        var cab = document.createElement('div');
+        cab.className = 'cab';
+        var a = document.createElement('span');
+        a.textContent = 'Entrada ' + en.n;
+        var t = document.createElement('time');
+        t.textContent = en.time.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        cab.appendChild(a);
+        cab.appendChild(t);
+        var p = document.createElement('p');
+        p.textContent = en.text;
+        li.appendChild(cab);
+        li.appendChild(p);
+        ol.appendChild(li);
+      });
+    }
+
+    /* ---------- Acciones ---------- */
+    function refresh() {
+      renderChips();
+      renderGraph();
+      renderMetrics();
+      runLoop();
+    }
+    function toggle(p) {
+      var d;
+      if (active.has(p.id)) {
+        active.delete(p.id);
+        lastAdded = null;
+        if (selected === p.id) selected = null;
+        d = calc();
+        pushEntry('Quitaste «' + p.name + '». Ahora tengo ' + pl(d.n, 'pieza', 'piezas') + ' y ' + pl(d.c, 'conexión posible', 'conexiones posibles') + ' (' + d.n + ' menos).');
+      } else {
+        active.add(p.id);
+        lastAdded = p.id;
+        d = calc();
+        pushEntry('Sumaste «' + p.name + '». Ahora tengo ' + pl(d.n, 'pieza', 'piezas') + ' y ' + pl(d.c, 'conexión posible', 'conexiones posibles') + ' (' + (d.n - 1) + ' nuevas).');
+      }
+      refresh();
+      var chip = $('chip-' + p.id);
+      if (chip) chip.focus();
+    }
+    $('btn-bucle').addEventListener('click', function () {
+      var d = calc();
+      lastAdded = null;
+      pushEntry('Me volví a leer y sigo con ' + pl(d.n, 'pieza', 'piezas') + ' y ' + pl(d.c, 'conexión posible', 'conexiones posibles') + '.');
+      renderGraph();
+      runLoop();
+    });
+
+    /* ---------- Casos de uso ---------- */
+    var CASOS = [
+      { id: 'doc', tab: 'Manual siempre al día', que: 'Un manual escrito a mano queda viejo el día que algo cambia. Si el blog se describe a sí mismo, la descripción siempre refleja lo que hay hoy.', ej: 'Es como el cartel de un edificio que se reescribe solo cuando cambian los pisos.' },
+      { id: 'sueltas', tab: 'Encontrar piezas sueltas', que: 'Una versión más completa del espejo podría avisar cuando una pieza quedó aislada, sin relación con las demás, para que alguien la revise.', ej: 'Es como revisar el tablero eléctrico y ver qué luz quedó sin cable.' },
+      { id: 'salud', tab: 'Tablero de salud', que: 'Contar piezas y conexiones posibles permite ver cuándo el sitio crece demasiado rápido y se vuelve difícil de mantener.', ej: 'Es como el tablero del auto: no arregla nada, pero avisa cuándo mirar el motor.' },
+      { id: 'transp', tab: 'Cuaderno de obra', que: 'Las entradas del diario cuentan cómo cambió el blog. Un lector o un colega nuevo puede leer esa historia en vez de preguntar.', ej: 'Es como el cuaderno de obra de una construcción, donde cada visita deja una nota con fecha.' }
+    ];
+    var casoActual = 0;
+    function renderCasos() {
+      var tl = $('tablist');
+      tl.innerHTML = '';
+      CASOS.forEach(function (c, i) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'tab';
+        b.id = 'tab-' + c.id;
+        b.setAttribute('role', 'tab');
+        b.setAttribute('aria-selected', i === casoActual ? 'true' : 'false');
+        b.setAttribute('aria-controls', 'panel');
+        b.textContent = c.tab;
+        b.addEventListener('click', function () { casoActual = i; renderCasos(); });
+        tl.appendChild(b);
+      });
+      var c = CASOS[casoActual];
+      var panel = $('panel');
+      panel.setAttribute('aria-labelledby', 'tab-' + c.id);
+      panel.innerHTML = '';
+      [['Qué hace', c.que], ['Ejemplo de todos los días', c.ej]].forEach(function (par) {
+        var d = document.createElement('div');
+        var lab = document.createElement('span');
+        lab.className = 'etiqueta';
+        lab.textContent = par[0];
+        var p = document.createElement('p');
+        p.textContent = par[1];
+        d.appendChild(lab);
+        d.appendChild(p);
+        panel.appendChild(d);
+      });
+    }
+
+    /* ---------- Arranque ---------- */
+    renderCasos();
+    var d0 = calc();
+    pushEntry('Me encendí con ' + pl(d0.n, 'pieza', 'piezas') + ' y ' + pl(d0.c, 'conexión posible', 'conexiones posibles') + '.');
+    refresh();
+  })();
+</script>
+
+</body></html>
