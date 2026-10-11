@@ -1,0 +1,353 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>El Horizonte de lo Desconocido</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  /* Layout: tesis arriba; a la izquierda el viaje (espacio + control + medidores); a la derecha los 5 miedos como tarjetas que se "revisan". */
+  :root {
+    --bg: #f1f3f8;
+    --fg: #141a2b;
+    --muted: #55607d;
+    --card: #ffffff;
+    --line: #d3d9e8;
+    --fear: #b8420c;
+    --fear-bg: #fde9dd;
+    --calm: #0b6f66;
+    --calm-bg: #d8f1ed;
+    --space: #070b18;
+    --space-fg: #e8ecf8;
+    --font-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", "Consolas", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b1020; --fg: #e8ecf8; --muted: #9aa5c6; --card: #131a30;
+      --line: #273150; --fear: #fb923c; --fear-bg: #3a2013; --calm: #2dd4bf; --calm-bg: #0e3a36;
+      --space: #04070f; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b1020; --fg: #e8ecf8; --muted: #9aa5c6; --card: #131a30; --line: #273150;
+    --fear: #fb923c; --fear-bg: #3a2013; --calm: #2dd4bf; --calm-bg: #0e3a36;
+    --space: #04070f; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+    padding-inline: clamp(16px, 4vw, 40px); padding-block: 28px 40px;
+  }
+  .wrap { max-width: 1120px; margin-inline: auto; display: flex; flex-direction: column; gap: 22px; }
+
+  header { display: flex; flex-direction: column; gap: 8px; }
+  h1 {
+    font-family: var(--font-display); font-weight: 700; font-size: clamp(1.7rem, 4.2vw, 2.6rem);
+    line-height: 1.08; margin: 0; letter-spacing: -0.01em; text-wrap: balance;
+  }
+  .thesis { margin: 0; max-width: 62ch; font-size: clamp(1rem, 2vw, 1.15rem); color: var(--muted); }
+  .thesis b { color: var(--fear); font-weight: 600; }
+  .thesis i { color: var(--calm); font-style: normal; font-weight: 600; }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+  @media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+  .stage { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .space {
+    position: relative; background: var(--space); border-radius: 14px; overflow: hidden;
+    aspect-ratio: 4 / 3; max-width: 100%;
+  }
+  .space canvas { display: block; width: 100%; height: 100%; }
+  .readout {
+    position: absolute; left: 12px; top: 10px; font-family: var(--font-mono); font-size: 0.85rem;
+    color: var(--space-fg); background: rgba(0,0,0,.45); padding: 4px 9px; border-radius: 6px;
+  }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.88rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #fff; border: 1px solid var(--line); }
+  .dot.hole { background: #000; border: 2px solid var(--fear); }
+  .dot.fear { border-radius: 2px; background: var(--fear); border-color: var(--fear); }
+
+  .controls { display: flex; flex-direction: column; gap: 10px; }
+  .controls label { font-weight: 600; font-size: 0.95rem; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  input[type="range"] { flex: 1 1 220px; min-width: 0; accent-color: var(--fear); height: 28px; }
+  button {
+    font: inherit; font-weight: 600; font-size: 0.92rem; color: var(--fg); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--muted); }
+  :focus-visible { outline: 3px solid var(--calm); outline-offset: 2px; }
+
+  .gauges { display: grid; gap: 10px; }
+  .gauge { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr) 3rem; gap: 10px; align-items: center; font-size: 0.92rem; }
+  .gauge .track { height: 12px; border-radius: 6px; background: var(--line); overflow: hidden; }
+  .gauge .fill { height: 100%; width: 0; border-radius: 6px; transition: width .35s ease; }
+  .gauge.fear .fill { background: var(--fear); }
+  .gauge.calm .fill { background: var(--calm); }
+  .gauge .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+  @media (max-width: 460px) { .gauge { grid-template-columns: 6.8rem minmax(0, 1fr) 2.6rem; font-size: 0.85rem; } }
+
+  .side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .status {
+    margin: 0; padding: 12px 14px; border-radius: 10px; background: var(--card);
+    border: 1px solid var(--line); font-weight: 500; min-height: 4.2em;
+  }
+  .status.done { background: var(--calm-bg); border-color: var(--calm); color: var(--fg); }
+
+  .cards { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .card {
+    display: block; width: 100%; text-align: left; font-weight: 400; padding: 12px 14px;
+    border-radius: 10px; border: 1px solid var(--line); background: var(--card); min-width: 0;
+  }
+  .card .tag { display: block; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+  .card .txt { display: block; overflow-wrap: anywhere; }
+  .card .act { display: block; margin-top: 6px; font-size: 0.85rem; font-weight: 600; }
+  .card.locked { opacity: .5; border-style: dashed; cursor: default; }
+  .card.locked .tag, .card.locked .txt { color: var(--muted); }
+  .card.open { background: var(--fear-bg); border-color: var(--fear); cursor: pointer; }
+  .card.open .tag, .card.open .act { color: var(--fear); }
+  .card.checked { background: var(--calm-bg); border-color: var(--calm); cursor: default; }
+  .card.checked .tag { color: var(--calm); }
+  .card.checked .old { display: block; color: var(--muted); text-decoration: line-through; font-size: 0.88rem; margin-bottom: 4px; }
+  .card.checked .txt { font-weight: 500; }
+  .card.pop { animation: pop .35s ease; }
+  @keyframes pop { from { transform: scale(.97); } to { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .card.pop { animation: none; } .gauge .fill { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>El Horizonte de lo Desconocido</h1>
+    <p class="thesis">Cuanto más te acercas a algo que no conoces, <b>más miedo sientes</b>. Revisa los datos y el miedo baja: <i>lo desconocido se vuelve claro</i>.</p>
+  </header>
+
+  <div class="grid">
+    <section class="stage" aria-label="El viaje">
+      <div class="space">
+        <canvas id="cv" role="img" aria-label="Estrellas que caen hacia un círculo negro que crece a medida que te acercas"></canvas>
+        <div class="readout" id="readout">10.000 km</div>
+      </div>
+
+      <div class="legend">
+        <span><i class="dot"></i> Estrellas: lo que ya conoces</span>
+        <span><i class="dot hole"></i> Círculo negro: lo desconocido</span>
+        <span><i class="dot fear"></i> Naranja: un miedo</span>
+      </div>
+
+      <div class="controls">
+        <label for="dist">Acércate a lo desconocido</label>
+        <div class="row">
+          <input type="range" id="dist" min="0" max="1000" value="0">
+          <button type="button" id="auto">Viajar solo</button>
+          <button type="button" id="reset">Reiniciar</button>
+        </div>
+      </div>
+
+      <div class="gauges">
+        <div class="gauge fear"><span>Miedo que sientes</span><div class="track"><div class="fill" id="gFear"></div></div><span class="num" id="nFear">0%</span></div>
+        <div class="gauge calm"><span>Lo que sabes de verdad</span><div class="track"><div class="fill" id="gCalm"></div></div><span class="num" id="nCalm">0%</span></div>
+      </div>
+    </section>
+
+    <section class="side" aria-label="Los miedos">
+      <p class="status" id="status" aria-live="polite"></p>
+      <ul class="cards" id="cards"></ul>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var FEARS = [
+    { at: 0.18, miedo: "Algoritmo desconocido detectado. ¿Robo de alma digital?", real: "Un programa solo procesa datos. No tiene un alma que robar." },
+    { at: 0.38, miedo: "La IA está pensando por sí misma. ¡Apáguelo!", real: "La IA sigue patrones y órdenes. No tiene voluntad propia." },
+    { at: 0.58, miedo: "El magnetismo cuántico borrará mis recuerdos.", real: "Ninguna tecnología de uso diario borra la memoria de las personas." },
+    { at: 0.78, miedo: "El vacío no tiene términos de servicio.", real: "Lo \"desconocido\" es solo algo que todavía no entendemos." },
+    { at: 0.92, miedo: "La tecnología nos superó. Adiós mundo analógico.", real: "Las herramientas las usamos nosotros. Aprender es la salida." }
+  ];
+  var START_KM = 10000;
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var slider = document.getElementById("dist");
+  var readout = document.getElementById("readout");
+  var statusEl = document.getElementById("status");
+  var cardsEl = document.getElementById("cards");
+  var gFear = document.getElementById("gFear"), nFear = document.getElementById("nFear");
+  var gCalm = document.getElementById("gCalm"), nCalm = document.getElementById("nCalm");
+  var autoBtn = document.getElementById("auto"), resetBtn = document.getElementById("reset");
+
+  var p = 0;
+  var revealed = {};
+  var count = 0;
+  var cards = [];
+  var autoRaf = 0;
+
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text) e.textContent = text;
+    return e;
+  }
+
+  FEARS.forEach(function (f, i) {
+    var li = el("li");
+    var b = el("button", "card locked");
+    b.type = "button";
+    b.addEventListener("click", function () { reveal(i); });
+    li.appendChild(b);
+    cardsEl.appendChild(li);
+    cards.push(b);
+  });
+
+  function reveal(i) {
+    if (revealed[i] || p < FEARS[i].at) return;
+    revealed[i] = true; count++;
+    render(i);
+  }
+
+  function fearLevel() { return Math.max(0, Math.round(p * 100 - count * 18)); }
+  function calmLevel() { return Math.round(count / FEARS.length * 100); }
+
+  function render(popIndex) {
+    var km = Math.round(START_KM * (1 - p));
+    readout.textContent = km.toLocaleString("es") + " km";
+
+    cards.forEach(function (b, i) {
+      var f = FEARS[i];
+      var state = revealed[i] ? "checked" : (p >= f.at ? "open" : "locked");
+      b.className = "card " + state + (popIndex === i ? " pop" : "");
+      b.disabled = state !== "open";
+      b.textContent = "";
+      if (state === "locked") {
+        b.appendChild(el("span", "tag", "Miedo " + (i + 1)));
+        b.appendChild(el("span", "txt", "Aparece más cerca de lo desconocido…"));
+      } else if (state === "open") {
+        b.appendChild(el("span", "tag", "Miedo " + (i + 1)));
+        b.appendChild(el("span", "txt", f.miedo));
+        b.appendChild(el("span", "act", "Toca para revisar los datos →"));
+      } else {
+        b.appendChild(el("span", "tag", "Realidad"));
+        b.appendChild(el("span", "old", f.miedo));
+        b.appendChild(el("span", "txt", f.real));
+      }
+    });
+
+    var fl = fearLevel(), cl = calmLevel();
+    gFear.style.width = fl + "%"; nFear.textContent = fl + "%";
+    gCalm.style.width = cl + "%"; nCalm.textContent = cl + "%";
+
+    var anyOpen = FEARS.some(function (f, i) { return p >= f.at && !revealed[i]; });
+    var msg, done = false;
+    if (count === FEARS.length) {
+      msg = "No pasó nada malo. Los miedos eran ruido. Lo desconocido se vuelve claro cuando lo exploras."; done = true;
+    } else if (p < 0.05 && count === 0) {
+      msg = "Estás lejos y todo se ve tranquilo. Mueve el control para acercarte.";
+    } else if (count === 0) {
+      msg = "El miedo sube y todavía no tienes ningún dato. Toca un cartel naranja para revisarlo.";
+    } else if (anyOpen) {
+      msg = count + " de " + FEARS.length + " miedos revisados. Cada vez que miras los datos, el miedo baja. Quedan carteles por revisar.";
+    } else {
+      msg = count + " de " + FEARS.length + " miedos revisados. Sigue acercándote: aparecerán más.";
+    }
+    statusEl.textContent = msg;
+    statusEl.className = "status" + (done ? " done" : "");
+  }
+
+  function setP(v) { p = Math.min(1, Math.max(0, v)); slider.value = Math.round(p * 1000); render(); }
+
+  slider.addEventListener("input", function () { stopAuto(); p = slider.value / 1000; render(); });
+
+  function stopAuto() { if (autoRaf) { cancelAnimationFrame(autoRaf); autoRaf = 0; } autoBtn.textContent = "Viajar solo"; }
+  autoBtn.addEventListener("click", function () {
+    if (autoRaf) { stopAuto(); return; }
+    if (p >= 1) setP(0);
+    autoBtn.textContent = "Pausar";
+    var last = performance.now();
+    (function step(now) {
+      var dt = Math.min(0.1, (now - last) / 1000); last = now;
+      var next = p + dt * (0.04 + p * 0.05);
+      setP(next);
+      if (p >= 1) { stopAuto(); return; }
+      autoRaf = requestAnimationFrame(step);
+    })(last);
+  });
+
+  resetBtn.addEventListener("click", function () {
+    stopAuto(); revealed = {}; count = 0; setP(0);
+  });
+
+  /* ---------- Espacio (canvas) ---------- */
+  var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  var W = 0, H = 0, dpr = 1;
+  var stars = [];
+  for (var s = 0; s < 170; s++) stars.push({ a: Math.random() * 6.283, d: 0.08 + Math.random() * 0.92, v: 0.4 + Math.random() * 0.9 });
+  var cols = { fear: [251, 146, 60], calm: [45, 212, 191] };
+  var frameN = 0;
+
+  function hexToRgb(h) {
+    h = (h || "").trim();
+    if (h.charAt(0) !== "#") return null;
+    if (h.length === 4) h = "#" + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+    var n = parseInt(h.slice(1), 16);
+    if (isNaN(n)) return null;
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function readColors() {
+    var cs = getComputedStyle(document.documentElement);
+    var f = hexToRgb(cs.getPropertyValue("--fear")), c = hexToRgb(cs.getPropertyValue("--calm"));
+    if (f) cols.fear = f; if (c) cols.calm = c;
+  }
+  function size() {
+    var r = cv.getBoundingClientRect();
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+    if (w !== W || h !== H) { W = w; H = h; cv.width = W; cv.height = H; }
+  }
+
+  function draw() {
+    if (frameN++ % 20 === 0) readColors();
+    size();
+    ctx.fillStyle = getComputedStyle(cv.parentNode).backgroundColor || "#070b18";
+    ctx.fillRect(0, 0, W, H);
+    var cx = W / 2, cy = H / 2, R = Math.hypot(W, H) / 2;
+    var k = count / FEARS.length;
+
+    ctx.lineWidth = Math.max(1, dpr);
+    stars.forEach(function (st) {
+      if (!reduce) {
+        st.d -= st.v * (0.0012 + p * 0.014);
+        if (st.d < 0.05) { st.d = 0.7 + Math.random() * 0.3; st.a = Math.random() * 6.283; }
+      }
+      var ca = Math.cos(st.a), sa = Math.sin(st.a);
+      var x = cx + ca * st.d * R, y = cy + sa * st.d * R;
+      var tail = (5 + p * 42) * dpr;
+      ctx.strokeStyle = "rgba(120,200,255," + (0.25 + p * 0.3) + ")";
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + ca * tail, y + sa * tail); ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.arc(x, y, 1.6 * dpr, 0, 6.283); ctx.fill();
+    });
+
+    var r = Math.min(W, H) * (0.07 + 0.17 * p);
+    var rgb = [0, 1, 2].map(function (i) { return Math.round(cols.fear[i] + (cols.calm[i] - cols.fear[i]) * k); });
+    var rc = rgb.join(",");
+    var g = ctx.createRadialGradient(cx, cy, r * 0.9, cx, cy, r * 2.4);
+    g.addColorStop(0, "rgba(" + rc + "," + (0.18 + 0.4 * p) + ")");
+    g.addColorStop(1, "rgba(" + rc + ",0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, r * 2.4, 0, 6.283); ctx.fill();
+    ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = "rgb(" + rc + ")"; ctx.lineWidth = 3 * dpr;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.283); ctx.stroke();
+
+    requestAnimationFrame(draw);
+  }
+
+  render();
+  draw();
+})();
+</script>
+
+</body></html>
