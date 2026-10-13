@@ -1,0 +1,815 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Grafo de Razonamiento Histórico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:wght@500;700&display=swap">
+<style>
+/* Layout: una mesa de trabajo. Izquierda: el tablero (grafo o lista plana) con sus cifras de teoría de grafos.
+   Derecha: panel de lectura con tres pestañas (lo seleccionado, el ahora, conectar). Debajo: el puente al código Python. */
+:root {
+  --bg: #EDF0F2;
+  --surface: #F9FAFB;
+  --ink: #16222D;
+  --ink-2: #506170;
+  --line: #C7D0D8;
+  --e: #1C6A8C;
+  --l: #476B2C;
+  --l-tint: #EEF3E8;
+  --kbg: #16222D;
+  --kfg: #EDF0F2;
+  --act: #B3205F;
+  --act-tint: #F9E6EE;
+  --edge: #8A9AA8;
+  --sel: #16222D;
+  --display: 'Spectral', Georgia, 'Times New Roman', serif;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E161D; --surface: #16212A; --ink: #E4EBF0; --ink-2: #9DB0BF; --line: #2E3E4A;
+    --e: #63B7DB; --l: #A9CC83; --l-tint: #1A2A1D; --kbg: #E4EBF0; --kfg: #0E161D;
+    --act: #FF74A9; --act-tint: #3A1626; --edge: #5E7384; --sel: #FFFFFF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E161D; --surface: #16212A; --ink: #E4EBF0; --ink-2: #9DB0BF; --line: #2E3E4A;
+  --e: #63B7DB; --l: #A9CC83; --l-tint: #1A2A1D; --kbg: #E4EBF0; --kfg: #0E161D;
+  --act: #FF74A9; --act-tint: #3A1626; --edge: #5E7384; --sel: #FFFFFF;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--sans); padding-inline: 16px; padding-block: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--e); outline-offset: 2px; }
+
+.page { max-width: 1180px; margin-inline: auto; padding-block: 36px 64px; display: flex; flex-direction: column; gap: 32px; }
+.kicker { font: 500 11px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+
+.masthead { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
+.masthead h1 { font: 700 clamp(30px, 5vw, 46px)/1.08 var(--display); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.masthead p { margin: 0; font-size: 17px; line-height: 1.55; color: var(--ink-2); max-width: 62ch; }
+
+.glosario { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); border-block: 1px solid var(--line); margin: 0; }
+.glosario div { padding: 14px 18px 14px 0; min-width: 0; }
+.glosario div + div { padding-left: 18px; border-left: 1px solid var(--line); }
+.glosario dt { font: 600 15px/1.3 var(--display); margin: 0 0 4px; }
+.glosario dd { margin: 0; font-size: 13.5px; color: var(--ink-2); }
+@media (max-width: 900px) {
+  .glosario div, .glosario div + div { padding: 12px 0; border-left: 0; }
+  .glosario div + div { border-top: 1px solid var(--line); }
+}
+
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (min-width: 1180px) { .workspace { grid-template-columns: minmax(0, 1fr) 370px; } }
+.board-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; }
+.seg { display: inline-flex; border: 1.5px solid var(--ink); border-radius: 4px; overflow: hidden; }
+.seg button { background: transparent; border: 0; padding: 8px 16px; cursor: pointer; font: 500 13px/1 var(--sans); }
+.seg button + button { border-left: 1.5px solid var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; padding: 0; list-style: none; font: 400 12.5px/1.2 var(--sans); color: var(--ink-2); }
+.leyenda li { display: inline-flex; align-items: center; gap: 6px; }
+.glyph { display: inline-block; width: 9px; height: 9px; flex: none; background: var(--c, var(--ink)); }
+.g-E { --c: var(--e); border-radius: 50%; }
+.g-L { --c: var(--l); border-radius: 1px; }
+.ln { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--edge); }
+
+.stats { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+.stats li { padding: 8px 14px; display: flex; align-items: baseline; gap: 8px; border-right: 1px solid var(--line); }
+.stats li:last-child { border-right: 0; }
+.stats b { font: 700 20px/1 var(--display); font-variant-numeric: tabular-nums; }
+.stats span { font: 500 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.modo-nota { margin: 0; font-size: 14px; color: var(--ink-2); max-width: 78ch; min-height: 44px; }
+.hint { display: none; font: 400 12px/1.3 var(--mono); color: var(--ink-2); margin: 0; }
+@media (max-width: 760px) { .hint { display: block; } }
+
+.board-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); border-radius: 4px; }
+.board { position: relative; min-width: 640px; height: 400px; transition: height .5s ease; }
+.board svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transition: opacity .35s; }
+.board.lineal svg { opacity: 0; pointer-events: none; }
+
+.edge { cursor: pointer; }
+.edge .hit { fill: none; stroke: transparent; stroke-width: 18; pointer-events: stroke; }
+.edge .line { fill: none; stroke: var(--edge); stroke-width: 2; transition: stroke .2s, stroke-width .2s; }
+.edge .arrow { fill: var(--edge); transition: fill .2s; }
+.edge:hover .line { stroke-width: 3; }
+.edge.sel .line { stroke: var(--sel); stroke-width: 3.4; }
+.edge.sel .arrow { fill: var(--sel); }
+.edge.act .line { stroke: var(--act); stroke-width: 3.6; }
+.edge.act .arrow { fill: var(--act); }
+.edge.dim { opacity: .3; }
+.edge:focus-visible { outline: none; }
+.edge:focus-visible .line { stroke: var(--e); stroke-width: 3.6; }
+
+.node {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 230px; text-align: left; cursor: pointer;
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 9px 11px 10px;
+  background: var(--surface); color: var(--ink);
+  border: 1.5px solid var(--c); border-radius: 10px;
+  font: 600 13px/1.25 var(--sans);
+  transition: left .6s cubic-bezier(.3,.7,.2,1), top .6s cubic-bezier(.3,.7,.2,1), width .6s cubic-bezier(.3,.7,.2,1), opacity .25s, box-shadow .2s, background .2s;
+}
+.n-E { --c: var(--e); }
+.n-L { --c: var(--l); background: var(--l-tint); border-radius: 3px; }
+.node .meta { display: flex; align-items: center; gap: 6px; }
+.node .kind, .node .num { font: 500 10px/1 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); }
+.node .num { margin-left: auto; }
+.node .titulo { text-wrap: balance; }
+.node.rel { box-shadow: 0 0 0 2px var(--e); }
+.node.sel { box-shadow: 0 0 0 3px var(--sel); }
+.node.act { --c: var(--act); box-shadow: 0 0 0 3px var(--act); }
+.node.n-E.act, .node.n-L.act { background: var(--act-tint); }
+.node.dim { opacity: .38; }
+.node:hover { box-shadow: 0 0 0 2px var(--ink-2); }
+.node.sel:hover { box-shadow: 0 0 0 3px var(--sel); }
+
+.board.lineal .node { flex-direction: row; align-items: center; gap: 10px; padding: 7px 12px; }
+.board.lineal .meta { display: contents; }
+.board.lineal .num { order: 0; width: 28px; margin-left: 0; }
+.board.lineal .glyph { order: 1; }
+.board.lineal .titulo { order: 2; flex: 1; min-width: 0; }
+.board.lineal .kind { order: 3; }
+
+.side { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; min-width: 0; }
+.tabs { display: flex; border-bottom: 1px solid var(--line); }
+.tabs button { flex: 1; background: transparent; border: 0; border-bottom: 3px solid transparent; padding: 12px 6px 10px; cursor: pointer; font: 600 13px/1.2 var(--sans); color: var(--ink-2); }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.panel { padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel[hidden] { display: none; }
+.panel h2 { font: 700 20px/1.2 var(--display); margin: 0; text-wrap: balance; }
+.panel h3 { font: 700 16px/1.2 var(--display); margin: 0; }
+.panel .flecha { color: var(--ink-2); font-weight: 500; }
+.panel p { margin: 0; font-size: 14px; }
+.campos { margin: 0; display: grid; gap: 10px; }
+.campos dt { font: 500 11px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 2px; }
+.campos dd { margin: 0; font-size: 14px; }
+.lista { margin: 0; padding-left: 18px; font-size: 14px; display: grid; gap: 2px; }
+.bloque { padding: 12px 14px; border-radius: 3px; display: flex; flex-direction: column; gap: 8px; }
+.bloque.kernel { background: var(--kbg); color: var(--kfg); }
+.bloque.kernel .kicker { color: var(--kfg); opacity: .75; }
+.bloque.kernel .fila { display: grid; gap: 2px; }
+.bloque.kernel .fila b { font: 500 11px/1.2 var(--mono); letter-spacing: .06em; opacity: .75; }
+.bloque.kernel .fila span, .bloque.kernel .fila ul { font-size: 14px; margin: 0; }
+.bloque.kernel ul { padding-left: 18px; }
+.bloque.nota { border: 1px dashed var(--ink-2); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border: 1px solid var(--line); background: transparent; border-radius: 999px; font: 400 12.5px/1.3 var(--sans); cursor: pointer; text-align: left; }
+button.chip:hover { border-color: var(--ink); }
+.chip.static { cursor: default; }
+.chip.hit { border-color: var(--act); background: var(--act-tint); }
+.grado { font: 500 12px/1.4 var(--mono); color: var(--ink-2); }
+
+.escenarios { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { border: 1.5px solid var(--ink); background: transparent; border-radius: 3px; padding: 7px 12px; font: 500 13px/1.2 var(--sans); cursor: pointer; }
+.btn:hover { background: var(--ink); color: var(--bg); }
+.btn.solid { background: var(--ink); color: var(--bg); }
+.btn.solid:hover { opacity: .88; }
+.conds { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.conds label { display: flex; gap: 10px; align-items: flex-start; padding: 7px 8px; border-radius: 3px; cursor: pointer; font-size: 13.5px; line-height: 1.35; }
+.conds label:hover { background: var(--bg); }
+.conds input { margin: 2px 0 0; width: 16px; height: 16px; flex: none; accent-color: var(--act); }
+.conds .tag { margin-left: auto; font: 500 10px/1.6 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+.inline { display: flex; gap: 8px; }
+.inline input { flex: 1; min-width: 0; }
+
+.consola { font: 400 12.5px/1.5 var(--mono); color: var(--ink-2); margin: 0; word-break: break-word; }
+.resultados { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.res { border: 1px solid var(--line); border-left-width: 4px; border-radius: 3px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.res.act { border-color: var(--act); background: var(--act-tint); }
+.res-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.res-top strong { font: 600 13.5px/1.3 var(--sans); flex: 1; min-width: 150px; }
+.badge { font: 500 10.5px/1 var(--mono); letter-spacing: .07em; text-transform: uppercase; padding: 3px 6px; border-radius: 2px; background: var(--line); color: var(--ink); }
+.res.act .badge { background: var(--act); color: #fff; }
+.res .mini { font-size: 13px; margin: 0; }
+.res .mini b { font: 500 10.5px/1 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--ink-2); display: block; margin-bottom: 2px; }
+.res .mini ul { margin: 2px 0 0; padding-left: 18px; }
+.vacio { border: 1px dashed var(--ink-2); border-radius: 3px; padding: 12px; font-size: 13.5px; color: var(--ink-2); }
+
+.form { display: grid; gap: 10px; }
+.form label { display: grid; gap: 4px; font: 500 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.form input, .form select, .form textarea { font: 400 14px/1.4 var(--sans); letter-spacing: 0; text-transform: none; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; width: 100%; min-width: 0; }
+.form textarea { resize: vertical; min-height: 64px; }
+.msg { font-size: 13px; min-height: 18px; margin: 0; }
+.msg.err { color: var(--act); }
+hr.sep { border: 0; border-top: 1px solid var(--line); margin: 2px 0; width: 100%; }
+
+.codigo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px 32px; }
+@media (min-width: 900px) { .codigo { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
+.codigo h2 { font: 700 26px/1.2 var(--display); margin: 0 0 8px; text-wrap: balance; }
+.codigo p { margin: 0 0 12px; color: var(--ink-2); max-width: 58ch; }
+.mapa { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.mapa th, .mapa td { text-align: left; padding: 8px 10px 8px 0; border-top: 1px solid var(--line); vertical-align: top; }
+.mapa th { font: 500 11px/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.mapa code { font: 500 12.5px/1.3 var(--mono); }
+.tabla-wrap { overflow-x: auto; }
+pre { margin: 0; padding: 16px; background: var(--kbg); color: var(--kfg); border-radius: 4px; overflow-x: auto; font: 400 12.5px/1.6 var(--mono); }
+pre.chico { font-size: 12px; padding: 10px 12px; }
+.lectura { display: grid; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; }
+.lectura li { border-top: 1px solid var(--line); padding-top: 10px; font-size: 14px; max-width: 58ch; }
+.lectura b { font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .node, .board, .board svg, .edge .line, .edge .arrow { transition: none; }
+}
+</style>
+
+<main class="page">
+  <header class="masthead">
+    <p class="kicker">Teoría de grafos aplicada a la memoria histórica</p>
+    <h1>Grafo de Razonamiento Histórico</h1>
+    <p>Una lista guarda qué pasó. Un grafo guarda además por qué pasó, bajo qué contexto y con qué consecuencias, para que una lección no quede como una moraleja suelta. Esta página es tu código en Python hecho tablero: tocá, conectá y proyectá.</p>
+  </header>
+
+  <dl class="glosario">
+    <div><dt>Nodo</dt><dd>Un objeto <code>NodoHistorico</code>: una experiencia o una lección.</dd></div>
+    <div><dt>Arista</dt><dd>Una <code>AristaRecordatorio</code>: une una experiencia con una lección y guarda causas, contexto y consecuencias.</dd></div>
+    <div><dt>Grado</dt><dd>Cuántas aristas toca un nodo. Una lección con grado 2 está respaldada por dos experiencias.</dd></div>
+    <div><dt>Componente</dt><dd>Un grupo de nodos unidos entre sí por aristas. Un nodo solo es una componente de uno.</dd></div>
+  </dl>
+
+  <section class="workspace" aria-label="Explorador del grafo">
+    <div class="board-col">
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Forma de guardar la información">
+          <button type="button" id="btn-grafo" aria-pressed="true">Grafo</button>
+          <button type="button" id="btn-lineal" aria-pressed="false">Lista plana</button>
+        </div>
+        <ul class="leyenda" aria-label="Leyenda">
+          <li><i class="glyph g-E"></i>Experiencia</li>
+          <li><i class="glyph g-L"></i>Lección</li>
+          <li><span class="ln"></span>AristaRecordatorio</li>
+        </ul>
+      </div>
+      <ul class="stats" id="stats" aria-label="Medidas del grafo"></ul>
+      <p class="modo-nota" id="modo-nota"></p>
+      <p class="hint">Deslizá el tablero hacia los costados para ver todo.</p>
+      <div class="board-wrap">
+        <div class="board" id="board">
+          <svg id="edges" aria-label="Aristas del grafo"></svg>
+        </div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="tabs" role="tablist" aria-label="Panel de lectura">
+        <button type="button" role="tab" id="tab-sel" aria-selected="true" aria-controls="panel-sel">Lo seleccionado</button>
+        <button type="button" role="tab" id="tab-ahora" aria-selected="false" aria-controls="panel-ahora">El ahora</button>
+        <button type="button" role="tab" id="tab-conectar" aria-selected="false" aria-controls="panel-conectar">Conectar</button>
+      </div>
+
+      <div class="panel" id="panel-sel" role="tabpanel" aria-labelledby="tab-sel"></div>
+
+      <div class="panel" id="panel-ahora" role="tabpanel" aria-labelledby="tab-ahora" hidden>
+        <p class="kicker">proyectar_futuro_posible</p>
+        <p>Marcá las condiciones del entorno. Si alguna coincide con una causa del pasado, la arista se enciende y muestra su kernel.</p>
+        <div class="escenarios" id="escenarios"></div>
+        <ul class="conds" id="conds"></ul>
+        <form class="inline" id="form-cond" autocomplete="off">
+          <input type="text" id="cond-nueva" aria-label="Nueva condición del entorno" placeholder="Otra condición del entorno">
+          <button type="submit" class="btn">Agregar</button>
+        </form>
+        <hr class="sep">
+        <p class="kicker">Resultado</p>
+        <p class="consola" id="consola"></p>
+        <ul class="resultados" id="resultados" aria-live="polite"></ul>
+      </div>
+
+      <div class="panel" id="panel-conectar" role="tabpanel" aria-labelledby="tab-conectar" hidden>
+        <h3>Nuevo nodo</h3>
+        <p class="kicker">agregar_nodo</p>
+        <form class="form" id="form-nodo" autocomplete="off">
+          <label for="nn-tipo">Tipo
+            <select id="nn-tipo"><option>Experiencia</option><option>Lección</option></select>
+          </label>
+          <label for="nn-id">id_nodo
+            <input type="text" id="nn-id" placeholder="Ej.: Peste de Justiniano">
+          </label>
+          <label for="nn-desc">descripcion
+            <textarea id="nn-desc" placeholder="Qué fue, en una frase"></textarea>
+          </label>
+          <button type="submit" class="btn solid">Agregar nodo</button>
+          <p class="msg" id="msg-nodo" role="status"></p>
+        </form>
+        <hr class="sep">
+        <h3>Nueva arista</h3>
+        <p class="kicker">conectar_con_recordatorio</p>
+        <form class="form" id="form-arista" autocomplete="off">
+          <label for="ne-exp">exp_id <select id="ne-exp"></select></label>
+          <label for="ne-lec">lec_id <select id="ne-lec"></select></label>
+          <label for="ne-causas">causas (una por línea)
+            <textarea id="ne-causas" placeholder="Interdependencia severa"></textarea>
+          </label>
+          <label for="ne-ctx">contexto
+            <input type="text" id="ne-ctx" placeholder="Dónde y cuándo valió esto">
+          </label>
+          <label for="ne-cons">consecuencias (una por línea)
+            <textarea id="ne-cons" placeholder="Colapso en cadena"></textarea>
+          </label>
+          <button type="submit" class="btn solid">Conectar</button>
+          <p class="msg" id="msg-arista" role="status"></p>
+        </form>
+        <pre class="chico" id="ultimo-codigo" hidden></pre>
+        <button type="button" class="btn" id="btn-reset">Volver al grafo del código</button>
+      </div>
+    </aside>
+  </section>
+
+  <section class="codigo" aria-label="Del grafo al código">
+    <div>
+      <h2>Del grafo al código</h2>
+      <p>Cada pieza de la página existe en tu Python. La decisión de «proyectar» ocupa una línea: la intersección entre las condiciones de hoy y las causas de cada arista.</p>
+      <div class="tabla-wrap">
+        <table class="mapa">
+          <thead><tr><th>En la página</th><th>En tu código</th></tr></thead>
+          <tbody>
+            <tr><td>Cada tarjeta del tablero</td><td><code>NodoHistorico</code> en <code>red.nodos</code></td></tr>
+            <tr><td>Cada línea</td><td><code>AristaRecordatorio</code> en <code>red.aristas</code></td></tr>
+            <tr><td>Bloque oscuro «kernel»</td><td><code>obtener_kernel_transmisible()</code></td></tr>
+            <tr><td>Pestaña «El ahora»</td><td><code>proyectar_futuro_posible</code></td></tr>
+            <tr><td>Pestaña «Conectar»</td><td><code>agregar_nodo</code> y <code>conectar_con_recordatorio</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="lectura">
+        <li><b>Coincidencia exacta.</b> Las condiciones se comparan como texto igual a igual. «Crisis climática global» no figura en ninguna causa, así que el grafo no tiene nada que decir sobre ella.</li>
+        <li><b>Una causa alcanza.</b> Con una sola causa en común la arista ya alerta, sea 1 de 3 o 3 de 3.</li>
+        <li><b>El contexto se muestra, no se compara.</b> Entra en el kernel como «validez contextual», pero no filtra qué se activa.</li>
+      </ul>
+    </div>
+    <pre aria-label="Núcleo de proyectar_futuro_posible"><code>for arista in self.aristas:
+    # Buscamos si las causas del pasado
+    # coinciden con las condiciones del presente
+    coincidencias = set(condiciones_actuales).intersection(
+        set(arista.causas)
+    )
+
+    if coincidencias:
+        kernel = arista.obtener_kernel_transmisible()
+        # principio_activo      -> la lección
+        # validez_contextual    -> contexto + causas
+        # indicadores_retorno   -> consecuencias</code></pre>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Datos: el grafo de tu código ---------- */
+  function datosIniciales() {
+    return {
+      nodos: [
+        { id: 'Colapso de la Edad del Bronce', tipo: 'Experiencia', desc: 'Caída sistémica de múltiples civilizaciones interconectadas.' },
+        { id: 'Caída del Imperio Romano de Occidente', tipo: 'Experiencia', desc: 'Fragmentación política y pérdida de control territorial centralizado.' },
+        { id: 'Resiliencia Sistémica', tipo: 'Lección', desc: 'Los sistemas hiperconectados necesitan capacidad de adaptación y redundancia.' },
+        { id: 'Mecanismos de Autocorrección', tipo: 'Lección', desc: 'La concentración del poder sin retroalimentación impide corregir errores a tiempo.' }
+      ],
+      aristas: [
+        { exp: 'Colapso de la Edad del Bronce', lec: 'Resiliencia Sistémica',
+          causas: ['Interdependencia severa', 'Sequías', 'Interrupción de rutas comerciales'],
+          contexto: 'Red comercial mediterránea cerrada donde el fallo de un nodo afectaba a todos',
+          consecuencias: ['Colapso en cadena', 'Pérdida de tecnologías de escritura por siglos'] },
+        { exp: 'Caída del Imperio Romano de Occidente', lec: 'Mecanismos de Autocorrección',
+          causas: ['Burocracia inflexible', 'Concentración del poder', 'Gasto militar insostenible'],
+          contexto: 'Imperio extenso con toma de decisiones centralizada y desconectada de las fronteras',
+          consecuencias: ['Incapacidad de responder a invasiones locales', 'Colapso fiscal'] }
+      ]
+    };
+  }
+  var EXTRAS_INICIALES = ['Crisis climática global'];
+  var ESCENARIO_CODIGO = ['Interdependencia severa', 'Gasto militar insostenible', 'Crisis climática global'];
+
+  var S = {
+    datos: datosIniciales(),
+    extras: EXTRAS_INICIALES.slice(),
+    ahora: {},
+    modo: 'grafo',
+    tab: 'sel',
+    sel: { tipo: 'arista', i: 0 }
+  };
+
+  /* ---------- Utilidades ---------- */
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function $(id) { return document.getElementById(id); }
+  function idxNodo(id) {
+    for (var i = 0; i < S.datos.nodos.length; i++) if (S.datos.nodos[i].id === id) return i;
+    return -1;
+  }
+  function kernel(a) {
+    return {
+      principio: S.datos.nodos[idxNodo(a.lec)].desc,
+      validez: 'Observado en: ' + a.contexto + '. Detonado por: ' + a.causas.join(', ') + '.',
+      indicadores: a.consecuencias
+    };
+  }
+  function condiciones() {
+    var vistos = {}, lista = [];
+    S.datos.aristas.forEach(function (a) {
+      a.causas.forEach(function (c) { if (!vistos[c]) { vistos[c] = 1; lista.push({ txt: c, origen: 'causa' }); } });
+    });
+    S.extras.forEach(function (c) { if (!vistos[c]) { vistos[c] = 1; lista.push({ txt: c, origen: 'extra' }); } });
+    return lista;
+  }
+  function lineas(txt) {
+    return txt.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+  function py(s) { return JSON.stringify(s); }
+
+  /* ---------- Teoría de grafos ---------- */
+  function medidas() {
+    var n = S.datos.nodos.length, parent = [], grado = [];
+    for (var i = 0; i < n; i++) { parent.push(i); grado.push(0); }
+    function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+    S.datos.aristas.forEach(function (a) {
+      var u = idxNodo(a.exp), v = idxNodo(a.lec);
+      grado[u]++; grado[v]++;
+      parent[find(u)] = find(v);
+    });
+    var raices = {}, aislados = 0, gmax = 0;
+    for (var j = 0; j < n; j++) {
+      raices[find(j)] = 1;
+      if (grado[j] === 0) aislados++;
+      if (grado[j] > gmax) gmax = grado[j];
+    }
+    return { nodos: n, aristas: S.datos.aristas.length, comp: Object.keys(raices).length, aislados: aislados, gmax: gmax, grado: grado };
+  }
+
+  /* ---------- Tablero ---------- */
+  var board = $('board'), svg = $('edges');
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var nodeEls = [], edgeEls = [];
+
+  function rebuildBoard() {
+    nodeEls.forEach(function (el) { el.remove(); });
+    nodeEls = [];
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    edgeEls = [];
+    S.datos.nodos.forEach(function (n, i) {
+      var t = n.tipo === 'Experiencia' ? 'E' : 'L';
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'node n-' + t;
+      b.setAttribute('data-nodo', i);
+      b.innerHTML = '<span class="meta"><i class="glyph g-' + t + '"></i><span class="kind">' + esc(n.tipo) + '</span><span class="num"></span></span>' +
+                    '<span class="titulo">' + esc(n.id) + '</span>';
+      board.appendChild(b);
+      nodeEls.push(b);
+    });
+    S.datos.aristas.forEach(function (a, i) {
+      var g = document.createElementNS(SVGNS, 'g');
+      g.setAttribute('class', 'edge');
+      g.setAttribute('tabindex', '0');
+      g.setAttribute('role', 'button');
+      g.setAttribute('aria-label', 'Arista de ' + a.exp + ' hacia ' + a.lec);
+      g.setAttribute('data-arista', i);
+      var hit = document.createElementNS(SVGNS, 'path'); hit.setAttribute('class', 'hit');
+      var line = document.createElementNS(SVGNS, 'path'); line.setAttribute('class', 'line');
+      var arrow = document.createElementNS(SVGNS, 'polygon'); arrow.setAttribute('class', 'arrow');
+      g.appendChild(hit); g.appendChild(line); g.appendChild(arrow);
+      svg.appendChild(g);
+      edgeEls.push({ g: g, hit: hit, line: line, arrow: arrow });
+    });
+  }
+
+  function layout() {
+    var W = board.clientWidth, lineal = S.modo === 'lineal';
+    var nodos = S.datos.nodos;
+    var pos = [], H, i;
+    board.classList.toggle('lineal', lineal);
+    if (lineal) {
+      var w = Math.min(W - 32, 520);
+      for (i = 0; i < nodos.length; i++) pos.push({ x: W / 2, y: 30 + i * 46, w: w });
+      H = 30 + nodos.length * 46 - 6;
+    } else {
+      var es = [], ls = [];
+      nodos.forEach(function (n, k) { (n.tipo === 'Experiencia' ? es : ls).push(k); });
+      var filas = Math.max(es.length, ls.length, 3);
+      H = Math.max(400, filas * 112 + 20);
+      es.forEach(function (k, j) { pos[k] = { x: W * 0.2, y: (j + 0.5) * H / es.length, w: 230 }; });
+      ls.forEach(function (k, j) { pos[k] = { x: W * 0.8, y: (j + 0.5) * H / ls.length, w: 230 }; });
+    }
+    board.style.height = H + 'px';
+    nodeEls.forEach(function (el, k) {
+      el.style.left = pos[k].x + 'px'; el.style.top = pos[k].y + 'px'; el.style.width = pos[k].w + 'px';
+      el.querySelector('.num').textContent = lineal ? '#' + (k + 1) : '';
+    });
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    if (!lineal) {
+      var outs = {}, ins = {};
+      S.datos.aristas.forEach(function (a, k) {
+        var u = idxNodo(a.exp), v = idxNodo(a.lec);
+        (outs[u] = outs[u] || []).push({ k: k, otro: v });
+        (ins[v] = ins[v] || []).push({ k: k, otro: u });
+      });
+      function off(lista, k) {
+        lista.sort(function (a, b) { return pos[a.otro].y - pos[b.otro].y; });
+        for (var q = 0; q < lista.length; q++) if (lista[q].k === k) return (q - (lista.length - 1) / 2) * 14;
+        return 0;
+      }
+      S.datos.aristas.forEach(function (a, k) {
+        var u = idxNodo(a.exp), v = idxNodo(a.lec);
+        var sx = pos[u].x + pos[u].w / 2, sy = pos[u].y + off(outs[u], k);
+        var tx = pos[v].x - pos[v].w / 2, ty = pos[v].y + off(ins[v], k);
+        var dx = (tx - sx) / 2;
+        var d = 'M' + sx + ' ' + sy + ' C' + (sx + dx) + ' ' + sy + ' ' + (tx - dx) + ' ' + ty + ' ' + (tx - 2) + ' ' + ty;
+        var el = edgeEls[k];
+        el.hit.setAttribute('d', d); el.line.setAttribute('d', d);
+        el.arrow.setAttribute('points', tx + ',' + ty + ' ' + (tx - 9) + ',' + (ty - 5) + ' ' + (tx - 9) + ',' + (ty + 5));
+      });
+    }
+    edgeEls.forEach(function (e) { e.g.setAttribute('tabindex', lineal ? '-1' : '0'); });
+  }
+
+  /* ---------- Proyección ---------- */
+  function proyectar() {
+    var actuales = condiciones().filter(function (c) { return S.ahora[c.txt]; }).map(function (c) { return c.txt; });
+    var enCausas = {};
+    var res = S.datos.aristas.map(function (a, i) {
+      var coinc = a.causas.filter(function (c) { return S.ahora[c]; });
+      a.causas.forEach(function (c) { enCausas[c] = 1; });
+      return { i: i, a: a, coinc: coinc };
+    });
+    var huerfanas = actuales.filter(function (c) { return !enCausas[c]; });
+    return { actuales: actuales, res: res, huerfanas: huerfanas };
+  }
+
+  /* ---------- Pintado ---------- */
+  var CL = ['sel', 'rel', 'act', 'dim'];
+  function paint() {
+    var enAhora = S.tab === 'ahora';
+    var p = proyectar();
+    var activo = enAhora && p.actuales.length > 0;
+    var relN = {}, selN = -1, selE = -1;
+    if (!enAhora) {
+      if (S.sel.tipo === 'nodo') {
+        selN = S.sel.i;
+        S.datos.aristas.forEach(function (a) {
+          var u = idxNodo(a.exp), v = idxNodo(a.lec);
+          if (u === selN) relN[v] = 1;
+          if (v === selN) relN[u] = 1;
+        });
+      } else {
+        selE = S.sel.i;
+        var a0 = S.datos.aristas[selE];
+        if (a0) { relN[idxNodo(a0.exp)] = 1; relN[idxNodo(a0.lec)] = 1; }
+      }
+    }
+    var nodoAct = {};
+    p.res.forEach(function (r) { if (r.coinc.length) { nodoAct[idxNodo(r.a.exp)] = 1; nodoAct[idxNodo(r.a.lec)] = 1; } });
+    nodeEls.forEach(function (el, k) {
+      CL.forEach(function (c) { el.classList.remove(c); });
+      el.setAttribute('aria-pressed', String(selN === k));
+      if (selN === k) el.classList.add('sel'); else if (relN[k]) el.classList.add('rel');
+      if (activo) el.classList.add(nodoAct[k] ? 'act' : 'dim');
+    });
+    edgeEls.forEach(function (e, k) {
+      CL.forEach(function (c) { e.g.classList.remove(c); });
+      if (selE === k) e.g.classList.add('sel');
+      if (activo) e.g.classList.add(p.res[k].coinc.length ? 'act' : 'dim');
+    });
+    return p;
+  }
+
+  /* ---------- Paneles ---------- */
+  function chipNodo(i) {
+    var n = S.datos.nodos[i], t = n.tipo === 'Experiencia' ? 'E' : 'L';
+    return '<button type="button" class="chip" data-nodo="' + i + '"><i class="glyph g-' + t + '"></i>' + esc(n.id) + '</button>';
+  }
+  function renderSel() {
+    var h = '', P = $('panel-sel');
+    if (S.sel.tipo === 'arista' && S.datos.aristas[S.sel.i]) {
+      var a = S.datos.aristas[S.sel.i], k = kernel(a);
+      h += '<p class="kicker">AristaRecordatorio · arista ' + (S.sel.i + 1) + '</p>';
+      h += '<h2>' + esc(a.exp) + ' <span class="flecha">→</span> ' + esc(a.lec) + '</h2>';
+      h += '<dl class="campos">' +
+           '<div><dt>causas</dt><dd><div class="chips">' + a.causas.map(function (c) { return '<span class="chip static">' + esc(c) + '</span>'; }).join('') + '</div></dd></div>' +
+           '<div><dt>contexto</dt><dd>' + esc(a.contexto) + '</dd></div>' +
+           '<div><dt>consecuencias</dt><dd><ul class="lista">' + a.consecuencias.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></dd></div></dl>';
+      h += '<div class="bloque kernel"><p class="kicker">obtener_kernel_transmisible()</p>' +
+           '<div class="fila"><b>principio_activo</b><span>' + esc(k.principio) + '</span></div>' +
+           '<div class="fila"><b>validez_contextual</b><span>' + esc(k.validez) + '</span></div>' +
+           '<div class="fila"><b>indicadores_retorno</b><ul>' + k.indicadores.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></div></div>';
+      h += '<div class="bloque nota"><p class="kicker">Compresión</p><p>El kernel conserva el principio, el contexto donde valió y qué mirar después. Se descartan los detalles que no se pueden transportar a otra época.</p></div>';
+    } else if (S.sel.tipo === 'nodo' && S.datos.nodos[S.sel.i]) {
+      var n = S.datos.nodos[S.sel.i], m = medidas(), g = m.grado[S.sel.i];
+      var vecinos = [];
+      S.datos.aristas.forEach(function (a) {
+        var u = idxNodo(a.exp), v = idxNodo(a.lec);
+        if (u === S.sel.i) vecinos.push(v);
+        if (v === S.sel.i) vecinos.push(u);
+      });
+      h += '<p class="kicker">' + esc(n.tipo) + ' · NodoHistorico</p>';
+      h += '<h2>' + esc(n.id) + '</h2>';
+      h += '<p>' + esc(n.desc) + '</p>';
+      h += '<p class="grado">Grado ' + g + (g === 0 ? ' · nodo aislado' : '') + '</p>';
+      if (vecinos.length) {
+        h += '<div><p class="kicker" style="margin-bottom:8px">Conectado con</p><div class="chips">' + vecinos.map(chipNodo).join('') + '</div></div>';
+      } else {
+        h += '<div class="bloque nota"><p class="kicker">Sin aristas</p><p>' +
+             (n.tipo === 'Experiencia' ? 'Una experiencia sin lección extraída: se sabe qué pasó, pero no qué enseña.' : 'Una lección sin experiencia que la respalde: es una moraleja sin evidencia.') +
+             ' Probá conectarla en la pestaña «Conectar».</p></div>';
+      }
+      if (n.tipo === 'Lección' && g >= 2) {
+        h += '<div class="bloque nota"><p class="kicker">Nodo con varias aristas</p><p>Esta lección está respaldada por ' + g + ' experiencias distintas. Cuantas más aristas, más contextos donde se verificó.</p></div>';
+      }
+    } else {
+      h = '<p class="vacio">Tocá un nodo o una línea del tablero.</p>';
+    }
+    P.innerHTML = h;
+  }
+
+  function renderStats() {
+    var m = medidas();
+    $('stats').innerHTML =
+      '<li><b>' + m.nodos + '</b><span>nodos</span></li>' +
+      '<li><b>' + m.aristas + '</b><span>aristas</span></li>' +
+      '<li><b>' + m.comp + '</b><span>' + (m.comp === 1 ? 'componente' : 'componentes') + '</span></li>' +
+      '<li><b>' + m.aislados + '</b><span>' + (m.aislados === 1 ? 'nodo aislado' : 'nodos aislados') + '</span></li>' +
+      '<li><b>' + m.gmax + '</b><span>grado máximo</span></li>';
+  }
+
+  function renderConds() {
+    var lista = condiciones();
+    $('conds').innerHTML = lista.map(function (c, i) {
+      return '<li><label for="cond-' + i + '"><input type="checkbox" id="cond-' + i + '" data-cond="' + i + '"' + (S.ahora[c.txt] ? ' checked' : '') + '>' +
+             '<span>' + esc(c.txt) + '</span>' + (c.origen === 'extra' ? '<span class="tag">del entorno</span>' : '') + '</label></li>';
+    }).join('');
+    $('escenarios').innerHTML =
+      '<button type="button" class="btn" data-esc="codigo">Escenario del código</button>' +
+      '<button type="button" class="btn" data-esc="limpiar">Limpiar</button>';
+  }
+
+  function renderResultados(p) {
+    var cont = $('resultados'), cons = $('consola');
+    if (!p.actuales.length) {
+      cons.textContent = '';
+      cont.innerHTML = '<li class="vacio">Todavía no marcaste nada. Probá el escenario del código y mirá qué aristas se encienden y cuáles no.</li>';
+      return;
+    }
+    cons.textContent = '--- EVALUANDO FUTUROS POSIBLES (' + new Date().getFullYear() + ') --- Condiciones del entorno observado: [' + p.actuales.join(', ') + ']';
+    var h = '', hubo = false;
+    p.res.forEach(function (r) {
+      if (r.coinc.length) {
+        hubo = true;
+        var k = kernel(r.a);
+        h += '<li class="res act"><div class="res-top"><span class="badge">Patrón reconocido</span><strong>' + esc(r.a.exp) + '</strong></div>' +
+             '<div class="chips">' + r.a.causas.map(function (c) { return '<span class="chip static' + (S.ahora[c] ? ' hit' : '') + '">' + esc(c) + '</span>'; }).join('') + '</div>' +
+             '<p class="mini"><b>Compresión conceptual</b>' + esc(k.principio) + '</p>' +
+             '<p class="mini"><b>Dependencia histórica</b>' + esc(k.validez) + '</p>' +
+             '<p class="mini"><b>Resultados a monitorear</b><ul>' + k.indicadores.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></p></li>';
+      } else {
+        h += '<li class="res"><div class="res-top"><span class="badge">Sin coincidencias</span><strong>' + esc(r.a.exp) + '</strong></div></li>';
+      }
+    });
+    if (!hubo) h = '<li class="vacio">Ninguna causa del pasado coincide con lo que marcaste. El grafo queda en silencio, y eso también es información.</li>' + h;
+    if (p.huerfanas.length) {
+      h += '<li class="vacio">Sin arista que las respalde: ' + p.huerfanas.map(esc).join('; ') + '. El grafo no tiene experiencias que hablen de esto todavía.</li>';
+    }
+    cont.innerHTML = h;
+  }
+
+  function renderSelects() {
+    var es = '', ls = '';
+    S.datos.nodos.forEach(function (n) {
+      var o = '<option>' + esc(n.id) + '</option>';
+      if (n.tipo === 'Experiencia') es += o; else ls += o;
+    });
+    var ve = $('ne-exp').value, vl = $('ne-lec').value;
+    $('ne-exp').innerHTML = es; $('ne-lec').innerHTML = ls;
+    if (ve) $('ne-exp').value = ve;
+    if (vl) $('ne-lec').value = vl;
+  }
+
+  var notas = {
+    grafo: 'Cada línea es una arista: guarda causas, contexto y consecuencias. Tocá una línea para ver su kernel o un nodo para ver con quién se conecta.',
+    lineal: 'En una lista plana cada registro está solo. Las cuatro filas existen, pero el vínculo entre la Edad del Bronce y la resiliencia sistémica no tiene dónde vivir, ni sus causas, ni su contexto.'
+  };
+  function render() {
+    var p = paint();
+    renderSel(); renderStats(); renderResultados(p);
+    $('modo-nota').textContent = notas[S.modo];
+  }
+  function rebuildAll() {
+    rebuildBoard(); layout(); renderConds(); renderSelects(); render();
+  }
+
+  /* ---------- Interacción ---------- */
+  function setModo(m) {
+    S.modo = m;
+    $('btn-grafo').setAttribute('aria-pressed', String(m === 'grafo'));
+    $('btn-lineal').setAttribute('aria-pressed', String(m === 'lineal'));
+    layout(); $('modo-nota').textContent = notas[m];
+  }
+  var TABS = { sel: 'panel-sel', ahora: 'panel-ahora', conectar: 'panel-conectar' };
+  function setTab(t) {
+    S.tab = t;
+    Object.keys(TABS).forEach(function (k) {
+      $('tab-' + k).setAttribute('aria-selected', String(k === t));
+      $(TABS[k]).hidden = k !== t;
+    });
+    render();
+  }
+  function seleccionar(tipo, i) {
+    S.sel = { tipo: tipo, i: i };
+    if (S.tab !== 'sel') setTab('sel'); else render();
+  }
+
+  $('btn-grafo').addEventListener('click', function () { setModo('grafo'); });
+  $('btn-lineal').addEventListener('click', function () { setModo('lineal'); });
+  Object.keys(TABS).forEach(function (k) { $('tab-' + k).addEventListener('click', function () { setTab(k); }); });
+
+  board.addEventListener('click', function (ev) {
+    var n = ev.target.closest('[data-nodo]');
+    if (n) { seleccionar('nodo', +n.getAttribute('data-nodo')); return; }
+    var e = ev.target.closest('[data-arista]');
+    if (e && S.modo === 'grafo') seleccionar('arista', +e.getAttribute('data-arista'));
+  });
+  svg.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    var e = ev.target.closest('[data-arista]');
+    if (e) { ev.preventDefault(); seleccionar('arista', +e.getAttribute('data-arista')); }
+  });
+  $('panel-sel').addEventListener('click', function (ev) {
+    var n = ev.target.closest('[data-nodo]');
+    if (n) seleccionar('nodo', +n.getAttribute('data-nodo'));
+  });
+
+  $('conds').addEventListener('change', function (ev) {
+    var i = ev.target.getAttribute('data-cond');
+    if (i === null) return;
+    S.ahora[condiciones()[+i].txt] = ev.target.checked;
+    render();
+  });
+  $('escenarios').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-esc]');
+    if (!b) return;
+    S.ahora = {};
+    if (b.getAttribute('data-esc') === 'codigo') {
+      ESCENARIO_CODIGO.forEach(function (c) {
+        if (condiciones().every(function (x) { return x.txt !== c; })) S.extras.push(c);
+        S.ahora[c] = true;
+      });
+    }
+    renderConds(); render();
+  });
+  $('form-cond').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var v = $('cond-nueva').value.trim();
+    if (!v) return;
+    if (condiciones().every(function (c) { return c.txt !== v; })) S.extras.push(v);
+    S.ahora[v] = true;
+    $('cond-nueva').value = '';
+    renderConds(); render();
+  });
+
+  function codigoLinea(txt) { var el = $('ultimo-codigo'); el.textContent = txt; el.hidden = false; }
+  $('form-nodo').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var msg = $('msg-nodo'), tipo = $('nn-tipo').value, id = $('nn-id').value.trim(), desc = $('nn-desc').value.trim();
+    msg.className = 'msg err';
+    if (!id || !desc) { msg.textContent = 'Completá el id y la descripción.'; return; }
+    if (idxNodo(id) !== -1) { msg.textContent = 'Ya existe un nodo con ese id. Usá otro nombre.'; return; }
+    S.datos.nodos.push({ id: id, tipo: tipo, desc: desc });
+    msg.className = 'msg'; msg.textContent = 'Nodo agregado. Aparece en el tablero sin aristas: grado 0.';
+    codigoLinea('red.agregar_nodo(\n    ' + py(id) + ',\n    ' + py(tipo) + ',\n    ' + py(desc) + ',\n)');
+    $('nn-id').value = ''; $('nn-desc').value = '';
+    S.sel = { tipo: 'nodo', i: S.datos.nodos.length - 1 };
+    rebuildAll();
+  });
+  $('form-arista').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var msg = $('msg-arista'), exp = $('ne-exp').value, lec = $('ne-lec').value;
+    var causas = lineas($('ne-causas').value), cons = lineas($('ne-cons').value), ctx = $('ne-ctx').value.trim();
+    msg.className = 'msg err';
+    if (!exp || !lec) { msg.textContent = 'Necesitás al menos una experiencia y una lección. Agregalas arriba.'; return; }
+    if (!causas.length || !cons.length || !ctx) { msg.textContent = 'Una arista sin causas, contexto y consecuencias sería una moraleja simple. Completá los tres.'; return; }
+    S.datos.aristas.push({ exp: exp, lec: lec, causas: causas, contexto: ctx, consecuencias: cons });
+    msg.className = 'msg'; msg.textContent = 'Arista creada. Mirá cómo cambian las medidas del grafo.';
+    codigoLinea('red.conectar_con_recordatorio(\n    exp_id=' + py(exp) + ',\n    lec_id=' + py(lec) + ',\n    causas=' + JSON.stringify(causas) + ',\n    contexto=' + py(ctx) + ',\n    consecuencias=' + JSON.stringify(cons) + ',\n)');
+    $('ne-causas').value = ''; $('ne-ctx').value = ''; $('ne-cons').value = '';
+    S.sel = { tipo: 'arista', i: S.datos.aristas.length - 1 };
+    rebuildAll();
+  });
+  $('btn-reset').addEventListener('click', function () {
+    S.datos = datosIniciales(); S.extras = EXTRAS_INICIALES.slice(); S.ahora = {};
+    S.sel = { tipo: 'arista', i: 0 };
+    $('msg-nodo').textContent = ''; $('msg-arista').textContent = ''; $('ultimo-codigo').hidden = true;
+    rebuildAll();
+  });
+
+  /* ---------- Arranque ---------- */
+  rebuildAll();
+  if (window.ResizeObserver) new ResizeObserver(function () { layout(); }).observe(board.parentElement);
+  else window.addEventListener('resize', layout);
+})();
+</script>
+
+</body></html>
