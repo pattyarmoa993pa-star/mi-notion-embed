@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spawn Paraguay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: una sola columna tipo consola de juego; bloques de lectura arriba, simulador al centro, horizontes y progresión al final. */
+:root {
+  --bg: #0e1726;
+  --surface: #16233a;
+  --surface-2: #1d2d49;
+  --line: #2c3d5c;
+  --fg: #e8eef7;
+  --muted: #9dafc9;
+  --tierra: #ee6a4f;
+  --azul: #7aa2ff;
+  --senal: #7fe6c4;
+  --on-accent: #0e1726;
+  --f-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f2f5fb; --surface: #ffffff; --surface-2: #e8eef9; --line: #c7d3e8;
+    --fg: #0e1726; --muted: #4a5b78; --tierra: #b8321b; --azul: #1f4fc2;
+    --senal: #0b7a5e; --on-accent: #ffffff; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f2f5fb; --surface: #ffffff; --surface-2: #e8eef9; --line: #c7d3e8;
+  --fg: #0e1726; --muted: #4a5b78; --tierra: #b8321b; --azul: #1f4fc2;
+  --senal: #0b7a5e; --on-accent: #ffffff; color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.55;
+  padding-inline: 16px; padding-block: 0 64px;
+}
+.wrap { max-width: 980px; margin-inline: auto; display: flex; flex-direction: column; gap: 72px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.08; }
+h1 { font-size: clamp(2.4rem, 7vw, 4.6rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.6rem, 4vw, 2.3rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; font-weight: 700; }
+p { margin: 0; max-width: 65ch; }
+.label { font-family: var(--f-mono); font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+a { color: var(--azul); }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
+
+/* barra HUD */
+.hud {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+  margin-inline: -16px; padding: 10px 16px;
+}
+.hud-in { max-width: 980px; margin-inline: auto; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between; }
+.hud nav { display: flex; gap: 16px; flex-wrap: wrap; }
+.hud a { font-family: var(--f-mono); font-size: 0.78rem; text-decoration: none; color: var(--muted); }
+.hud a:hover { color: var(--fg); }
+.hud .brand { font-family: var(--f-display); font-weight: 800; color: var(--fg); font-size: 1.05rem; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1.3fr 1fr; gap: 32px; align-items: end; padding-top: 56px; }
+.hero > * { min-width: 0; }
+.hero h1 em { font-style: normal; color: var(--tierra); }
+.hero .lede { margin-top: 20px; color: var(--muted); font-size: 1.1rem; }
+.stripe { display: flex; height: 6px; margin-top: 28px; max-width: 220px; }
+.stripe i { flex: 1; }
+.stripe i:nth-child(1) { background: var(--tierra); }
+.stripe i:nth-child(2) { background: var(--fg); }
+.stripe i:nth-child(3) { background: var(--azul); }
+.signal { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.signal .label { color: var(--senal); }
+.signal p { font-family: var(--f-mono); font-size: 0.86rem; line-height: 1.6; }
+
+/* conceptos */
+.sec-head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.tab { background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; font-family: var(--f-mono); font-size: 0.82rem; }
+.tab[aria-selected="true"] { background: var(--tierra); border-color: var(--tierra); color: var(--on-accent); font-weight: 600; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.panel > * { min-width: 0; }
+.panel h3 { margin-bottom: 8px; }
+.panel .ex { background: var(--surface-2); border-radius: 10px; padding: 16px; }
+.panel .ex .label { display: block; margin-bottom: 6px; }
+
+/* simulador */
+.sim { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.controls label { display: flex; flex-direction: column; gap: 6px; }
+select { font: inherit; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; max-width: 100%; }
+.btn { background: var(--tierra); color: var(--on-accent); border: 0; border-radius: 8px; padding: 11px 20px; font-weight: 700; }
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); font-weight: 400; }
+.grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.grid4 > * { min-width: 0; }
+.cell { background: var(--surface-2); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.cell b { font-family: var(--f-display); font-size: 1.05rem; }
+.cell span.d { color: var(--muted); font-size: 0.92rem; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.cols > * { min-width: 0; }
+.inv { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.inv li { display: flex; gap: 10px; align-items: baseline; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); }
+.inv li.off { opacity: 0.55; background: transparent; border: 1px dashed var(--line); }
+.inv li .tag { font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--senal); flex: none; }
+.inv li.off .tag { color: var(--muted); }
+.alien { border-left: 3px solid var(--senal); padding: 4px 0 4px 16px; font-family: var(--f-mono); font-size: 0.9rem; line-height: 1.65; }
+.alien .label { color: var(--senal); display: block; margin-bottom: 4px; }
+
+/* servidor */
+.server { border-top: 1px solid var(--line); padding-top: 24px; display: flex; flex-direction: column; gap: 16px; }
+.actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.actions > * { min-width: 0; }
+.act { text-align: left; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.act:hover:not(:disabled) { border-color: var(--azul); }
+.act:disabled { opacity: 0.5; cursor: default; }
+.act b { font-family: var(--f-display); }
+.act small { color: var(--muted); }
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.meters > * { min-width: 0; }
+.meter .row { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 0.76rem; color: var(--muted); }
+.bar { display: flex; gap: 4px; margin-top: 6px; }
+.bar i { flex: 1; height: 10px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); }
+.bar i.on { background: var(--azul); border-color: var(--azul); }
+.rank { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.pill { font-family: var(--f-mono); font-size: 0.8rem; border: 1px solid var(--senal); color: var(--senal); border-radius: 999px; padding: 4px 12px; }
+#log { margin: 0; padding: 0; list-style: none; font-size: 0.92rem; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+
+/* horizontes */
+.horizon { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: center; }
+.horizon > * { min-width: 0; }
+.horizon svg { width: 100%; height: auto; display: block; }
+.horizon .nodeline { stroke: var(--line); stroke-dasharray: 4 6; }
+.horizon .dim { fill: var(--surface-2); stroke: var(--line); }
+.horizon .core { fill: var(--tierra); }
+.horizon .halo { fill: none; stroke: var(--tierra); opacity: 0.5; }
+.horizon text { font-family: var(--f-mono); font-size: 11px; fill: var(--muted); }
+.horizon text.main { fill: var(--fg); font-weight: 600; font-size: 13px; }
+
+/* progresión */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; list-style: none; padding: 0; margin: 0; }
+.steps > * { min-width: 0; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
+.step.now { border-color: var(--senal); }
+.step .label { color: var(--senal); }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.rules > * { min-width: 0; }
+.rules div { border-top: 2px solid var(--tierra); padding-top: 12px; }
+.rules h3 { margin-bottom: 6px; }
+.rules p { color: var(--muted); font-size: 0.97rem; }
+footer { color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--line); padding-top: 20px; }
+
+@media (max-width: 720px) {
+  .hero, .panel, .cols, .horizon { grid-template-columns: 1fr; }
+  .hero { padding-top: 36px; }
+  .wrap { gap: 56px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cell, .inv li { animation: in 0.35s ease both; }
+  @keyframes in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+</head>
+<body>
+<div class="hud"><div class="hud-in">
+  <span class="brand">Spawn Paraguay</span>
+  <nav aria-label="Secciones">
+    <a href="#conceptos">Conceptos</a><a href="#simulador">Simulador</a><a href="#horizontes">Horizontes</a><a href="#identidad">Identidad</a>
+  </nav>
+</div></div>
+
+<main class="wrap">
+
+<section class="hero">
+  <div>
+    <p class="label">Videojuego didáctico · prototipo</p>
+    <h1 style="margin-top:14px">Nadie eligió el mapa. <em>Todos</em> aparecimos en algún lugar.</h1>
+    <p class="lede">Un mundo donde cada persona es un personaje que hizo spawn sin elegir territorio, idioma, familia ni época. El juego empieza en Paraguay y desde ahí pregunta qué significa ser humano.</p>
+    <div class="stripe" aria-hidden="true"><i></i><i></i><i></i></div>
+  </div>
+  <aside class="signal" aria-label="Transmisión del observador">
+    <span class="label">Transmisión · observador externo</span>
+    <p>Llegué al planeta hace poco. Los ejemplares aparecen en lugares distintos y recién después aprenden las reglas del lugar. Nadie parece haber firmado nada. Sigo observando.</p>
+  </aside>
+</section>
+
+<section id="conceptos" aria-labelledby="t-conceptos">
+  <div class="sec-head">
+    <span class="label">La lógica del universo</span>
+    <h2 id="t-conceptos">Cuatro ideas sostienen todo el juego</h2>
+    <p>Una mecánica conocida de los videojuegos sirve para hablar de algo complejo. Elegí un concepto para ver cómo se ve en Paraguay.</p>
+  </div>
+  <div class="tabs" role="tablist" id="tabs" aria-label="Conceptos"></div>
+  <div class="panel" id="panel" role="tabpanel" aria-live="polite"></div>
+</section>
+
+<section id="simulador" aria-labelledby="t-sim">
+  <div class="sec-head">
+    <span class="label">Mecánica central</span>
+    <h2 id="t-sim">Hacer spawn en Paraguay</h2>
+    <p>Tirá el dado del spawn y mirá qué condiciones tocan. Después intervení en el servidor compartido y comprobá cómo cambian las condiciones de quien aparezca después.</p>
+  </div>
+  <div class="sim">
+    <div class="controls">
+      <label><span class="label">Territorio</span>
+        <select id="selTerr" aria-label="Territorio del spawn"></select></label>
+      <button class="btn" id="btnSpawn" type="button">Tirar spawn</button>
+    </div>
+
+    <div class="grid4" id="spawnCells"></div>
+
+    <div class="cols">
+      <div>
+        <h3>Inventario</h3>
+        <p class="label" style="margin-top:4px">Lo que este personaje tiene a mano</p>
+        <ul class="inv" id="inv"></ul>
+      </div>
+      <div>
+        <h3>Skin</h3>
+        <p class="label" style="margin-top:4px">La identidad que se ve</p>
+        <ul class="inv" id="skin"></ul>
+      </div>
+    </div>
+
+    <div class="alien" id="alien"><span class="label">Observador</span><span id="alienTxt"></span></div>
+
+    <div class="server">
+      <div>
+        <h3>Servidor compartido</h3>
+        <p style="color:var(--muted)">Cada acción modifica lo que recibirá el próximo personaje. Los objetos grises del inventario se desbloquean para quien aparezca después: probá una acción y volvé a tirar el spawn en el mismo territorio.</p>
+      </div>
+      <div class="actions" id="actions"></div>
+      <div class="meters" id="meters"></div>
+      <div class="rank"><span class="label">Tu personaje actual</span><span class="pill" id="rank"></span></div>
+      <ul id="log" aria-live="polite"></ul>
+    </div>
+  </div>
+</section>
+
+<section id="horizontes" aria-labelledby="t-hor">
+  <div class="sec-head">
+    <span class="label">Más allá del primer mapa</span>
+    <h2 id="t-hor">Otros servidores, todavía sin nombre</h2>
+    <p>Paraguay tiene identidad propia y es el punto de partida. Los demás países quedan como horizontes: cada uno será otra manera de habitar el mismo planeta, sin que ninguno le quite espacio a otro.</p>
+  </div>
+  <div class="horizon">
+    <svg viewBox="0 0 520 330" role="img" aria-label="Mapa de constelación: un nodo central, Paraguay, rodeado de cinco horizontes sin explorar">
+      <g class="nodeline">
+        <line x1="260" y1="165" x2="90" y2="70"/><line x1="260" y1="165" x2="430" y2="60"/>
+        <line x1="260" y1="165" x2="470" y2="200"/><line x1="260" y1="165" x2="340" y2="295"/>
+        <line x1="260" y1="165" x2="70" y2="250"/>
+      </g>
+      <circle class="halo" cx="260" cy="165" r="34"/>
+      <circle class="core" cx="260" cy="165" r="20"/>
+      <text class="main" x="260" y="215" text-anchor="middle">Paraguay</text>
+      <g>
+        <circle class="dim" cx="90" cy="70" r="11"/><text x="90" y="98" text-anchor="middle">???</text>
+        <circle class="dim" cx="430" cy="60" r="11"/><text x="430" y="88" text-anchor="middle">???</text>
+        <circle class="dim" cx="470" cy="200" r="11"/><text x="470" y="228" text-anchor="middle">???</text>
+        <circle class="dim" cx="340" cy="295" r="11"/><text x="340" y="320" text-anchor="middle">???</text>
+        <circle class="dim" cx="70" cy="250" r="11"/><text x="70" y="278" text-anchor="middle">???</text>
+      </g>
+    </svg>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <h3>Una sola pregunta, muchas respuestas</h3>
+      <p style="color:var(--muted)">El mismo personaje podrá viajar y encontrar cómo otro lugar resuelve problemas humanos parecidos: cómo comer juntos, cómo cuidar a los mayores, cómo hablar. Las respuestas no se ordenan de mejor a peor.</p>
+      <p class="label">Estado: fuera de mapa</p>
+    </div>
+  </div>
+</section>
+
+<section id="identidad" aria-labelledby="t-id">
+  <div class="sec-head">
+    <span class="label">Identidad del proyecto</span>
+    <h2 id="t-id">Explorar qué significa ser humano</h2>
+  </div>
+  <ol class="steps" style="margin-bottom:32px">
+    <li class="step"><span class="label">Etapa 1</span><h3>Espectador</h3><p style="color:var(--muted)">Recibe el spawn y observa. Todavía cree que el mapa es la única forma posible.</p></li>
+    <li class="step"><span class="label">Etapa 2</span><h3>Participante</h3><p style="color:var(--muted)">Usa su inventario, colabora y compite. Empieza a notar lo que otros no recibieron.</p></li>
+    <li class="step"><span class="label">Etapa 3</span><h3>Agente consciente</h3><p style="color:var(--muted)">Sabe que comparte el servidor y modifica las condiciones de quienes llegarán después.</p></li>
+  </ol>
+  <div class="rules">
+    <div><h3>Desigualdad a la vista</h3><p>La metáfora del spawn no vuelve pasivas a las personas ni niega que los puntos de partida sean distintos. Los dos hechos conviven.</p></div>
+    <div><h3>Paraguay con voz propia</h3><p>Idioma, comida, música y territorio tienen detalle real. Es un mundo con carácter, no un decorado de postal.</p></div>
+    <div><h3>Sin acaparar</h3><p>Los demás países no se describen todavía. Cuando lleguen, tendrán el mismo cuidado que Paraguay y ninguno estará por encima.</p></div>
+  </div>
+</section>
+
+<footer>Prototipo de diseño del juego. Las condiciones del simulador son ejemplos para probar la mecánica, no estadísticas.</footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Conceptos ---------- */
+  var CONCEPTOS = [
+    { id: "spawn", n: "Spawn", d: "Las condiciones iniciales que nadie eligió: territorio, familia, época y contexto social.",
+      ex: "Nacer a orillas del río en Asunción o en una colonia del Chaco cambia la distancia a la escuela, al hospital y a la ruta." },
+    { id: "inventario", n: "Inventario", d: "Los recursos disponibles: conocimientos, herramientas, oportunidades y experiencias.",
+      ex: "Una guampa y un termo para el tereré no cuestan casi nada. Una conexión estable a internet, según el lugar, sí." },
+    { id: "skin", n: "Skin", d: "La identidad visible: vestimenta, idioma, costumbres, símbolos y pertenencia cultural.",
+      ex: "El guaraní y el español conviven. El ao po'i, la polca y la guarania son parte de la skin, y no todas las skins se parecen." },
+    { id: "servidor", n: "Servidor compartido", d: "El planeta donde todos colaboran, compiten y modifican las condiciones que recibirán quienes aparezcan después.",
+      ex: "Plantar monte, grabar a los mayores o abrir una biblioteca cambia el inventario de alguien que todavía no nació." }
+  ];
+  var tabs = document.getElementById("tabs");
+  var panel = document.getElementById("panel");
+  function showConcept(i) {
+    var c = CONCEPTOS[i];
+    Array.prototype.forEach.call(tabs.children, function (b, k) {
+      b.setAttribute("aria-selected", k === i ? "true" : "false");
+      b.tabIndex = k === i ? 0 : -1;
+    });
+    panel.innerHTML = "<div><span class='label'>Concepto " + (i + 1) + " de 4</span><h3 style='margin-top:6px'>" + c.n +
+      "</h3><p>" + c.d + "</p></div><div class='ex'><span class='label'>En Paraguay</span><p>" + c.ex + "</p></div>";
+  }
+  CONCEPTOS.forEach(function (c, i) {
+    var b = document.createElement("button");
+    b.className = "tab"; b.type = "button"; b.setAttribute("role", "tab"); b.textContent = c.n;
+    b.addEventListener("click", function () { showConcept(i); });
+    b.addEventListener("keydown", function (e) {
+      var k = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!k) return;
+      var j = (i + k + CONCEPTOS.length) % CONCEPTOS.length;
+      showConcept(j); tabs.children[j].focus();
+    });
+    tabs.appendChild(b);
+  });
+  showConcept(0);
+
+  /* ---------- Datos del spawn ---------- */
+  var STATS = [
+    { k: "edu", n: "Acceso a educación" },
+    { k: "con", n: "Conectividad" },
+    { k: "ent", n: "Cuidado del entorno" },
+    { k: "mem", n: "Memoria cultural" }
+  ];
+
+  var TERR = [
+    { n: "Asunción, sobre el río", d: "Capital sobre el río Paraguay. Mucha gente y mucho cruce de mundos.",
+      base: { edu: 2, con: 2, ent: 0, mem: 1 },
+      idiomas: ["Español con guaraní en la calle", "Guaraní y español según con quién hable"],
+      cost: ["Chipa en la parada del colectivo", "Tereré en la vereda con vecinos"], mus: ["Polca y rock local", "Guarania en la radio"] },
+    { n: "Compañía rural, Región Oriental", d: "Chacras, monte y caminos de tierra. Los vecinos se conocen por el nombre.",
+      base: { edu: 1, con: 0, ent: 2, mem: 3 },
+      idiomas: ["Casi todo en guaraní", "Guaraní en casa, español en la escuela"],
+      cost: ["Sopa paraguaya los domingos", "Tereré con yuyos, preparado por la abuela"], mus: ["Guarania y polca en las fiestas", "Arpa paraguaya en la capilla"] },
+    { n: "Chaco paraguayo", d: "Mucho territorio, poca gente y distancias largas. Conviven varios pueblos y comunidades.",
+      base: { edu: 0, con: 0, ent: 2, mem: 2 },
+      idiomas: ["Lengua de su pueblo y español", "Plautdietsch en la colonia, español para afuera", "Guaraní y español en el pueblo"],
+      cost: ["Esperar la lluvia como parte del calendario", "Compartir el agua como regla del lugar"], mus: ["Cantos de su comunidad", "Música de radio con señal intermitente"] },
+    { n: "Ciudad del Este, frontera", d: "Ciudad de cruce y comercio, con idiomas y monedas mezcladas.",
+      base: { edu: 1, con: 2, ent: 0, mem: 1 },
+      idiomas: ["Español, guaraní y portugués mezclados", "Guaraní en casa y portugués en el comercio"],
+      cost: ["Tereré en el local mientras se atiende", "Fútbol en la plaza después de la jornada"], mus: ["Cumbia y sertanejo", "Polca en la casa de los abuelos"] },
+    { n: "Colonia agrícola, Itapúa", d: "Tierra colorada, cooperativas y campos de cultivo. Varias migraciones se mezclaron acá.",
+      base: { edu: 2, con: 1, ent: 1, mem: 1 },
+      idiomas: ["Español, guaraní y la lengua de los abuelos migrantes", "Guaraní y español con apellidos de otros orígenes"],
+      cost: ["Cooperativa como centro de la semana", "Mate o tereré según la familia"], mus: ["Polca paraguaya y música de otros orígenes", "Guarania de los abuelos"] }
+  ];
+  var FAMILIA = [
+    "Vive con abuela y tías", "Familia numerosa con madre que trabaja fuera",
+    "Hijo único de una docente", "Hermanos mayores que cuidan a los menores", "Padres con un almacén en el barrio"
+  ];
+  var EPOCA = [
+    "Antes de 1989, bajo dictadura", "Años 90, apertura democrática",
+    "Años 2020, mundo conectado", "Futuro posible, hacia 2050"
+  ];
+  var CONTEXTO = [
+    "Comunidad que se organiza en comisiones vecinales", "Barrio donde cada uno se arregla por su cuenta",
+    "Escuela que es el centro del pueblo", "Cooperativa que reparte trabajo y deudas", "Iglesia o capilla como punto de encuentro"
+  ];
+  var ITEMS = [
+    { n: "Un idioma para empezar y manos curiosas", s: null, m: 0 },
+    { n: "Guampa, termo y alguien con quien compartir", s: null, m: 0 },
+    { n: "Libros de texto propios", s: "edu", m: 1 },
+    { n: "Escuela a menos de media hora", s: "edu", m: 2 },
+    { n: "Beca para seguir estudiando", s: "edu", m: 3 },
+    { n: "Camino firme hasta la ruta", s: "con", m: 1 },
+    { n: "Señal de internet estable", s: "con", m: 2 },
+    { n: "Centro de salud al que se llega en el día", s: "con", m: 3 },
+    { n: "Agua limpia cerca de casa", s: "ent", m: 1 },
+    { n: "Monte nativo para sombra y frutos", s: "ent", m: 2 },
+    { n: "Suelo y agua cuidados para la próxima generación", s: "ent", m: 3 },
+    { n: "Historias que cuenta la abuela", s: "mem", m: 1 },
+    { n: "Radio y canciones en guaraní", s: "mem", m: 2 },
+    { n: "Archivo de la lengua con voces de los mayores", s: "mem", m: 3 }
+  ];
+  var ACCIONES = [
+    { s: "edu", n: "Abrir una biblioteca comunitaria", d: "Sube el acceso a educación" },
+    { s: "con", n: "Tender un camino y una antena", d: "Sube la conectividad" },
+    { s: "ent", n: "Plantar monte nativo", d: "Sube el cuidado del entorno" },
+    { s: "mem", n: "Grabar a los mayores hablando", d: "Sube la memoria cultural" }
+  ];
+  var RANGOS = ["Espectador", "Participante", "Agente consciente"];
+
+  var legado = { edu: 0, con: 0, ent: 0, mem: 0 };
+  var acciones = 0;
+  var cur = null;
+
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function level(t, s, leg) { return Math.min(3, t.base[s] + leg[s]); }
+
+  /* ---------- Render del spawn ---------- */
+  var selTerr = document.getElementById("selTerr");
+  var optAll = document.createElement("option");
+  optAll.value = "-1"; optAll.textContent = "Al azar"; selTerr.appendChild(optAll);
+  TERR.forEach(function (t, i) {
+    var o = document.createElement("option");
+    o.value = String(i); o.textContent = t.n; selTerr.appendChild(o);
+  });
+
+  function cell(label, title, desc) {
+    return "<div class='cell'><span class='label'>" + label + "</span><b>" + title + "</b>" +
+      (desc ? "<span class='d'>" + desc + "</span>" : "") + "</div>";
+  }
+
+  function alienLine(c) {
+    var t = c.terr;
+    var lines = [
+      "Este ejemplar bebe agua fría con hierba junto a otros y se pasan el recipiente en círculo. No sé qué acuerdo sellan, pero nadie se retira.",
+      "Al ejemplar le asignaron un idioma antes de poder opinar. Con ese idioma ahora pide, agradece y bromea. Interesante.",
+      "Veo que el lugar donde apareció decide cuánto tarda en llegar a una escuela. El ejemplar no eligió esa distancia. Otros ejemplares sí pueden acortarla.",
+      "Los ejemplares de esta zona se reúnen cada tanto para arreglar algo entre todos. No hay recompensa visible, solo queda el arreglo para quien llegue después."
+    ];
+    var idx = c.ti === 2 ? 2 : c.ti === 1 ? 3 : c.ti === 0 ? 0 : 1;
+    return lines[idx] + " (zona: " + t.n + ")";
+  }
+
+  function renderSpawn() {
+    var c = cur, t = c.terr;
+    document.getElementById("spawnCells").innerHTML =
+      cell("Territorio", t.n, t.d) + cell("Familia", c.fam, "") + cell("Época", c.ep, "") + cell("Contexto social", c.ctx, "");
+
+    var inv = ITEMS.map(function (it) {
+      var on = !it.s || level(t, it.s, c.leg) >= it.m;
+      return "<li class='" + (on ? "" : "off") + "'><span class='tag'>" + (on ? "Tiene" : "Falta") + "</span><span>" + it.n + "</span></li>";
+    }).join("");
+    document.getElementById("inv").innerHTML = inv;
+
+    document.getElementById("skin").innerHTML = [
+      ["Idioma", c.idioma], ["Costumbre", c.cost], ["Música", c.mus]
+    ].map(function (r) {
+      return "<li><span class='tag'>" + r[0] + "</span><span>" + r[1] + "</span></li>";
+    }).join("");
+
+    document.getElementById("alienTxt").textContent = alienLine(c);
+  }
+
+  function rollSpawn() {
+    var v = parseInt(selTerr.value, 10);
+    var ti = v >= 0 ? v : Math.floor(Math.random() * TERR.length);
+    var t = TERR[ti];
+    cur = { ti: ti, terr: t, fam: pick(FAMILIA), ep: pick(EPOCA), ctx: pick(CONTEXTO),
+            leg: JSON.parse(JSON.stringify(legado)), idioma: pick(t.idiomas), cost: pick(t.cost), mus: pick(t.mus) };
+    renderSpawn();
+  }
+
+  /* ---------- Servidor ---------- */
+  var actionsEl = document.getElementById("actions");
+  var metersEl = document.getElementById("meters");
+  var logEl = document.getElementById("log");
+
+  function renderMeters() {
+    metersEl.innerHTML = STATS.map(function (s) {
+      var v = legado[s.k], bars = "";
+      for (var i = 0; i < 3; i++) bars += "<i class='" + (i < v ? "on" : "") + "'></i>";
+      return "<div class='meter'><div class='row'><span>" + s.n + "</span><span>" + v + "/3</span></div><div class='bar'>" + bars + "</div></div>";
+    }).join("");
+    var r = acciones === 0 ? 0 : acciones < 4 ? 1 : 2;
+    document.getElementById("rank").textContent = RANGOS[r];
+    Array.prototype.forEach.call(actionsEl.children, function (b) {
+      b.disabled = legado[b.dataset.s] >= 3;
+    });
+  }
+
+  ACCIONES.forEach(function (a) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "act"; b.dataset.s = a.s;
+    b.innerHTML = "<b>" + a.n + "</b><small>" + a.d + "</small>";
+    b.addEventListener("click", function () {
+      if (legado[a.s] >= 3) return;
+      legado[a.s] += 1; acciones += 1;
+      var li = document.createElement("li");
+      li.textContent = "Acción " + acciones + ": " + a.n + ". El próximo spawn recibe algo más.";
+      logEl.insertBefore(li, logEl.firstChild);
+      while (logEl.children.length > 4) logEl.removeChild(logEl.lastChild);
+      renderMeters();
+    });
+    actionsEl.appendChild(b);
+  });
+
+  document.getElementById("btnSpawn").addEventListener("click", rollSpawn);
+  renderMeters();
+  rollSpawn();
+})();
+
+</script>
+
+</body>
+</html>
