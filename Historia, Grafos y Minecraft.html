@@ -1,0 +1,816 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Historia, Grafos y Minecraft</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: cabecera con aviso de ejemplo, pestañas por nivel, y en cada nivel un escenario (mapa de bloques o red) junto a un panel de control. */
+:root{
+  --bg:#f1f4ee; --panel:#ffffff; --panel2:#e7ece3; --fg:#16211a; --muted:#56655a; --line:#cbd5c6;
+  --l1:#23804a; --l2:#2268b5; --l3:#b8620a; --l4:#6446c0; --on-c:#ffffff;
+  --route:#f08a12; --bad:#c0392b; --ok:#23804a;
+  --casing:#13201a; --halo:#ffffff; --node:#1d2e3f; --edge-plain:#d9d2bd;
+  --tile-g1:#93cc7d; --tile-g2:#84c06f; --tile-g3:#a1d68a; --tile-hill:#aab3a0; --tile-sand:#e3d79f; --tile-w1:#6fa9e2; --tile-w2:#63a0dc;
+  --font-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1511; --panel:#17201a; --panel2:#1d2820; --fg:#e5ece6; --muted:#9aa99e; --line:#2c3a30;
+    --l1:#52c97f; --l2:#62a9f2; --l3:#f0a03c; --l4:#a48cf2; --on-c:#0c130e;
+    --route:#f2a542; --bad:#ef6b5b; --ok:#52c97f;
+    --casing:#050806; --halo:#0f1511; --node:#2b4258; --edge-plain:#5d6a5b;
+    --tile-g1:#3f6e3b; --tile-g2:#376331; --tile-g3:#477a42; --tile-hill:#5b6458; --tile-sand:#867c55; --tile-w1:#30618f; --tile-w2:#295687;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1511; --panel:#17201a; --panel2:#1d2820; --fg:#e5ece6; --muted:#9aa99e; --line:#2c3a30;
+  --l1:#52c97f; --l2:#62a9f2; --l3:#f0a03c; --l4:#a48cf2; --on-c:#0c130e;
+  --route:#f2a542; --bad:#ef6b5b; --ok:#52c97f;
+  --casing:#050806; --halo:#0f1511; --node:#2b4258; --edge-plain:#5d6a5b;
+  --tile-g1:#3f6e3b; --tile-g2:#376331; --tile-g3:#477a42; --tile-hill:#5b6458; --tile-sand:#867c55; --tile-w1:#30618f; --tile-w2:#295687;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1200px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(30px,5vw,48px);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(21px,3vw,27px);font-weight:800;letter-spacing:-.01em}
+h3{font-size:16px;font-weight:600}
+p{margin:0}
+.eyebrow{font:500 12px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{max-width:62ch;color:var(--muted);font-size:17px}
+.top{display:flex;flex-direction:column;gap:12px;padding-block:12px 18px}
+.notice{border:1px solid var(--line);border-left:4px solid var(--l3);background:color-mix(in srgb,var(--l3) 10%,var(--panel));padding:10px 14px;border-radius:6px;font-size:14px}
+.status-legend{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:13px;color:var(--muted);align-items:center}
+.status-legend span{display:inline-flex;align-items:center;gap:8px}
+.status-legend svg{width:38px;height:8px;overflow:visible}
+
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-block:6px 18px}
+.tab{font:600 14px var(--font-body);padding:9px 15px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.tab:focus-visible,.btn:focus-visible,.chip:focus-visible,input:focus-visible,select:focus-visible,.hitnode:focus-visible{outline:3px solid var(--l2);outline-offset:2px}
+.panel-head{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;max-width:70ch}
+.panel-head p{color:var(--muted)}
+.split{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:940px){.split{grid-template-columns:minmax(0,1fr)}}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.card h3{margin-bottom:10px}
+.stage{border:1px solid var(--line);border-radius:10px;overflow-x:auto;background:var(--panel2)}
+.stage svg{display:block;width:100%;height:auto;min-width:640px}
+.stage.wide svg{min-width:760px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn,.chip{font:500 13px var(--font-body);padding:7px 12px;border-radius:6px;border:1.5px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.btn:hover,.chip:hover{border-color:var(--fg)}
+.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip{--c:var(--fg)}
+.chip[aria-pressed="true"]{background:var(--c);border-color:var(--c);color:var(--on-c)}
+.chip.c1{--c:var(--l1)} .chip.c2{--c:var(--l2)} .chip.c3{--c:var(--l3)} .chip.c4{--c:var(--l4)}
+.chip.goto{border-style:dashed;border-color:var(--l4);color:var(--l4)}
+.preset[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.slider{display:grid;grid-template-columns:96px minmax(0,1fr) 28px;gap:10px;align-items:center;font-size:13px}
+.slider output{font:500 13px var(--font-mono);text-align:right}
+input[type=range]{width:100%;accent-color:var(--l3)}
+select{font:400 14px var(--font-body);padding:7px 8px;border:1.5px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg);width:100%}
+.hint{font-size:13px;color:var(--muted)}
+.live{font-size:14px;min-height:42px}
+table.cmp{border-collapse:collapse;width:100%;font-size:13px;min-width:360px}
+.cmp th,.cmp td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;vertical-align:top}
+.cmp thead th{font:500 11px var(--font-mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.cmp tbody th{font-weight:500;color:var(--muted);white-space:nowrap}
+.cmp .chosen{background:color-mix(in srgb,var(--l3) 14%,var(--panel))}
+.scroll{overflow-x:auto}
+.tag{display:inline-block;font:500 10.5px var(--font-mono);letter-spacing:.05em;text-transform:uppercase;padding:1px 6px;border-radius:4px;border:1.5px solid var(--fg);color:var(--fg);vertical-align:middle;white-space:nowrap}
+.tag.int{border-style:dashed;color:var(--l2);border-color:var(--l2)}
+.tag.hip{border-style:dotted;color:var(--l4);border-color:var(--l4)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:14px;margin-top:10px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--muted);padding:10px 14px;border-top:1px solid var(--line);background:var(--panel)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--fg);display:inline-block}
+.sw.k1{background:color-mix(in srgb,var(--l1) 25%,var(--panel));border-color:var(--l1)}
+.sw.k2{background:color-mix(in srgb,var(--l2) 25%,var(--panel));border-color:var(--l2)}
+.sw.k3{background:color-mix(in srgb,var(--l3) 25%,var(--panel));border-color:var(--l3)}
+.ramp{width:70px;height:8px;border-radius:4px;background:linear-gradient(90deg,hsl(140 62% 46%),hsl(70 62% 46%),hsl(0 62% 46%))}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.qgrid .btn{text-align:left;line-height:1.35;padding:10px 12px}
+.answer{font-size:14px;display:flex;flex-direction:column;gap:8px}
+.answer ul{margin:0;padding-left:18px}
+.date{font:800 44px var(--font-display);letter-spacing:-.02em;line-height:1}
+.evt{font-weight:600}
+.srcrow{display:grid;grid-template-columns:14px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.srcrow i{width:14px;height:14px;margin-top:3px;display:block}
+.srcrow .nm{font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.srcrow .where{font-size:12.5px;color:var(--muted)}
+.note{padding:10px 12px;border-radius:6px;font-size:13.5px;border:1px solid var(--line)}
+.note.warn{border-color:var(--l3);background:color-mix(in srgb,var(--l3) 12%,var(--panel))}
+.timeline{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-top:1px solid var(--line);background:var(--panel)}
+.ticks{display:flex;justify-content:space-between}
+.ticks button{font:500 13px var(--font-mono);background:none;border:0;color:var(--muted);cursor:pointer;padding:2px 4px}
+.ticks button[aria-current="true"]{color:var(--fg);font-weight:500;text-decoration:underline;text-underline-offset:4px}
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+pre{margin:0;font:400 12.5px/1.5 var(--font-mono);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px;overflow-x:auto}
+textarea{width:100%;min-height:180px;font:400 12px var(--font-mono);background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px}
+ol.rules{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+footer{margin-top:28px;color:var(--muted);font-size:13px;max-width:70ch}
+
+/* SVG */
+svg text{font-family:var(--font-body)}
+.plain{fill:var(--panel2)}
+.t-g1{fill:var(--tile-g1)} .t-g2{fill:var(--tile-g2)} .t-g3{fill:var(--tile-g3)} .t-h{fill:var(--tile-hill)} .t-s{fill:var(--tile-sand)} .t-w1{fill:var(--tile-w1)} .t-w2{fill:var(--tile-w2)}
+.casing{stroke:var(--casing);stroke-width:7;stroke-linecap:round;opacity:.85}
+.selring{stroke:var(--halo);stroke-width:13;stroke-linecap:round;opacity:.95}
+.ed{stroke-width:3.5;stroke-linecap:round}
+.ed.blocked{stroke:var(--muted)!important;stroke-dasharray:2 7}
+.route{stroke:var(--route);stroke-width:13;stroke-linecap:round;opacity:.9}
+.hit{stroke:transparent;stroke-width:20;cursor:pointer;fill:none;pointer-events:stroke}
+.pill{fill:var(--panel);stroke:var(--casing);stroke-width:1.5}
+.pill.bad{fill:var(--bad);stroke:var(--bad)}
+.pt{font:500 11px var(--font-mono);fill:var(--fg);text-anchor:middle}
+.pill.bad + .pt{fill:#fff}
+.blk{fill:var(--node);stroke:var(--casing);stroke-width:2}
+.blk-top{fill:#ffffff;opacity:.22}
+.nl{font:500 13px var(--font-mono);fill:#fff;text-anchor:middle}
+.name{font:600 12px var(--font-body);fill:var(--fg);text-anchor:middle;paint-order:stroke;stroke:var(--halo);stroke-width:4px;stroke-linejoin:round}
+.visited .blk{stroke:var(--l2);stroke-width:4}
+.onpath .blk{stroke:var(--route);stroke-width:4}
+.bd{fill:color-mix(in srgb,var(--l2) 90%,#000)}
+.bdt{font:500 10.5px var(--font-body);fill:#fff;text-anchor:middle}
+.cost{fill:var(--panel);stroke:var(--l2);stroke-width:1.5}
+.coln{font:500 11px var(--font-mono);fill:var(--muted);text-anchor:middle;letter-spacing:.04em;text-transform:uppercase}
+.n2 rect{stroke-width:2}
+.n2.k-estado rect{fill:color-mix(in srgb,var(--l1) 16%,var(--panel));stroke:var(--l1)}
+.n2.k-evento rect{fill:color-mix(in srgb,var(--l2) 16%,var(--panel));stroke:var(--l2)}
+.n2.k-decision rect{fill:color-mix(in srgb,var(--l3) 18%,var(--panel));stroke:var(--l3)}
+.n2 .t{font:600 13px var(--font-body);fill:var(--fg);text-anchor:middle}
+.n2 .s{font:400 10.5px var(--font-mono);fill:var(--muted);text-anchor:middle}
+.n2{cursor:pointer}
+.n2.sel rect{stroke-width:4}
+.n2.dim{opacity:.3}
+.e2{fill:none;stroke:var(--fg);stroke-width:2}
+.e2.st-int{stroke:var(--l2);stroke-dasharray:7 5}
+.e2.st-hip{stroke:var(--l4);stroke-dasharray:2 5;stroke-linecap:round;stroke-width:2.5}
+.e2.up{stroke-width:3.5;stroke:var(--l2)}
+.e2.down{stroke-width:3.5;stroke:var(--route)}
+.e2.dim{opacity:.18}
+.mk-doc{fill:var(--fg)} .mk-int{fill:var(--l2)} .mk-hip{fill:var(--l4)} .mk-up{fill:var(--l2)} .mk-down{fill:var(--route)}
+.mkA{fill:var(--l2);stroke:#fff;stroke-width:1.5}
+.mkB{fill:var(--l3);stroke:#fff;stroke-width:1.5}
+.mkM{fill:var(--panel);stroke:var(--l4);stroke-width:2.5;stroke-dasharray:3 2}
+.mkl{font:600 9.5px var(--font-mono);text-anchor:middle;fill:#fff}
+.mkl.m{fill:var(--l4)}
+.trA{stroke:var(--l2);stroke-width:3.5;fill:none;stroke-linecap:round}
+.trB{stroke:var(--l3);stroke-width:3.5;fill:none;stroke-linecap:round}
+.trM{stroke:var(--l4);stroke-width:3.5;fill:none;stroke-linecap:round;stroke-dasharray:2 6}
+.dotA{background:var(--l2);border-radius:50%} .dotB{background:var(--l3);transform:rotate(45deg) scale(.8)} .dotM{border:2.5px dashed var(--l4);border-radius:3px}
+@media (prefers-reduced-motion:no-preference){.chip,.btn,.tab{transition:background .15s,border-color .15s}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <p class="eyebrow">Simulación conceptual · equipo técnico de Minecraft</p>
+  <h1>Historia, grafos y Minecraft</h1>
+  <p class="lede">Reconstruir las batallas y guerras del Paraguay como una red de lugares, decisiones, movimientos y consecuencias.</p>
+  <div class="notice"><strong>Ejemplo conceptual.</strong> Los lugares, valores y fechas de esta página son marcadores de posición. No representan una ruta histórica verificada.</div>
+  <div class="status-legend" aria-label="Estatus de la información">
+    <span><svg viewBox="0 0 38 8"><line x1="0" y1="4" x2="38" y2="4" stroke="currentColor" stroke-width="2.5" style="color:var(--fg)"/></svg>Documentado</span>
+    <span><svg viewBox="0 0 38 8"><line x1="0" y1="4" x2="38" y2="4" stroke-width="2.5" stroke-dasharray="7 5" style="stroke:var(--l2)"/></svg>Interpretación historiográfica</span>
+    <span><svg viewBox="0 0 38 8"><line x1="0" y1="4" x2="38" y2="4" stroke-width="3" stroke-dasharray="2 5" stroke-linecap="round" style="stroke:var(--l4)"/></svg>Hipótesis de simulación</span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Niveles de exploración">
+  <button class="tab" role="tab" id="tab-nivel1" aria-controls="p-nivel1" aria-selected="true">Nivel 1 · Territorio</button>
+  <button class="tab" role="tab" id="tab-nivel2" aria-controls="p-nivel2" aria-selected="false" tabindex="-1">Nivel 2 · Relaciones</button>
+  <button class="tab" role="tab" id="tab-nivel3" aria-controls="p-nivel3" aria-selected="false" tabindex="-1">Nivel 3 · Escenarios</button>
+  <button class="tab" role="tab" id="tab-tecnico" aria-controls="p-tecnico" aria-selected="false" tabindex="-1">Para el equipo técnico</button>
+</nav>
+
+<!-- NIVEL 1 -->
+<section role="tabpanel" id="p-nivel1" aria-labelledby="tab-nivel1">
+  <div class="panel-head">
+    <h2>Un mapa es un grafo</h2>
+    <p>Los lugares son nodos y los caminos son aristas. Cada arista tiene un costo. La ruta que sale depende de lo que se quiera optimizar. Elige un criterio, mueve los pesos o bloquea una conexión.</p>
+  </div>
+  <div class="split">
+    <div class="col">
+      <div class="bar" role="group" aria-label="Capas de la memoria histórica">
+        <button class="chip c1" data-layer="l1" aria-pressed="true">Capa 1 · Territorio</button>
+        <button class="chip c2" data-layer="l2" aria-pressed="true">Capa 2 · Acontecimientos</button>
+        <button class="chip c3" data-layer="l3" aria-pressed="true">Capa 3 · Decisiones y conexiones</button>
+        <button class="chip goto" data-goto="nivel3">Capa 4 · Recreación (Nivel 3)</button>
+      </div>
+      <div>
+        <div class="stage"><svg id="svg1" viewBox="0 0 760 460" role="img" aria-label="Mapa de ejemplo con siete lugares conectados por caminos"></svg></div>
+        <div class="legend">
+          <span><i class="ramp"></i>Color: riesgo bajo a alto</span>
+          <span><b style="font-family:var(--font-mono)">4</b>Número: distancia</span>
+          <span><i class="sw" style="background:var(--route);border-color:var(--route)"></i>Ruta elegida</span>
+          <span><i class="sw k2"></i>Nodo visitado por el algoritmo</span>
+        </div>
+      </div>
+      <div class="bar">
+        <button class="btn primary" id="play1">Ver cómo decide el algoritmo</button>
+        <button class="btn" id="reset1">Restablecer</button>
+      </div>
+      <p class="live" id="live1" aria-live="polite"></p>
+    </div>
+    <div class="col">
+      <div class="card">
+        <h3>Qué optimizar</h3>
+        <div class="bar" role="group" aria-label="Criterios predefinidos" style="margin-bottom:12px">
+          <button class="btn preset" data-p="corta" aria-pressed="true">Más corta</button>
+          <button class="btn preset" data-p="segura" aria-pressed="false">Menos expuesta</button>
+          <button class="btn preset" data-p="abast" aria-pressed="false">Mejor abastecida</button>
+          <button class="btn preset" data-p="equil" aria-pressed="false">Equilibrada</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="slider"><label for="wa">Distancia</label><input id="wa" type="range" min="0" max="10" value="10"><output id="wao" for="wa">10</output></div>
+          <div class="slider"><label for="wb">Riesgo</label><input id="wb" type="range" min="0" max="10" value="0"><output id="wbo" for="wb">0</output></div>
+          <div class="slider"><label for="wc">Abastecimiento</label><input id="wc" type="range" min="0" max="10" value="0"><output id="wco" for="wc">0</output></div>
+        </div>
+        <p class="hint" style="margin-top:10px">Costo de una conexión = distancia × peso + riesgo × peso + falta de abastecimiento × peso.</p>
+      </div>
+      <div class="card">
+        <h3>Resultado del modelo <span class="tag hip">hipótesis</span></h3>
+        <p id="route1" style="font-size:14px;margin-bottom:10px"></p>
+        <div class="scroll"><table class="cmp" id="cmp1"></table></div>
+      </div>
+      <div class="card">
+        <h3>Conexión seleccionada</h3>
+        <label for="edgesel" class="hint">Haz clic en un camino del mapa o elígelo aquí.</label>
+        <select id="edgesel"></select>
+        <dl class="kv" id="edgeinfo"></dl>
+        <div class="bar" style="margin-top:12px"><button class="btn" id="blockbtn"></button></div>
+      </div>
+      <div class="card">
+        <h3>Respaldo documental</h3>
+        <p style="font-size:14px">Ruta A: sin fuentes cargadas (ejemplo).<br>Ruta B: sin fuentes cargadas (ejemplo).</p>
+        <p class="hint" style="margin-top:8px">Cuando existan datos, aquí se listan las fuentes que respaldan cada alternativa. El algoritmo propone una ruta; no decide qué ocurrió.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NIVEL 2 -->
+<section role="tabpanel" id="p-nivel2" aria-labelledby="tab-nivel2" hidden>
+  <div class="panel-head">
+    <h2>La memoria como red de conocimiento</h2>
+    <p>Un nodo es un acontecimiento, una decisión o un estado del mundo. Las conexiones son causas, condiciones y consecuencias. Una consecuencia puede convertirse en condición previa de lo que viene después. Haz clic en un nodo para ver de dónde viene y a dónde lleva.</p>
+  </div>
+  <div class="col">
+    <div class="bar" role="group" aria-label="Filtrar por estatus">
+      <span class="hint">Mostrar conexiones:</span>
+      <button class="chip" data-f="doc" aria-pressed="true">Documentadas</button>
+      <button class="chip" data-f="int" aria-pressed="true">Interpretaciones</button>
+      <button class="chip" data-f="hip" aria-pressed="true">Hipótesis</button>
+    </div>
+    <div>
+      <div class="stage wide"><svg id="svg2" viewBox="0 0 880 400" role="group" aria-label="Red de acontecimientos de ejemplo"></svg></div>
+      <div class="legend">
+        <span><i class="sw k1"></i>Estado del mundo (condición o consecuencia)</span>
+        <span><i class="sw k2"></i>Acontecimiento</span>
+        <span><i class="sw k3"></i>Decisión</span>
+        <span>Azul: causas · Naranja: consecuencias</span>
+      </div>
+    </div>
+    <div class="qgrid" role="group" aria-label="Preguntas que permite responder">
+      <button class="btn" data-q="dep">¿Qué acontecimientos dependieron de la ruta de suministro?</button>
+      <button class="btn" data-goto="nivel3" data-imp="1">¿Qué lugares adquirieron importancia estratégica?</button>
+      <button class="btn" data-q="status">¿Qué conexiones están documentadas y cuáles son interpretaciones?</button>
+      <button class="btn" data-q="rest" id="restbtn">¿Cómo cambia la lectura al sumar restricciones geográficas y logísticas?</button>
+    </div>
+    <div class="card"><div class="answer" id="ans2" aria-live="polite"></div></div>
+  </div>
+</section>
+
+<!-- NIVEL 3 -->
+<section role="tabpanel" id="p-nivel3" aria-labelledby="tab-nivel3" hidden>
+  <div class="panel-head">
+    <h2>Navegar por escenarios históricos</h2>
+    <p>Avanza y retrocede en el tiempo, compara fuentes y prueba hipótesis sin confundirlas con los hechos documentados. Las fechas son de ejemplo.</p>
+  </div>
+  <div class="split">
+    <div class="col">
+      <div class="bar" role="group" aria-label="Capas visibles">
+        <button class="chip c2" data-s="A" aria-pressed="true">Fuente A</button>
+        <button class="chip c3" data-s="B" aria-pressed="true">Fuente B</button>
+        <button class="chip c4" data-s="M" aria-pressed="true">Simulación</button>
+        <button class="chip" data-imp3 aria-pressed="false">Importancia estratégica acumulada</button>
+      </div>
+      <div>
+        <div class="stage"><svg id="svg3" viewBox="0 0 760 460" role="img" aria-label="Mapa con la posición de cada fuente en la fecha elegida"></svg></div>
+        <div class="timeline">
+          <div class="bar">
+            <button class="btn" id="prev3">Anterior</button>
+            <button class="btn primary" id="play3">Reproducir</button>
+            <button class="btn" id="next3">Siguiente</button>
+          </div>
+          <input id="range3" type="range" min="0" max="4" step="1" value="0" aria-label="Fecha del escenario">
+          <div class="ticks" id="ticks3"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" id="panel3"></div>
+    </div>
+  </div>
+</section>
+
+<!-- TÉCNICO -->
+<section role="tabpanel" id="p-tecnico" aria-labelledby="tab-tecnico" hidden>
+  <div class="panel-head">
+    <h2>Del modelo al mundo de Minecraft</h2>
+    <p>Qué dato necesita cada elemento y una sugerencia de cómo mostrarlo. Las representaciones son propuestas para validar con el equipo.</p>
+  </div>
+  <div class="col">
+    <div class="card scroll">
+      <table class="cmp" style="min-width:640px">
+        <thead><tr><th>Elemento</th><th>Datos mínimos</th><th>Representación sugerida</th></tr></thead>
+        <tbody>
+          <tr><th>Nodo (lugar)</th><td>id, nombre, coordenadas, tipo, fechas de existencia, fuentes</td><td>Estructura señalizada con cartel y baliza. Solo aparece dentro de sus fechas.</td></tr>
+          <tr><th>Arista (conexión)</th><td>origen, destino, tipo, distancia, riesgo, abastecimiento, vigencia</td><td>Camino de bloques, vía o ruta fluvial. El color del camino indica el riesgo.</td></tr>
+          <tr><th>Acontecimiento</th><td>id, fecha, lugar, tipo, estatus, fuentes</td><td>Estandarte en el lugar, con un libro que resume la ficha y sus fuentes.</td></tr>
+          <tr><th>Relación causal</th><td>origen, destino, tipo de relación, estatus</td><td>Línea de partículas visible en el modo de relaciones (Nivel 2).</td></tr>
+          <tr><th>Estatus</th><td>documentado, interpretación, hipótesis</td><td>Bloque sólido, vidrio y vidrio tintado con partículas. La hipótesis solo se ve en modo simulación.</td></tr>
+          <tr><th>Fecha activa</th><td>año o fecha del escenario</td><td>Control de tiempo que muestra u oculta nodos, aristas y unidades según su vigencia.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tech-grid">
+      <div class="card">
+        <h3>Reglas de rigor</h3>
+        <ol class="rules">
+          <li>El algoritmo no inventa decisiones históricas. Propone rutas y se marca como hipótesis.</li>
+          <li>Todo dato lleva estatus y fuente. Sin fuente, no se muestra como hecho.</li>
+          <li>Cuando dos fuentes difieren, se muestran las dos. No se elige una.</li>
+          <li>El mapa representa el territorio de la época, no el actual.</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>Estructura de datos</h3>
+        <pre><code>{
+  "nodo":   { "id": "R", "nombre": "...",
+              "x": 285, "z": 262, "tipo": "cruce",
+              "desde": null, "hasta": null,
+              "fuentes": [] },
+  "arista": { "origen": "S", "destino": "R",
+              "distancia": 4, "riesgo": 7,
+              "abastecimiento": 2,
+              "estatus": "documentado" },
+  "relacion": { "de": "E1", "a": "E2",
+              "tipo": "dio lugar a",
+              "estatus": "interpretacion" }
+}</code></pre>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Datos de ejemplo de esta simulación</h3>
+      <p class="hint" style="margin-bottom:10px">Nodos, aristas, acontecimientos y relaciones en JSON, con las coordenadas del boceto.</p>
+      <div class="bar"><button class="btn primary" id="copyjson">Copiar JSON</button><span class="hint" id="copymsg" aria-live="polite"></span></div>
+      <textarea id="exp" readonly hidden aria-label="JSON de ejemplo"></textarea>
+    </div>
+  </div>
+</section>
+
+<footer>Todos los nombres, valores, fechas y relaciones de esta página son datos de ejemplo para ilustrar la lógica. Reemplázalos por datos con fuentes antes de cualquier uso histórico.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+
+/* ================= DATOS (ejemplo) ================= */
+var NODES=[
+ {id:'S',name:'Punto de partida',x:70,y:310,tipo:'inicio'},
+ {id:'F',name:'Fortaleza',x:250,y:110,tipo:'fortificación'},
+ {id:'R',name:'Cruce de río',x:285,y:262,tipo:'cruce'},
+ {id:'D',name:'Depósito',x:330,y:395,tipo:'abastecimiento'},
+ {id:'P',name:'Puerto',x:495,y:325,tipo:'puerto'},
+ {id:'C',name:'Ciudad',x:520,y:120,tipo:'población'},
+ {id:'T',name:'Objetivo',x:690,y:225,tipo:'objetivo'}
+];
+var NODE={};NODES.forEach(function(n){NODE[n.id]=n});
+var EVT1={F:'Guarnición',R:'Paso de tropas',C:'Enfrentamiento',P:'Desembarco',D:'Suministro'};
+var EDGES=[
+ {a:'S',b:'R',d:4,r:7,s:2,tipo:'camino',nota:'Corto y sin cobertura.'},
+ {a:'R',b:'C',d:4,r:8,s:2,tipo:'camino abierto',nota:'Terreno expuesto.'},
+ {a:'C',b:'T',d:3,r:6,s:3,tipo:'camino',nota:'Tramo final cercano a la ciudad.'},
+ {a:'S',b:'D',d:5,r:2,s:9,tipo:'camino interior',nota:'Más largo, protegido, con víveres.'},
+ {a:'D',b:'P',d:4,r:3,s:8,tipo:'camino',nota:'Conecta el depósito con el puerto.'},
+ {a:'P',b:'T',d:4,r:3,s:7,tipo:'río navegable',nota:'Ruta fluvial hacia el objetivo.'},
+ {a:'S',b:'F',d:6,r:5,s:4,tipo:'camino',nota:'Pasa junto a la fortaleza.'},
+ {a:'F',b:'C',d:5,r:5,s:4,tipo:'paso de montaña',nota:'Paso estrecho.'},
+ {a:'F',b:'R',d:3,r:6,s:3,tipo:'sendero',nota:'Sendero secundario.'},
+ {a:'R',b:'D',d:3,r:3,s:6,tipo:'camino',nota:'Baja hacia el depósito.'},
+ {a:'R',b:'P',d:5,r:5,s:5,tipo:'río navegable',nota:'Se sigue la corriente.'},
+ {a:'C',b:'P',d:4,r:4,s:5,tipo:'camino',nota:'Une la ciudad con el puerto.'}
+];
+var EDGE={};EDGES.forEach(function(e){e.id=e.a+e.b;EDGE[e.id]=e});
+function edgeBetween(u,v){return EDGE[u+v]||EDGE[v+u]||null}
+var ROUTE_A=['SR','RC','CT'],ROUTE_B=['SD','DP','PT'];
+
+/* ================= TERRENO DE BLOQUES ================= */
+var RIVER=[[-20,110],[60,125],[140,170],[220,235],[285,262],[360,300],[430,325],[495,328],[570,350],[650,395],[780,415]];
+function dSeg(px,py,x1,y1,x2,y2){var dx=x2-x1,dy=y2-y1,t=((px-x1)*dx+(py-y1)*dy)/(dx*dx+dy*dy);t=Math.max(0,Math.min(1,t));return Math.hypot(px-(x1+t*dx),py-(y1+t*dy))}
+function dRiver(px,py){var m=1e9;for(var i=0;i<RIVER.length-1;i++){m=Math.min(m,dSeg(px,py,RIVER[i][0],RIVER[i][1],RIVER[i+1][0],RIVER[i+1][1]))}return m}
+var TILES=(function(){
+  var h='<g shape-rendering="crispEdges">';
+  for(var j=0;j<23;j++){for(var i=0;i<38;i++){
+    var cx=i*20+10,cy=j*20+10,dr=dRiver(cx,cy),hs=((i*73856093)^(j*19349663))>>>0,hv=hs%100,cls;
+    var nz=Math.sin(i*0.9+1)*Math.cos(j*0.7+2)+Math.sin((i+j)*0.35);
+    if(dr<15){cls=hv%2?'t-w1':'t-w2'}
+    else if(dr<24&&hv%3===0){cls='t-s'}
+    else if(nz>1.05){cls='t-h'}
+    else{cls=['t-g1','t-g2','t-g3'][hv%3]}
+    h+='<rect x="'+(i*20)+'" y="'+(j*20)+'" width="20" height="20" class="'+cls+'"/>';
+  }}
+  return h+'</g>';
+})();
+function riskColor(r){return 'hsl('+(140-14*r)+',62%,46%)'}
+function nodeBlock(n,half){return '<rect class="blk" x="'+(-half)+'" y="'+(-half)+'" width="'+(half*2)+'" height="'+(half*2)+'"/><rect class="blk-top" x="'+(-half)+'" y="'+(-half)+'" width="'+(half*2)+'" height="7"/>'}
+
+/* ================= TABS ================= */
+var TABS=['nivel1','nivel2','nivel3','tecnico'];
+function showTab(id){
+  if(TABS.indexOf(id)<0)id='nivel1';
+  TABS.forEach(function(t){
+    var b=$('#tab-'+t);b.setAttribute('aria-selected',t===id?'true':'false');b.tabIndex=t===id?0:-1;
+    $('#p-'+t).hidden=t!==id;
+  });
+  try{history.replaceState(null,'','#'+id)}catch(e){}
+  if(id!=='nivel3')stopPlay3(); if(id!=='nivel1')stopAnim1();
+}
+TABS.forEach(function(t,i){
+  var b=$('#tab-'+t);
+  b.addEventListener('click',function(){showTab(t)});
+  b.addEventListener('keydown',function(ev){
+    var k=ev.key==='ArrowRight'?1:ev.key==='ArrowLeft'?-1:0;
+    if(k){var n=TABS[(i+k+TABS.length)%TABS.length];showTab(n);$('#tab-'+n).focus();ev.preventDefault()}
+  });
+});
+document.addEventListener('click',function(ev){
+  var g=ev.target.closest('[data-goto]');
+  if(g){ if(g.dataset.imp){state3.imp=true;renderAll3()} showTab(g.dataset.goto); }
+});
+
+/* ================= NIVEL 1 ================= */
+var state1={a:10,b:0,c:0,blocked:{},sel:'SR',layers:{l1:true,l2:true,l3:true},anim:null,timer:null};
+var PRESETS={corta:[10,0,0],segura:[2,10,0],abast:[2,0,10],equil:[10,4,3]};
+function dijkstra(){
+  var a=state1.a,b=state1.b,c=state1.c,zero=(a+b+c===0);
+  var w=function(e){return zero?e.d:a*e.d+b*e.r+c*(10-e.s)};
+  var dist={},prev={},done={},order=[];
+  NODES.forEach(function(n){dist[n.id]=Infinity});dist.S=0;
+  for(;;){
+    var u=null,best=Infinity;
+    NODES.forEach(function(n){if(!done[n.id]&&dist[n.id]<best){best=dist[n.id];u=n.id}});
+    if(u===null)break;
+    done[u]=true;order.push({id:u,dist:dist[u]});
+    if(u==='T')break;
+    EDGES.forEach(function(e){
+      if(state1.blocked[e.id])return;
+      var v=e.a===u?e.b:(e.b===u?e.a:null);
+      if(!v||done[v])return;
+      var nd=dist[u]+w(e);
+      if(nd<dist[v]){dist[v]=nd;prev[v]={from:u,edge:e.id}}
+    });
+  }
+  var path=null;
+  if(done.T){path=[];var cur='T';while(cur!=='S'){var p=prev[cur];path.unshift(p.edge);cur=p.from}}
+  return {order:order,path:path,w:w};
+}
+function pathNodes(p){var out=['S'],cur='S';p.forEach(function(id){var e=EDGE[id];cur=e.a===cur?e.b:e.a;out.push(cur)});return out}
+function metrics(p,w){
+  var d=0,r=0,s=0,c=0;p.forEach(function(id){var e=EDGE[id];d+=e.d;r+=e.r;s+=e.s;c+=w(e)});
+  return {d:d,r:r,s:(s/p.length).toFixed(1),c:c};
+}
+var sameSet=function(p,q){return !!p&&!!q&&p.length===q.length&&p.every(function(x){return q.indexOf(x)>=0})};
+function stopAnim1(){if(state1.timer){clearInterval(state1.timer);state1.timer=null}state1.anim=null}
+
+function renderMap1(res){
+  var L=state1.layers,k=state1.anim;
+  var complete=!!res.path&&(k===null||k>=res.order.length);
+  var pset={};if(complete&&L.l3)res.path.forEach(function(x){pset[x]=1});
+  var onN={};if(complete&&L.l3)pathNodes(res.path).forEach(function(x){onN[x]=1});
+  var vis={};if(k!==null)res.order.slice(0,k).forEach(function(o){vis[o.id]=o.dist});
+  var h=L.l1?TILES:'<rect x="0" y="0" width="760" height="460" class="plain"/>';
+  EDGES.forEach(function(e){if(pset[e.id]){var A=NODE[e.a],B=NODE[e.b];h+='<line class="route" x1="'+A.x+'" y1="'+A.y+'" x2="'+B.x+'" y2="'+B.y+'"/>'}});
+  EDGES.forEach(function(e){
+    var A=NODE[e.a],B=NODE[e.b],bl=state1.blocked[e.id],col=(L.l3&&!bl)?riskColor(e.r):'var(--edge-plain)';
+    var ln='x1="'+A.x+'" y1="'+A.y+'" x2="'+B.x+'" y2="'+B.y+'"';
+    if(state1.sel===e.id)h+='<line class="selring" '+ln+'/>';
+    h+='<line class="casing" '+ln+'/><line class="ed'+(bl?' blocked':'')+'" style="stroke:'+col+'" '+ln+'/>';
+  });
+  EDGES.forEach(function(e){
+    var A=NODE[e.a],B=NODE[e.b],mx=(A.x+B.x)/2,my=(A.y+B.y)/2,bl=state1.blocked[e.id];
+    if(L.l3||bl){h+='<g transform="translate('+mx+','+my+')"><rect class="pill'+(bl?' bad':'')+'" x="-12" y="-9" width="24" height="18" rx="4"/><text class="pt" y="4">'+(bl?'×':e.d)+'</text></g>'}
+  });
+  EDGES.forEach(function(e){var A=NODE[e.a],B=NODE[e.b];h+='<line class="hit" data-e="'+e.id+'" x1="'+A.x+'" y1="'+A.y+'" x2="'+B.x+'" y2="'+B.y+'"><title>'+esc(A.name+' – '+B.name)+'</title></line>'});
+  NODES.forEach(function(n){
+    h+='<g class="node'+(onN[n.id]?' onpath':'')+(vis[n.id]!==undefined?' visited':'')+'" transform="translate('+n.x+','+n.y+')">'+nodeBlock(n,15)+'<text class="nl" y="5">'+n.id+'</text><text class="name" y="36">'+esc(n.name)+'</text>';
+    if(L.l2&&EVT1[n.id]){var t=EVT1[n.id],w=t.length*6.2+16;h+='<rect class="bd" x="'+(-w/2)+'" y="-42" width="'+w+'" height="18" rx="3"/><text class="bdt" y="-29">'+esc(t)+'</text>'}
+    if(vis[n.id]!==undefined){h+='<g transform="translate(20,-6)"><rect class="cost" x="0" y="-9" width="'+(String(Math.round(vis[n.id])).length*7+22)+'" height="18" rx="4"/><text class="pt" style="text-anchor:start" x="5" y="4">Σ '+Math.round(vis[n.id])+'</text></g>'}
+    h+='</g>';
+  });
+  $('#svg1').innerHTML=h;
+}
+function renderPanel1(res){
+  var w=res.w,r=$('#route1'),chosen=res.path;
+  var label=!chosen?'—':sameSet(chosen,ROUTE_A)?'Ruta A':sameSet(chosen,ROUTE_B)?'Ruta B':'Otra ruta';
+  r.innerHTML=chosen?'<strong>'+label+':</strong> '+pathNodes(chosen).map(function(i){return esc(NODE[i].name)}).join(' → '):'<strong>Sin ruta posible.</strong> Las conexiones bloqueadas dejan al objetivo aislado. Desbloquea alguna.';
+  var cols=[{t:'Ruta A',p:ROUTE_A},{t:'Ruta B',p:ROUTE_B},{t:'Modelo',p:chosen}];
+  var rows=[['Distancia','d'],['Exposición','r'],['Abastec. medio','s'],['Costo','c']];
+  var m=cols.map(function(c){
+    if(!c.p)return null;
+    if(c.p.some(function(x){return state1.blocked[x]}))return 'blocked';
+    return metrics(c.p,w);
+  });
+  var h='<thead><tr><th></th>'+cols.map(function(c,i){return '<th'+(c.t==='Modelo'?'':'')+'>'+c.t+'</th>'}).join('')+'</tr></thead><tbody>';
+  rows.forEach(function(rw){
+    h+='<tr><th>'+rw[0]+'</th>'+m.map(function(x,i){
+      var isCh=(cols[i].t==='Modelo')||(cols[i].t===label);
+      var v=x===null?'—':x==='blocked'?'bloqueada':Math.round(x[rw[1]]*10)/10;
+      return '<td'+(isCh&&cols[i].t!=='Modelo'?' class="chosen"':'')+'>'+v+'</td>';
+    }).join('')+'</tr>';
+  });
+  $('#cmp1').innerHTML=h+'</tbody>';
+  var sel=EDGE[state1.sel],A=NODE[sel.a],B=NODE[sel.b],bl=state1.blocked[sel.id];
+  $('#edgesel').value=sel.id;
+  $('#edgeinfo').innerHTML='<dt>Tramo</dt><dd>'+esc(A.name)+' – '+esc(B.name)+'</dd><dt>Tipo</dt><dd>'+esc(sel.tipo)+'</dd><dt>Distancia</dt><dd>'+sel.d+'</dd><dt>Riesgo</dt><dd>'+sel.r+' / 10</dd><dt>Abastecimiento</dt><dd>'+sel.s+' / 10</dd><dt>Costo actual</dt><dd>'+Math.round(res.w(sel)*10)/10+'</dd><dt>Nota</dt><dd>'+esc(sel.nota)+'</dd>';
+  $('#blockbtn').textContent=bl?'Desbloquear conexión':'Bloquear conexión (imprevisto)';
+  $('#live1').innerHTML=state1.anim!==null&&state1.anim<res.order.length?
+    ('Evaluando <strong>'+esc(NODE[res.order[Math.max(0,state1.anim-1)].id].name)+'</strong>. El algoritmo siempre expande el lugar de menor costo acumulado.'):
+    (chosen?'Con estos pesos el modelo propone la <strong>'+label+'</strong>. Es una hipótesis de simulación, no un hecho.':'Sin ruta posible con las conexiones actuales.');
+}
+function renderAll1(){var res=dijkstra();renderMap1(res);renderPanel1(res);
+  ['a','b','c'].forEach(function(k){$('#w'+k).value=state1[k];$('#w'+k+'o').textContent=state1[k]});
+  var cur=null;Object.keys(PRESETS).forEach(function(p){if(PRESETS[p][0]===state1.a&&PRESETS[p][1]===state1.b&&PRESETS[p][2]===state1.c)cur=p});
+  document.querySelectorAll('.preset').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.p===cur?'true':'false')});
+  document.querySelectorAll('[data-layer]').forEach(function(b){b.setAttribute('aria-pressed',state1.layers[b.dataset.layer]?'true':'false')});
+}
+(function initN1(){
+  $('#edgesel').innerHTML=EDGES.map(function(e){return '<option value="'+e.id+'">'+esc(NODE[e.a].name+' – '+NODE[e.b].name)+'</option>'}).join('');
+  $('#edgesel').addEventListener('change',function(){state1.sel=this.value;renderAll1()});
+  $('#svg1').addEventListener('click',function(ev){var t=ev.target.closest('[data-e]');if(t){state1.sel=t.dataset.e;renderAll1()}});
+  document.querySelectorAll('.preset').forEach(function(b){b.addEventListener('click',function(){stopAnim1();var p=PRESETS[b.dataset.p];state1.a=p[0];state1.b=p[1];state1.c=p[2];renderAll1()})});
+  ['a','b','c'].forEach(function(k){$('#w'+k).addEventListener('input',function(){stopAnim1();state1[k]=+this.value;renderAll1()})});
+  document.querySelectorAll('[data-layer]').forEach(function(b){b.addEventListener('click',function(){state1.layers[b.dataset.layer]=!state1.layers[b.dataset.layer];renderAll1()})});
+  $('#blockbtn').addEventListener('click',function(){stopAnim1();if(state1.blocked[state1.sel])delete state1.blocked[state1.sel];else state1.blocked[state1.sel]=true;renderAll1()});
+  $('#play1').addEventListener('click',function(){
+    stopAnim1();var n=dijkstra().order.length;state1.anim=0;renderAll1();
+    state1.timer=setInterval(function(){state1.anim++;if(state1.anim>n){stopAnim1()}renderAll1()},750);
+  });
+  $('#reset1').addEventListener('click',function(){stopAnim1();state1.a=10;state1.b=0;state1.c=0;state1.blocked={};state1.sel='SR';state1.layers={l1:true,l2:true,l3:true};renderAll1()});
+  renderAll1();
+})();
+
+/* ================= NIVEL 2 ================= */
+var KIND_LABEL={estado:'Estado del mundo',evento:'Acontecimiento',decision:'Decisión'};
+var N2=[
+ {id:'C1',x:90,y:60,k:'estado',t:'Territorio',s:'ríos, caminos'},
+ {id:'C2',x:90,y:150,k:'estado',t:'Recursos',s:'hombres y víveres'},
+ {id:'C3',x:90,y:240,k:'estado',t:'Situación política',s:'alianzas, órdenes'},
+ {id:'C4',x:90,y:340,k:'estado',t:'Ruta de suministro',s:'abastecimiento'},
+ {id:'D1',x:265,y:90,k:'decision',t:'Elegir la ruta',s:'decisión'},
+ {id:'E1',x:265,y:200,k:'evento',t:'Movilización',s:'tropas al frente'},
+ {id:'E2',x:440,y:170,k:'evento',t:'Enfrentamiento',s:'batalla'},
+ {id:'S1',x:615,y:90,k:'estado',t:'Cambio territorial',s:'consecuencia A'},
+ {id:'S2',x:615,y:250,k:'estado',t:'Cambio logístico',s:'consecuencia B'},
+ {id:'D2',x:790,y:100,k:'decision',t:'Reorganizar',s:'decisión posterior'},
+ {id:'E3',x:790,y:215,k:'evento',t:'Ocupación',s:'posición ganada'},
+ {id:'E4',x:790,y:330,k:'evento',t:'Negociación',s:'acontecimiento'},
+ {id:'G1',x:265,y:330,k:'estado',t:'Río crecido',s:'restricción geográfica',g:1},
+ {id:'G2',x:440,y:300,k:'estado',t:'Sin forraje',s:'restricción logística',g:1}
+];
+var N2m={};N2.forEach(function(n){N2m[n.id]=n});
+var E2=[
+ {a:'C1',b:'D1',st:'doc',rel:'condicionó'},{a:'C3',b:'D1',st:'int',rel:'influyó en'},
+ {a:'D1',b:'E1',st:'doc',rel:'ordenó'},{a:'C2',b:'E1',st:'doc',rel:'hizo posible'},
+ {a:'C4',b:'E1',st:'int',rel:'abasteció'},{a:'C4',b:'E2',st:'hip',rel:'hizo posible'},
+ {a:'E1',b:'E2',st:'doc',rel:'dio lugar a'},{a:'E2',b:'S1',st:'doc',rel:'produjo'},
+ {a:'E2',b:'S2',st:'doc',rel:'produjo'},{a:'S1',b:'E3',st:'doc',rel:'permitió'},
+ {a:'S2',b:'D2',st:'int',rel:'motivó'},{a:'S2',b:'E4',st:'int',rel:'condicionó'},
+ {a:'D2',b:'E3',st:'hip',rel:'orientó'},{a:'E3',b:'E4',st:'doc',rel:'abrió paso a'},
+ {a:'G1',b:'E1',st:'int',rel:'retrasó',g:1},{a:'G2',b:'E2',st:'hip',rel:'limitó',g:1}
+];
+var ST_LABEL={doc:'Documentada',int:'Interpretación',hip:'Hipótesis'};
+var state2={sel:null,q:null,f:{doc:true,int:true,hip:true},rest:false};
+var W2=152,H2=46;
+function vNodes2(){return N2.filter(function(n){return state2.rest||!n.g})}
+function vEdges2(){return E2.filter(function(e){return (state2.rest||!e.g)&&state2.f[e.st]})}
+function reach(id,edges){
+  var up={},down={},q=[id],i,cur;
+  while(q.length){cur=q.shift();edges.forEach(function(e){if(e.b===cur&&!up[e.a]&&e.a!==id){up[e.a]=1;q.push(e.a)}})}
+  q=[id];
+  while(q.length){cur=q.shift();edges.forEach(function(e){if(e.a===cur&&!down[e.b]&&e.b!==id){down[e.b]=1;q.push(e.b)}})}
+  return {up:up,down:down};
+}
+function path2(a,b){
+  if(a.x===b.x){var d=b.y>a.y?1:-1;return 'M'+a.x+' '+(a.y+d*H2/2)+' L'+b.x+' '+(b.y-d*H2/2)}
+  var x1=a.x+W2/2,y1=a.y,x2=b.x-W2/2,y2=b.y,o=Math.min(60,(x2-x1)/2);
+  return 'M'+x1+' '+y1+' C'+(x1+o)+' '+y1+' '+(x2-o)+' '+y2+' '+x2+' '+y2;
+}
+function renderMap2(){
+  var edges=vEdges2(),sel=state2.sel,R=sel?reach(sel,edges):null;
+  var inUp=function(id){return R&&(R.up[id]||id===sel)},inDown=function(id){return R&&(R.down[id]||id===sel)};
+  var h='<defs>';
+  ['doc','int','hip','up','down'].forEach(function(k){h+='<marker id="ar-'+k+'" viewBox="0 0 8 8" refX="7.5" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path class="mk-'+k+'" d="M0 0 L8 4 L0 8 z"/></marker>'});
+  h+='</defs><rect x="0" y="0" width="880" height="400" fill="transparent" data-bg="1"/>';
+  [['Condiciones previas',90],['Decisión y movimiento',265],['Acontecimiento',440],['Consecuencias',615],['Lo que sigue',790]].forEach(function(c){h+='<text class="coln" x="'+c[1]+'" y="20">'+c[0]+'</text>'});
+  edges.forEach(function(e){
+    var A=N2m[e.a],B=N2m[e.b],cls='e2 st-'+e.st,mk=e.st;
+    if(R){
+      var u=inUp(e.a)&&inUp(e.b),d=inDown(e.a)&&inDown(e.b);
+      if(u){cls+=' up';mk='up'}else if(d){cls+=' down';mk='down'}else cls+=' dim';
+    }
+    h+='<path class="'+cls+'" d="'+path2(A,B)+'" marker-end="url(#ar-'+mk+')"><title>'+esc(A.t+' '+e.rel+' '+B.t+' ('+ST_LABEL[e.st]+')')+'</title></path>';
+  });
+  vNodes2().forEach(function(n){
+    var dim=R&&!(inUp(n.id)||inDown(n.id));
+    h+='<g class="n2 k-'+(n.k)+(sel===n.id?' sel':'')+(dim?' dim':'')+'" data-n="'+n.id+'" tabindex="0" role="button" aria-label="'+esc(n.t+', '+n.s)+'" transform="translate('+(n.x-W2/2)+','+(n.y-H2/2)+')"><rect width="'+W2+'" height="'+H2+'" rx="6"/><text class="t" x="'+(W2/2)+'" y="20">'+esc(n.t)+'</text><text class="s" x="'+(W2/2)+'" y="35">'+esc(n.s)+'</text></g>';
+  });
+  $('#svg2').innerHTML=h;
+}
+function renderAnswer2(){
+  var box=$('#ans2'),edges=vEdges2(),sel=state2.sel;
+  var names=function(set,filter){return Object.keys(set).map(function(i){return N2m[i]}).filter(function(n){return !filter||filter(n)}).sort(function(a,b){return a.x-b.x||a.y-b.y}).map(function(n){return '<li>'+esc(n.t)+' <span class="hint">('+KIND_LABEL[n.k].toLowerCase()+')</span></li>'}).join('')};
+  var h='';
+  if(state2.q==='status'){
+    var c={doc:0,int:0,hip:0};edges.forEach(function(e){c[e.st]++});
+    h='<strong>Estatus de las conexiones visibles</strong><ul><li><span class="tag">documentada</span> '+c.doc+' conexiones respaldadas por fuentes.</li><li><span class="tag int">interpretación</span> '+c.int+' conexiones propuestas por la historiografía posterior.</li><li><span class="tag hip">hipótesis</span> '+c.hip+' conexiones planteadas por la simulación.</li></ul><p class="hint">Usa los filtros de arriba para ver solo lo documentado y comparar cómo cambia la red.</p>';
+  }else if(state2.q==='rest'){
+    h=state2.rest?'<strong>Con restricciones visibles</strong><p>Se suman dos condiciones al mapa: <em>río crecido</em> (geográfica) y <em>sin forraje</em> (logística). Ahora la movilización y el enfrentamiento dependen también de ellas, y eso alcanza a todo lo que viene después. Pulsa la pregunta otra vez para ocultarlas.</p>':'<strong>Restricciones ocultas</strong><p>La red vuelve a mostrar solo las condiciones ya cargadas.</p>';
+  }else if(!sel){
+    h='<p>Selecciona un nodo, o usa una de las preguntas, para recorrer la red.</p>';
+  }else{
+    var R=reach(sel,edges),n=N2m[sel];
+    if(state2.q==='dep'){
+      var ev=names(R.down,function(x){return x.k!=='estado'});
+      h='<strong>Acontecimientos y decisiones que dependieron de la ruta de suministro</strong>'+(ev?'<ul>'+ev+'</ul>':'<p>Ninguno con los filtros actuales.</p>')+'<p class="hint">Según las conexiones visibles. Si ocultas las interpretaciones, esta lista cambia.</p>';
+    }else{
+      h='<strong>'+esc(n.t)+'</strong> <span class="hint">'+KIND_LABEL[n.k].toLowerCase()+'</span><p><b>Causas y condiciones previas</b></p>'+(Object.keys(R.up).length?'<ul>'+names(R.up)+'</ul>':'<p class="hint">Ninguna con los filtros actuales.</p>')+'<p><b>Consecuencias</b></p>'+(Object.keys(R.down).length?'<ul>'+names(R.down)+'</ul>':'<p class="hint">Ninguna con los filtros actuales.</p>');
+    }
+  }
+  box.innerHTML=h;
+}
+function renderAll2(){
+  renderMap2();renderAnswer2();
+  document.querySelectorAll('[data-f]').forEach(function(b){b.setAttribute('aria-pressed',state2.f[b.dataset.f]?'true':'false')});
+}
+(function initN2(){
+  $('#svg2').addEventListener('click',function(ev){
+    var t=ev.target.closest('[data-n]');
+    if(t){state2.sel=state2.sel===t.dataset.n?null:t.dataset.n;state2.q=null}
+    else if(ev.target.closest('[data-bg]')){state2.sel=null;state2.q=null}
+    renderAll2();
+  });
+  $('#svg2').addEventListener('keydown',function(ev){
+    if(ev.key!=='Enter'&&ev.key!==' ')return;
+    var t=ev.target.closest('[data-n]');if(!t)return;
+    ev.preventDefault();var id=t.dataset.n;state2.sel=state2.sel===id?null:id;state2.q=null;renderAll2();
+    var again=$('#svg2 [data-n="'+id+'"]');if(again)again.focus();
+  });
+  document.querySelectorAll('[data-f]').forEach(function(b){b.addEventListener('click',function(){state2.f[b.dataset.f]=!state2.f[b.dataset.f];renderAll2()})});
+  document.querySelectorAll('[data-q]').forEach(function(b){b.addEventListener('click',function(){
+    var q=b.dataset.q;
+    if(q==='dep'){state2.q='dep';state2.sel='C4'}
+    else if(q==='status'){state2.q='status';state2.sel=null;state2.f={doc:true,int:true,hip:true}}
+    else if(q==='rest'){state2.rest=!state2.rest;state2.q='rest';state2.sel=null}
+    renderAll2();
+  })});
+  renderAll2();
+})();
+
+/* ================= NIVEL 3 ================= */
+var T3=[
+ {y:1864,title:'Posición inicial documentada',A:'Parte del punto de partida.',B:'Coincide con la fuente A.',M:null},
+ {y:1865,title:'Avance hasta el cruce del río',A:'Llega al cruce del río.',B:'Llega al cruce del río.',M:'Punto desde el que la simulación explora otra ruta.'},
+ {y:1866,title:'Las fuentes se separan',A:'Permanece en el cruce a la espera de refuerzos.',B:'Se traslada al puerto por vía fluvial.',M:'Hipótesis: avanza al depósito para reabastecerse.'},
+ {y:1867,title:'Dos recorridos distintos',A:'Avanza hacia la ciudad.',B:'Permanece en el puerto.',M:'Hipótesis: llega al puerto con suministros.'},
+ {y:1868,title:'Las rutas convergen',A:'Alcanza el objetivo por la ciudad.',B:'Alcanza el objetivo por vía fluvial.',M:'Hipótesis: alcanza el objetivo con mejor abastecimiento.'}
+];
+var POS={A:['S','R','R','C','T'],B:['S','R','P','P','T'],M:[null,'R','D','P','T']};
+var SRC_LABEL={A:'Fuente A',B:'Fuente B',M:'Simulación'};
+var SRC_TAG={A:'<span class="tag">documentado</span>',B:'<span class="tag">documentado</span>',M:'<span class="tag hip">hipótesis</span>'};
+var SRC_DOT={A:'dotA',B:'dotB',M:'dotM'};
+var OFFS={A:-6,B:6,M:0};
+var state3={t:0,s:{A:true,B:true,M:true},imp:false,timer:null};
+function stopPlay3(){if(state3.timer){clearInterval(state3.timer);state3.timer=null}var b=$('#play3');if(b)b.textContent='Reproducir'}
+function visits(){
+  var v={};NODES.forEach(function(n){v[n.id]=0});
+  ['A','B','M'].forEach(function(s){if(!state3.s[s])return;for(var i=0;i<=state3.t;i++){var p=POS[s][i];if(p)v[p]++}});
+  return v;
+}
+function offLine(a,b,off){
+  var dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy),nx=-dy/l*off,ny=dx/l*off;
+  return {x1:a.x+nx,y1:a.y+ny,x2:b.x+nx,y2:b.y+ny};
+}
+function renderMap3(){
+  var t=state3.t,v=visits(),h=TILES;
+  EDGES.forEach(function(e){var A=NODE[e.a],B=NODE[e.b],ln='x1="'+A.x+'" y1="'+A.y+'" x2="'+B.x+'" y2="'+B.y+'"';h+='<line class="casing" style="stroke-width:5;opacity:.5" '+ln+'/><line class="ed" style="stroke:var(--edge-plain);stroke-width:2.5" '+ln+'/>'});
+  ['A','B','M'].forEach(function(s){
+    if(!state3.s[s])return;
+    for(var i=0;i<t;i++){
+      var p=POS[s][i],q=POS[s][i+1];
+      if(!p||!q||p===q)continue;
+      var e=edgeBetween(p,q);if(!e)continue;
+      var A=NODE[e.a],B=NODE[e.b],o=offLine(A,B,OFFS[s]);
+      h+='<line class="tr'+s+'" x1="'+o.x1+'" y1="'+o.y1+'" x2="'+o.x2+'" y2="'+o.y2+'"/>';
+    }
+  });
+  NODES.forEach(function(n){
+    var half=state3.imp?15+Math.min(v[n.id],6)*2.5:15;
+    h+='<g transform="translate('+n.x+','+n.y+')">'+nodeBlock(n,half)+'<text class="nl" y="5">'+n.id+'</text><text class="name" y="'+(half+21)+'">'+esc(n.name)+(state3.imp&&v[n.id]?' · '+v[n.id]:'')+'</text>';
+    var shown=[];['A','M','B'].forEach(function(s){if(state3.s[s]&&POS[s][t]===n.id)shown.push(s)});
+    shown.forEach(function(s,i){
+      var cx=(i-(shown.length-1)/2)*18,cy=-half-14,L=s==='M'?'H':s;
+      if(s==='A')h+='<circle class="mkA" cx="'+cx+'" cy="'+cy+'" r="8"/>';
+      else if(s==='B')h+='<rect class="mkB" x="'+(cx-7)+'" y="'+(cy-7)+'" width="14" height="14" transform="rotate(45 '+cx+' '+cy+')"/>';
+      else h+='<rect class="mkM" x="'+(cx-8)+'" y="'+(cy-8)+'" width="16" height="16" rx="3"/>';
+      h+='<text class="mkl'+(s==='M'?' m':'')+'" x="'+cx+'" y="'+(cy+3.5)+'">'+L+'</text>';
+    });
+    h+='</g>';
+  });
+  $('#svg3').innerHTML=h;
+}
+function renderPanel3(){
+  var t=state3.t,T=T3[t],h='<p class="date">'+T.y+'</p><p class="evt" style="margin-top:6px">'+esc(T.title)+'</p>';
+  var disc=state3.s.A&&state3.s.B&&POS.A[t]!==POS.B[t];
+  if(disc)h+='<div class="note warn" style="margin-top:12px"><strong>Las fuentes difieren.</strong> No se elige una: se muestran las dos y queda abierta la pregunta.</div>';
+  h+='<div style="margin-top:12px">';
+  ['A','B','M'].forEach(function(s){
+    if(!state3.s[s])return;
+    var txt=s==='M'?T.M:T[s];if(!txt)return;
+    h+='<div class="srcrow"><i class="'+SRC_DOT[s]+'"></i><div><div class="nm">'+SRC_LABEL[s]+' '+SRC_TAG[s]+'</div><p>'+esc(txt)+'</p><p class="where">Posición: '+esc(NODE[POS[s][t]].name)+'</p></div></div>';
+  });
+  h+='</div>';
+  if(state3.imp){
+    var v=visits(),top=NODES.filter(function(n){return v[n.id]>0}).sort(function(a,b){return v[b.id]-v[a.id]}).slice(0,3);
+    h+='<div class="note" style="margin-top:6px"><strong>Importancia estratégica acumulada.</strong> Cuenta las presencias registradas en cada lugar hasta esta fecha. En el ejemplo: '+top.map(function(n){return esc(n.name)+' ('+v[n.id]+')'}).join(', ')+'. Es una medida de juguete para ilustrar la idea.</div>';
+  }
+  $('#panel3').innerHTML=h;
+}
+function renderAll3(){
+  renderMap3();renderPanel3();
+  $('#range3').value=state3.t;
+  document.querySelectorAll('#ticks3 button').forEach(function(b,i){if(i===state3.t)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current')});
+  document.querySelectorAll('[data-s]').forEach(function(b){b.setAttribute('aria-pressed',state3.s[b.dataset.s]?'true':'false')});
+  var ib=$('[data-imp3]');if(ib)ib.setAttribute('aria-pressed',state3.imp?'true':'false');
+  $('#prev3').disabled=state3.t===0;$('#next3').disabled=state3.t===T3.length-1;
+}
+(function initN3(){
+  $('#ticks3').innerHTML=T3.map(function(x,i){return '<button data-t="'+i+'">'+x.y+'</button>'}).join('');
+  $('#ticks3').addEventListener('click',function(ev){var b=ev.target.closest('[data-t]');if(b){stopPlay3();state3.t=+b.dataset.t;renderAll3()}});
+  $('#range3').addEventListener('input',function(){stopPlay3();state3.t=+this.value;renderAll3()});
+  $('#prev3').addEventListener('click',function(){stopPlay3();state3.t=Math.max(0,state3.t-1);renderAll3()});
+  $('#next3').addEventListener('click',function(){stopPlay3();state3.t=Math.min(T3.length-1,state3.t+1);renderAll3()});
+  $('#play3').addEventListener('click',function(){
+    if(state3.timer){stopPlay3();return}
+    if(state3.t>=T3.length-1)state3.t=0;
+    renderAll3();$('#play3').textContent='Pausar';
+    state3.timer=setInterval(function(){
+      if(state3.t>=T3.length-1){stopPlay3();return}
+      state3.t++;renderAll3();
+      if(state3.t>=T3.length-1)stopPlay3();
+    },1600);
+  });
+  document.querySelectorAll('[data-s]').forEach(function(b){b.addEventListener('click',function(){state3.s[b.dataset.s]=!state3.s[b.dataset.s];renderAll3()})});
+  $('[data-imp3]').addEventListener('click',function(){state3.imp=!state3.imp;renderAll3()});
+  renderAll3();
+})();
+
+/* ================= EXPORT ================= */
+function exportData(){
+  return JSON.stringify({
+    aviso:'Datos de ejemplo conceptual. No representan una ruta histórica verificada.',
+    nodos:NODES.map(function(n){return {id:n.id,nombre:n.name,x:n.x,z:n.y,tipo:n.tipo,desde:null,hasta:null,fuentes:[]}}),
+    aristas:EDGES.map(function(e){return {id:e.id,origen:e.a,destino:e.b,tipo:e.tipo,distancia:e.d,riesgo:e.r,abastecimiento:e.s,vigencia:null,fuentes:[],estatus:'ejemplo'}}),
+    acontecimientos:N2.map(function(n){return {id:n.id,nombre:n.t,clase:n.k==='estado'?'estado':n.k==='evento'?'acontecimiento':'decision',detalle:n.s,restriccion:!!n.g}}),
+    relaciones:E2.map(function(e){return {de:e.a,a:e.b,tipo:e.rel,estatus:e.st==='doc'?'documentado':e.st==='int'?'interpretacion':'hipotesis'}}),
+    escenario:T3.map(function(x,i){return {fecha:x.y,fuenteA:POS.A[i],fuenteB:POS.B[i],simulacion:POS.M[i]}})
+  },null,2);
+}
+$('#copyjson').addEventListener('click',function(){
+  var txt=exportData(),msg=$('#copymsg'),ta=$('#exp');
+  var fallback=function(){ta.hidden=false;ta.value=txt;ta.focus();ta.select();msg.textContent='Selecciona y copia el texto.'};
+  try{
+    navigator.clipboard.writeText(txt).then(function(){msg.textContent='Copiado.'},fallback);
+  }catch(e){fallback()}
+});
+
+/* ================= INICIO ================= */
+var h0=(location.hash||'').replace('#','');
+showTab(TABS.indexOf(h0)>=0?h0:'nivel1');
+})();
+</script>
+
+</body></html>
