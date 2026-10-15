@@ -1,0 +1,350 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Torneo de Resiliencia Neuronal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: encabezado explicativo, barra de control, rejilla de 6 tarjetas con radar de circuitos, clasificación en vivo y tres notas de lectura. */
+:root{
+  --bg:#f1f4f3; --surface:#ffffff; --surface-2:#e8eeed; --fg:#14201e; --muted:#566663; --line:#d3dcda;
+  --accent:#0b5c55; --accent-fg:#ffffff; --sl:40%; --grid:#c4d0cd;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1514; --surface:#152120; --surface-2:#1d2d2c; --fg:#e5eeec; --muted:#92a8a4; --line:#27393a;
+  --accent:#5fd1c4; --accent-fg:#06211e; --sl:62%; --grid:#2f4545; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1514; --surface:#152120; --surface-2:#1d2d2c; --fg:#e5eeec; --muted:#92a8a4; --line:#27393a;
+  --accent:#5fd1c4; --accent-fg:#06211e; --sl:62%; --grid:#2f4545; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(30px,5vw,48px);font-weight:700;letter-spacing:-.02em}
+h2{font-size:22px;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header{display:flex;flex-direction:column;gap:12px;max-width:760px}
+header p{color:var(--muted);font-size:16px;max-width:65ch}
+
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.controls .status{margin-left:auto;font-family:var(--f-mono);font-size:13px;color:var(--muted);min-width:0}
+.controls .status b{color:var(--fg);font-weight:500}
+button,select{font:inherit;font-size:14px;border-radius:8px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);padding:8px 14px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+label.sel{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+
+.wave{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;margin-top:-18px}
+.wave i{display:block;height:100%;width:0;background:hsl(12 75% var(--sl));transition:width .6s ease}
+
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:960px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;transition:opacity .4s}
+.card.down{opacity:.72}
+.card.flash{animation:flash .6s ease}
+@keyframes flash{0%{box-shadow:0 0 0 0 hsl(12 75% 50% / .55)}100%{box-shadow:0 0 0 12px hsl(12 75% 50% / 0)}}
+.card-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.card h3{font-size:18px}
+.strat{color:var(--muted);font-size:13px;line-height:1.45}
+.pill{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;border-radius:20px;padding:3px 9px;border:1px solid currentColor;white-space:nowrap;flex:none}
+.pill.ok{color:hsl(165 60% var(--sl))}
+.pill.off{color:hsl(12 75% var(--sl))}
+svg.radar{width:100%;height:auto;max-width:300px;align-self:center;display:block}
+.radar .ring{fill:none;stroke:var(--grid);stroke-width:1}
+.radar .axis{stroke:var(--grid);stroke-width:1}
+.radar .lab{font-family:var(--f-mono);font-size:10.5px;fill:var(--muted)}
+.radar .lab.comp{fill:var(--fg);font-weight:500}
+.radar .shield{fill:none;stroke:var(--accent);stroke-width:2}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.stat span{display:block;font-size:11px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.04em;text-transform:uppercase}
+.stat b{font-family:var(--f-mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.chip{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-radius:6px;padding:3px 7px;display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+.chip.comp{border-color:var(--accent);color:var(--accent)}
+.events{min-height:64px;font-size:13px;display:flex;flex-direction:column;gap:3px}
+.events div{color:var(--muted)}
+.events .good{color:hsl(165 60% var(--sl))}
+.events .bad{color:hsl(12 75% var(--sl))}
+.dots{display:flex;gap:6px;align-items:center;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.dot{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--grid)}
+.dot.ok{background:hsl(165 60% var(--sl));border-color:transparent}
+.dot.fail{background:hsl(12 75% var(--sl));border-color:transparent}
+.dot.down{background:var(--fg);border-color:transparent}
+.dot.out{background:transparent;border-style:dashed}
+
+.rank{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.rank-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;align-items:baseline}
+.rank-head .eyebrow{white-space:nowrap}
+ol.rl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ol.rl li{display:grid;grid-template-columns:34px minmax(0,1.3fr) minmax(0,1fr) 92px;gap:12px;align-items:center;padding:8px 10px;border-radius:8px;background:var(--surface-2)}
+@media (max-width:620px){ol.rl li{grid-template-columns:30px minmax(0,1fr) 80px}ol.rl .bar{display:none}}
+.pos{font-family:var(--f-display);font-weight:700;font-size:20px}
+.rl .nm{min-width:0}
+.rl .nm b{font-weight:600}
+.rl .nm small{display:block;color:var(--muted);font-size:12px}
+.bar{height:8px;border-radius:4px;background:var(--bg);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px}
+.num{font-family:var(--f-mono);font-size:12px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.verdict{border-top:1px solid var(--line);padding-top:14px;color:var(--muted);max-width:75ch}
+.verdict[hidden]{display:none}
+.verdict b{color:var(--fg);font-weight:600}
+
+.notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+@media (max-width:860px){.notes{grid-template-columns:minmax(0,1fr)}}
+.note{display:flex;flex-direction:column;gap:8px;border-top:2px solid var(--accent);padding-top:12px}
+.note h3{font-size:18px}
+.note p{color:var(--muted);font-size:14px}
+.legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 18px;margin-top:4px}
+@media (max-width:620px){.legend{grid-template-columns:minmax(0,1fr)}}
+.legend div{font-size:13px;color:var(--muted)}
+.legend b{font-family:var(--f-mono);font-weight:500;color:var(--fg)}
+footer{color:var(--muted);font-size:13px;max-width:75ch}
+@media (prefers-reduced-motion:reduce){.card.flash{animation:none}.wave i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Simulación didáctica · seis biotipos de circuitos neuronales</span>
+    <h1>Torneo de Resiliencia Neuronal</h1>
+    <p>Seis personajes funcionales reciben las mismas olas de estrés. Cada uno entrenó un circuito distinto, y ese circuito amortigua el golpe. Lanza las olas, mira cómo se deforma cada radar y compara quién conserva la capacidad de reacción.</p>
+  </header>
+
+  <section aria-label="Controles">
+    <div class="controls">
+      <button class="primary" id="btn-step">Lanzar ola de estrés</button>
+      <button id="btn-auto">Ejecutar torneo completo</button>
+      <button id="btn-reset">Reiniciar</button>
+      <label class="sel" for="sel-rounds">Rondas
+        <select id="sel-rounds"><option>3</option><option>4</option><option>5</option></select>
+      </label>
+      <div class="status" id="status" aria-live="polite">Ronda <b>0</b> de <b>3</b></div>
+    </div>
+    <div class="wave" aria-hidden="true"><i id="wave"></i></div>
+  </section>
+
+  <section aria-label="Personajes">
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="rank" aria-label="Clasificación">
+    <div class="rank-head">
+      <h2>Clasificación</h2>
+      <span class="eyebrow" id="rank-state">En vivo · antes de la primera ola</span>
+    </div>
+    <ol class="rl" id="rank"></ol>
+    <p class="verdict" id="verdict" hidden></p>
+  </section>
+
+  <section aria-label="Cómo leerlo">
+    <div class="notes">
+      <div class="note">
+        <h3>La taxonomía</h3>
+        <p>Cada eje del radar es un circuito. Más lejos del centro significa más disfunción, de 0 a 100. Todos parten de 20.</p>
+        <div class="legend">
+          <div><b>DMN</b> Modo por defecto: rumiación</div>
+          <div><b>SAL</b> Saliencia: amenazas</div>
+          <div><b>NEG</b> Afecto negativo: alerta</div>
+          <div><b>POS</b> Afecto positivo: recompensa</div>
+          <div><b>ATT</b> Atención: concentración</div>
+          <div><b>COG</b> Control cognitivo: ejecutivas</div>
+        </div>
+      </div>
+      <div class="note">
+        <h3>La compensación</h3>
+        <p>Una ola suma entre 15 y 35 puntos a cada circuito. El circuito que el personaje entrenó (marcado con un anillo) sube solo entre 5 y 15. Nadie es inmune: el mapa biológico es el mismo, cambia lo que cada uno aprendió a regular.</p>
+      </div>
+      <div class="note">
+        <h3>La métrica</h3>
+        <p>Hay fallo de reacción cuando el promedio de COG y SAL supera 70. Hay colapso cuando el estrés global, el promedio de los seis circuitos, supera 75. La clasificación ordena por funcionalidad, luego por menos fallos y luego por menor estrés.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>Modelo simplificado para ilustrar una idea, inspirado en la taxonomía de biotipos de Leanne Williams (Stanford). No es una herramienta clínica ni reproduce datos del estudio. Igual que en el código original, la intensidad de la ola se muestra pero no cambia el cálculo: el impacto sale de los rangos aleatorios de arriba.</footer>
+</div>
+
+<script>
+(function(){
+  var KEYS=["DMN","SAL","NEG","POS","ATT","COG"];
+  var PERS=[
+    {n:"Elena 'La Zen'",b:"DMN",d:"Mindfulness avanzado: detiene la rumiación del circuito por defecto."},
+    {n:"Víctor 'El Estoico'",b:"SAL",d:"Reevaluación cognitiva: neutraliza falsas alarmas de la red de saliencia."},
+    {n:"Sofía 'La Valiente'",b:"NEG",d:"Exposición controlada: modula la sobreactivación del afecto negativo."},
+    {n:"Alan 'El Hedonista'",b:"POS",d:"Activación conductual: estimula el circuito de recompensa mediante hábitos."},
+    {n:"Diana 'La Focalizada'",b:"ATT",d:"Técnicas de enfoque profundo: evita la dispersión de la red de atención."},
+    {n:"Carlos 'El Estratega'",b:"COG",d:"Resolución estructurada de problemas: mantiene el control cognitivo frontal."}
+  ];
+  var CX=110,CY=104,R=64,LR=82;
+  var total=3,ronda=0,chars=[],timer=null,rafId=null;
+  var $=function(id){return document.getElementById(id)};
+  var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+  function mean(o){var s=0;KEYS.forEach(function(k){s+=o[k]});return s/KEYS.length}
+  function hue(e){return Math.round(175-Math.max(0,Math.min(100,e))/100*163)}
+  function col(e,a){return "hsl("+hue(e)+" 70% var(--sl)"+(a!=null?" / "+a:"")+")"}
+  function pt(i,v,r){var a=i*Math.PI/3;return [CX+(r*v/100)*Math.sin(a),CY-(r*v/100)*Math.cos(a)]}
+  function poly(vals){return KEYS.map(function(k,i){return pt(i,vals[k],R).map(function(x){return x.toFixed(1)}).join(",")}).join(" ")}
+
+  function init(){
+    if(timer){clearInterval(timer);timer=null}
+    ronda=0;
+    chars=PERS.map(function(p){
+      var c={},d={};KEYS.forEach(function(k){c[k]=20;d[k]=20});
+      return {n:p.n,b:p.b,d:p.d,c:c,disp:d,estres:20,fallos:0,ok:true,colapso:0,hist:[],msgs:[]};
+    });
+    buildCards();render();
+    $("wave").style.width="0";
+    $("btn-auto").textContent="Ejecutar torneo completo";
+    $("verdict").hidden=true;
+  }
+
+  function buildCards(){
+    var g=$("grid");g.innerHTML="";
+    chars.forEach(function(p,idx){
+      var el=document.createElement("article");el.className="card";el.id="card"+idx;
+      var rings="";[25,50,75,100].forEach(function(v){
+        rings+='<polygon class="ring" points="'+poly({DMN:v,SAL:v,NEG:v,POS:v,ATT:v,COG:v})+'"/>';
+      });
+      var axes="",labs="";
+      KEYS.forEach(function(k,i){
+        var e=pt(i,100,R),l=pt(i,100,LR),anchor=Math.abs(l[0]-CX)<4?"middle":(l[0]>CX?"start":"end");
+        axes+='<line class="axis" x1="'+CX+'" y1="'+CY+'" x2="'+e[0].toFixed(1)+'" y2="'+e[1].toFixed(1)+'"/>';
+        labs+='<text class="lab'+(k===p.b?" comp":"")+'" x="'+l[0].toFixed(1)+'" y="'+(l[1]+4).toFixed(1)+'" text-anchor="'+anchor+'">'+k+'</text>';
+      });
+      var chips="";KEYS.forEach(function(k){chips+='<div class="chip'+(k===p.b?" comp":"")+'" id="ch'+idx+k+'"><span>'+k+'</span><span>20</span></div>'});
+      el.innerHTML=
+        '<div class="card-top"><h3>'+p.n+'</h3><span class="pill ok" id="pl'+idx+'">Funcional</span></div>'+
+        '<p class="strat">'+p.d+'</p>'+
+        '<svg class="radar" viewBox="0 0 220 208" role="img" aria-label="Radar de los seis circuitos de '+p.n+'">'+rings+axes+
+          '<polygon id="pg'+idx+'" points="" stroke-width="2"/>'+
+          '<circle class="shield" id="sh'+idx+'" r="7"/>'+labs+'</svg>'+
+        '<div class="stats"><div class="stat"><span>Estrés global</span><b id="es'+idx+'">20.0%</b></div>'+
+          '<div class="stat"><span>Fallos</span><b id="fa'+idx+'">0</b></div></div>'+
+        '<div class="chips">'+chips+'</div>'+
+        '<div class="events" id="ev'+idx+'" aria-live="off"><div>Esperando la primera ola.</div></div>'+
+        '<div class="dots" id="dt'+idx+'"></div>';
+      g.appendChild(el);
+    });
+  }
+
+  function drawRadar(i){
+    var p=chars[i];
+    var pg=$("pg"+i);pg.setAttribute("points",poly(p.disp));
+    var e=mean(p.disp);
+    pg.style.fill=col(e,.28);pg.style.stroke=col(e);
+    var bi=KEYS.indexOf(p.b),s=pt(bi,p.disp[p.b],R),sh=$("sh"+i);
+    sh.setAttribute("cx",s[0].toFixed(1));sh.setAttribute("cy",s[1].toFixed(1));
+  }
+
+  function render(){
+    chars.forEach(function(p,i){
+      drawRadar(i);
+      var card=$("card"+i);card.classList.toggle("down",!p.ok);
+      var pl=$("pl"+i);pl.textContent=p.ok?"Funcional":"Desregulado";pl.className="pill "+(p.ok?"ok":"off");
+      $("es"+i).textContent=p.estres.toFixed(1)+"%";$("es"+i).style.color=col(p.estres);
+      $("fa"+i).textContent=p.fallos;
+      KEYS.forEach(function(k){$("ch"+i+k).lastChild.textContent=Math.round(p.c[k])});
+      var ev=$("ev"+i);ev.innerHTML="";
+      if(p.msgs.length){p.msgs.forEach(function(m){var d=document.createElement("div");d.textContent=m[0];if(m[1])d.className=m[1];ev.appendChild(d)})}
+      else{ev.innerHTML="<div>Esperando la primera ola.</div>"}
+      var dt=$("dt"+i);dt.innerHTML="<span>Rondas</span>";
+      for(var r=0;r<total;r++){var s=document.createElement("span");s.className="dot "+(p.hist[r]||"");s.title="Ronda "+(r+1);dt.appendChild(s)}
+    });
+    renderRank();
+    $("status").innerHTML="Ronda <b>"+ronda+"</b> de <b>"+total+"</b>";
+    var done=ronda>=total;
+    $("btn-step").disabled=done;$("btn-auto").disabled=done;
+  }
+
+  function sorted(){
+    return chars.slice().sort(function(a,b){
+      if(a.ok!==b.ok)return a.ok?-1:1;
+      if(a.fallos!==b.fallos)return a.fallos-b.fallos;
+      return a.estres-b.estres;
+    });
+  }
+
+  function renderRank(){
+    var ol=$("rank");ol.innerHTML="";
+    sorted().forEach(function(p,i){
+      var li=document.createElement("li");
+      li.innerHTML='<span class="pos">#'+(i+1)+'</span>'+
+        '<div class="nm"><b>'+p.n+'</b><small>'+(p.ok?"Aún funcional":"Colapsado")+' · circuito entrenado: '+p.b+'</small></div>'+
+        '<div class="bar" aria-hidden="true"><i style="width:'+p.estres.toFixed(1)+'%;background:'+col(p.estres)+'"></i></div>'+
+        '<span class="num">'+p.fallos+' fallos<br>'+p.estres.toFixed(1)+'%</span>';
+      ol.appendChild(li);
+    });
+    var fin=ronda>=total&&ronda>0;
+    $("rank-state").textContent=ronda===0?"En vivo · antes de la primera ola":(fin?"Resultado final":"En vivo · tras la ronda "+ronda);
+    var v=$("verdict");
+    if(fin){
+      var s=sorted(),top=s[0];
+      var ventaja=chars.filter(function(p){return p.b==="COG"||p.b==="SAL"}).map(function(p){return p.n}).join(" y ");
+      v.hidden=false;
+      v.innerHTML="Primer lugar: <b>"+top.n+"</b>, con "+top.fallos+" fallos de reacción y "+top.estres.toFixed(1)+"% de estrés final. La métrica de reacción solo lee COG y SAL, así que "+ventaja+" parten con ventaja estructural. Los demás compensan otros circuitos que esta métrica no mide: otro criterio daría otro orden.";
+    }else{v.hidden=true}
+  }
+
+  function tween(){
+    if(rafId)cancelAnimationFrame(rafId);
+    chars.forEach(function(p){p.from=Object.assign({},p.disp)});
+    if(reduce){chars.forEach(function(p,i){KEYS.forEach(function(k){p.disp[k]=p.c[k]});drawRadar(i)});return}
+    var t0=null,dur=700;
+    function f(ts){
+      if(t0===null)t0=ts;
+      var t=Math.min(1,(ts-t0)/dur),e=1-Math.pow(1-t,3);
+      chars.forEach(function(p,i){KEYS.forEach(function(k){p.disp[k]=p.from[k]+(p.c[k]-p.from[k])*e});drawRadar(i)});
+      if(t<1)rafId=requestAnimationFrame(f);else rafId=null;
+    }
+    rafId=requestAnimationFrame(f);
+  }
+
+  function step(){
+    if(ronda>=total)return false;
+    ronda++;
+    var inten=rand(40,70);
+    $("wave").style.width=inten+"%";
+    chars.forEach(function(p,i){
+      p.msgs=[];
+      if(!p.ok){p.hist.push("out");p.msgs.push(["Inactivo desde la ronda "+p.colapso+".",""]);return}
+      p.msgs.push(["Ola de estrés, intensidad "+inten+".",""]);
+      KEYS.forEach(function(k){
+        var imp=(k===p.b)?rand(5,15):rand(15,35);
+        p.c[k]=Math.min(100,p.c[k]+imp);
+      });
+      p.msgs.push(["Estrategia eficiente: "+p.b+" amortigua el golpe.","good"]);
+      p.estres=mean(p.c);
+      var react=(p.c.COG+p.c.SAL)/2;
+      if(react>70){p.fallos++;p.hist.push("fail");p.msgs.push(["Fallo de reacción: bloqueo emocional o rumiación excesiva.","bad"])}
+      else{p.hist.push("ok");p.msgs.push(["Reacción limpia y veloz.","good"])}
+      if(p.estres>75){p.ok=false;p.colapso=ronda;p.hist[p.hist.length-1]="down";p.msgs.push(["Desregulación profunda: queda inactivo.","bad"])}
+      var card=$("card"+i);card.classList.remove("flash");void card.offsetWidth;if(!reduce)card.classList.add("flash");
+    });
+    tween();render();
+    return true;
+  }
+
+  function stopAuto(){if(timer){clearInterval(timer);timer=null}$("btn-auto").textContent="Ejecutar torneo completo"}
+
+  $("btn-step").addEventListener("click",function(){stopAuto();step()});
+  $("btn-auto").addEventListener("click",function(){
+    if(timer){stopAuto();return}
+    $("btn-auto").textContent="Pausar";
+    step();
+    timer=setInterval(function(){if(!step()||ronda>=total)stopAuto()},1600);
+  });
+  $("btn-reset").addEventListener("click",function(){stopAuto();init()});
+  $("sel-rounds").addEventListener("change",function(e){stopAuto();total=parseInt(e.target.value,10);init()});
+
+  init();
+})();
+</script>
+
+</body></html>
