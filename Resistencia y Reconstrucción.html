@@ -1,0 +1,435 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Resistencia y Reconstrucción</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: mapa de campo (canvas) a la izquierda, lecturas y gráfico a la derecha; fases y reglas debajo. */
+:root {
+  --bg: #EDF0EE;
+  --panel: #F8FAF9;
+  --ink: #17232C;
+  --muted: #5A6A73;
+  --line: #CBD3D0;
+  --field: #E4E9E6;
+  --py: #1F4E9C;
+  --on-py: #FFFFFF;
+  --ext: #B3261E;
+  --dmg: #C26A00;
+  --empty: #AEB9B5;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Source Sans 3', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10171C; --panel: #182128; --ink: #E3E9EC; --muted: #93A3AC; --line: #2B3841;
+    --field: #141C22; --py: #78A4F0; --on-py: #0B1420; --ext: #F27C73; --dmg: #EBA94A; --empty: #3A4A54;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10171C; --panel: #182128; --ink: #E3E9EC; --muted: #93A3AC; --line: #2B3841;
+  --field: #141C22; --py: #78A4F0; --on-py: #0B1420; --ext: #F27C73; --dmg: #EBA94A; --empty: #3A4A54;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1 {
+  font-family: var(--display); font-weight: 700; font-size: clamp(36px, 7vw, 56px);
+  line-height: 1; letter-spacing: 0.01em; text-transform: uppercase; margin: 0 0 10px; text-wrap: balance;
+}
+h2 {
+  font-family: var(--display); font-weight: 600; font-size: 22px; letter-spacing: 0.04em;
+  text-transform: uppercase; margin: 0 0 12px; text-wrap: balance;
+}
+.lede { margin: 0; max-width: 64ch; color: var(--muted); font-size: 17px; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 14px; min-width: 0; }
+.col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+.field-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; margin-bottom: 10px; }
+.turn { font-family: var(--mono); font-size: 14px; font-variant-numeric: tabular-nums; }
+.phase-name { font-family: var(--display); font-weight: 600; font-size: 20px; letter-spacing: 0.04em; text-transform: uppercase; }
+canvas { display: block; width: 100%; aspect-ratio: 2 / 1; max-width: 100%; border: 1px solid var(--line); cursor: pointer; touch-action: manipulation; }
+.hint { margin: 8px 0 0; font-size: 14px; color: var(--muted); }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.btn {
+  font: 600 14px var(--body); padding: 8px 14px; min-height: 38px; border-radius: 4px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer;
+}
+.btn:hover:not(:disabled) { border-color: var(--muted); }
+.btn.primary { background: var(--py); color: var(--on-py); border-color: var(--py); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+:focus-visible { outline: 2px solid var(--py); outline-offset: 2px; }
+.speed { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); margin-left: auto; }
+.speed input { accent-color: var(--py); width: 120px; min-width: 0; }
+
+.readout { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.readout li { display: grid; grid-template-columns: 24px 1fr auto 44px; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.readout li:first-child { border-top: 0; padding-top: 0; }
+.readout .n { font-family: var(--mono); font-size: 20px; font-weight: 500; font-variant-numeric: tabular-nums; text-align: right; }
+.readout .d { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.readout .name { font-size: 15px; }
+.readout small { display: block; color: var(--muted); font-size: 13px; line-height: 1.3; }
+
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--muted); font-family: var(--mono); font-size: 10px; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .ln.py { stroke: var(--py); }
+.chart .ln.ex { stroke: var(--ext); stroke-dasharray: 5 3; }
+.chart .ln.dm { stroke: var(--dmg); stroke-dasharray: 1 4; stroke-width: 2.5; }
+.chart circle.py { fill: var(--py); }
+.chart circle.ex { fill: var(--ext); }
+.chart circle.dm { fill: var(--dmg); }
+.key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 6px; }
+
+.phases { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 700px) { .phases { grid-template-columns: minmax(0, 1fr); } }
+.phases li { border-top: 3px solid var(--line); padding-top: 10px; color: var(--muted); }
+.phases li.on { border-top-color: var(--py); color: var(--ink); }
+.phases b { display: block; font-family: var(--display); font-size: 19px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
+.phases p { margin: 0; font-size: 15px; }
+
+.rules { margin: 0; display: flex; flex-direction: column; }
+.rule { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 12px; padding: 14px 0; border-top: 1px solid var(--line); }
+.rule dt { font-weight: 600; grid-column: 2; }
+.rule dd { margin: 0; grid-column: 2; }
+.rule .sw { grid-column: 1; grid-row: 1 / span 3; padding-top: 2px; }
+.rule .why { color: var(--muted); font-size: 15px; }
+.rule code { font-family: var(--mono); font-size: 13px; background: var(--field); padding: 1px 5px; border-radius: 3px; }
+.foot { margin: 0; font-size: 14px; color: var(--muted); max-width: 70ch; }
+
+svg .sw-py { fill: var(--py); }
+svg .sw-ex { stroke: var(--ext); fill: none; stroke-linecap: round; }
+svg .sw-dm { fill: var(--dmg); }
+svg .sw-em { fill: var(--empty); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Resistencia y Reconstrucción</h1>
+    <p class="lede">Un conflicto histórico jugado como autómata celular. Los extranjeros atacan rápido y se agotan sin apoyo. Los paraguayos resisten en grupo, sobreviven los más compactos y después reconstruyen el territorio.</p>
+  </header>
+
+  <section class="stage" aria-label="Simulación">
+    <div class="panel">
+      <div class="field-head">
+        <span class="phase-name" id="phaseName">Posición inicial</span>
+        <span class="turn" id="turnLabel">Turno 1 / 30 · semilla 42</span>
+      </div>
+      <canvas id="map" role="img" aria-label="Mapa de la simulación"></canvas>
+      <p class="hint">Toca una celda para cambiarla: vacío, paraguayo, extranjero, terreno dañado.</p>
+      <div class="controls">
+        <button class="btn primary" id="play" type="button">Reproducir</button>
+        <button class="btn" id="stepBtn" type="button">Paso</button>
+        <button class="btn" id="reset" type="button">Reiniciar</button>
+        <button class="btn" id="newMap" type="button">Nuevo mapa</button>
+        <label class="speed" for="speed">Lenta
+          <input id="speed" type="range" min="100" max="1000" step="50" value="650">
+          Rápida</label>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="panel">
+        <h2>Celdas</h2>
+        <ul class="readout" id="readout"></ul>
+      </div>
+      <div class="panel">
+        <h2>Evolución</h2>
+        <svg class="chart" id="chart" viewBox="0 0 360 190" role="img" aria-label="Celdas por turno"></svg>
+        <div class="key">
+          <span><svg width="26" height="8" aria-hidden="true"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--py)" stroke-width="2.5"/></svg>Paraguayos</span>
+          <span><svg width="26" height="8" aria-hidden="true"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--ext)" stroke-width="2.5" stroke-dasharray="5 3"/></svg>Extranjeros</span>
+          <span><svg width="26" height="8" aria-hidden="true"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--dmg)" stroke-width="2.5" stroke-dasharray="1 4" stroke-linecap="round"/></svg>Dañado</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tres momentos</h2>
+    <ol class="phases" id="phases">
+      <li data-i="0"><b>Ofensiva efímera</b><p>Los extranjeros avanzan donde tienen apoyo mutuo. Sin vecinos de su bando se disipan.</p></li>
+      <li data-i="1"><b>Resistencia y selección</b><p>Los paraguayos con vecinos aliados resisten. Quedan los núcleos más compactos.</p></li>
+      <li data-i="2"><b>Reconstrucción</b><p>Sin presión extranjera, los sobrevivientes limpian el terreno dañado y repueblan el mapa.</p></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Reglas de cada celda</h2>
+    <dl class="rules">
+      <div class="rule">
+        <span class="sw"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path class="sw-ex" stroke-width="3" d="M6 6L18 18M18 6L6 18"/></svg></span>
+        <dt>Extranjero</dt>
+        <dd>Se disipa si no tiene ningún extranjero vecino o si tiene más de 3 paraguayos vecinos. En otro caso se mantiene.</dd>
+        <dd class="why">Campaña sin sostén: depende de apoyo inmediato y se agota rápido.</dd>
+      </div>
+      <div class="rule">
+        <span class="sw"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect class="sw-py" x="4" y="4" width="16" height="16"/></svg></span>
+        <dt>Paraguayo</dt>
+        <dd>Cae a terreno dañado solo si no tiene vecinos paraguayos y más de 2 extranjeros lo rodean. En cualquier otro caso resiste.</dd>
+        <dd class="why">La comunidad protege: quien está aislado y rodeado es quien se pierde.</dd>
+      </div>
+      <div class="rule">
+        <span class="sw"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path class="sw-dm" d="M12 3L21 12L12 21L3 12Z"/></svg></span>
+        <dt>Terreno dañado</dt>
+        <dd>Con 2 o más paraguayos vecinos y ningún extranjero se reconstruye como paraguayo. Si hay algún extranjero cerca sigue dañado. Si no, se limpia a vacío.</dd>
+        <dd class="why">Los sobrevivientes restauran el tejido social y el territorio.</dd>
+      </div>
+      <div class="rule">
+        <span class="sw"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle class="sw-em" cx="12" cy="12" r="2.5"/></svg></span>
+        <dt>Vacío</dt>
+        <dd>Nace un paraguayo con 3 o más paraguayos vecinos y ningún extranjero. Nace un extranjero con 3 o más extranjeros vecinos y ningún paraguayo.</dd>
+        <dd class="why">Repoblación después de la guerra, o refuerzo de una línea que ya tiene apoyo.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <p class="foot">Mapa de 20 filas por 40 columnas, vecindad de 8 celdas y bordes que no se conectan. El mapa inicial sale al azar con 60% vacío, 25% paraguayo y 15% extranjero. La semilla es propia de esta página, por lo que el mapa no es idéntico al de numpy con semilla 42.</p>
+</div>
+
+<script>
+(function () {
+  var ROWS = 20, COLS = 40, LAST = 29;           // 30 turnos: índices 0 a 29
+  var V = 0, P = 1, E = 2, D = 3;
+  var NAMES = ['vacío', 'paraguayo', 'extranjero', 'dañado'];
+
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function makeMap(seed) {
+    var r = rng(seed), m = new Uint8Array(ROWS * COLS);
+    for (var i = 0; i < m.length; i++) {
+      var x = r();
+      m[i] = x < 0.60 ? V : (x < 0.85 ? P : E);
+    }
+    return m;
+  }
+  function near(m, r, c, t) {
+    var n = 0;
+    for (var i = -1; i <= 1; i++) for (var j = -1; j <= 1; j++) {
+      if (i === 0 && j === 0) continue;
+      var rr = r + i, cc = c + j;
+      if (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && m[rr * COLS + cc] === t) n++;
+    }
+    return n;
+  }
+  function step(m) {
+    var n = m.slice();
+    for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+      var k = r * COLS + c, cell = m[k];
+      var py = near(m, r, c, P), ex = near(m, r, c, E);
+      if (cell === P) {
+        if (ex > 2 && py < 1) n[k] = D;
+      } else if (cell === E) {
+        if (ex === 0 || py > 3) n[k] = V;
+      } else if (cell === D) {
+        if (py >= 2 && ex === 0) n[k] = P;
+        else if (ex > 0) n[k] = D;
+        else n[k] = V;
+      } else {
+        if (py >= 3 && ex === 0) n[k] = P;
+        else if (ex >= 3 && py === 0) n[k] = E;
+      }
+    }
+    return n;
+  }
+  function counts(m) {
+    var o = { p: 0, e: 0, d: 0, v: 0 };
+    for (var i = 0; i < m.length; i++) {
+      if (m[i] === P) o.p++; else if (m[i] === E) o.e++; else if (m[i] === D) o.d++; else o.v++;
+    }
+    return o;
+  }
+
+  var seed = 42, map, idx, history, playing = false, timer = null;
+  var canvas = document.getElementById('map');
+  var ctx = canvas.getContext('2d');
+  var playBtn = document.getElementById('play');
+  var stepBtn = document.getElementById('stepBtn');
+  var speed = document.getElementById('speed');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var ROWDEFS = [
+    { key: 'p', name: 'Paraguayos', note: 'Resistencia', sw: '<rect class="sw-py" x="4" y="4" width="16" height="16"/>' },
+    { key: 'e', name: 'Extranjeros', note: 'Efímero', sw: '<path class="sw-ex" stroke-width="3" d="M6 6L18 18M18 6L6 18"/>' },
+    { key: 'd', name: 'Terreno dañado', note: 'Conflicto', sw: '<path class="sw-dm" d="M12 3L21 12L12 21L3 12Z"/>' },
+    { key: 'v', name: 'Vacío', note: 'Libre o recuperado', sw: '<circle class="sw-em" cx="12" cy="12" r="2.5"/>' }
+  ];
+  var readout = document.getElementById('readout');
+  readout.innerHTML = ROWDEFS.map(function (r) {
+    return '<li><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + r.sw + '</svg>' +
+      '<span class="name">' + r.name + '<small>' + r.note + '</small></span>' +
+      '<span class="n" id="n-' + r.key + '">0</span><span class="d" id="d-' + r.key + '"></span></li>';
+  }).join('');
+
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  function fit() {
+    var w = canvas.clientWidth || 600, dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(w * dpr / 2);
+    draw();
+  }
+
+  function draw() {
+    var W = canvas.width, cell = W / COLS;
+    var cField = css('--field'), cLine = css('--line'), cPy = css('--py'), cEx = css('--ext'), cDm = css('--dmg'), cEm = css('--empty');
+    ctx.fillStyle = cField; ctx.fillRect(0, 0, W, canvas.height);
+    ctx.strokeStyle = cLine; ctx.globalAlpha = 0.55; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var x = 1; x < COLS; x++) { ctx.moveTo(x * cell, 0); ctx.lineTo(x * cell, canvas.height); }
+    for (var y = 1; y < ROWS; y++) { ctx.moveTo(0, y * cell); ctx.lineTo(W, y * cell); }
+    ctx.stroke(); ctx.globalAlpha = 1;
+    for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+      var s = map[r * COLS + c], x0 = c * cell, y0 = r * cell, cx = x0 + cell / 2, cy = y0 + cell / 2;
+      if (s === P) {
+        ctx.fillStyle = cPy; ctx.fillRect(x0 + cell * 0.14, y0 + cell * 0.14, cell * 0.72, cell * 0.72);
+      } else if (s === E) {
+        ctx.strokeStyle = cEx; ctx.lineWidth = Math.max(1.5, cell * 0.14); ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x0 + cell * 0.25, y0 + cell * 0.25); ctx.lineTo(x0 + cell * 0.75, y0 + cell * 0.75);
+        ctx.moveTo(x0 + cell * 0.75, y0 + cell * 0.25); ctx.lineTo(x0 + cell * 0.25, y0 + cell * 0.75);
+        ctx.stroke();
+      } else if (s === D) {
+        var q = cell * 0.36;
+        ctx.fillStyle = cDm; ctx.beginPath();
+        ctx.moveTo(cx, cy - q); ctx.lineTo(cx + q, cy); ctx.lineTo(cx, cy + q); ctx.lineTo(cx - q, cy);
+        ctx.closePath(); ctx.fill();
+      } else {
+        ctx.fillStyle = cEm; ctx.beginPath(); ctx.arc(cx, cy, cell * 0.07, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  function phaseOf() {
+    if (idx === 0) return { i: -1, name: 'Posición inicial' };
+    var cur = history[idx], prev = history[idx - 1];
+    if (cur.e === 0) return { i: 2, name: cur.d > 0 ? 'Reconstrucción' : 'Territorio restablecido' };
+    if (cur.e > prev.e) return { i: 0, name: 'Ofensiva efímera' };
+    return { i: 1, name: 'Resistencia y selección' };
+  }
+
+  function chart() {
+    var W = 360, H = 190, ml = 36, mr = 12, mt = 10, mb = 28;
+    var pw = W - ml - mr, ph = H - mt - mb, mx = 0, i, k;
+    history.forEach(function (h) { mx = Math.max(mx, h.p, h.e, h.d); });
+    var ymax = Math.max(100, Math.ceil(mx / 100) * 100);
+    function X(t) { return ml + pw * t / LAST; }
+    function Y(v) { return mt + ph - ph * v / ymax; }
+    var s = '';
+    for (k = 0; k <= 4; k++) {
+      var v = ymax * k / 4, yy = Y(v);
+      s += '<line class="grid" x1="' + ml + '" y1="' + yy + '" x2="' + (W - mr) + '" y2="' + yy + '"/>';
+      s += '<text x="' + (ml - 6) + '" y="' + (yy + 3) + '" text-anchor="end">' + v + '</text>';
+    }
+    [0, 9, 19, 29].forEach(function (t) {
+      s += '<text x="' + X(t) + '" y="' + (H - mb + 14) + '" text-anchor="middle">' + (t + 1) + '</text>';
+    });
+    s += '<text x="' + (ml + pw / 2) + '" y="' + (H - 2) + '" text-anchor="middle">turno</text>';
+    [['p', 'py'], ['e', 'ex'], ['d', 'dm']].forEach(function (sr) {
+      var pts = history.map(function (h, t) { return X(t).toFixed(1) + ',' + Y(h[sr[0]]).toFixed(1); }).join(' ');
+      s += '<polyline class="ln ' + sr[1] + '" points="' + pts + '"/>';
+      var last = history[history.length - 1];
+      s += '<circle class="' + sr[1] + '" cx="' + X(history.length - 1).toFixed(1) + '" cy="' + Y(last[sr[0]]).toFixed(1) + '" r="3.5"/>';
+    });
+    document.getElementById('chart').innerHTML = s;
+  }
+
+  function render() {
+    var cur = history[idx], prev = idx > 0 ? history[idx - 1] : null;
+    ROWDEFS.forEach(function (r) {
+      document.getElementById('n-' + r.key).textContent = cur[r.key];
+      var d = prev ? cur[r.key] - prev[r.key] : 0;
+      document.getElementById('d-' + r.key).textContent = prev ? (d > 0 ? '+' + d : d < 0 ? '−' + Math.abs(d) : '0') : '';
+    });
+    var ph = phaseOf();
+    document.getElementById('phaseName').textContent = ph.name;
+    document.getElementById('turnLabel').textContent = 'Turno ' + (idx + 1) + ' / 30 · semilla ' + seed;
+    Array.prototype.forEach.call(document.querySelectorAll('#phases li'), function (li) {
+      li.classList.toggle('on', Number(li.getAttribute('data-i')) === ph.i);
+    });
+    canvas.setAttribute('aria-label', 'Mapa de ' + COLS + ' por ' + ROWS + ' celdas, turno ' + (idx + 1) + ': ' +
+      cur.p + ' paraguayos, ' + cur.e + ' extranjeros, ' + cur.d + ' celdas dañadas.');
+    stepBtn.disabled = idx >= LAST;
+    playBtn.textContent = playing ? 'Pausar' : 'Reproducir';
+    draw(); chart();
+  }
+
+  function reset(newSeed) {
+    stop();
+    if (typeof newSeed === 'number') seed = newSeed;
+    map = makeMap(seed); idx = 0; history = [counts(map)];
+    render();
+  }
+  function advance() {
+    if (idx >= LAST) return;
+    map = step(map); idx++; history.push(counts(map));
+  }
+  function delay() { return 1150 - Number(speed.value); }
+  function tick() {
+    if (!playing) return;
+    if (idx >= LAST) { stop(); render(); return; }
+    advance(); render();
+    if (idx >= LAST) { stop(); render(); return; }
+    timer = setTimeout(tick, delay());
+  }
+  function stop() { playing = false; if (timer) { clearTimeout(timer); timer = null; } }
+  function play() {
+    if (idx >= LAST) reset();
+    playing = true; render();
+    timer = setTimeout(tick, delay());
+  }
+
+  playBtn.addEventListener('click', function () { if (playing) { stop(); render(); } else play(); });
+  stepBtn.addEventListener('click', function () { stop(); advance(); render(); });
+  document.getElementById('reset').addEventListener('click', function () { reset(); });
+  document.getElementById('newMap').addEventListener('click', function () { reset(Math.floor(Math.random() * 9000) + 100); });
+  canvas.addEventListener('click', function (ev) {
+    var rect = canvas.getBoundingClientRect();
+    var c = Math.floor((ev.clientX - rect.left) / rect.width * COLS);
+    var r = Math.floor((ev.clientY - rect.top) / rect.height * ROWS);
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+    var k = r * COLS + c;
+    map[k] = (map[k] + 1) % 4;
+    history[idx] = counts(map);
+    render();
+  });
+
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(canvas); else window.addEventListener('resize', fit);
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', draw);
+  }
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  reset(42);
+  fit();
+  if (!reduce) play();
+})();
+</script>
+
+</body></html>
