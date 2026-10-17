@@ -1,0 +1,293 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Barra de alerta</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Concepto: una sola barra de cuatro tramos que sube cuando las senales se combinan; debajo, las comunidades con sus picos de capacidades. Mismos colores de capacidad que el mapa. */
+:root{
+  --bg:#EBEFEC; --surface:#F7F9F6; --fg:#16211D; --muted:#58665F; --line:#C8D0CA;
+  --c-inv:#2F6FDB; --c-org:#C77F0A; --c-cre:#C2417A; --c-tra:#0E8C86; --c-res:#5F8420; --c-esp:#7556CF;
+  --z1:#D9B44A; --z2:#E08E2B; --z3:#D2552E; --z4:#A3262F;
+  --warn:#B3261E; --ok:#2E7A3C;
+  --f-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1715; --surface:#16201D; --fg:#E7EDE9; --muted:#9AA9A2; --line:#2B3833;
+    --c-inv:#6FA2FF; --c-org:#E8A63A; --c-cre:#EE7CAD; --c-tra:#3FC9C0; --c-res:#A2C754; --c-esp:#A58FF7;
+    --z1:#E8C75A; --z2:#F0A040; --z3:#F0714A; --z4:#E5535C;
+    --warn:#FF8F85; --ok:#7FD08C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1715; --surface:#16201D; --fg:#E7EDE9; --muted:#9AA9A2; --line:#2B3833;
+  --c-inv:#6FA2FF; --c-org:#E8A63A; --c-cre:#EE7CAD; --c-tra:#3FC9C0; --c-res:#A2C754; --c-esp:#A58FF7;
+  --z1:#E8C75A; --z2:#F0A040; --z3:#F0714A; --z4:#E5535C;
+  --warn:#FF8F85; --ok:#7FD08C; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--fg); font:15px/1.55 var(--f-body);
+  padding-block:28px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:32px}
+.eyebrow{font:500 .72rem var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+h1{font:700 clamp(2.1rem,6.5vw,3.7rem)/1.02 var(--f-display);letter-spacing:-.025em;margin:0;text-wrap:balance}
+.lede{font-size:1.08rem;max-width:62ch;margin:16px 0 0}
+h2{font:700 1.4rem/1.2 var(--f-display);letter-spacing:-.01em;margin:0 0 6px;text-wrap:balance}
+h3{font:700 1.15rem/1.25 var(--f-display);margin:0 0 8px}
+p{margin:0 0 10px}
+.sub{color:var(--muted);max-width:66ch;margin:0 0 16px}
+.small{font-size:.88rem;color:var(--muted)}
+.lab{font:500 .7rem var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.panel{padding:18px}
+.risk{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:34px}
+.risk b{font:500 2.6rem/1 var(--f-mono)}
+.risk span{font:700 1.2rem var(--f-display)}
+.barwrap{position:relative;padding-top:0}
+.bar4{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;position:relative}
+.seg{height:22px;background:var(--line);border-radius:3px;overflow:hidden}
+.seg i{display:block;height:100%}
+.mark{position:absolute;top:-8px;bottom:-8px;width:0;border-left:2px solid var(--fg);transform:translateX(-1px)}
+.mark::after{content:"";position:absolute;top:-6px;left:-7px;border:6px solid transparent;border-top-color:var(--fg);border-bottom:0}
+.zones{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:10px}
+.zone{font-size:.8rem;line-height:1.3;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.zone b{display:block;font:500 .7rem var(--f-mono);letter-spacing:.08em;color:var(--fg)}
+.zone.on{color:var(--fg)}
+.zone.on b{color:var(--zc)}
+.what{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;align-items:start}
+.sig{display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px solid var(--line)}
+.sig:first-of-type{padding-top:0}
+.sig label{display:flex;justify-content:space-between;gap:10px;font-weight:500}
+.sig label .lv{font:500 .7rem var(--f-mono);letter-spacing:.08em;color:var(--muted);margin-right:8px}
+.sig output{font:500 .9rem var(--f-mono)}
+.sig input[type=range]{width:100%;accent-color:var(--z3)}
+.sig .small{margin:0}
+.chk{display:flex;align-items:flex-start;gap:8px;font-size:.92rem;cursor:pointer;margin-top:14px}
+.chk input{accent-color:var(--c-inv);width:16px;height:16px;margin-top:3px;flex:none}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 14px}
+.btn{font:500 .9rem var(--f-body);color:var(--fg);background:transparent;border:1px solid var(--fg);border-radius:4px;padding:8px 12px;cursor:pointer;text-align:left}
+.btn.ghost{border-color:var(--line);color:var(--muted)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--c-inv);outline-offset:2px}
+.log{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px;min-height:5.2em;font-size:.92rem}
+.meter{display:grid;grid-template-columns:11rem 1fr 2.4rem;gap:10px;align-items:center;font-size:.88rem;margin-top:10px}
+.track{height:9px;background:var(--line);border-radius:5px;overflow:hidden}
+.track i{display:block;height:100%;border-radius:5px;background:var(--muted)}
+.track i.hot{background:var(--z3)}
+.mv{font:500 .85rem var(--f-mono);text-align:right}
+.comms{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:12px}
+.comm{padding:14px}
+.comm h3{margin:0 0 2px;font-size:1.02rem}
+.comm .t{font:500 .7rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.peaks{display:flex;align-items:flex-end;gap:5px;height:34px;margin-bottom:6px}
+.peaks i{flex:1;border-radius:2px 2px 0 0;min-height:2px}
+.letters{display:flex;gap:5px;font:500 .62rem var(--f-mono);color:var(--muted);margin-bottom:10px}
+.letters span{flex:1;text-align:center}
+.mini{display:grid;grid-template-columns:6.6rem 1fr 2rem;gap:8px;align-items:center;font-size:.8rem;color:var(--muted);margin-top:6px}
+.mini .track{height:7px}
+.list{margin:0;padding-left:1.15em;display:flex;flex-direction:column;gap:8px;max-width:74ch}
+code{font:400 .85em var(--f-mono);background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:1px 5px}
+@media (max-width:520px){.meter{grid-template-columns:8.4rem 1fr 2.2rem}.zone{font-size:.72rem}.risk b{font-size:2.1rem}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Muestra para el equipo técnico · sociedad de ejemplo</p>
+    <h1>Barra de alerta</h1>
+    <p class="lede">Detecta cuándo varias acciones observables empiezan a reforzarse y a formar un patrón destructivo. Mide el riesgo de que el patrón se consolide. No dice si una persona es buena o mala.</p>
+  </header>
+
+  <section aria-labelledby="t-barra">
+    <h2 id="t-barra">Riesgo de consolidación</h2>
+    <p class="sub">Mové las señales y mirá cómo sube la barra cuando se combinan. Una señal sola mueve poco.</p>
+    <div class="card panel">
+      <div class="risk"><b id="rnum">0</b><span id="rname"></span></div>
+      <div class="barwrap">
+        <div class="bar4" id="bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Riesgo de consolidación del patrón"></div>
+        <div class="zones" id="zones"></div>
+      </div>
+      <div class="what" aria-live="polite" id="what"></div>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="card panel">
+      <p class="lab">Señales observables</p>
+      <div class="sig"><label for="conc"><span><span class="lv">N1</span>Concentración de recursos estratégicos</span><output id="o-conc"></output></label>
+        <input id="conc" type="range" min="0" max="100" step="1"><p class="small">Parte de los recursos esenciales que controla un solo actor.</p></div>
+      <div class="sig"><label for="dep"><span><span class="lv">N2</span>Servicios que exigen autorización del centro</span><output id="o-dep"></output></label>
+        <input id="dep" type="range" min="0" max="100" step="1"><p class="small">Cuánto necesitan las comunidades pasar por un único centro. Cada comunidad lo siente distinto según las alternativas que tenga.</p></div>
+      <div class="sig"><label for="ctr"><span><span class="lv">N3</span>Contrapesos activos (más es mejor)</span><output id="o-ctr"></output></label>
+        <input id="ctr" type="range" min="0" max="100" step="1"><p class="small">Capacidad real de cuestionar decisiones, revisar acuerdos y desarrollar alternativas independientes.</p></div>
+      <div class="sig"><label for="per"><span><span class="lv">N4</span>Persecución de grupos y de la oposición</span><output id="o-per"></output></label>
+        <input id="per" type="range" min="0" max="100" step="1"><p class="small">Sanciones, exclusiones o procesos contra quienes cuestionan.</p></div>
+      <label class="chk" for="carisma"><input id="carisma" type="checkbox"><span>El personaje central tiene una personalidad fuerte y opiniones impopulares</span></label>
+      <p class="small" id="carismaMsg" style="margin-top:8px"></p>
+    </div>
+
+    <div class="card panel">
+      <p class="lab">Intervenir</p>
+      <p class="small">Cada botón es un paso. Fijate qué pasa con los servicios y con quién concentra el poder, no solo con la barra.</p>
+      <div class="btnrow">
+        <button class="btn" type="button" data-a="abrupta">Recortar el poder del centro de golpe</button>
+        <button class="btn" type="button" data-a="gradual">Abrir alternativas y auditoría de a poco</button>
+        <button class="btn" type="button" data-a="proteger">Proteger a quienes cuestionan</button>
+        <button class="btn ghost" type="button" data-a="reset">Volver al inicio</button>
+      </div>
+      <div class="log" id="log" aria-live="polite"></div>
+      <div class="meter"><span>Continuidad de servicios</span><span class="track"><i id="m-svc"></i></span><span class="mv" id="v-svc"></span></div>
+      <div class="meter"><span>Facción rival: concentración</span><span class="track"><i id="m-riv" class="hot"></i></span><span class="mv" id="v-riv"></span></div>
+      <p class="small" id="actor" style="margin-top:10px"></p>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-com">
+    <h2 id="t-com">Comunidades con reglas propias</h2>
+    <p class="sub">No hay una sociedad uniforme con diversidad pintada encima. Cada comunidad tiene sus propios picos de capacidades y sus propias alternativas, y eso cambia cuánto le pesa la dependencia y cuánto aguanta un golpe a los servicios. Valores de ejemplo.</p>
+    <div class="comms" id="comms"></div>
+    <p class="small" style="margin-top:10px">Picos en el mismo orden y color que el mapa de capacidades: I investigación, O organización, C creación, T traducción, R resistencia, E especialización.</p>
+  </section>
+
+  <section aria-labelledby="t-calc">
+    <h2 id="t-calc">Cómo se calcula</h2>
+    <div class="card panel">
+      <ul class="list">
+        <li>Cada señal vale entre 0 y 1. La concentración usa al actor que más concentra, sea el centro o la facción rival.</li>
+        <li>Riesgo = 100 × (½ promedio de las señales + ½ media geométrica). La media geométrica solo sube cuando las señales aparecen juntas.</li>
+        <li>Dependencia de cada comunidad = servicios que exigen autorización × (1,4 − alternativas propias), con tope en 1.</li>
+        <li>Un recorte brusco quita servicios en proporción a esa dependencia, amortiguado por los picos de organización, resistencia y traducción de la comunidad. La caída de servicios es lo que la facción rival aprovecha.</li>
+        <li>La personalidad, el carisma y las opiniones del personaje no entran en ninguna fórmula.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+var CAPV=['--c-inv','--c-org','--c-cre','--c-tra','--c-res','--c-esp'];
+var CAPN=['Investigación','Organización','Creación','Traducción','Resistencia','Especialización'];
+var CAPL=['I','O','C','T','R','E'];
+var COMM=[
+ {n:'Barrio Santa Rosa',t:'urbano · ingresos bajos',alt:.25,cap:[.3,.8,.6,.5,.6,.3]},
+ {n:'Valle Alto',t:'rural · agricultura familiar',alt:.35,cap:[.2,.6,.4,.3,.9,.4]},
+ {n:'Puerto Nuevo',t:'ciudad intermedia · comercio',alt:.7,cap:[.5,.6,.5,.6,.3,.6]},
+ {n:'Paso Frontera',t:'frontera · comercio informal',alt:.5,cap:[.2,.5,.4,.9,.5,.2]}
+];
+var LV=[
+ {k:'N1',n:'Concentración inicial',v:'--z1',d:'Una persona o institución comienza a controlar recursos estratégicos. La concentración puede ser legítima o necesaria en ciertas circunstancias. Todavía no implica un patrón destructivo.'},
+ {k:'N2',n:'Dependencia creciente',v:'--z2',d:'Otras comunidades pierden alternativas y necesitan autorización de un único centro para acceder a servicios esenciales.'},
+ {k:'N3',n:'Bloqueo de la regulación',v:'--z3',d:'Se restringe la capacidad de cuestionar decisiones, revisar acuerdos o desarrollar alternativas independientes.'},
+ {k:'N4',n:'Patrón consolidándose',v:'--z4',d:'El control de recursos, la eliminación de contrapesos y la persecución de quienes se oponen comienzan a reforzarse mutuamente.'}
+];
+var START={conc:65,dep:50,ctr:55,per:15,rival:0,sv:[100,100,100,100]};
+var S={};
+function reset(){S={conc:START.conc,dep:START.dep,ctr:START.ctr,per:START.per,rival:0,sv:START.sv.slice(),log:null}}
+function $(id){return document.getElementById(id)}
+function clamp(x,a,b){return Math.min(b,Math.max(a,x))}
+function r0(x){return Math.round(x)}
+function di(c){return Math.min(1,S.dep/100*(1.4-c.alt))}
+function cq(c){return (c.cap[1]+c.cap[4]+c.cap[3])/3}
+function signals(){
+  var m=0;COMM.forEach(function(c){m+=di(c)});m/=COMM.length;
+  return [Math.max(S.conc,S.rival)/100,m,1-S.ctr/100,S.per/100];
+}
+function risk(){
+  var s=signals(),sum=0,pr=1;
+  s.forEach(function(x){sum+=x;pr*=x});
+  return 100*(.5*sum/4+.5*Math.pow(pr,.25));
+}
+function avgSv(){var t=0;S.sv.forEach(function(x){t+=x});return t/S.sv.length}
+
+function act(a){
+  var before=risk(),msg='';
+  if(a==='reset'){reset();syncSliders();render();return}
+  if(a==='abrupta'){
+    var c0=S.conc;
+    S.conc=clamp(S.conc-45,0,100);
+    COMM.forEach(function(c,i){S.sv[i]=clamp(S.sv[i]-80*di(c)*(1-.5*cq(c)),0,100)});
+    S.rival=Math.max(S.rival,clamp((100-avgSv())*1.4,0,100));
+    S.ctr=clamp(S.ctr-20,0,100);
+    var after=risk();
+    msg='Recortaste el poder del centro de golpe. Su concentración bajó de '+r0(c0)+' a '+r0(S.conc)+', pero los servicios cayeron a '+r0(avgSv())+' y la facción rival pasó a concentrar '+r0(S.rival)+'. Las medidas de emergencia redujeron los contrapesos a '+r0(S.ctr)+'. Riesgo: '+r0(before)+' → '+r0(after)+'. El poder cambió de manos y la sociedad quedó con menos servicios.';
+  }else if(a==='gradual'){
+    S.ctr=clamp(S.ctr+15,0,100);
+    S.conc=clamp(S.conc-8,0,100);
+    S.dep=clamp(S.dep-8,0,100);
+    S.rival=clamp(S.rival-8,0,100);
+    S.sv=S.sv.map(function(x){return clamp(x+6,0,100)});
+    var after2=risk();
+    msg='Abriste alternativas y auditoría de a poco. Contrapesos '+r0(S.ctr)+', concentración '+r0(S.conc)+', dependencia '+r0(S.dep)+'. Los servicios no se interrumpieron. Riesgo: '+r0(before)+' → '+r0(after2)+'. Un paso mueve poco; el efecto se sostiene con varios pasos.';
+  }else if(a==='proteger'){
+    S.per=clamp(S.per-20,0,100);
+    var after3=risk();
+    msg='Protegiste a quienes cuestionan. La persecución bajó a '+r0(S.per)+'. Riesgo: '+r0(before)+' → '+r0(after3)+'. Esto no corrige la concentración ni la dependencia, así que la barra baja solo en parte.';
+  }
+  S.log=msg;
+  syncSliders();render();
+}
+
+var KEYS=['conc','dep','ctr','per'];
+function syncSliders(){KEYS.forEach(function(k){$(k).value=S[k];$('o-'+k).textContent=r0(S[k])})}
+
+function render(){
+  var r=risk(),rr=r0(r),zi=r<10?-1:Math.min(3,Math.floor(r/25));
+  $('rnum').textContent=rr;
+  $('rname').textContent=zi<0?'Sin señales relevantes':LV[zi].k+' · '+LV[zi].n;
+  $('rname').style.color=zi<0?'':'var('+LV[zi].v+')';
+  var bar=$('bar'),h='',i;
+  for(i=0;i<4;i++){
+    var f=clamp((r-25*i)/25,0,1)*100;
+    h+='<div class="seg"><i style="width:'+f+'%;background:var('+LV[i].v+')"></i></div>';
+  }
+  h+='<div class="mark" style="left:'+clamp(r,0,100)+'%"></div>';
+  bar.innerHTML=h;bar.setAttribute('aria-valuenow',rr);
+  $('zones').innerHTML=LV.map(function(l,j){
+    return '<div class="zone'+(j===zi?' on':'')+'" style="--zc:var('+l.v+')"><b>'+l.k+'</b>'+l.n+'</div>';
+  }).join('');
+  $('what').innerHTML=zi<0
+    ?'<h3>Sin señales relevantes</h3><p>Ninguna señal alcanza para hablar de un patrón. Mové las señales para ver cómo evoluciona la alerta.</p>'
+    :'<h3>'+LV[zi].k+' · '+LV[zi].n+'</h3><p>'+LV[zi].d+'</p>';
+  $('carismaMsg').textContent=$('carisma').checked
+    ?'Sin efecto en la barra, que sigue en '+rr+'. La alerta lee acciones observables y sus consecuencias, no el carácter ni las ideas de nadie.'
+    :'';
+  var sv=avgSv();
+  $('m-svc').style.width=r0(sv)+'%';$('v-svc').textContent=r0(sv);
+  $('m-riv').style.width=r0(S.rival)+'%';$('v-riv').textContent=r0(S.rival);
+  $('actor').textContent=S.rival>S.conc
+    ?'Quien más concentra ahora es la facción rival ('+r0(S.rival)+'), no el centro ('+r0(S.conc)+').'
+    :'Quien más concentra es el centro ('+r0(S.conc)+').';
+  $('log').textContent=S.log||'Todavía no intervenías. El punto de partida está en el tramo N2: hay concentración y dependencia, y los contrapesos todavía funcionan.';
+  $('comms').innerHTML=COMM.map(function(c,i){
+    var d=di(c),pk=c.cap.map(function(v,k){
+      return '<i title="'+CAPN[k]+' '+r0(v*100)+'" style="height:'+r0(v*100)+'%;background:var('+CAPV[k]+')"></i>';
+    }).join('');
+    var lt=CAPL.map(function(l){return '<span>'+l+'</span>'}).join('');
+    function row(l,v,hot){return '<div class="mini"><span>'+l+'</span><span class="track"><i'+(hot?' class="hot"':'')+' style="width:'+r0(v)+'%"></i></span><span class="mv">'+r0(v)+'</span></div>'}
+    return '<div class="card comm"><h3>'+c.n+'</h3><p class="t">'+c.t+'</p><div class="peaks" aria-hidden="true">'+pk+'</div><div class="letters" aria-hidden="true">'+lt+'</div>'+
+      row('Alternativas',c.alt*100,false)+row('Dependencia',d*100,d>.7)+row('Servicios',S.sv[i],false)+'</div>';
+  }).join('');
+}
+
+KEYS.forEach(function(k){
+  $(k).addEventListener('input',function(){S[k]=+this.value;$('o-'+k).textContent=this.value;S.log=null;render()});
+});
+$('carisma').addEventListener('change',render);
+document.querySelector('.btnrow').addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-a]');if(!b)return;act(b.getAttribute('data-a'));
+});
+
+reset();syncSliders();render();
+})();
+</script>
+
+</body></html>
