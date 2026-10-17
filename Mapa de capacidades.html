@@ -1,0 +1,543 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mapa de capacidades</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Concepto: relieve de crestas (lineas de nivel apiladas en profundidad). Cada pico es una capacidad; el color identifica el tipo, nunca un valor. */
+:root{
+  --bg:#EBEFEC; --surface:#F7F9F6; --fg:#16211D; --muted:#58665F; --line:#C8D0CA; --ridge:#2A3A34;
+  --c-inv:#2F6FDB; --c-org:#C77F0A; --c-cre:#C2417A; --c-tra:#0E8C86; --c-res:#5F8420; --c-esp:#7556CF;
+  --warn:#B3261E; --ok:#2E7A3C;
+  --f-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1715; --surface:#16201D; --fg:#E7EDE9; --muted:#9AA9A2; --line:#2B3833; --ridge:#9FB3AA;
+    --c-inv:#6FA2FF; --c-org:#E8A63A; --c-cre:#EE7CAD; --c-tra:#3FC9C0; --c-res:#A2C754; --c-esp:#A58FF7;
+    --warn:#FF8F85; --ok:#7FD08C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1715; --surface:#16201D; --fg:#E7EDE9; --muted:#9AA9A2; --line:#2B3833; --ridge:#9FB3AA;
+  --c-inv:#6FA2FF; --c-org:#E8A63A; --c-cre:#EE7CAD; --c-tra:#3FC9C0; --c-res:#A2C754; --c-esp:#A58FF7;
+  --warn:#FF8F85; --ok:#7FD08C; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--fg); font:15px/1.55 var(--f-body);
+  padding-block:28px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+.eyebrow{font:500 .72rem var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+h1{font:700 clamp(2.1rem,6.5vw,3.7rem)/1.02 var(--f-display);letter-spacing:-.025em;margin:0;text-wrap:balance}
+.lede{font-size:1.08rem;max-width:62ch;margin:16px 0 0}
+h2{font:700 1.4rem/1.2 var(--f-display);letter-spacing:-.01em;margin:0 0 6px;text-wrap:balance}
+h3{font:700 1.15rem/1.25 var(--f-display);margin:0 0 8px;display:flex;align-items:center;gap:10px}
+p{margin:0 0 10px}
+.sub{color:var(--muted);max-width:66ch;margin:0 0 16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.map{margin:0;overflow:hidden}
+canvas{display:block;width:100%;aspect-ratio:16/8;cursor:pointer}
+@media (max-width:640px){canvas{aspect-ratio:4/3.5}}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.lg{display:flex;align-items:center;gap:8px;min-width:0;text-align:left;font:500 .9rem var(--f-body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:8px 10px;cursor:pointer}
+.lg[aria-pressed="true"]{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
+.lg .nm{flex:1;min-width:0;overflow-wrap:anywhere}
+.lg .vl{font:500 .85rem var(--f-mono);color:var(--muted)}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--c);flex:none}
+.key{padding:0 16px 14px;color:var(--muted);font-size:.85rem;display:flex;flex-wrap:wrap;gap:4px 20px}
+.key b{color:var(--fg);font-weight:600}
+.controls{display:flex;flex-wrap:wrap;gap:14px 26px;padding:14px 16px 16px;border-top:1px solid var(--line);align-items:flex-end}
+.ctl{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ctl>span,.lab{font:500 .7rem var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ctl input[type=range]{width:200px;max-width:100%;accent-color:var(--c-inv)}
+select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 8px;max-width:100%}
+.chk{display:flex;align-items:center;gap:8px;font-size:.92rem;cursor:pointer}
+.chk input{accent-color:var(--c-inv);width:16px;height:16px}
+.btn{font:500 .9rem var(--f-body);color:var(--fg);background:transparent;border:1px solid var(--fg);border-radius:4px;padding:7px 12px;cursor:pointer}
+.btn.pri{background:var(--fg);color:var(--bg)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--c-inv);outline-offset:2px}
+.panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:16px;align-items:start}
+.panel{padding:18px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.stats div{display:flex;flex-direction:column;min-width:0}
+.stats b{font:500 1.5rem/1.1 var(--f-mono)}
+.stats span{font-size:.78rem;color:var(--muted);line-height:1.3;margin-top:4px}
+.small{font-size:.88rem;color:var(--muted)}
+.warn{color:var(--warn)}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.bars{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.bar{display:grid;grid-template-columns:7.6rem 1fr 2rem;gap:10px;align-items:center;font-size:.9rem}
+.track{height:9px;background:var(--line);border-radius:5px;overflow:hidden}
+.track i{display:block;height:100%;border-radius:5px}
+.bv{font:500 .85rem var(--f-mono);text-align:right}
+.chip{display:inline-block;font:500 .72rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:99px;padding:2px 9px;color:var(--muted)}
+pre{font:400 .78rem/1.5 var(--f-mono);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px;overflow-x:auto;margin:12px 0 0}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:520px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;font-size:.9rem}
+th{font:500 .7rem var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+td.m{font-family:var(--f-mono);font-size:.82rem}
+.pill{display:inline-block;font:500 .7rem var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:99px;border:1px solid currentColor}
+.pill.ok{color:var(--ok)}.pill.bad{color:var(--warn)}
+.cbar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;min-width:90px}
+.cbar i{display:block;height:100%;background:var(--muted)}
+.cbar i.bad{background:var(--warn)}
+ul.rules{margin:0;padding-left:1.15em;display:flex;flex-direction:column;gap:8px;max-width:72ch}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;align-items:start}
+@media (max-width:480px){.bar{grid-template-columns:6.2rem 1fr 1.8rem}.stats b{font-size:1.25rem}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Prototipo para el equipo técnico · población de ejemplo generada</p>
+    <h1>El mapa de capacidades</h1>
+    <p class="lede">Una sociedad dibujada como relieve. Cada pico es una capacidad que la población desarrolla y su altura dice cuánto. El mapa no ordena a las personas: muestra qué capacidades distintas existen y cómo se conectan.</p>
+  </header>
+
+  <section aria-labelledby="t-mapa">
+    <h2 id="t-mapa">La sociedad vista desde arriba</h2>
+    <p class="sub">Elegí un pico en el mapa o en la lista para ver de qué está hecho. Cambiá la población o su composición y mirá cómo se mueve el relieve.</p>
+    <figure class="card map">
+      <canvas id="cv" role="img" aria-label="Relieve con seis picos de capacidades: investigación, organización, creación, traducción, resistencia y especialización. La lista de abajo da los mismos datos en texto."></canvas>
+      <div class="legend" id="legend"></div>
+      <div class="key">
+        <span><b>Altura</b> desarrollo promedio (0–100)</span>
+        <span><b>Anchura</b> personas con nivel alto</span>
+        <span><b>Líneas</b> personas que sostienen dos picos</span>
+        <span><b>Color</b> tipo de capacidad, sin valor asociado</span>
+      </div>
+      <div class="controls">
+        <label class="ctl" for="n"><span>Población · <output id="nout">800</output> personas</span>
+          <input id="n" type="range" min="200" max="3000" step="100" value="800"></label>
+        <label class="ctl" for="comp"><span>Composición</span>
+          <select id="comp">
+            <option value="mixta">Mixta</option>
+            <option value="urbana">Mayormente urbana</option>
+            <option value="rural">Mayormente rural</option>
+            <option value="frontera">Zona de frontera</option>
+          </select></label>
+        <label class="chk" for="conn"><input id="conn" type="checkbox" checked>Mostrar conexiones</label>
+        <button class="btn" id="regen" type="button">Generar otra población</button>
+      </div>
+    </figure>
+  </section>
+
+  <section class="panels" aria-label="Detalle">
+    <div class="card panel" id="peakPanel" aria-live="polite"></div>
+    <div class="card panel" id="personPanel" aria-live="polite"></div>
+  </section>
+
+  <section aria-labelledby="t-sesgo">
+    <h2 id="t-sesgo">Control de sesgo</h2>
+    <p class="sub">El sistema no debe confundir riqueza, educación formal o poder político con capacidad humana. Esta tabla mide cuánta relación hay entre cada uno de esos atributos y el pico más alto de cada persona. Con datos bien tratados queda cerca de cero.</p>
+    <div class="card panel">
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Atributo de contexto</th><th>Relación con capacidad (r)</th><th>Magnitud</th><th>Estado</th></tr></thead>
+          <tbody id="biasRows"></tbody>
+        </table>
+      </div>
+      <label class="chk" for="bias" style="margin-top:16px"><input id="bias" type="checkbox">Simular una lectura sesgada (el error que hay que evitar)</label>
+      <p class="small" id="biasMsg" style="margin-top:10px"></p>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-tec">
+    <h2 id="t-tec">Para quienes lo implementan</h2>
+    <p class="sub">Qué significa cada variable visual y qué reglas tiene que respetar el modelo de datos.</p>
+    <div class="two">
+      <div class="card panel">
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Variable</th><th>Qué dice</th><th>Cálculo en el prototipo</th></tr></thead>
+            <tbody>
+              <tr><td>Altura</td><td>Grado de desarrollo de una capacidad en la población</td><td class="m">promedio de cap<sub>k</sub> × 100</td></tr>
+              <tr><td>Anchura</td><td>Cuántas personas la tienen desarrollada</td><td class="m">% con nivel ≥ 60</td></tr>
+              <tr><td>Posición</td><td>Región donde vive cada especialización; picos cercanos tienden a combinarse</td><td class="m">ubicación fija en el prototipo</td></tr>
+              <tr><td>Línea entre picos</td><td>Colaboración, dependencia o intercambio de conocimiento</td><td class="m">% de personas con nivel ≥ 50 en ambos</td></tr>
+              <tr><td>Color</td><td>Tipo de capacidad</td><td class="m">sin significado de valor</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card panel">
+        <h3>Reglas del modelo</h3>
+        <ul class="rules">
+          <li>Las capacidades y los atributos de contexto son campos separados. Ningún cálculo de capacidad lee riqueza, educación formal ni poder político.</li>
+          <li>No existe puntaje total ni orden de personas. Cada capacidad se muestra por separado y siempre en el mismo orden.</li>
+          <li>Un pico bajo describe un perfil. No se trata como un déficit.</li>
+          <li>La población se genera por distribución entre capacidades, experiencias y contextos, sin diseñar cada habitante a mano.</li>
+          <li>El control de sesgo corre cada vez que se genera una población.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card panel" style="margin-top:16px">
+      <h3>Preguntas abiertas para el equipo</h3>
+      <ul class="rules">
+        <li>Cómo se mide cada capacidad sin usar títulos, ingresos ni cargos como señal.</li>
+        <li>Si la posición de cada pico se fija a mano o se calcula desde datos de afinidad entre capacidades.</li>
+        <li>Cómo distinguir colaboración, dependencia e intercambio en las conexiones, que hoy comparten una sola medida.</li>
+        <li>Qué contextos generan la población y con qué proporciones.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+var CAPS=[
+ {k:'investigacion',n:'Investigación',s:'I',v:'--c-inv',x:.12,y:.44,d:'Personas con alta capacidad para descubrir, experimentar o resolver problemas técnicos.'},
+ {k:'organizacion',n:'Organización',s:'O',v:'--c-org',x:.30,y:.74,d:'Personas capaces de coordinar grupos, administrar recursos o movilizar comunidades.'},
+ {k:'creacion',n:'Creación',s:'C',v:'--c-cre',x:.44,y:.36,d:'Personas que desarrollan obras, expresiones culturales o nuevas ideas.'},
+ {k:'traduccion',n:'Traducción',s:'T',v:'--c-tra',x:.58,y:.80,d:'Personas capaces de conectar comunidades que utilizan lenguajes o marcos conceptuales diferentes.'},
+ {k:'resistencia',n:'Resistencia',s:'R',v:'--c-res',x:.74,y:.60,d:'Personas con conocimientos locales y capacidad para mantener una comunidad frente a situaciones adversas.'},
+ {k:'especializacion',n:'Especialización',s:'E',v:'--c-esp',x:.90,y:.30,d:'Personas con capacidades avanzadas en ámbitos concretos, incluso si no tienen influencia política o económica.'}
+];
+var K=CAPS.length, R=64, N=220;
+var CTX={urbano:[.05,0,.05,0,-.08,.10],rural:[-.05,.04,0,-.02,.14,-.03],frontera:[-.02,0,.02,.15,.04,-.05]};
+var CTXN=['urbano','rural','frontera'];
+var COMP={mixta:[.4,.4,.2],urbana:[.7,.2,.1],rural:[.15,.75,.1],frontera:[.2,.25,.55]};
+
+var state={n:800,comp:'mixta',seed:20261017,conn:true,bias:false,sel:0,person:0,P:[],A:null,thr:0};
+var tgt=new Float32Array(R*N), cur=new Float32Array(R*N), dom=new Int8Array(R*N);
+var tops=[], col={caps:[]}, raf=0;
+
+function $(id){return document.getElementById(id)}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){var u=0;while(u===0)u=r();var v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function sig(x){return 1/(1+Math.exp(-x))}
+function logit(p){return Math.log(p/(1-p))}
+function clamp(x,a,b){return Math.min(b,Math.max(a,x))}
+function pct(x){return Math.round(x*100)}
+function corr(a,b){var n=a.length,ma=0,mb=0,i;for(i=0;i<n;i++){ma+=a[i];mb+=b[i]}ma/=n;mb/=n;var sab=0,saa=0,sbb=0;for(i=0;i<n;i++){var da=a[i]-ma,db=b[i]-mb;sab+=da*db;saa+=da*da;sbb+=db*db}return sab/Math.sqrt(saa*sbb||1)}
+
+/* Poblacion: distribucion de capacidades por contexto. Riqueza, educacion y poder se generan aparte y no alimentan ninguna capacidad. */
+function generate(){
+  var r=mulberry32(state.seed), comp=COMP[state.comp], P=[], i, k;
+  for(i=0;i<state.n;i++){
+    var u=r(), ci=u<comp[0]?0:(u<comp[0]+comp[1]?1:2);
+    var zw=gauss(r), ze=gauss(r), zp=gauss(r);
+    var w=sig(1.7*zw), e=sig(1.7*(.7*zw+.71*ze)), p=sig(1.7*(.6*zw+.8*zp));
+    var s1=Math.floor(r()*K), g=r(), s2r=Math.floor(r()*(K-1)), s2=-1;
+    if(g<.5){s2=s2r>=s1?s2r+1:s2r}
+    var cap=[];
+    for(k=0;k<K;k++){
+      var lg=logit(clamp(.34+CTX[CTXN[ci]][k],.1,.8))+gauss(r);
+      if(k===s1)lg+=1.3;
+      if(k===s2)lg+=.9;
+      cap.push(sig(lg));
+    }
+    P.push({id:i+1,ci:ci,w:w,e:e,p:p,cap:cap});
+  }
+  state.P=P;
+  var ws=P.map(function(q){return q.w}).sort(function(a,b){return a-b});
+  state.thr=ws[Math.floor(.667*(ws.length-1))];
+}
+
+function analyze(){
+  var P=state.P, n=P.length, meas=new Float32Array(n*K), i, k, j;
+  for(i=0;i<n;i++){
+    var q=P[i], bt=state.bias?.9*((q.w+q.e+q.p)/3-.5):0;
+    q.bt=bt;
+    for(k=0;k<K;k++)meas[i*K+k]=clamp(q.cap[k]+bt,0,1);
+  }
+  var A={meas:meas,mean:[],breadth:[],nHigh:[],topShare:[],link:new Float32Array(K*K),lmax:1,corr:{}};
+  for(k=0;k<K;k++){
+    var s=0,hi=0;
+    for(i=0;i<n;i++){var v=meas[i*K+k];s+=v;if(v>=.6)hi++}
+    A.mean.push(s/n);A.breadth.push(hi/n);A.nHigh.push(hi);
+    var idx=[];for(i=0;i<n;i++)idx.push(i);
+    idx.sort(function(a,b){return meas[b*K+k]-meas[a*K+k]});
+    var m=Math.max(5,Math.round(n*.1)),rich=0;
+    for(i=0;i<m;i++)if(P[idx[i]].w>=state.thr)rich++;
+    A.topShare.push(rich/m);
+  }
+  for(i=0;i<n;i++){
+    for(j=0;j<K;j++){
+      if(meas[i*K+j]<.5)continue;
+      for(k=j+1;k<K;k++)if(meas[i*K+k]>=.5)A.link[j*K+k]++;
+    }
+  }
+  for(j=0;j<K;j++)for(k=j+1;k<K;k++){A.link[k*K+j]=A.link[j*K+k];A.lmax=Math.max(A.lmax,A.link[j*K+k])}
+  var mx=[],cw=[],ce=[],cp=[];
+  for(i=0;i<n;i++){var b=0;for(k=0;k<K;k++)b=Math.max(b,meas[i*K+k]);mx.push(b);cw.push(P[i].w);ce.push(P[i].e);cp.push(P[i].p)}
+  A.corr={w:corr(mx,cw),e:corr(mx,ce),p:corr(mx,cp)};
+  state.A=A;
+}
+
+function baseNoise(u,y){return .035+.025*Math.sin(u*9+y*4)+.02*Math.sin(u*17-y*7+1.3)}
+function computeTarget(){
+  var A=state.A, vis=[], sx=[], sy=[], k, r, c;
+  for(k=0;k<K;k++){
+    vis.push(clamp((A.mean[k]-.15)/.5,.15,.85));
+    sx.push(.055+.22*A.breadth[k]);
+    sy.push(.09+.28*A.breadth[k]);
+  }
+  for(r=0;r<R;r++){
+    var y=r/(R-1);
+    for(c=0;c<N;c++){
+      var u=c/(N-1), sum=baseNoise(u,y), best=-1, bv=.045;
+      for(k=0;k<K;k++){
+        var dx=(u-CAPS[k].x)/sx[k], dy=(y-CAPS[k].y)/sy[k];
+        var g=vis[k]*Math.exp(-.5*(dx*dx+dy*dy));
+        sum+=g;
+        if(g>bv){bv=g;best=k}
+      }
+      tgt[r*N+c]=sum;dom[r*N+c]=best;
+    }
+  }
+}
+
+var cv=$('cv'), ctx=cv.getContext('2d'), dpr=1;
+function refreshColors(){
+  var cs=getComputedStyle(document.documentElement);
+  function g(n){return cs.getPropertyValue(n).trim()}
+  col.surface=g('--surface');col.fg=g('--fg');col.ridge=g('--ridge');col.muted=g('--muted');
+  col.caps=CAPS.map(function(c){return g(c.v)});
+}
+function resize(){
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  var w=cv.clientWidth,h=cv.clientHeight;
+  if(!w||!h)return;
+  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  draw();
+}
+function personNow(){return state.P[state.person]}
+
+function draw(){
+  var w=cv.clientWidth,h=cv.clientHeight;
+  if(!w||!h||!col.surface)return;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle=col.surface;ctx.fillRect(0,0,w,h);
+  var padX=Math.max(16,w*.035), span=w-2*padX, maxH=h*.40, c, r, k;
+  function by(y){return h*(.26+.62*y)}
+  var xs=new Float32Array(N), ys=new Float32Array(N);
+  for(c=0;c<N;c++)xs[c]=padX+span*c/(N-1);
+  ctx.lineJoin='round';ctx.lineCap='round';
+  var sel=state.sel;
+  function run(a,b,key){
+    ctx.beginPath();ctx.moveTo(xs[a],ys[a]);
+    for(var i=a+1;i<=b;i++)ctx.lineTo(xs[i],ys[i]);
+    if(key<0){ctx.strokeStyle=col.ridge;ctx.globalAlpha=.32;ctx.lineWidth=1}
+    else{ctx.strokeStyle=col.caps[key];ctx.globalAlpha=key===sel?1:.4;ctx.lineWidth=key===sel?1.9:1.3}
+    ctx.stroke();
+  }
+  for(r=0;r<R;r++){
+    var y=r/(R-1), b=by(y);
+    for(c=0;c<N;c++)ys[c]=b-cur[r*N+c]*maxH;
+    ctx.globalAlpha=1;
+    ctx.beginPath();ctx.moveTo(xs[0],ys[0]);
+    for(c=1;c<N;c++)ctx.lineTo(xs[c],ys[c]);
+    ctx.lineTo(xs[N-1],h+2);ctx.lineTo(xs[0],h+2);ctx.closePath();
+    ctx.fillStyle=col.surface;ctx.fill();
+    var s=0,key=dom[r*N+1];
+    for(c=1;c<N;c++){
+      var kk=dom[r*N+c];
+      if(kk!==key){run(s,c-1,key);s=c-1;key=kk}
+    }
+    run(s,N-1,key);
+  }
+  ctx.globalAlpha=1;
+  tops=CAPS.map(function(p){
+    var row=Math.round(p.y*(R-1)), cc=Math.round(p.x*(N-1));
+    return {x:xs[cc],y:by(p.y)-cur[row*N+cc]*maxH,base:by(p.y)};
+  });
+
+  var A=state.A;
+  if(state.conn&&A){
+    var a,b2;
+    for(a=0;a<K;a++)for(b2=a+1;b2<K;b2++){
+      var t=A.link[a*K+b2]/A.lmax, involved=(a===sel||b2===sel);
+      if(t<.25&&!involved)continue;
+      var ta=tops[a],tb=tops[b2];
+      ctx.beginPath();ctx.moveTo(ta.x,ta.y);
+      ctx.quadraticCurveTo((ta.x+tb.x)/2,Math.min(ta.y,tb.y)-h*(.05+.10*t),tb.x,tb.y);
+      if(involved){ctx.strokeStyle=col.caps[sel];ctx.globalAlpha=.3+.6*t}
+      else{ctx.strokeStyle=col.fg;ctx.globalAlpha=.08+.22*t}
+      ctx.lineWidth=1+3.5*t;ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  var q=personNow();
+  if(q&&A){
+    var pts=[];
+    for(k=0;k<K;k++){
+      var v=A.meas[state.person*K+k], tb2=tops[k];
+      var py=tb2.base-v*maxH*.9;
+      ctx.beginPath();ctx.moveTo(tb2.x,tb2.base);ctx.lineTo(tb2.x,py);
+      ctx.strokeStyle=col.caps[k];ctx.lineWidth=2;ctx.globalAlpha=.9;ctx.stroke();
+      pts.push([tb2.x,py]);
+    }
+    ctx.globalAlpha=.55;ctx.setLineDash([4,4]);ctx.strokeStyle=col.fg;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
+    for(k=1;k<K;k++)ctx.lineTo(pts[k][0],pts[k][1]);
+    ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+    for(k=0;k<K;k++){
+      ctx.beginPath();ctx.arc(pts[k][0],pts[k][1],4.5,0,6.2832);
+      ctx.fillStyle=col.caps[k];ctx.fill();
+      ctx.lineWidth=2;ctx.strokeStyle=col.surface;ctx.stroke();
+    }
+  }
+
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  var wide=w>=760, ff='"IBM Plex Sans",system-ui,sans-serif';
+  for(k=0;k<K;k++){
+    var tp=tops[k], isSel=k===sel, ly=tp.y-16;
+    if(isSel){
+      ctx.beginPath();ctx.arc(tp.x,tp.y,5,0,6.2832);
+      ctx.lineWidth=2;ctx.strokeStyle=col.caps[k];ctx.stroke();
+    }
+    if(wide){
+      ctx.font=(isSel?'600 ':'500 ')+'12.5px '+ff;
+      ctx.lineWidth=4;ctx.strokeStyle=col.surface;ctx.strokeText(CAPS[k].n,tp.x,ly);
+      ctx.fillStyle=isSel?col.caps[k]:col.fg;ctx.fillText(CAPS[k].n,tp.x,ly);
+    }else{
+      ctx.beginPath();ctx.arc(tp.x,ly,10,0,6.2832);
+      ctx.fillStyle=col.caps[k];ctx.globalAlpha=isSel?1:.8;ctx.fill();ctx.globalAlpha=1;
+      ctx.font='600 11px '+ff;ctx.fillStyle=col.surface;ctx.fillText(CAPS[k].s,tp.x,ly+.5);
+    }
+  }
+}
+
+function tick(){
+  var moved=false,i;
+  for(i=0;i<cur.length;i++){
+    var d=tgt[i]-cur[i];
+    if(Math.abs(d)>.0004){cur[i]+=d*.16;moved=true}else cur[i]=tgt[i];
+  }
+  draw();
+  raf=moved?requestAnimationFrame(tick):0;
+}
+function kick(){
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches){cur.set(tgt);draw();return}
+  if(!raf)raf=requestAnimationFrame(tick);
+}
+
+function renderLegend(){
+  var A=state.A;
+  $('legend').innerHTML=CAPS.map(function(c,k){
+    return '<button type="button" class="lg" data-k="'+k+'" aria-pressed="'+(k===state.sel)+'" style="--c:var('+c.v+')">'+
+      '<span class="dot" style="--c:var('+c.v+')"></span><span class="nm">'+c.n+'</span><span class="vl">'+pct(A.mean[k])+'</span></button>';
+  }).join('');
+}
+function renderPeak(){
+  var A=state.A,k=state.sel,c=CAPS[k],n=state.P.length,j;
+  var partners=[];
+  for(j=0;j<K;j++)if(j!==k)partners.push([j,A.link[k*K+j]/n]);
+  partners.sort(function(a,b){return b[1]-a[1]});
+  var ts=A.topShare[k], flag=ts>.45;
+  $('peakPanel').innerHTML=
+    '<p class="lab">Pico seleccionado</p>'+
+    '<h3><span class="dot" style="--c:var('+c.v+')"></span>'+c.n+'</h3>'+
+    '<p>'+c.d+'</p>'+
+    '<div class="stats"><div><b>'+pct(A.mean[k])+'</b><span>Altura: desarrollo promedio</span></div>'+
+    '<div><b>'+pct(A.breadth[k])+'%</b><span>Anchura: nivel alto (≥ 60)</span></div>'+
+    '<div><b>'+A.nHigh[k]+'</b><span>de '+n+' personas con nivel alto</span></div></div>'+
+    '<p class="small">Se conecta sobre todo con '+CAPS[partners[0][0]].n+' ('+pct(partners[0][1])+'% de la población sostiene ambos picos) y con '+CAPS[partners[1][0]].n+' ('+pct(partners[1][1])+'%).</p>'+
+    '<p class="small'+(flag?' warn':'')+'">Quién ocupa la cima: '+pct(ts)+'% del 10% más alto viene del tercio más rico. Sin sesgo se espera cerca de 33%.</p>';
+}
+function jsonFor(q,i){
+  var A=state.A,lines=CAPS.map(function(c,k){return '    "'+c.k+'": '+A.meas[i*K+k].toFixed(2)});
+  return '{\n  "id": '+q.id+',\n  "contexto": "'+CTXN[q.ci]+'",\n  "capacidades": {\n'+lines.join(',\n')+'\n  },\n  "atributos_de_contexto": {\n    "riqueza": '+q.w.toFixed(2)+',\n    "educacion_formal": '+q.e.toFixed(2)+',\n    "poder_politico": '+q.p.toFixed(2)+'\n  }\n}';
+}
+function renderPerson(){
+  var A=state.A,i=state.person,q=state.P[i];
+  var bars=CAPS.map(function(c,k){
+    var v=A.meas[i*K+k];
+    return '<div class="bar"><span>'+c.n+'</span><span class="track"><i style="width:'+pct(v)+'%;background:var(--'+c.v.slice(2)+')"></i></span><span class="bv">'+pct(v)+'</span></div>';
+  }).join('');
+  var note=state.bias?'<p class="small warn">Lectura sesgada: el sistema sumó '+(q.bt>=0?'+':'')+Math.round(q.bt*100)+' puntos por posición socioeconómica.</p>':'';
+  $('personPanel').innerHTML=
+    '<p class="lab">Una persona dentro del mapa</p>'+
+    '<h3>Persona #'+String(q.id).padStart(4,'0')+' <span class="chip">'+CTXN[q.ci]+'</span></h3>'+
+    '<p class="small">Los puntos del mapa marcan su nivel en cada pico. Tiene varios picos, de alturas distintas, y ninguno la ubica por encima o por debajo de otra persona.</p>'+
+    '<div class="btnrow"><button type="button" class="btn" data-m="a">Técnica alta, organización baja</button>'+
+    '<button type="button" class="btn" data-m="b">Liderazgo comunitario sin herramientas técnicas</button>'+
+    '<button type="button" class="btn" data-m="r">Otra al azar</button></div>'+
+    '<div class="bars">'+bars+'</div>'+note+
+    '<p class="small">Contexto, no capacidad: riqueza '+pct(q.w)+' · educación formal '+pct(q.e)+' · poder político '+pct(q.p)+'</p>'+
+    '<pre>'+jsonFor(q,i)+'</pre>';
+}
+function renderBias(){
+  var A=state.A, rows=[['Riqueza',A.corr.w],['Educación formal',A.corr.e],['Poder político',A.corr.p]];
+  $('biasRows').innerHTML=rows.map(function(x){
+    var r=x[1], a=Math.abs(r), bad=a>=.2;
+    return '<tr><td>'+x[0]+'</td><td class="m">'+(r>=0?'+':'−')+a.toFixed(2)+'</td><td><div class="cbar"><i class="'+(bad?'bad':'')+'" style="width:'+Math.min(100,a*100)+'%"></i></div></td>'+
+      '<td><span class="pill '+(bad?'bad':'ok')+'">'+(bad?'Sesgo detectado':'Sin relación')+'</span></td></tr>';
+  }).join('');
+  $('biasMsg').textContent=state.bias
+    ?'Lectura sesgada activa: el sistema suma la posición socioeconómica al nivel de cada persona. El relieve casi no cambia, por eso el error pasa desapercibido. Lo que cambia es quién ocupa las cimas y cuánto se relaciona la capacidad con los recursos.'
+    :'Lectura actual: las capacidades se calculan sin leer riqueza, educación formal ni poder político. Prendé la simulación para ver cómo se vería el error.';
+}
+function renderAll(){renderLegend();renderPeak();renderPerson();renderBias()}
+
+function findPerson(mode){
+  var A=state.A,n=state.P.length,i,sc=[];
+  for(i=0;i<n;i++){
+    var m=A.meas,s;
+    if(mode==='a')s=Math.abs(m[i*K]-.9)+Math.abs(m[i*K+1]-.15);
+    else if(mode==='b')s=Math.abs(m[i*K+1]-.9)+Math.abs(m[i*K]-.15)+.5*Math.abs(m[i*K+5]-.2);
+    else s=Math.random();
+    sc.push([i,s]);
+  }
+  sc.sort(function(a,b){return a[1]-b[1]});
+  var pool=sc.slice(0,mode==='r'?1:5).map(function(x){return x[0]}).filter(function(x){return x!==state.person});
+  state.person=pool.length?pool[Math.floor(Math.random()*pool.length)]:sc[0][0];
+}
+
+function rebuild(resetPerson){
+  generate();analyze();
+  if(resetPerson)findPerson('a');
+  if(state.person>=state.P.length)state.person=0;
+  computeTarget();renderAll();kick();
+}
+
+function pickAt(ev){
+  var rect=cv.getBoundingClientRect(),x=ev.clientX-rect.left,y=ev.clientY-rect.top,best=0,bd=1e9,k;
+  for(k=0;k<K;k++){
+    var t=tops[k];if(!t)continue;
+    var yy=clamp(y,t.y,t.base),d=Math.hypot(x-t.x,y-yy);
+    if(d<bd){bd=d;best=k}
+  }
+  return best;
+}
+
+cv.addEventListener('click',function(ev){state.sel=pickAt(ev);renderLegend();renderPeak();draw()});
+$('legend').addEventListener('click',function(ev){
+  var b=ev.target.closest('.lg');if(!b)return;
+  state.sel=+b.getAttribute('data-k');renderLegend();renderPeak();draw();
+});
+$('personPanel').addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-m]');if(!b)return;
+  findPerson(b.getAttribute('data-m'));renderPerson();draw();
+});
+$('n').addEventListener('input',function(){state.n=+this.value;$('nout').textContent=this.value;rebuild(false)});
+$('comp').addEventListener('change',function(){state.comp=this.value;rebuild(false)});
+$('conn').addEventListener('change',function(){state.conn=this.checked;draw()});
+$('bias').addEventListener('change',function(){state.bias=this.checked;analyze();computeTarget();renderAll();kick()});
+$('regen').addEventListener('click',function(){state.seed=Math.floor(Math.random()*1e9);rebuild(true)});
+
+function themeChanged(){refreshColors();draw()}
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',themeChanged)}catch(e){}
+new MutationObserver(themeChanged).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+if(window.ResizeObserver)new ResizeObserver(resize).observe(cv);else window.addEventListener('resize',resize);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){draw()});
+
+refreshColors();
+rebuild(true);
+cur.set(tgt);
+resize();
+})();
+</script>
+
+</body></html>
