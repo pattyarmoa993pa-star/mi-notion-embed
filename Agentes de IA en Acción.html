@@ -1,0 +1,497 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Agentes de IA en Acción</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: tablero de planta. Encabezado, orden con su línea de fases, tres agentes en fila,
+   panel de control junto al registro de actividad, y al final la traducción código → empresa. */
+:root{
+  --bg:#EDF0F2; --surface:#FFFFFF; --surface-2:#E3E8EB; --ink:#13232C; --ink-2:#4A5B65; --line:#CBD4D9;
+  --accent:#0A6C8C; --accent-ink:#FFFFFF; --accent-bg:#D8EBF1;
+  --ok:#1B7A4B; --ok-bg:#DDF1E6; --warn:#8A5700; --warn-bg:#F8EBCF; --bad:#B0301D; --bad-bg:#F8DCD6;
+  --f-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E181E; --surface:#16242C; --surface-2:#1E2F38; --ink:#E4ECF0; --ink-2:#9DB0BA; --line:#2B404B;
+    --accent:#4FB8D8; --accent-ink:#06222C; --accent-bg:#123644;
+    --ok:#55C58A; --ok-bg:#163826; --warn:#E2AE4A; --warn-bg:#3A2D10; --bad:#F0806B; --bad-bg:#3C1E18;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E181E; --surface:#16242C; --surface-2:#1E2F38; --ink:#E4ECF0; --ink-2:#9DB0BA; --line:#2B404B;
+  --accent:#4FB8D8; --accent-ink:#06222C; --accent-bg:#123644;
+  --ok:#55C58A; --ok-bg:#163826; --warn:#E2AE4A; --warn-bg:#3A2D10; --bad:#F0806B; --bad-bg:#3C1E18;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.55;
+  padding-block:28px 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:32px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:.01em;line-height:1.05}
+h1{font-size:clamp(34px,6.4vw,60px);text-transform:uppercase}
+h2{font-size:26px;text-transform:uppercase}
+h3{font-size:22px}
+p{margin:0}
+.lede{max-width:62ch;color:var(--ink-2);font-size:17px}
+.mono{font-family:var(--f-mono)}
+.label{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+header{display:flex;flex-direction:column;gap:14px}
+.stats{display:flex;flex-wrap:wrap;gap:8px 28px;padding-top:6px}
+.stat{display:flex;align-items:baseline;gap:8px}
+.stat b{font-family:var(--f-display);font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.stat b.bad{color:var(--bad)} .stat b.ok{color:var(--ok)}
+section{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px}
+
+/* Orden */
+.order{display:grid;grid-template-columns:1fr auto;gap:12px 24px;align-items:start}
+.order dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:4px 16px;min-width:0}
+.order dt{color:var(--ink-2)} .order dd{margin:0;min-width:0}
+.big-state{font-family:var(--f-mono);font-weight:500;font-size:14px;padding:6px 12px;border-radius:3px;background:var(--surface-2);letter-spacing:.06em}
+.big-state[data-s="DIAGNOSTICADA"],.big-state[data-s="REPARADA"]{background:var(--accent-bg);color:var(--accent)}
+.big-state[data-s="CERRADA"]{background:var(--ok-bg);color:var(--ok)}
+.phases{list-style:none;margin:18px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.phases li{border-top:4px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.phases li.done{border-top-color:var(--ok)}
+.phases li.now{border-top-color:var(--accent)}
+.phases .n{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em}
+.phases .d{color:var(--ink-2);font-size:13.5px}
+.phases li.now .n{color:var(--accent);font-weight:500}
+
+/* Agentes */
+.agents{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.agent{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0;transition:border-color .2s,box-shadow .2s,background .2s}
+.agent[data-s="work"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.agent[data-s="done"]{border-color:var(--ok)}
+.agent[data-s="blocked"]{border-color:var(--bad);background:var(--bad-bg)}
+.agent .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.agent .role{font-family:var(--f-mono);font-size:12.5px;color:var(--ink-2);overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12.5px;padding:2px 8px;border-radius:3px;border:1px solid var(--line);color:var(--ink-2)}
+.chip.on{background:var(--accent-bg);border-color:transparent;color:var(--accent);font-weight:500}
+.chip.off{text-decoration:line-through;opacity:.65}
+.pill{align-self:flex-start;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:3px;background:var(--surface-2);color:var(--ink-2)}
+.agent[data-s="work"] .pill{background:var(--accent-bg);color:var(--accent)}
+.agent[data-s="done"] .pill{background:var(--ok-bg);color:var(--ok)}
+.agent[data-s="blocked"] .pill{background:var(--bad);color:var(--surface)}
+.agent .last{font-size:13.5px;color:var(--ink-2);min-height:3.1em}
+
+/* Controles y registro */
+.cols{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+.controls{display:flex;flex-direction:column;gap:18px}
+.group{display:flex;flex-direction:column;gap:10px}
+.btn{font:inherit;font-weight:600;min-height:44px;padding:8px 16px;border-radius:4px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:left}
+.btn.alt{background:transparent;color:var(--accent)}
+.btn.quiet{border-color:var(--line);color:var(--ink);background:var(--surface)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+.btnrow .btn{flex:1 1 140px}
+.scn{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.scn small{font-weight:400;color:var(--ink-2);font-size:13px}
+.try{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.try label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2);min-width:0}
+select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:4px;min-height:44px;padding:6px 8px;width:100%}
+.try .btn{grid-column:1 / -1}
+
+.log{list-style:none;margin:0;padding:0;max-height:470px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.log li{border-left:3px solid var(--line);padding:2px 0 2px 12px;display:flex;flex-direction:column;gap:3px}
+.log li[data-k="ok"]{border-left-color:var(--ok)}
+.log li[data-k="bad"]{border-left-color:var(--bad)}
+.log li[data-k="warn"]{border-left-color:var(--warn)}
+.log li[data-k="info"]{border-left-color:var(--accent)}
+.log .msg{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;padding:1px 6px;border-radius:3px;background:var(--surface-2);color:var(--ink-2)}
+li[data-k="ok"] .tag{background:var(--ok-bg);color:var(--ok)}
+li[data-k="bad"] .tag{background:var(--bad-bg);color:var(--bad)}
+li[data-k="warn"] .tag{background:var(--warn-bg);color:var(--warn)}
+li[data-k="info"] .tag{background:var(--accent-bg);color:var(--accent)}
+.log code{font-family:var(--f-mono);font-size:13px;overflow-wrap:anywhere}
+.log .tr{font-size:14px;color:var(--ink-2)}
+.empty{color:var(--ink-2);padding:8px 0}
+
+/* Matriz y traducción */
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:520px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
+th{font-family:var(--f-mono);font-weight:500;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+td.yes{color:var(--ok);font-weight:600} td.no{color:var(--ink-2)}
+tr.hl td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+td.cell-hl{background:var(--accent-bg)}
+.map{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.map article{display:flex;flex-direction:column;gap:8px;min-width:0}
+.map code{font-family:var(--f-mono);font-size:13px;color:var(--accent);overflow-wrap:anywhere}
+.map .biz{border-top:1px solid var(--line);padding-top:8px;color:var(--ink-2)}
+.map .biz b{color:var(--ink)}
+
+@media (max-width:760px){
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .phases{grid-template-columns:repeat(2,1fr)}
+  .order{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:no-preference){
+  .agent[data-s="blocked"]{animation:shake .35s}
+  @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="label">Simulación para gerencia</span>
+    <h1>Observa cómo interactúan tus agentes de IA</h1>
+    <p class="lede">Una orden de reparación pasa por tres agentes con permisos distintos. Ejecuta el flujo y después intenta romperlo: cada bloqueo es un error que no llegó a la planta.</p>
+    <div class="stats" aria-label="Contadores de la sesión">
+      <div class="stat"><b id="s-int">0</b><span class="label">Intentos</span></div>
+      <div class="stat"><b id="s-blk" class="bad">0</b><span class="label">Bloqueados por el sistema</span></div>
+      <div class="stat"><b id="s-ok" class="ok">0</b><span class="label">Órdenes cerradas</span></div>
+    </div>
+  </header>
+
+  <section aria-labelledby="h-orden">
+    <h2 id="h-orden">La orden de servicio</h2>
+    <div class="panel">
+      <div class="order">
+        <dl>
+          <dt>Orden</dt><dd id="o-id"></dd>
+          <dt>Máquina</dt><dd id="o-maq"></dd>
+          <dt>Falla reportada</dt><dd id="o-falla"></dd>
+          <dt>Diagnóstico</dt><dd id="o-diag"></dd>
+        </dl>
+        <span class="big-state" id="o-estado" data-s="PENDIENTE">PENDIENTE</span>
+      </div>
+      <ol class="phases" id="phases"></ol>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-agentes">
+    <h2 id="h-agentes">Los tres agentes</h2>
+    <div class="agents" id="agents"></div>
+  </section>
+
+  <section aria-labelledby="h-panel">
+    <h2 id="h-panel">Pruébalo tú mismo</h2>
+    <div class="cols">
+      <div class="controls panel">
+        <div class="group">
+          <span class="label">Flujo normal</span>
+          <button class="btn" id="b-full">Procesar orden completa</button>
+          <div class="btnrow">
+            <button class="btn alt" id="b-step">Avanzar un paso</button>
+            <button class="btn quiet" id="b-new">Nueva orden</button>
+          </div>
+        </div>
+        <div class="group">
+          <span class="label">Qué pasa si algo sale mal</span>
+          <button class="btn quiet scn" data-scn="1">Reparar sin diagnóstico<small>El técnico llega antes que el análisis.</small></button>
+          <button class="btn quiet scn" data-scn="2">Diagnóstico intenta reparar<small>Un agente actúa fuera de su cargo.</small></button>
+          <button class="btn quiet scn" data-scn="3">Cerrar sin reparación<small>El supervisor recibe una orden incompleta.</small></button>
+        </div>
+        <div class="group">
+          <span class="label">Asigna tú la acción</span>
+          <div class="try">
+            <label for="sel-ag">Agente
+              <select id="sel-ag">
+                <option value="diag">Scanner-X1</option>
+                <option value="rep">Fixer-Bot</option>
+                <option value="sup">Alpha-Mind</option>
+              </select>
+            </label>
+            <label for="sel-ac">Acción
+              <select id="sel-ac">
+                <option value="diagnosticar">Diagnosticar</option>
+                <option value="reparar">Reparar</option>
+                <option value="cerrar">Aprobar y cerrar</option>
+              </select>
+            </label>
+            <button class="btn alt" id="b-try">Intentar sobre la orden actual</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="label" style="margin-bottom:10px">Registro de actividad y lectura de negocio</div>
+        <ol class="log" id="log" role="log" aria-live="polite"></ol>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-matriz">
+    <h2 id="h-matriz">Quién puede hacer qué</h2>
+    <div class="panel scroll">
+      <table id="matrix">
+        <thead><tr><th>Cargo del agente</th><th>Diagnosticar</th><th>Reparar</th><th>Aprobar y cerrar</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-trad">
+    <h2 id="h-trad">Del código a la empresa</h2>
+    <div class="map">
+      <article class="panel">
+        <h3>Responsabilidades separadas</h3>
+        <code>AgenteDiagnostico · AgenteReparacion</code>
+        <p>Cada agente conoce solo su tarea. El reparador no sabe diagnosticar, actúa según el reporte que recibe.</p>
+        <p class="biz"><b>En la empresa:</b> descripciones de cargo claras. Nadie improvisa fuera de su función.</p>
+      </article>
+      <article class="panel">
+        <h3>Control de permisos</h3>
+        <code>ROLES_PERMISOS · tiene_permiso()</code>
+        <p>Cada rol tiene una lista cerrada de acciones. Si un agente pide otra, el sistema la bloquea al instante.</p>
+        <p class="biz"><b>En la empresa:</b> la matriz de autorizaciones. Quién firma qué, aplicado en cada ejecución.</p>
+      </article>
+      <article class="panel">
+        <h3>Coordinación del flujo</h3>
+        <code>SistemaCoordinador · Tarea.estado</code>
+        <p>El coordinador fija el orden de la orden: pendiente, diagnosticada, reparada, cerrada. Nadie se adelanta.</p>
+        <p class="biz"><b>En la empresa:</b> el jefe de operaciones o el sistema de procesos (BPM) que lleva cada orden de punta a punta.</p>
+      </article>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var PERM = {DIAG:'diagnosticar_maquinaria', REP:'reparar_maquinaria', APR:'aprobar_presupuesto_y_cierre'};
+  var ROLES = {
+    Tecnico_Diagnostico:[PERM.DIAG],
+    Tecnico_Especialista:[PERM.REP],
+    Supervisor_IA:[PERM.DIAG,PERM.REP,PERM.APR]
+  };
+  var PERM_LABEL = {};
+  PERM_LABEL[PERM.DIAG]='Diagnosticar'; PERM_LABEL[PERM.REP]='Reparar'; PERM_LABEL[PERM.APR]='Aprobar y cerrar';
+  var AGENTS = {
+    diag:{nombre:'Scanner-X1', rol:'Tecnico_Diagnostico', cargo:'Analista de diagnóstico', fase:1},
+    rep:{nombre:'Fixer-Bot', rol:'Tecnico_Especialista', cargo:'Técnico de mantenimiento', fase:2},
+    sup:{nombre:'Alpha-Mind', rol:'Supervisor_IA', cargo:'Supervisor de calidad', fase:3}
+  };
+  var ACTIONS = {
+    diagnosticar:{perm:PERM.DIAG, label:'Diagnosticar'},
+    reparar:{perm:PERM.REP, label:'Reparar'},
+    cerrar:{perm:PERM.APR, label:'Aprobar y cerrar'}
+  };
+  var FASES = [
+    {n:'PENDIENTE', d:'Orden recibida del cliente'},
+    {n:'DIAGNOSTICADA', d:'Causa de la falla identificada'},
+    {n:'REPARADA', d:'Pieza reemplazada en planta'},
+    {n:'CERRADA', d:'Calidad verificada y aprobada'}
+  ];
+  var DIAG_TXT = 'Fallo en el sistema hidráulico debido a una válvula desgastada.';
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function sleep(ms){ return new Promise(function(r){ setTimeout(r, reduce ? 60 : ms); }); }
+  function $(id){ return document.getElementById(id); }
+
+  var counter = 0, tarea = null, busy = false;
+  var stats = {intentos:0, bloqueos:0, cerradas:0};
+  var astate = {}, alast = {};
+  var hlTimer = null;
+
+  function newTask(){
+    counter++;
+    tarea = {id:counter, maquina:'Prensa Hidráulica Industrial', falla:'Pérdida de presión en el ciclo secundario', diagnostico:'', estado:'PENDIENTE'};
+    Object.keys(AGENTS).forEach(function(k){ astate[k]='idle'; alast[k]='Esperando su turno.'; });
+  }
+
+  function addLog(kind, tag, code, tr){
+    var log = $('log');
+    var empty = log.querySelector('.empty'); if(empty) empty.remove();
+    var li = document.createElement('li'); li.setAttribute('data-k', kind);
+    var m = document.createElement('div'); m.className='msg';
+    var t = document.createElement('span'); t.className='tag'; t.textContent=tag;
+    var c = document.createElement('code'); c.textContent=code;
+    m.appendChild(t); m.appendChild(c); li.appendChild(m);
+    if(tr){ var p = document.createElement('div'); p.className='tr'; p.textContent=tr; li.appendChild(p); }
+    log.appendChild(li); log.scrollTop = log.scrollHeight;
+  }
+
+  function highlight(rol, perm){
+    var rows = document.querySelectorAll('#matrix tbody tr');
+    rows.forEach(function(r){
+      var on = r.getAttribute('data-rol') === rol;
+      r.classList.toggle('hl', on);
+      r.querySelectorAll('td[data-perm]').forEach(function(td){ td.classList.toggle('cell-hl', on && td.getAttribute('data-perm')===perm); });
+    });
+    clearTimeout(hlTimer);
+    hlTimer = setTimeout(function(){
+      rows.forEach(function(r){ r.classList.remove('hl'); r.querySelectorAll('td').forEach(function(td){ td.classList.remove('cell-hl'); }); });
+    }, 2200);
+  }
+
+  function render(){
+    $('o-id').textContent = '#' + tarea.id;
+    $('o-maq').textContent = tarea.maquina;
+    $('o-falla').textContent = tarea.falla;
+    $('o-diag').textContent = tarea.diagnostico || 'Todavía sin diagnóstico';
+    var es = $('o-estado'); es.textContent = tarea.estado; es.setAttribute('data-s', tarea.estado);
+    var idx = FASES.map(function(f){return f.n;}).indexOf(tarea.estado);
+    $('phases').innerHTML = FASES.map(function(f,i){
+      var cls = i < idx || tarea.estado==='CERRADA' ? 'done' : (i===idx ? 'now' : '');
+      return '<li class="'+cls+'"><span class="n">'+f.n+'</span><span class="d">'+f.d+'</span></li>';
+    }).join('');
+
+    var STATUS = {idle:'En espera', work:'Trabajando…', done:'Completó su fase', blocked:'Bloqueado'};
+    $('agents').innerHTML = Object.keys(AGENTS).map(function(k){
+      var a = AGENTS[k], perms = ROLES[a.rol];
+      var chips = Object.keys(PERM_LABEL).map(function(p){
+        var on = perms.indexOf(p) > -1;
+        return '<span class="chip '+(on?'on':'off')+'">'+PERM_LABEL[p]+'</span>';
+      }).join('');
+      return '<article class="agent" data-s="'+astate[k]+'">'
+        + '<div class="top"><span class="label">Fase '+a.fase+'</span><span class="role">'+a.rol+'</span></div>'
+        + '<h3>'+a.nombre+'</h3>'
+        + '<div>'+a.cargo+'</div>'
+        + '<div class="chips" aria-label="Permisos">'+chips+'</div>'
+        + '<span class="pill">'+STATUS[astate[k]]+'</span>'
+        + '<p class="last">'+alast[k]+'</p>'
+        + '</article>';
+    }).join('');
+
+    $('s-int').textContent = stats.intentos;
+    $('s-blk').textContent = stats.bloqueos;
+    $('s-ok').textContent = stats.cerradas;
+    var lock = busy;
+    ['b-full','b-new','b-try'].forEach(function(id){ $(id).disabled = lock; });
+    document.querySelectorAll('.scn').forEach(function(b){ b.disabled = lock; });
+    $('b-step').disabled = lock || tarea.estado==='CERRADA';
+  }
+
+  function buildMatrix(){
+    var body = document.querySelector('#matrix tbody');
+    body.innerHTML = Object.keys(AGENTS).map(function(k){
+      var a = AGENTS[k], perms = ROLES[a.rol];
+      var cells = [PERM.DIAG, PERM.REP, PERM.APR].map(function(p){
+        var on = perms.indexOf(p) > -1;
+        return '<td data-perm="'+p+'" class="'+(on?'yes':'no')+'">'+(on?'Autorizado':'Sin acceso')+'</td>';
+      }).join('');
+      return '<tr data-rol="'+a.rol+'"><td><b>'+a.nombre+'</b> <span class="mono" style="color:var(--ink-2);font-size:12.5px">'+a.rol+'</span></td>'+cells+'</tr>';
+    }).join('');
+  }
+
+  function fail(key, kind, tag, code, tr, last){
+    astate[key] = 'blocked'; alast[key] = last;
+    stats.bloqueos++;
+    addLog(kind, tag, code, tr);
+  }
+
+  async function attempt(key, action){
+    var a = AGENTS[key], act = ACTIONS[action];
+    stats.intentos++;
+    astate[key] = 'work'; alast[key] = 'Intentando «' + act.label + '»…';
+    highlight(a.rol, act.perm);
+    render();
+    addLog('info','INTENTO','['+a.rol+'] '+a.nombre+' intenta «'+act.label+'» en la Orden #'+tarea.id+'...',
+      'El coordinador asigna la orden a '+a.cargo.toLowerCase()+'.');
+    await sleep(750);
+
+    if(ROLES[a.rol].indexOf(act.perm) === -1){
+      fail(key,'bad','DENEGADO','Acceso Denegado para '+a.nombre+'. tiene_permiso("'+act.perm+'") = False',
+        'El cargo de '+a.cargo.toLowerCase()+' no tiene autorizada esta acción. El sistema la frenó antes de que tocara la máquina.',
+        'Sin autorización para «'+act.label+'».');
+      render(); return false;
+    }
+
+    if(action === 'diagnosticar'){
+      if(tarea.estado !== 'PENDIENTE'){
+        fail(key,'warn','RECHAZADO',a.nombre+' no puede diagnosticar: la orden ya está en estado '+tarea.estado+'.',
+          'Esa fase ya se completó. Repetirla generaría trabajo duplicado.',
+          'La orden ya pasó por diagnóstico.');
+        render(); return false;
+      }
+      tarea.diagnostico = DIAG_TXT; tarea.estado = 'DIAGNOSTICADA';
+      astate[key] = 'done'; alast[key] = 'Diagnóstico entregado.';
+      addLog('ok','COMPLETADO',a.nombre+' analizó la telemetría de «'+tarea.maquina+'». '+DIAG_TXT,
+        'La causa queda registrada en la orden. El técnico recibirá un reporte, no una suposición.');
+      render(); return true;
+    }
+
+    if(action === 'reparar'){
+      if(tarea.estado !== 'DIAGNOSTICADA'){
+        fail(key,'warn','RECHAZADO',a.nombre+' no puede reparar: estado actual «'+tarea.estado+'», se requiere «DIAGNOSTICADA».',
+          'Se evitó reparar a ciegas. Sin diagnóstico se corre el riesgo de cambiar la pieza equivocada.',
+          'La orden aún no está lista para reparar.');
+        render(); return false;
+      }
+      tarea.estado = 'REPARADA';
+      astate[key] = 'done'; alast[key] = 'Reparación física completada.';
+      addLog('ok','COMPLETADO',a.nombre+' reemplazó las piezas según el diagnóstico. Reparación completada con éxito.',
+        'El trabajo de campo termina y la orden pasa a control de calidad.');
+      render(); return true;
+    }
+
+    if(tarea.estado === 'REPARADA'){
+      tarea.estado = 'CERRADA'; stats.cerradas++;
+      astate[key] = 'done'; alast[key] = 'Control de calidad aprobado.';
+      addLog('ok','CERRADA','[SUPERVISOR] '+a.nombre+' verificó el control de calidad. Orden #'+tarea.id+' CERRADA.',
+        'La orden queda cerrada con trazabilidad completa: quién diagnosticó, quién reparó y quién aprobó.');
+      render(); return true;
+    }
+    fail(key,'bad','RECHAZADO','[SUPERVISOR] '+a.nombre+' rechazó el cierre: estado actual es «'+tarea.estado+'».',
+      'El supervisor no cierra órdenes incompletas. Se protege la calidad y la facturación al cliente.',
+      'Rechazó el cierre: la orden no está reparada.');
+    render(); return false;
+  }
+
+  async function withLock(fn){
+    if(busy) return; busy = true; render();
+    try{ await fn(); } finally { busy = false; render(); }
+  }
+
+  function nextAction(){
+    if(tarea.estado==='PENDIENTE') return ['diag','diagnosticar'];
+    if(tarea.estado==='DIAGNOSTICADA') return ['rep','reparar'];
+    if(tarea.estado==='REPARADA') return ['sup','cerrar'];
+    return null;
+  }
+
+  function fresh(note){
+    newTask();
+    addLog('info','NUEVA ORDEN','Tarea #'+tarea.id+' creada: «'+tarea.maquina+'». '+tarea.falla+'.', note || 'Entra una solicitud del cliente al sistema.');
+    render();
+  }
+
+  $('b-full').addEventListener('click', function(){
+    withLock(async function(){
+      if(tarea.estado==='CERRADA') fresh();
+      var ok = true, n;
+      while(ok && (n = nextAction())){ ok = await attempt(n[0], n[1]); await sleep(350); }
+    });
+  });
+  $('b-step').addEventListener('click', function(){
+    withLock(async function(){ var n = nextAction(); if(n) await attempt(n[0], n[1]); });
+  });
+  $('b-new').addEventListener('click', function(){ withLock(async function(){ fresh(); }); });
+  $('b-try').addEventListener('click', function(){
+    withLock(async function(){ await attempt($('sel-ag').value, $('sel-ac').value); });
+  });
+  var SCN = {
+    '1':['rep','reparar','Escenario: el técnico recibe la orden sin diagnóstico previo.'],
+    '2':['diag','reparar','Escenario: un agente de diagnóstico intenta reparar.'],
+    '3':['sup','cerrar','Escenario: el supervisor recibe una orden que nadie reparó.']
+  };
+  document.querySelectorAll('.scn').forEach(function(b){
+    b.addEventListener('click', function(){
+      var s = SCN[b.getAttribute('data-scn')];
+      withLock(async function(){
+        fresh(s[2]);
+        $('sel-ag').value = s[0]; $('sel-ac').value = s[1];
+        await sleep(300);
+        await attempt(s[0], s[1]);
+      });
+    });
+  });
+
+  buildMatrix();
+  newTask();
+  $('log').innerHTML = '<li class="empty">Aún no hay actividad. Pulsa «Procesar orden completa» para ver cómo se coordinan los agentes.</li>';
+  render();
+})();
+</script>
+
+</body></html>
