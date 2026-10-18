@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>html{color-scheme:light dark}body{margin:0}</style>
+<title>Dominó Live A Live</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: a disc of 400 dots (all humanity) beside a phone showing the SMS; domino wave drawn as links between devices. */
+:root {
+  --bg: #F4F2FA;
+  --surface: #FFFFFF;
+  --ink: #17152B;
+  --muted: #5F5C7A;
+  --line: #DAD6EC;
+  --idle: #C2BEDC;
+  --amber: #C97A00;
+  --pink: #D92D56;
+  --on-pink: #FFFFFF;
+  --f-display: "Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+  --f-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1020; --surface: #181B33; --ink: #F1EFFA; --muted: #A09DC0; --line: #2B2F52;
+    --idle: #3A4062; --amber: #FFB547; --pink: #FF5D7A; --on-pink: #1A0A10; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1020; --surface: #181B33; --ink: #F1EFFA; --muted: #A09DC0; --line: #2B2F52;
+  --idle: #3A4062; --amber: #FFB547; --pink: #FF5D7A; --on-pink: #1A0A10; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.5;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.2rem, 7vw, 4rem); line-height: 1; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--pink); }
+.lede { color: var(--muted); font-size: 1.05rem; max-width: 56ch; margin: 12px 0 0; }
+.stage { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+.canvas-box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.steps { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip.done { color: var(--ink); border-color: var(--ink); }
+#cv-wrap { width: 100%; aspect-ratio: 1 / 1; max-height: 70vh; margin: 0 auto; }
+canvas { width: 100%; height: 100%; display: block; }
+.counter { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.big { font-family: var(--f-display); font-weight: 800; font-size: clamp(1.4rem, 4.5vw, 2rem); font-variant-numeric: tabular-nums; }
+.small { color: var(--muted); font-size: 0.85rem; }
+.side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.phone { background: var(--surface); border: 1px solid var(--line); border-radius: 28px; padding: 16px 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+.phone-head { text-align: center; font-size: 0.8rem; color: var(--muted); font-family: var(--f-mono); }
+.phone-head b { display: block; color: var(--ink); font-size: 1rem; font-family: var(--f-display); letter-spacing: 0; }
+.bubble { background: var(--idle); color: var(--ink); border-radius: 20px 20px 20px 6px; padding: 12px 16px; font-size: 1.05rem; font-weight: 500; max-width: 90%; align-self: flex-start; opacity: 0.55; transition: opacity .25s, background .25s; }
+.bubble.live { background: var(--pink); color: var(--on-pink); opacity: 1; }
+.status { font-family: var(--f-mono); font-size: 0.78rem; color: var(--muted); min-height: 2.4em; }
+.controls { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+button { font: inherit; cursor: pointer; }
+.go { background: var(--pink); color: var(--on-pink); border: 0; border-radius: 12px; padding: 14px 18px; font-family: var(--f-display); font-weight: 800; font-size: 1.1rem; flex: 1 1 100%; }
+.go:focus-visible, .seg button:focus-visible, .copy:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; flex: 1 1 auto; }
+.seg button { flex: 1; background: transparent; color: var(--muted); border: 0; padding: 9px 10px; font-size: 0.85rem; font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.copy { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; align-self: flex-start; }
+.scale { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 520px) { .scale { grid-template-columns: minmax(0, 1fr); } }
+.scale div { border-top: 3px solid var(--ink); padding-top: 10px; }
+.scale .k { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.scale .v { font-family: var(--f-display); font-weight: 800; font-size: 1.7rem; font-variant-numeric: tabular-nums; }
+h2 { font-family: var(--f-display); font-size: 1.5rem; margin: 0 0 12px; letter-spacing: -0.01em; }
+ol.how { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { ol.how { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { ol.how { grid-template-columns: minmax(0, 1fr); } }
+ol.how li { counter-increment: s; border-top: 3px solid var(--amber); padding-top: 10px; }
+ol.how li::before { content: counter(s); font-family: var(--f-mono); color: var(--amber); font-size: 0.85rem; display: block; margin-bottom: 4px; }
+ol.how b { display: block; font-family: var(--f-display); font-size: 1.1rem; }
+ol.how span { color: var(--muted); font-size: 0.92rem; }
+@media (prefers-reduced-motion: reduce) { .bubble { transition: none; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Dominó <em>Live A Live</em></h1>
+    <p class="lede">Un código llega a todos a la vez. El orden en que cada dispositivo lo descifra es su número. Después el mensaje cae de número en número.</p>
+  </header>
+
+  <section class="stage" aria-label="Simulación">
+    <div class="canvas-box">
+      <div class="steps" id="steps">
+        <span class="chip" data-s="1">Código a todos</span>
+        <span class="chip" data-s="2">Cada quien descifra</span>
+        <span class="chip" data-s="3">Cae el dominó</span>
+      </div>
+      <div id="cv-wrap"><canvas id="cv" role="img" aria-label="400 puntos que representan a la humanidad recibiendo un mensaje en cadena"></canvas></div>
+      <div class="counter">
+        <div class="big" id="people">0</div>
+        <div class="small" id="people-label">personas con el mensaje (cada punto ≈ 20 millones)</div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="phone" aria-live="polite">
+        <div class="phone-head"><b id="who">Dispositivo sin número</b><span id="when">SMS</span></div>
+        <div class="bubble" id="bubble">Congrats! Time to Live A Live. 🙌</div>
+        <div class="status" id="status">Listo. Pulsa el botón y el código sale para todos al mismo tiempo.</div>
+      </div>
+      <div class="controls">
+        <div class="row"><button class="go" id="go" type="button">Lanzar el código</button></div>
+        <div class="row">
+          <div class="seg" role="group" aria-label="Modo">
+            <button type="button" id="m-chain" aria-pressed="true">Cadena 1 a 1</button>
+            <button type="button" id="m-tree" aria-pressed="false">Cascada 1 a 2</button>
+          </div>
+          <div class="seg" role="group" aria-label="Velocidad">
+            <button type="button" data-sp="1" aria-pressed="true">1x</button>
+            <button type="button" data-sp="2" aria-pressed="false">2x</button>
+            <button type="button" data-sp="4" aria-pressed="false">4x</button>
+          </div>
+        </div>
+        <button class="copy" id="copy" type="button">Copiar el mensaje</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>La escala real</h2>
+    <div class="scale">
+      <div><div class="k">Cadena, 1 segundo por salto</div><div class="v" id="r-chain">—</div></div>
+      <div><div class="k">Cascada, cada uno avisa a 2</div><div class="v" id="r-tree">—</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Para jugarlo en vivo</h2>
+    <ol class="how">
+      <li><b>Mismo código, mismo segundo</b><span>Proyecten o envíen el mismo texto cifrado a todo el grupo a la vez.</span></li>
+      <li><b>Descifren</b><span>El orden en que cada persona termina es su número. Si empatan, gana quien levante la mano primero.</span></li>
+      <li><b>Anoten su número</b><span>Cada quien deja el SMS listo en el celular, con el mensaje de abajo.</span></li>
+      <li><b>Que caiga</b><span>El #1 manda el SMS al #2, el #2 al #3, y así. El último lo grita en voz alta.</span></li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function () {
+  var MSG = "Congrats! Time to Live A Live. 🙌";
+  var N = 400, WORLD = 8.1e9;
+  var T1 = 1.4, T2 = 4.5, T3 = T1 + T2 + 0.8, CHAIN_SPAN = 10, HOP = 0.9;
+  var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  var wrap = document.getElementById("cv-wrap");
+  var el = function (id) { return document.getElementById(id); };
+  var mode = "chain", speed = 1, t = 0, running = false, finished = false, last = 0, deliveredK = 0;
+  var nodes = [], order = [], te = [], W = 0, H = 0, dpr = 1;
+
+  function build() {
+    nodes = [];
+    for (var i = 0; i < N; i++) {
+      var r = Math.sqrt((i + 0.5) / N), th = i * 2.39996;
+      nodes.push({
+        x: 0.5 + 0.46 * r * Math.cos(th) + (Math.random() - 0.5) * 0.008,
+        y: 0.5 + 0.46 * r * Math.sin(th) + (Math.random() - 0.5) * 0.008,
+        dec: Math.random(), rank: 0
+      });
+    }
+    order = nodes.map(function (_, i) { return i; }).sort(function (a, b) { return nodes[a].dec - nodes[b].dec; });
+    order.forEach(function (ni, p) { nodes[ni].rank = p + 1; });
+    te = [0];
+    for (var k = 1; k <= N; k++) {
+      te[k] = mode === "chain" ? T3 + ((k - 1) / N) * CHAIN_SPAN : T3 + Math.floor(Math.log2(k)) * HOP;
+    }
+  }
+
+  function parent(k) { return mode === "chain" ? k - 1 : Math.floor(k / 2); }
+  function endTime() { return te[N] + 1.4; }
+
+  function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+  function resize() {
+    var r = wrap.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(200, Math.round(r.width)); H = Math.max(200, Math.round(r.height));
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  function draw() {
+    var idle = css("--idle"), amber = css("--amber"), pink = css("--pink"), ink = css("--ink");
+    var s = Math.min(W, H), ox = (W - s) / 2, oy = (H - s) / 2, sc = s / 560;
+    ctx.clearRect(0, 0, W, H);
+    var P = function (n) { return [ox + n.x * s, oy + n.y * s]; };
+
+    ctx.lineWidth = 1.2 * sc + 0.3;
+    ctx.strokeStyle = pink;
+    for (var k = 2; k <= deliveredK; k++) {
+      var age = t - te[k];
+      ctx.globalAlpha = Math.max(0.07, 1 - age / 1.6);
+      var a = P(nodes[order[parent(k) - 1]]), b = P(nodes[order[k - 1]]);
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    var flash = (running && t < T1 + 0.5) ? Math.sin(Math.min(1, t / (T1 + 0.5)) * Math.PI) : 0;
+    for (var i = 0; i < N; i++) {
+      var n = nodes[i], p = P(n), col = idle, rad = 2.6 * sc + 0.6;
+      if (running || finished) {
+        if (n.rank <= deliveredK) { col = pink; rad *= 1.25; }
+        else if (t >= T1 + n.dec * T2) { col = amber; }
+      }
+      if (flash > 0) { col = amber; rad += flash * 4 * sc; }
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(p[0], p[1], rad, 0, 6.2832); ctx.fill();
+    }
+
+    if (deliveredK > 0 && !finished) {
+      var h = P(nodes[order[deliveredK - 1]]);
+      ctx.strokeStyle = pink; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(h[0], h[1], 9 * sc + 2, 0, 6.2832); ctx.stroke();
+      ctx.fillStyle = ink; ctx.font = "500 " + Math.round(12 * sc + 4) + "px " + css("--f-mono");
+      ctx.textAlign = h[0] > W / 2 ? "right" : "left";
+      ctx.fillText("#" + deliveredK, h[0] + (h[0] > W / 2 ? -14 : 14) * sc - (h[0] > W / 2 ? 0 : 0), h[1] - 12 * sc);
+    }
+  }
+
+  function phase() {
+    if (!running && !finished) return 0;
+    if (finished || t >= T3) return 3;
+    if (t >= T1) return 2;
+    return 1;
+  }
+
+  function ui() {
+    var ph = phase();
+    document.querySelectorAll("#steps .chip").forEach(function (c) {
+      var n = +c.getAttribute("data-s");
+      c.className = "chip" + (n === ph && !finished ? " on" : (n < ph || (finished && n <= 3) ? " done" : ""));
+    });
+    var people = Math.round(deliveredK / N * WORLD);
+    el("people").textContent = people.toLocaleString("es");
+    var bubble = el("bubble"), who = el("who"), when = el("when"), st = el("status");
+    if (ph === 0) {
+      who.textContent = "Dispositivo sin número"; when.textContent = "SMS";
+      bubble.className = "bubble"; st.textContent = "Listo. Pulsa el botón y el código sale para todos al mismo tiempo.";
+    } else if (ph === 1) {
+      who.textContent = "Código recibido"; when.textContent = "todos a la vez";
+      bubble.className = "bubble"; st.textContent = "Los " + N + " puntos reciben el mismo código en el mismo instante.";
+    } else if (ph === 2) {
+      var d = 0; for (var i = 0; i < N; i++) if (t >= T1 + nodes[i].dec * T2) d++;
+      who.textContent = "Descifrando"; when.textContent = d + " de " + N + " con número";
+      bubble.className = "bubble"; st.textContent = "El primero en descifrar es el #1, el segundo el #2, y así hasta el #" + N + ".";
+    } else if (deliveredK > 0) {
+      who.textContent = "Dispositivo #" + deliveredK;
+      when.textContent = mode === "chain" ? "recibió del #" + Math.max(1, deliveredK - 1) : "nivel " + Math.floor(Math.log2(deliveredK)) + " de la cascada";
+      bubble.className = "bubble live";
+      st.textContent = finished ? "Llegó al #" + N + ". Todos tienen el mensaje." : "Reenvío automático al siguiente número.";
+    } else {
+      who.textContent = "Todos con número"; when.textContent = "#1 va primero";
+      bubble.className = "bubble"; st.textContent = "El #1 manda el SMS.";
+    }
+    el("go").textContent = running ? "Reiniciar" : (finished ? "Repetir" : "Lanzar el código");
+  }
+
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (running) {
+      t += dt * speed;
+      while (deliveredK < N && te[deliveredK + 1] <= t) deliveredK++;
+      if (t >= endTime()) { running = false; finished = true; deliveredK = N; }
+    }
+    draw(); ui();
+    requestAnimationFrame(frame);
+  }
+
+  function reset() { t = 0; deliveredK = 0; running = false; finished = false; build(); draw(); ui(); }
+  function launch() { build(); t = 0; deliveredK = 0; finished = false; running = true; }
+
+  el("go").addEventListener("click", function () { if (running) reset(); else launch(); });
+  function setMode(m) {
+    mode = m;
+    el("m-chain").setAttribute("aria-pressed", m === "chain");
+    el("m-tree").setAttribute("aria-pressed", m === "tree");
+    reset();
+  }
+  el("m-chain").addEventListener("click", function () { setMode("chain"); });
+  el("m-tree").addEventListener("click", function () { setMode("tree"); });
+  document.querySelectorAll("[data-sp]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      speed = +b.getAttribute("data-sp");
+      document.querySelectorAll("[data-sp]").forEach(function (x) { x.setAttribute("aria-pressed", x === b); });
+    });
+  });
+  el("copy").addEventListener("click", function () {
+    var b = el("copy");
+    var ok = function () { b.textContent = "Copiado"; setTimeout(function () { b.textContent = "Copiar el mensaje"; }, 1500); };
+    try { navigator.clipboard.writeText(MSG).then(ok, function () { b.textContent = MSG; }); } catch (e) { b.textContent = MSG; }
+  });
+
+  var yrs = WORLD / (365.25 * 24 * 3600);
+  el("r-chain").textContent = "≈ " + Math.round(yrs) + " años";
+  el("r-tree").textContent = Math.ceil(Math.log2(WORLD)) + " saltos, " + Math.ceil(Math.log2(WORLD)) + " s";
+
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(wrap); else window.addEventListener("resize", resize);
+  build(); resize(); ui();
+  requestAnimationFrame(function (n) { last = n; requestAnimationFrame(frame); });
+})();
+</script>
+</body>
+</html>
