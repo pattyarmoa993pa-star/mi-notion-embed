@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Visibilidad financiera en una PYME</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f7f6f2;--fg:#1d2330;--mut:#667085;--card:#fff;--bd:#d9d6cc;--c1:#2a7ab0;--c2:#d9822b;--c3:#4f8f4f;--c4:#b04a6a;--warn:#fdecd0;--bad:#f9d6d6;--ok:#d9efd9;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--fg:#e8e9ec;--mut:#9aa3b2;--card:#1d222b;--bd:#343b48;--c1:#5aa6dc;--c2:#f0a050;--c3:#7ec07e;--c4:#e07a9a;--warn:#4a3a1c;--bad:#4d2427;--ok:#1f3d25}}
+:root[data-theme="dark"]{--bg:#14171d;--fg:#e8e9ec;--mut:#9aa3b2;--card:#1d222b;--bd:#343b48;--c1:#5aa6dc;--c2:#f0a050;--c3:#7ec07e;--c4:#e07a9a;--warn:#4a3a1c;--bad:#4d2427;--ok:#1f3d25}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:18px 0 8px}p{margin:6px 0}.mut{color:var(--mut);font-size:13px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin:10px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.kpi b{display:block;font-size:20px}.kpi span{font-size:12px;color:var(--mut)}
+button,select{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:6px 12px;cursor:pointer}
+button.on{background:var(--c1);color:#fff;border-color:var(--c1)}
+.tabs,.yrs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;align-items:end}
+.ctl label{font-size:13px;display:block}input[type=range]{width:100%}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}td.n,th.n{text-align:right}
+.al{padding:8px 10px;border-radius:8px;margin:6px 0;font-size:14px}.al.w{background:var(--warn)}.al.b{background:var(--bad)}.al.g{background:var(--ok)}
+svg{width:100%;height:auto;display:block}.lg span{margin-right:12px;font-size:12px}.lg i{display:inline-block;width:10px;height:10px;margin-right:4px;border-radius:2px}
+details{margin:4px 0}summary{cursor:pointer;font-weight:600}
+</style></head><body><main>
+<h1>La pérdida de visibilidad financiera en una PYME</h1>
+<p class="mut">Empresa ficticia, 2022–2026. Montos en millones de guaraníes (M). Todo está registrado; la pregunta es si se entiende.</p>
+<div class="card"><div class="ctl">
+<div><label>Escenario<br><select id="sc"><option value="A">A · Negocio rentable (referencia)</option><option value="B">B · Negocio con problemas</option></select></label></div>
+<div><label>Retiros personales: <b id="vp">100%</b><input id="mp" type="range" min="0" max="200" value="100"></label></div>
+<div><label>Aportes del dueño: <b id="va">100%</b><input id="ma" type="range" min="0" max="200" value="100"></label></div>
+<div><label>Pago de capital de deuda: <b id="vd">100%</b><input id="md" type="range" min="0" max="200" value="100"></label></div>
+</div></div>
+<div class="tabs" id="tabs"><button data-t="A">A · Lo que ve el dueño</button><button data-t="B">B · Cinco años</button><button data-t="C">C · Reconstrucción</button></div>
+<div id="view"></div>
+<p class="mut">Supuestos: el excedente operativo ya incluye intereses; no se modela depreciación ni impuestos; los saldos iniciales son ilustrativos. Los datos son ficticios.</p>
+</main>
+<script>
+const SC={A:{E:[100,120,135,150,165],P:[40,60,80,100,120],D:[20,25,30,35,40],A:[10,15,0,20,10],AR:[40,60,85,115,150],AP:[20,25,30,35,40],R:[800,900,980,1060,1150],debt:300},
+B:{E:[60,55,45,35,25],P:[20,25,25,30,30],D:[20,25,30,35,40],A:[0,10,25,45,60],AR:[35,50,70,95,125],AP:[15,16,17,18,19],R:[700,720,740,760,780],debt:350}};
+const AR0=30,AP0=15,YS=[2022,2023,2024,2025,2026];
+const st={t:'A',sc:'A',p:1,a:1,d:1,ans:null,yr:'Todos',cat:'Todas',nat:'Todas',err:false,pg:0};
+let T=[],G=[];
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function split(tot,n,r){const w=Array.from({length:n},()=>.5+r()),s=w.reduce((a,b)=>a+b,0);let o=w.map(x=>Math.round(tot*x/s)),d=tot-o.reduce((a,b)=>a+b,0);o[n-1]+=d;return o}
+const f=v=>v.toLocaleString('es-PY',{maximumFractionDigits:1})+' M',m=v=>v/1000;
+function gen(){const c=SC[st.sc],r=rng(7);T=[];const pick=a=>a[Math.floor(r()*a.length)],k=v=>Math.round(v*1000);
+const OC=['Gastos operativos','Proveedores varios','Mantenimiento','Combustible'],MD=['Transferencia','Efectivo','Cheque','Débito'];
+YS.forEach((Y,y)=>{const E=k(c.E[y]),P=k(c.P[y]*st.p),D=k(c.D[y]*st.d),A=k(c.A[y]*st.a),R=k(c.R[y]),O=R-E,I=Math.round(O*.03),PV=Math.round(O*.57),GA=O-I-PV;
+const add=(tot,n,fn)=>{if(tot<=0)return;split(tot,n,r).forEach((v,i)=>{const o=fn(i,v);const q=r();T.push(Object.assign({y:Y,imp:v,medio:pick(MD),per:Y,est:q<.04?'Diferencia':q<.1?'Pendiente':'Conciliada',err:''},o))})};
+add(R,60,()=>{const q=r();return q<.2?{tipo:'Ingreso',nat:'Cobro de factura anterior',cat:'Ventas',orig:'Cliente',dest:'Cta. Cte. Empresa',con:'Cobro de factura de '+(Y-1)}:q>.9?{tipo:'Ingreso',nat:'Anticipo de cliente',cat:'Ventas',orig:'Cliente',dest:'Cta. Cte. Empresa',con:'Anticipo de pedido',err:'Anticipo registrado como venta'}:{tipo:'Ingreso',nat:'Cobro de ventas',cat:'Ventas',orig:'Cliente',dest:'Cta. Cte. Empresa',con:'Cobro de factura'}});
+add(PV,50,()=>({tipo:'Egreso',nat:'Pago a proveedor',cat:'Proveedores',orig:'Cta. Cte. Empresa',dest:'Proveedor',con:'Pago de factura de compra'}));
+add(GA,60,()=>({tipo:'Egreso',nat:'Gasto operativo',cat:'Gastos operativos',orig:pick(['Cta. Cte. Empresa','Caja']),dest:'Terceros',con:'Gasto del negocio'}));
+add(I,12,()=>({tipo:'Egreso',nat:'Intereses de préstamo',cat:'Gastos financieros',orig:'Cta. Cte. Empresa',dest:'Banco (préstamo)',con:'Interés de cuota'}));
+add(D,12,()=>({tipo:'Egreso',nat:'Capital de deuda',cat:r()<.7?'Gastos financieros':'Préstamos',orig:'Cta. Cte. Empresa',dest:'Banco (préstamo)',con:'Amortización de capital',err:''}));
+add(P,40,()=>{const q=r();return q<.15?{tipo:'Egreso',nat:'Gasto personal',cat:'Retiro del propietario',orig:'Cta. Cte. Empresa',dest:'Cta. Personal Dueño',con:'Retiro'}:q<.45?{tipo:'Egreso',nat:'Gasto personal',cat:'Retiro sin clasificar',orig:pick(['Caja','Cta. Cte. Empresa']),dest:'Cta. Personal Dueño',con:'Retiro de efectivo',err:'Retiro sin clasificar'}:{tipo:'Egreso',nat:'Gasto personal',cat:pick(OC),orig:'Cta. Cte. Empresa',dest:'Terceros',con:'Compra de uso personal',err:'Gasto personal registrado como operativo'}});
+add(A,4,()=>({tipo:'Ingreso',nat:'Aporte del propietario',cat:r()<.75?'Otros ingresos':'Aportes',orig:'Cta. Personal Dueño',dest:'Cta. Cte. Empresa',con:'Aporte para cubrir obligaciones',err:''}));
+for(let i=0;i<12;i++)T.push({y:Y,tipo:'Transferencia',imp:k(5+r()*55),orig:'Cta. Cte. Empresa',dest:'Caja',medio:'Transferencia',cat:'Transferencia',nat:'Transferencia interna',per:Y,est:r()<.15?'Pendiente':'Conciliada',con:'Entre cuentas propias (no cuenta)',err:''})});
+T.forEach(t=>{if(t.nat==='Capital de deuda'&&t.cat==='Gastos financieros')t.err='Capital registrado como gasto';if(t.nat==='Aporte del propietario'&&t.cat==='Otros ingresos')t.err='Aporte registrado como ingreso'});
+T.sort((a,b)=>a.y-b.y||(a.f||0)-(b.f||0));let n={};T.forEach(t=>{n[t.y]=(n[t.y]||0)+1;t.id='OP-'+t.y+'-'+String(n[t.y]).padStart(4,'0');t.m=1+Math.floor(r()*12);t.d=1+Math.floor(r()*28)});
+T.sort((a,b)=>a.y-b.y||a.m-b.m||a.d-b.d);n={};T.forEach(t=>{n[t.y]=(n[t.y]||0)+1;t.id='OP-'+t.y+'-'+String(n[t.y]).padStart(4,'0')});
+const S=(y,nat)=>T.filter(t=>t.y===y&&nat.includes(t.nat)).reduce((a,t)=>a+t.imp,0);let cum=0,cap=0,ar=AR0,ap=AP0;
+G=YS.map((Y,y)=>{const cob=S(Y,['Cobro de ventas','Cobro de factura anterior','Anticipo de cliente']),prov=S(Y,['Pago a proveedor']),gas=S(Y,['Gasto operativo']),int=S(Y,['Intereses de préstamo']),per=S(Y,['Gasto personal']),cp=S(Y,['Capital de deuda']),apo=S(Y,['Aporte del propietario']);
+const E=cob-prov-gas-int,dAR=k0(c.AR[y]-ar),dAP=k0(c.AP[y]-ap);ar=c.AR[y];ap=c.AP[y];const net=E-per-cp+apo;cum+=net;cap+=cp;
+const ty=T.filter(t=>t.y===Y&&t.tipo!=='Transferencia'),pend=ty.filter(t=>t.est!=='Conciliada').reduce((a,t)=>a+t.imp,0),sc=T.filter(t=>t.y===Y&&t.nat==='Gasto personal'&&t.err).reduce((a,t)=>a+t.imp,0),cnt=ty.filter(t=>t.err).length;
+const ingReg=T.filter(t=>t.y===Y&&t.tipo==='Ingreso'&&['Ventas','Otros ingresos'].includes(t.cat)).reduce((a,t)=>a+t.imp,0)+0,egReg=prov+gas+int+per+cp;
+return{Y,cob,prov,gas,int,per,cp,apo,E,eco:E+dAR-dAP,net,cum,AR:c.AR[y]*1000,AP:c.AP[y]*1000,debt:c.debt*1000-cap,pend,sc,cnt,ingReg:cob+apo,egReg}})}
+function k0(v){return Math.round(v*1000)}
+function chart(L,se){const W=620,H=230,p=44;const all=se.flatMap(s=>s.v),mx=Math.max(0,...all),mn=Math.min(0,...all),rg=(mx-mn)||1,y=v=>8+(H-40)*(mx-v)/rg,gw=(W-p)/L.length,bw=(gw-14)/se.length;
+let s=`<svg viewBox="0 0 ${W} ${H}" role="img"><line x1="${p}" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="var(--bd)"/><text x="2" y="16" font-size="10" fill="var(--mut)">${Math.round(mx)}</text><text x="2" y="${H-30}" font-size="10" fill="var(--mut)">${Math.round(mn)}</text>`;
+L.forEach((l,i)=>{se.forEach((e,j)=>{const v=e.v[i],y0=y(0),y1=y(v);s+=`<rect x="${p+i*gw+7+j*bw}" y="${Math.min(y0,y1)}" width="${bw-2}" height="${Math.max(1,Math.abs(y1-y0))}" fill="${e.c}"><title>${e.n} ${l}: ${f(v)}</title></rect>`});s+=`<text x="${p+i*gw+gw/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--mut)">${l}</text>`});
+return s+'</svg><div class="lg">'+se.map(e=>`<span><i style="background:${e.c}"></i>${e.n}</span>`).join('')+'</div>'}
+const sum=(a,k)=>a.reduce((x,g)=>x+g[k],0),kp=(l,v,x='')=>`<div class="card kpi"><b>${v}</b><span>${l}${x}</span></div>`;
+function verdict(){const c=SC[st.sc],E=G.map(g=>g.E),D=G.map(g=>g.cp),P=sum(G,'per'),sh=P/Math.max(1,sum(G,'E')),neg=G.some(g=>g.E<g.cp);
+if(neg)return{k:'prob',t:'Problemas reales de liquidez o rentabilidad, ocultos temporalmente por aportes',d:'En al menos un año el excedente operativo no alcanza para pagar el capital de la deuda. Sin aportes del dueño, el negocio no se sostiene solo.'};
+if(sh>.05)return{k:'rent',t:'Negocio rentable que pierde de vista su dinero',d:'El excedente operativo cubre la deuda en todos los años, pero una parte grande de la caja sale como gasto personal sin identificarse. Rentabilidad no es liquidez disponible.'};
+return{k:'sano',t:'Negocio sano con poca fuga',d:'Los retiros personales son bajos y la deuda se cubre. Aun así, clasificar bien sigue siendo necesario.'}}
+const ENG=[['Saldo de caja acumulado','Mezcla ventas, retiros, aportes y capital: un saldo positivo no dice si el negocio genera ese dinero o si lo puso el dueño.'],['Ingresos registrados','Incluye aportes del dueño clasificados como ingresos y anticipos como ventas; infla la actividad real.'],['Egresos registrados','Suma gastos del negocio, retiros personales y capital de deuda en una sola bolsa; no se ve qué es costo y qué es decisión del dueño.'],['Resultado aparente','Es solo ingresos menos egresos de caja. No es utilidad: ignora cuentas por cobrar, por pagar y la naturaleza de cada movimiento.'],['Margen aparente','Se calcula sobre una base distorsionada; puede parecer bajo en un negocio rentable o aceptable en uno que depende de aportes.']];
+function ownerView(){const ir=sum(G,'ingReg'),er=sum(G,'egReg'),res=ir-er;let h=`<h2>Tablero administrativo convencional</h2><div class="grid">${kp('Saldo acumulado de caja',f(m(sum(G,'net'))))}${kp('Ingresos registrados',f(m(ir)))}${kp('Egresos registrados',f(m(er)))}${kp('Resultado aparente',f(m(res)))}${kp('Margen aparente',(100*res/ir).toFixed(1)+'%')}</div>`;
+h+=`<div class="card">${chart(YS,[{n:'Ingresos registrados',c:'var(--c1)',v:G.map(g=>m(g.ingReg))},{n:'Egresos registrados',c:'var(--c2)',v:G.map(g=>m(g.egReg))}])}</div>`;
+h+=`<div class="card"><b>Según este tablero, ¿qué crees que ocurre con la empresa?</b><div class="tabs">${['Gana dinero','Pierde dinero','Necesita aportes para sobrevivir'].map(x=>`<button data-a="${x}" class="${st.ans===x?'on':''}">${x}</button>`).join('')}</div>${st.ans?`<p>Respondiste: <b>${st.ans}</b>. Explora la etapa B y contrasta en la C.</p>`:''}</div>`;
+h+=`<h2>¿Por qué cada indicador puede engañar?</h2><div class="card">${ENG.map(e=>`<details><summary>${e[0]}</summary><p>${e[1]}</p></details>`).join('')}</div>`;return h}
+function alerts(Y){const gs=Y==='Todos'?G:G.filter(g=>g.Y===+Y),a=[],tot=x=>sum(gs,x),out=tot('prov')+tot('gas')+tot('int')+tot('per')+tot('cp');
+const ps=tot('sc')/Math.max(1,tot('per')),pe=tot('per')/Math.max(1,tot('E')),pe2=tot('pend')/Math.max(1,tot('cob')),dep=tot('apo')/Math.max(1,tot('cp'));
+const A=(c,t)=>a.push(`<div class="al ${c}">${t}</div>`);
+A(ps>.5?'b':'w',`Retiros sin clasificar o mal clasificados: ${f(m(tot('sc')))} (${(100*ps).toFixed(0)}% de los retiros personales).`);
+A(pe>.5?'b':pe>.25?'w':'g',`Los retiros personales equivalen al ${(100*pe).toFixed(0)}% del excedente operativo.`);
+A(tot('apo')>0?(dep>.5?'b':'w'):'g',`Aportes del dueño: ${f(m(tot('apo')))}${tot('apo')>0?` (${(100*dep).toFixed(0)}% del capital de deuda pagado)`:''}.`);
+A(tot('E')<tot('cp')?'b':'g',`Excedente operativo ${f(m(tot('E')))} frente a capital de deuda ${f(m(tot('cp')))}${tot('E')<tot('cp')?': el negocio no cubre su deuda solo.':'.'}`);
+A(pe2>.05?'w':'g',`Diferencias o pendientes de conciliación: ${f(m(tot('pend')))}.`);return a.join('')}
+function filtered(){return T.filter(t=>(st.yr==='Todos'||t.y===+st.yr)&&(st.cat==='Todas'||t.cat===st.cat)&&(st.nat==='Todas'||t.nat===st.nat)&&(!st.err||t.err))}
+function accView(){const gs=st.yr==='Todos'?G:G.filter(g=>g.Y===+st.yr);let h=`<h2>Línea de tiempo</h2><div class="yrs">${['Todos',...YS].map(y=>`<button data-y="${y}" class="${st.yr==y?'on':''}">${y}</button>`).join('')}</div>`;
+h+=`<div class="card">${chart(YS,[{n:'Cobros',c:'var(--c1)',v:G.map(g=>m(g.cob))},{n:'Gastos del negocio',c:'var(--c2)',v:G.map(g=>m(g.prov+g.gas+g.int))},{n:'Retiros personales',c:'var(--c4)',v:G.map(g=>m(g.per))},{n:'Caja neta del año',c:'var(--c3)',v:G.map(g=>m(g.net))}])}</div>`;
+h+=`<h2>Alertas ${st.yr}</h2>${alerts(st.yr)}`;
+const cats=['Todas',...new Set(T.map(t=>t.cat))],nats=['Todas',...new Set(T.map(t=>t.nat))],F=filtered(),pages=Math.max(1,Math.ceil(F.length/20));st.pg=Math.min(st.pg,pages-1);
+h+=`<h2>Transacciones (${F.length.toLocaleString('es-PY')} registros)</h2><div class="card"><div class="ctl"><label>Categoría registrada<br><select id="fc">${cats.map(c=>`<option ${c==st.cat?'selected':''}>${c}</option>`).join('')}</select></label><label>Naturaleza real<br><select id="fn">${nats.map(c=>`<option ${c==st.nat?'selected':''}>${c}</option>`).join('')}</select></label><label><input type="checkbox" id="fe" ${st.err?'checked':''}> Solo con posible error</label></div>
+<div class="scroll"><table><tr><th>N.º</th><th>Fecha</th><th>Tipo</th><th class="n">Importe (M)</th><th>Origen → Destino</th><th>Medio</th><th>Registrada como</th><th>Naturaleza real</th><th>Período</th><th>Conciliación</th><th>Concepto</th><th>Posible error</th></tr>`;
+F.slice(st.pg*20,st.pg*20+20).forEach(t=>{h+=`<tr><td>${t.id}</td><td>${String(t.d).padStart(2,'0')}/${String(t.m).padStart(2,'0')}/${t.y}</td><td>${t.tipo}</td><td class="n">${(t.imp/1000).toFixed(2)}</td><td>${t.orig} → ${t.dest}</td><td>${t.medio}</td><td>${t.cat}</td><td>${t.nat}</td><td>${t.per}</td><td>${t.est}</td><td>${t.con}</td><td>${t.err||'—'}</td></tr>`});
+return h+`</table></div><div class="tabs"><button data-pg="-1">‹</button><span class="mut" style="align-self:center">Página ${st.pg+1} de ${pages}</span><button data-pg="1">›</button></div></div>`}
+function recView(){const v=verdict(),gT=x=>f(m(sum(G,x)));let h=`<h2>Vista integrada reconstruida</h2><div class="card scroll"><table><tr><th>M</th>${YS.map(y=>`<th class="n">${y}</th>`).join('')}<th class="n">Total</th></tr>`;
+const row=(l,k,tot=true)=>`<tr><td>${l}</td>${G.map(g=>`<td class="n">${(g[k]/1000).toFixed(1)}</td>`).join('')}<td class="n">${tot?(sum(G,k)/1000).toFixed(1):'—'}</td></tr>`;
+h+=row('Excedente de caja operativo','E')+row('Resultado económico (con cuentas por cobrar/pagar)','eco')+row('Retiros personales','per')+row('Aportes del propietario','apo')+row('Capital de deuda pagado','cp')+row('Caja neta del año','net')+row('Efectivo acumulado','cum',false)+row('Cuentas por cobrar (cierre)','AR',false)+row('Cuentas por pagar (cierre)','AP',false)+row('Saldo de deuda (cierre)','debt',false)+row('Pendiente de aclarar','pend')+`</table></div>`;
+h+=`<div class="card">${chart(YS,[{n:'Resultado económico',c:'var(--c1)',v:G.map(g=>m(g.eco))},{n:'Caja neta',c:'var(--c3)',v:G.map(g=>m(g.net))},{n:'Efectivo acumulado',c:'var(--c2)',v:G.map(g=>m(g.cum))},{n:'Saldo de deuda',c:'var(--c4)',v:G.map(g=>m(g.debt))}])}</div>`;
+const ir=sum(G,'ingReg'),res=ir-sum(G,'egReg');
+h+=`<h2>Percepción del dueño vs realidad</h2><div class="card scroll"><table><tr><th>Indicador</th><th>Lo que parecía</th><th>Reconstruido</th></tr><tr><td>Resultado</td><td>${f(m(res))} (margen ${(100*res/ir).toFixed(1)}%)</td><td>Resultado económico ${gT('eco')}</td></tr><tr><td>Caja generada por el negocio</td><td>Saldo de ${f(m(sum(G,'net')))}</td><td>Excedente operativo ${gT('E')}</td></tr><tr><td>Dinero del dueño</td><td>No visible</td><td>Retiros ${gT('per')}; aportes ${gT('apo')}</td></tr><tr><td>Deuda</td><td>Gasto financiero</td><td>Capital ${gT('cp')} (no es gasto)</td></tr></table></div>`;
+const exp={rent:'Negocio rentable',prob:'Necesita aportes',sano:'Negocio rentable'};
+h+=`<div class="al ${v.k==='prob'?'b':v.k==='rent'?'w':'g'}"><b>${v.t}.</b> ${v.d}</div>`;
+if(st.ans){const ok=(v.k==='prob'&&st.ans.startsWith('Necesita'))||(v.k!=='prob'&&st.ans==='Gana dinero');h+=`<p>Tu respuesta inicial («${st.ans}») ${ok?'coincide':'no coincide'} con la reconstrucción${ok?', pero fíjate cuánto costó llegar a ella con el tablero convencional.':'. Con los datos mezclados, es una conclusión razonable pero equivocada.'}</p>`}
+return h+`<p><b>Registrar operaciones no equivale a comprenderlas.</b> Modifica los controles superiores y observa cómo cambia el diagnóstico.</p>`}
+function render(){gen();document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===st.t));
+document.getElementById('view').innerHTML=st.t==='A'?ownerView():st.t==='B'?accView():recView()}
+document.getElementById('tabs').onclick=e=>{if(e.target.dataset.t){st.t=e.target.dataset.t;render()}};
+document.getElementById('sc').onchange=e=>{st.sc=e.target.value;render()};
+[['mp','p','vp'],['ma','a','va'],['md','d','vd']].forEach(([i,k,l])=>document.getElementById(i).oninput=e=>{st[k]=e.target.value/100;document.getElementById(l).textContent=e.target.value+'%';render()});
+document.getElementById('view').onclick=e=>{const d=e.target.dataset;if(d.a){st.ans=d.a;render()}if(d.y){st.yr=d.y;st.pg=0;render()}if(d.pg){st.pg=Math.max(0,st.pg+ +d.pg);render()}};
+document.getElementById('view').onchange=e=>{if(e.target.id==='fc')st.cat=e.target.value;if(e.target.id==='fn')st.nat=e.target.value;if(e.target.id==='fe')st.err=e.target.checked;st.pg=0;render()};
+render();
+</script></body></html>
