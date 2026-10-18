@@ -1,0 +1,680 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Laboratorio de Investigación</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Spectral:wght@500;600;700&display=swap">
+<style>
+/* Concepto: un tablero de investigación sobre papel gris-azulado. Izquierda, tres pasos guiados; derecha, el mapa de fichas conectadas. El rojo de sello aparece solo cuando hay una coincidencia. */
+:root {
+  --bg: #EDF0F2;
+  --surface: #F8F9FA;
+  --map: #E3E8EC;
+  --grid: #CDD5DB;
+  --ink: #12262E;
+  --muted: #4B5E67;
+  --line: #BFC9CF;
+  --accent: #1C5463;
+  --on-accent: #FFFFFF;
+  --alert: #A7202B;
+  --alert-soft: #F7DDDE;
+  --ok: #2F6B45;
+  --font-display: "Spectral", Georgia, "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1A1F;
+    --surface: #16252C;
+    --map: #12212A;
+    --grid: #223640;
+    --ink: #E6ECEF;
+    --muted: #9DB0B8;
+    --line: #2E4650;
+    --accent: #78BCCF;
+    --on-accent: #0F1A1F;
+    --alert: #FF7F87;
+    --alert-soft: #3B1F24;
+    --ok: #7CC196;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1A1F;
+  --surface: #16252C;
+  --map: #12212A;
+  --grid: #223640;
+  --ink: #E6ECEF;
+  --muted: #9DB0B8;
+  --line: #2E4650;
+  --accent: #78BCCF;
+  --on-accent: #0F1A1F;
+  --alert: #FF7F87;
+  --alert-soft: #3B1F24;
+  --ok: #7CC196;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+header { display: flex; flex-direction: column; gap: 10px; max-width: 70ch; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.1; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); font-size: 1.05rem; max-width: 60ch; }
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 370px) minmax(0, 1fr);
+  grid-template-areas: "steps map" "steps results" "steps notes";
+  grid-template-rows: auto auto 1fr;
+  gap: 24px 32px;
+  align-items: start;
+}
+.steps-col { grid-area: steps; }
+.map-col { grid-area: map; min-width: 0; }
+.results-col { grid-area: results; min-width: 0; }
+.notes-col { grid-area: notes; min-width: 0; }
+@media (max-width: 920px) {
+  .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "map" "steps" "results" "notes"; }
+}
+
+/* Pasos */
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 28px; counter-reset: paso; }
+.step { counter-increment: paso; display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); }
+.step h2 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; margin: 0; display: flex; gap: 10px; align-items: baseline; }
+.step h2::before { content: counter(paso); font-family: var(--font-mono); font-size: 0.85rem; font-weight: 500; color: var(--accent); border: 1px solid var(--accent); border-radius: 50%; width: 1.7em; height: 1.7em; display: inline-grid; place-items: center; flex: none; transform: translateY(-2px); }
+.step p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 0.9rem; }
+
+.legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 0; padding: 0; list-style: none; font-size: 0.9rem; }
+.legend li { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.legend svg { width: 22px; height: 22px; flex: none; color: var(--ink); }
+
+form { display: flex; flex-direction: column; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px; }
+form h3 { font-family: var(--font-body); font-size: 0.95rem; font-weight: 600; margin: 0; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+input, select { font: inherit; font-size: 16px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 9px 10px; min-width: 0; width: 100%; }
+input::placeholder { color: var(--muted); opacity: 0.8; }
+.row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 420px) { .row2 { grid-template-columns: minmax(0, 1fr); } }
+
+button { font: inherit; font-weight: 600; cursor: pointer; border-radius: 4px; padding: 10px 14px; border: 1px solid var(--accent); background: transparent; color: var(--accent); min-height: 44px; }
+button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+button.primary { background: var(--accent); color: var(--on-accent); }
+button.primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--ink)); }
+button.quiet { border-color: var(--line); color: var(--muted); font-weight: 500; }
+button:disabled { opacity: 0.55; cursor: progress; }
+button:focus-visible, input:focus-visible, select:focus-visible, .node:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn-big { width: 100%; font-size: 1.05rem; padding: 14px 16px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.status { margin: 0; min-height: 1.4em; font-size: 0.88rem; color: var(--ok); }
+.status.err { color: var(--alert); }
+
+/* Mapa */
+.map-card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.map-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.map-head h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 0; font-weight: 600; }
+.count { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+#mapbox { position: relative; background: var(--map); }
+#map { display: block; width: 100%; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.hint { padding: 10px 16px; font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); margin: 0; }
+
+.node { cursor: grab; }
+.node:active { cursor: grabbing; }
+.node .body { fill: var(--surface); stroke: var(--ink); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+.node .ico { color: var(--ink); }
+.node .name { font-family: var(--font-body); font-size: 13px; font-weight: 600; fill: var(--ink); paint-order: stroke; stroke: var(--map); stroke-width: 4px; stroke-linejoin: round; }
+.node .kind { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; fill: var(--muted); paint-order: stroke; stroke: var(--map); stroke-width: 3px; }
+.node .sel { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 4 4; opacity: 0; }
+.node.selected .sel { opacity: 1; }
+.node .pulse { fill: none; stroke: var(--alert); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.node.hit .body { fill: var(--alert-soft); stroke: var(--alert); stroke-width: 3; }
+.node.hit .ico { color: var(--alert); }
+.node.hit .pulse { opacity: 1; animation: pulse 1.8s ease-out infinite; }
+.node.involved .body { stroke: var(--alert); stroke-width: 2.5; }
+.node.dim { opacity: 0.3; }
+
+.link line { stroke: var(--muted); stroke-width: 1.8; transition: stroke 0.25s; }
+.link .arrow { fill: var(--muted); transition: fill 0.25s; }
+.link text { font-family: var(--font-body); font-size: 11.5px; fill: var(--muted); paint-order: stroke; stroke: var(--map); stroke-width: 4px; stroke-linejoin: round; text-anchor: middle; }
+.link.hot line { stroke: var(--alert); stroke-width: 2.6; }
+.link.hot .arrow { fill: var(--alert); }
+.link.hot text { fill: var(--alert); font-weight: 600; }
+.link.dim { opacity: 0.25; }
+
+.sweep { opacity: 0; pointer-events: none; }
+.scanning .sweep { opacity: 1; animation: sweep 1.2s ease-in-out forwards; }
+@keyframes sweep { from { transform: translateX(0); } to { transform: translateX(var(--sweepw)); } }
+@keyframes pulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.7); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .scanning .sweep { animation: none; }
+  .node.hit .pulse { animation: none; opacity: 0.6; }
+}
+.empty { font-family: var(--font-display); font-size: 17px; fill: var(--muted); text-anchor: middle; }
+
+/* Resultados y notas */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.panel h2 { font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; margin: 0; }
+.panel h3 { font-size: 0.8rem; font-family: var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin: 0; }
+.finding { border-left: 4px solid var(--alert); background: var(--alert-soft); padding: 12px 14px; border-radius: 0 4px 4px 0; display: flex; flex-direction: column; gap: 6px; }
+.finding strong { font-family: var(--font-display); font-size: 1.1rem; }
+.finding ul { margin: 0; padding-left: 1.1em; }
+.nofind { border-left: 4px solid var(--ok); padding: 8px 14px; margin: 0; }
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 700px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.detail dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 0.95rem; }
+.detail dt { color: var(--muted); }
+.detail dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.detail ul { margin: 0; padding-left: 1.1em; font-size: 0.92rem; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 0.92rem; }
+.log li { display: grid; grid-template-columns: auto 1fr; gap: 10px; }
+.log time { font-family: var(--font-mono); font-size: 12px; color: var(--muted); padding-top: 2px; font-variant-numeric: tabular-nums; }
+.log li.alert span { color: var(--alert); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Ejercicio de demostración · datos ficticios</p>
+    <h1>Laboratorio de Investigación</h1>
+    <p class="lede">Un tablero para ver quién se relaciona con quién. Se maneja con clics: cada persona, empresa o cuenta es una ficha, y cada relación es una flecha entre dos fichas. No hay que escribir código.</p>
+  </header>
+
+  <div class="layout">
+    <section class="map-col" aria-label="Mapa de fichas y conexiones">
+      <div class="map-card">
+        <div class="map-head">
+          <h2>Mapa del caso</h2>
+          <span class="count" id="count">4 fichas · 4 conexiones</span>
+        </div>
+        <div id="mapbox">
+          <svg id="map" role="img" aria-label="Mapa de fichas conectadas por flechas">
+            <defs>
+              <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" style="stroke:var(--grid)" stroke-width="1"/></pattern>
+              <linearGradient id="sweepg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" style="stop-color:var(--accent);stop-opacity:0"/><stop offset="1" style="stop-color:var(--accent);stop-opacity:0.45"/></linearGradient>
+            </defs>
+            <rect id="bgrect" x="0" y="0" width="100%" height="100%" fill="url(#grid)"/>
+            <g id="links"></g>
+            <g id="nodes"></g>
+            <rect class="sweep" id="sweep" x="-90" y="0" width="90" height="100%" fill="url(#sweepg)"/>
+            <text class="empty" id="emptytxt" x="50%" y="50%" hidden>El tablero está vacío. Agregue una ficha para comenzar.</text>
+          </svg>
+        </div>
+        <p class="hint">Puede arrastrar cada ficha para ordenar el mapa. Toque una ficha para ver sus datos.</p>
+      </div>
+    </section>
+
+    <div class="steps-col">
+      <ol class="steps">
+        <li class="step">
+          <h2>Observe el caso</h2>
+          <p>El mapa muestra una empresa, dos personas y una cuenta bancaria. Cada flecha dice qué relación existe y en qué sentido va.</p>
+          <ul class="legend" id="legend"></ul>
+        </li>
+
+        <li class="step">
+          <h2>Agregue información</h2>
+          <form id="f-ficha" autocomplete="off">
+            <h3>Nueva ficha</h3>
+            <label for="in-nombre">Nombre
+              <input id="in-nombre" type="text" maxlength="40" placeholder="Ej.: Teléfono de Juan" required>
+            </label>
+            <div class="row2">
+              <label for="in-tipo">Tipo
+                <select id="in-tipo"></select>
+              </label>
+              <label for="in-dato">Dato (opcional)
+                <input id="in-dato" type="text" maxlength="40" placeholder="Ej.: Desde 2019">
+              </label>
+            </div>
+            <button type="submit">Agregar al mapa</button>
+            <p class="status" id="st-ficha" role="status"></p>
+          </form>
+
+          <form id="f-vinculo" autocomplete="off">
+            <h3>Nueva conexión</h3>
+            <label for="sel-origen">Desde
+              <select id="sel-origen"></select>
+            </label>
+            <label for="sel-destino">Hacia
+              <select id="sel-destino"></select>
+            </label>
+            <label for="in-rel">Relación
+              <input id="in-rel" type="text" maxlength="40" list="rels" placeholder="Ej.: Es dueño de" required>
+              <datalist id="rels">
+                <option value="Es dueño de"></option>
+                <option value="Llama a"></option>
+                <option value="Socio"></option>
+                <option value="Firmante"></option>
+                <option value="Recibe fondos de"></option>
+                <option value="Se reunió con"></option>
+              </datalist>
+            </label>
+            <button type="submit">Conectar fichas</button>
+            <p class="status" id="st-vinculo" role="status"></p>
+          </form>
+        </li>
+
+        <li class="step">
+          <h2>Busque coincidencias</h2>
+          <p>El sistema revisa si varias fichas distintas llegan al mismo lugar. Es la forma más rápida de saber por dónde empezar a mirar.</p>
+          <button type="button" class="primary btn-big" id="btn-buscar">Buscar coincidencias</button>
+          <div class="btnrow">
+            <button type="button" class="quiet" id="btn-limpiar-res">Quitar resaltado</button>
+            <button type="button" class="quiet" id="btn-reset">Volver al caso inicial</button>
+            <button type="button" class="quiet" id="btn-vaciar">Vaciar tablero</button>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <section class="results-col" aria-label="Resultados de la búsqueda">
+      <div class="panel" id="resultados">
+        <h2>Resultados</h2>
+        <p class="muted" style="margin:0">Todavía no se hizo ninguna búsqueda. Use el paso 3 cuando quiera.</p>
+      </div>
+    </section>
+
+    <section class="notes-col" aria-label="Ficha seleccionada y cuaderno">
+      <div class="cols">
+        <div class="panel detail" id="detalle" aria-live="polite"></div>
+        <div class="panel">
+          <h2>Cuaderno</h2>
+          <ul class="log" id="cuaderno" aria-live="polite"></ul>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var TIPOS = {
+    persona: 'Persona', empresa: 'Empresa', cuenta: 'Cuenta bancaria',
+    telefono: 'Teléfono', vehiculo: 'Vehículo', organismo: 'Organismo', otro: 'Otro'
+  };
+  var ICONOS = {
+    persona: '<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/>',
+    empresa: '<rect x="5" y="4" width="14" height="16"/><path d="M9 8h2M13 8h2M9 12h2M13 12h2M10 20v-4h4v4"/>',
+    cuenta: '<path d="M3 9l9-5 9 5z"/><path d="M5.5 11v6M9.8 11v6M14.2 11v6M18.5 11v6M3 19.5h18"/>',
+    telefono: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
+    vehiculo: '<path d="M4 14l1.6-5h12.8L20 14"/><path d="M3 14h18v4H3z"/><circle cx="7.5" cy="18.5" r="1.4"/><circle cx="16.5" cy="18.5" r="1.4"/>',
+    organismo: '<path d="M6 21V4"/><path d="M6 5h11l-2.2 3.6L17 12H6"/>',
+    otro: '<circle cx="12" cy="12" r="4.5"/>'
+  };
+  var R = 28;
+  var $ = function (id) { return document.getElementById(id); };
+  var svg = $('map'), gLinks = $('links'), gNodes = $('nodes');
+  var state, seq = 0, selected = null, results = null, dims = { W: 800, H: 520 }, scanning = false;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function icon(tipo, size) {
+    return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONOS[tipo] || ICONOS.otro) + '</svg>';
+  }
+
+  function casoInicial() {
+    seq = 0;
+    var e = function (nombre, tipo, fx, fy, attrs) { return { id: 'e' + (++seq), nombre: nombre, tipo: tipo, fx: fx, fy: fy, attrs: attrs }; };
+    var carlos = e('Carlos', 'persona', 0.14, 0.26, { 'Edad': '42' });
+    var ana = e('Ana', 'persona', 0.14, 0.74, { 'Edad': '35' });
+    var alpha = e('Empresa Alpha S.A.', 'empresa', 0.55, 0.5, { 'País': 'Paraíso fiscal' });
+    var cuenta = e('Cuenta Banco 123', 'cuenta', 0.85, 0.24, { 'Saldo': '500.000' });
+    return {
+      entidades: [carlos, ana, alpha, cuenta],
+      vinculos: [
+        { de: carlos.id, a: alpha.id, rel: 'Socio fundador' },
+        { de: ana.id, a: alpha.id, rel: 'Gerente' },
+        { de: cuenta.id, a: alpha.id, rel: 'Recibe fondos de' },
+        { de: carlos.id, a: cuenta.id, rel: 'Firmante' }
+      ],
+      log: []
+    };
+  }
+
+  function byId(id) { return state.entidades.filter(function (x) { return x.id === id; })[0]; }
+  function nombre(id) { var x = byId(id); return x ? x.nombre : '?'; }
+  function px(en) {
+    return {
+      x: Math.min(dims.W - 50, Math.max(50, en.fx * dims.W)),
+      y: Math.min(dims.H - 62, Math.max(44, en.fy * dims.H))
+    };
+  }
+
+  function nota(texto, clase) {
+    var d = new Date();
+    var h = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    state.log.unshift({ h: h, t: texto, c: clase || '' });
+    state.log = state.log.slice(0, 8);
+    drawLog();
+  }
+  function drawLog() {
+    var ul = $('cuaderno');
+    if (!state.log.length) { ul.innerHTML = '<li><time></time><span class="muted">Aquí quedará el registro de cada paso.</span></li>'; return; }
+    ul.innerHTML = state.log.map(function (l) {
+      return '<li class="' + l.c + '"><time>' + l.h + '</time><span>' + esc(l.t) + '</span></li>';
+    }).join('');
+  }
+
+  /* ---------- Dibujo del mapa ---------- */
+  function measure() {
+    var w = $('mapbox').clientWidth || 800;
+    dims.W = w;
+    dims.H = w < 600 ? 560 : 520;
+    svg.setAttribute('viewBox', '0 0 ' + dims.W + ' ' + dims.H);
+    svg.style.height = dims.H + 'px';
+    svg.style.setProperty('--sweepw', (dims.W + 90) + 'px');
+  }
+
+  function buildNodes() {
+    gNodes.innerHTML = state.entidades.map(function (en) {
+      var p = px(en);
+      var nm = en.nombre.length > 22 ? en.nombre.slice(0, 21) + '…' : en.nombre;
+      return '<g class="node" data-id="' + en.id + '" tabindex="0" role="button" aria-label="' + esc(en.nombre + ', ' + TIPOS[en.tipo]) + '" transform="translate(' + p.x + ',' + p.y + ')">' +
+        '<circle class="pulse" r="' + R + '"/>' +
+        '<circle class="sel" r="' + (R + 7) + '"/>' +
+        '<circle class="body" r="' + R + '"/>' +
+        '<g class="ico" transform="translate(-14,-14) scale(1.1667)" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (ICONOS[en.tipo] || ICONOS.otro) + '</g>' +
+        '<text class="name" y="' + (R + 18) + '" text-anchor="middle">' + esc(nm) + '</text>' +
+        '<text class="kind" y="' + (R + 31) + '" text-anchor="middle">' + esc(TIPOS[en.tipo]) + '</text>' +
+        '</g>';
+    }).join('');
+    $('emptytxt').hidden = state.entidades.length > 0;
+    paint();
+  }
+
+  function drawLinks() {
+    var out = '';
+    var groups = {};
+    state.vinculos.forEach(function (v) {
+      var k = [v.de, v.a].sort().join('|');
+      (groups[k] = groups[k] || []).push(v);
+    });
+    state.vinculos.forEach(function (v) {
+      var A = byId(v.de), B = byId(v.a);
+      if (!A || !B) return;
+      var pa = px(A), pb = px(B);
+      var dx = pb.x - pa.x, dy = pb.y - pa.y, L = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+      var g = groups[[v.de, v.a].sort().join('|')];
+      var i = g.indexOf(v);
+      var off = (i - (g.length - 1) / 2) * 22;
+      var x1 = pa.x + ux * (R + 3) + nx * off, y1 = pa.y + uy * (R + 3) + ny * off;
+      var x2 = pb.x - ux * (R + 9) + nx * off, y2 = pb.y - uy * (R + 9) + ny * off;
+      var ah = 10, aw = 5;
+      var bx = x2 - ux * ah, by = y2 - uy * ah;
+      var tri = x2 + ',' + y2 + ' ' + (bx + nx * aw) + ',' + (by + ny * aw) + ' ' + (bx - nx * aw) + ',' + (by - ny * aw);
+      var mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - 5;
+      var cls = 'link';
+      if (results) { cls += results.linkSet[v.de + '>' + v.a] ? ' hot' : ' dim'; }
+      out += '<g class="' + cls + '"><line x1="' + x1 + '" y1="' + y1 + '" x2="' + bx + '" y2="' + by + '"/>' +
+        '<polygon class="arrow" points="' + tri + '"/>' +
+        '<text x="' + mx + '" y="' + my + '">' + esc(v.rel) + '</text></g>';
+    });
+    gLinks.innerHTML = out;
+    $('count').textContent = state.entidades.length + (state.entidades.length === 1 ? ' ficha' : ' fichas') + ' · ' + state.vinculos.length + (state.vinculos.length === 1 ? ' conexión' : ' conexiones');
+  }
+
+  function paint() {
+    var nodes = gNodes.querySelectorAll('.node');
+    Array.prototype.forEach.call(nodes, function (el) {
+      var id = el.getAttribute('data-id');
+      el.classList.toggle('selected', id === selected);
+      el.classList.remove('hit', 'involved', 'dim');
+      if (results) {
+        if (results.hit[id]) el.classList.add('hit');
+        else if (results.involved[id]) el.classList.add('involved');
+        else el.classList.add('dim');
+      }
+    });
+  }
+
+  function drawAll() { measure(); buildNodes(); drawLinks(); drawDetail(); fillSelects(); }
+
+  /* ---------- Selects y leyenda ---------- */
+  function fillSelects() {
+    ['sel-origen', 'sel-destino'].forEach(function (id) {
+      var s = $(id), prev = s.value;
+      s.innerHTML = state.entidades.map(function (en) { return '<option value="' + en.id + '">' + esc(en.nombre) + '</option>'; }).join('');
+      if (prev && byId(prev)) s.value = prev;
+    });
+    if (state.entidades.length > 1 && $('sel-origen').value === $('sel-destino').value) {
+      $('sel-destino').selectedIndex = Math.min(1, state.entidades.length - 1);
+    }
+  }
+  function fillStatic() {
+    $('in-tipo').innerHTML = Object.keys(TIPOS).map(function (k) { return '<option value="' + k + '">' + TIPOS[k] + '</option>'; }).join('');
+    $('legend').innerHTML = ['persona', 'empresa', 'cuenta', 'telefono', 'vehiculo', 'organismo'].map(function (k) {
+      return '<li>' + icon(k, 22) + '<span>' + TIPOS[k] + '</span></li>';
+    }).join('');
+  }
+
+  /* ---------- Ficha seleccionada ---------- */
+  function drawDetail() {
+    var el = $('detalle');
+    var en = selected && byId(selected);
+    if (!en) {
+      el.innerHTML = '<h2>Ficha seleccionada</h2><p class="muted" style="margin:0">Toque una ficha del mapa para ver sus datos y conexiones.</p>';
+      return;
+    }
+    var attrs = Object.keys(en.attrs || {}).map(function (k) { return '<dt>' + esc(k) + '</dt><dd>' + esc(en.attrs[k]) + '</dd>'; }).join('');
+    var sale = state.vinculos.filter(function (v) { return v.de === en.id; }).map(function (v) { return '<li>' + esc(v.rel) + ' → ' + esc(nombre(v.a)) + '</li>'; }).join('');
+    var entra = state.vinculos.filter(function (v) { return v.a === en.id; }).map(function (v) { return '<li>' + esc(nombre(v.de)) + ' → ' + esc(v.rel) + '</li>'; }).join('');
+    el.innerHTML = '<h2>' + esc(en.nombre) + '</h2>' +
+      '<dl><dt>Tipo</dt><dd>' + esc(TIPOS[en.tipo]) + '</dd>' + attrs + '</dl>' +
+      '<h3>Sale de esta ficha</h3>' + (sale ? '<ul>' + sale + '</ul>' : '<p class="muted small" style="margin:0">Sin conexiones.</p>') +
+      '<h3>Llega a esta ficha</h3>' + (entra ? '<ul>' + entra + '</ul>' : '<p class="muted small" style="margin:0">Sin conexiones.</p>') +
+      '<div class="btnrow"><button type="button" class="quiet" id="btn-quitar">Quitar esta ficha</button></div>';
+    $('btn-quitar').onclick = function () { quitar(en.id); };
+  }
+  function select(id) { selected = id; paint(); drawDetail(); }
+
+  function quitar(id) {
+    var n = nombre(id);
+    state.entidades = state.entidades.filter(function (x) { return x.id !== id; });
+    state.vinculos = state.vinculos.filter(function (v) { return v.de !== id && v.a !== id; });
+    selected = null; results = null;
+    nota('Se quitó la ficha «' + n + '» y sus conexiones.');
+    drawAll(); showResults();
+  }
+
+  /* ---------- Formularios ---------- */
+  function lugarLibre() {
+    /* Prueba una cuadrícula de lugares y elige el más alejado de las fichas existentes. */
+    var best = null, bestD = -1;
+    for (var gx = 0.1; gx <= 0.9; gx += 0.1) {
+      for (var gy = 0.12; gy <= 0.8; gy += 0.1) {
+        var dmin = 1e9;
+        state.entidades.forEach(function (e) {
+          var d = Math.sqrt(Math.pow((e.fx - gx) * dims.W, 2) + Math.pow((e.fy - gy) * dims.H, 2));
+          if (d < dmin) dmin = d;
+        });
+        if (dmin > bestD) { bestD = dmin; best = { fx: gx, fy: gy }; }
+      }
+    }
+    return best || { fx: 0.5, fy: 0.5 };
+  }
+
+  $('f-ficha').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var st = $('st-ficha');
+    var nm = $('in-nombre').value.trim();
+    var tipo = $('in-tipo').value, dato = $('in-dato').value.trim();
+    st.className = 'status';
+    if (!nm) { st.className = 'status err'; st.textContent = 'Escriba un nombre para la ficha.'; return; }
+    if (state.entidades.some(function (x) { return x.nombre.toLowerCase() === nm.toLowerCase(); })) {
+      st.className = 'status err'; st.textContent = 'Ya existe una ficha con ese nombre. Use otro nombre.'; return;
+    }
+    var pos = lugarLibre();
+    var en = { id: 'e' + (++seq), nombre: nm, tipo: tipo, fx: pos.fx, fy: pos.fy, attrs: dato ? { 'Dato': dato } : {} };
+    state.entidades.push(en);
+    results = null; selected = en.id;
+    nota('Se agregó la ficha «' + nm + '» (' + TIPOS[tipo] + ').');
+    $('in-nombre').value = ''; $('in-dato').value = '';
+    st.textContent = 'Ficha agregada al mapa.';
+    drawAll(); showResults();
+  });
+
+  $('f-vinculo').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var st = $('st-vinculo');
+    var de = $('sel-origen').value, a = $('sel-destino').value, rel = $('in-rel').value.trim();
+    st.className = 'status err';
+    if (!de || !a) { st.textContent = 'Primero agregue al menos dos fichas.'; return; }
+    if (de === a) { st.textContent = 'Elija dos fichas distintas.'; return; }
+    if (!rel) { st.textContent = 'Escriba qué relación hay entre las dos fichas.'; return; }
+    if (state.vinculos.some(function (v) { return v.de === de && v.a === a && v.rel.toLowerCase() === rel.toLowerCase(); })) {
+      st.textContent = 'Esa conexión ya está en el mapa.'; return;
+    }
+    state.vinculos.push({ de: de, a: a, rel: rel });
+    results = null;
+    nota('Se conectó «' + nombre(de) + '» con «' + nombre(a) + '» (' + rel + ').');
+    $('in-rel').value = '';
+    st.className = 'status'; st.textContent = 'Conexión creada.';
+    drawLinks(); paint(); drawDetail(); showResults();
+  });
+
+  /* ---------- Búsqueda de coincidencias ---------- */
+  function analizar() {
+    var grupos = {};
+    state.vinculos.forEach(function (v) {
+      var g = grupos[v.a] = grupos[v.a] || {};
+      (g[v.de] = g[v.de] || []).push(v.rel);
+    });
+    var finds = [];
+    Object.keys(grupos).forEach(function (dest) {
+      var origenes = Object.keys(grupos[dest]);
+      if (origenes.length >= 2) {
+        finds.push({ dest: dest, origenes: origenes.map(function (o) { return { id: o, rels: grupos[dest][o] }; }) });
+      }
+    });
+    var hit = {}, involved = {}, linkSet = {};
+    finds.forEach(function (f) {
+      hit[f.dest] = true;
+      f.origenes.forEach(function (o) { involved[o.id] = true; linkSet[o.id + '>' + f.dest] = true; });
+    });
+    return { finds: finds, hit: hit, involved: involved, linkSet: linkSet };
+  }
+
+  function buscar() {
+    if (scanning) return;
+    var res = analizar();
+    var btn = $('btn-buscar');
+    var fin = function () {
+      results = res; scanning = false; svg.classList.remove('scanning');
+      btn.disabled = false; btn.textContent = 'Buscar coincidencias';
+      if (res.finds.length) nota('Búsqueda: ' + res.finds.length + (res.finds.length === 1 ? ' coincidencia encontrada.' : ' coincidencias encontradas.'), 'alert');
+      else nota('Búsqueda: sin coincidencias con la información actual.');
+      drawLinks(); paint(); showResults();
+    };
+    results = null; drawLinks(); paint();
+    if (reduce) { fin(); return; }
+    scanning = true; btn.disabled = true; btn.textContent = 'Revisando el mapa…';
+    svg.classList.add('scanning');
+    setTimeout(fin, 1250);
+  }
+
+  function showResults() {
+    var box = $('resultados');
+    if (!results) {
+      box.innerHTML = '<h2>Resultados</h2><p class="muted" style="margin:0">Todavía no se hizo ninguna búsqueda. Use el paso 3 cuando quiera.</p>';
+      return;
+    }
+    if (!results.finds.length) {
+      box.innerHTML = '<h2>Resultados</h2><p class="nofind">No se encontraron coincidencias. Ninguna ficha recibe conexiones de dos o más fichas distintas. Agregue más conexiones y busque de nuevo.</p>';
+      return;
+    }
+    var n = results.finds.length;
+    box.innerHTML = '<h2>' + n + (n === 1 ? ' punto de encuentro' : ' puntos de encuentro') + '</h2>' +
+      results.finds.map(function (f) {
+        return '<div class="finding"><strong>' + esc(nombre(f.dest)) + '</strong>' +
+          '<span>Llegan a esta ficha ' + f.origenes.length + ' fichas distintas:</span><ul>' +
+          f.origenes.map(function (o) { return '<li>' + esc(nombre(o.id)) + ' · ' + esc(o.rels.join(', ')) + '</li>'; }).join('') +
+          '</ul></div>';
+      }).join('') +
+      '<p class="muted small" style="margin:0">Una coincidencia es una pista y no una conclusión. Indica qué ficha conviene revisar primero.</p>';
+  }
+
+  $('btn-buscar').addEventListener('click', buscar);
+  $('btn-limpiar-res').addEventListener('click', function () {
+    results = null; drawLinks(); paint(); showResults();
+  });
+  $('btn-reset').addEventListener('click', function () {
+    state = casoInicial(); selected = null; results = null;
+    nota('Se restauró el caso inicial.');
+    drawAll(); showResults();
+  });
+  $('btn-vaciar').addEventListener('click', function () {
+    state.entidades = []; state.vinculos = []; selected = null; results = null;
+    nota('Se vació el tablero.');
+    drawAll(); showResults();
+  });
+
+  /* ---------- Arrastrar fichas ---------- */
+  var drag = null;
+  gNodes.addEventListener('pointerdown', function (e) {
+    var g = e.target.closest('.node');
+    if (!g) return;
+    var en = byId(g.getAttribute('data-id'));
+    var rect = svg.getBoundingClientRect();
+    var p = px(en);
+    drag = { g: g, en: en, ox: e.clientX - rect.left - p.x, oy: e.clientY - rect.top - p.y, sx: e.clientX, sy: e.clientY, moved: false };
+    try { g.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault();
+  });
+  gNodes.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    if (!drag.moved && Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) < 5) return;
+    drag.moved = true;
+    var rect = svg.getBoundingClientRect();
+    var x = Math.min(dims.W - 50, Math.max(50, e.clientX - rect.left - drag.ox));
+    var y = Math.min(dims.H - 62, Math.max(44, e.clientY - rect.top - drag.oy));
+    drag.en.fx = x / dims.W; drag.en.fy = y / dims.H;
+    drag.g.setAttribute('transform', 'translate(' + x + ',' + y + ')');
+    drawLinks();
+  });
+  function endDrag() {
+    if (!drag) return;
+    if (!drag.moved) select(drag.en.id);
+    drag = null;
+  }
+  gNodes.addEventListener('pointerup', endDrag);
+  gNodes.addEventListener('pointercancel', function () { drag = null; });
+  gNodes.addEventListener('keydown', function (e) {
+    var g = e.target.closest('.node');
+    if (g && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); select(g.getAttribute('data-id')); }
+  });
+
+  /* ---------- Inicio ---------- */
+  state = casoInicial();
+  fillStatic();
+  drawAll();
+  drawLog();
+  showResults();
+  var lastW = $('mapbox').clientWidth;
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () {
+      var w = $('mapbox').clientWidth;
+      if (w && Math.abs(w - lastW) > 2) { lastW = w; measure(); buildNodes(); drawLinks(); }
+    }).observe($('mapbox'));
+  }
+})();
+</script>
+
+</body></html>
