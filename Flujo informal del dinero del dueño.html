@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>Flujo informal del dinero del dueño</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f7f6f2;--fg:#1d2330;--mut:#667085;--card:#fff;--bd:#d9d6cc;--c1:#2a7ab0;--c2:#d9822b;--c3:#4f8f4f;--c4:#b04a6a;--hl:#fdecd0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--fg:#e8e9ec;--mut:#9aa3b2;--card:#1d222b;--bd:#343b48;--c1:#5aa6dc;--c2:#f0a050;--c3:#7ec07e;--c4:#e07a9a;--hl:#4a3a1c}}
+:root[data-theme="dark"]{--bg:#14171d;--fg:#e8e9ec;--mut:#9aa3b2;--card:#1d222b;--bd:#343b48;--c1:#5aa6dc;--c2:#f0a050;--c3:#7ec07e;--c4:#e07a9a;--hl:#4a3a1c}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}h1{font-size:21px;margin:0 0 4px}h2{font-size:16px;margin:16px 0 6px}.mut{color:var(--mut);font-size:13px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin:10px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap}button{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;cursor:pointer}button.p{background:var(--c1);color:#fff;border-color:var(--c1)}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.ctl label{font-size:13px}input[type=range]{width:100%}
+svg{width:100%;height:auto}.nd rect{fill:var(--card);stroke:var(--bd);stroke-width:1.5}.nd text{fill:var(--fg);font-size:12px;text-anchor:middle}.nd.on rect{fill:var(--hl);stroke:var(--c2);stroke-width:2.5}
+.ln{stroke:var(--bd);stroke-width:1.5;stroke-dasharray:4 4;fill:none}
+#cap{min-height:70px}#cap p{margin:3px 0}.bar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin:6px 0}.bar div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.k b{display:block;font-size:19px}.k span{font-size:12px;color:var(--mut)}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}td.n{text-align:right}
+</style></head><body><main>
+<h1>El dinero del dueño: aprobado por chat, pagado por terceros</h1>
+<p class="mut">Simulación simple. Montos en millones de guaraníes (M), ficticios. Elige una ruta y mira por dónde pasa el dinero y qué ve la contabilidad.</p>
+<div class="card"><div class="row" id="rb"></div>
+<svg viewBox="0 0 720 290" id="sv" role="img" aria-label="Diagrama del flujo de dinero"></svg>
+<div id="cap" class="mut">Pulsa una ruta para empezar.</div></div>
+<h2>Eventos simulados</h2>
+<div class="card scroll"><table id="lg"><tr><th>#</th><th>Canal de aprobación</th><th class="n">Monto (M)</th><th>Pasó por</th><th>Registrado como</th><th>Es en realidad</th><th>Respaldo formal</th></tr></table></div>
+<h2>Un año de esta costumbre</h2>
+<div class="card"><div class="ctl">
+<label>Pedidos del dueño por mes: <b id="v1">10</b><input id="s1" type="range" min="1" max="30" value="10"></label>
+<label>Monto promedio (M): <b id="v2">1.0</b><input id="s2" type="range" min="2" max="30" value="10"></label>
+<label>Peso: pago directo <b id="v3">40</b>%<input id="s3" type="range" min="0" max="100" value="40"></label>
+<label>Peso: vía empleado <b id="v4">40</b>%<input id="s4" type="range" min="0" max="100" value="40"></label>
+<label>Peso: retiro en efectivo <b id="v5">20</b>%<input id="s5" type="range" min="0" max="100" value="20"></label></div>
+<div id="res"></div></div>
+<p class="mut">Los porcentajes de respaldo formal son supuestos ilustrativos. La idea: cada paso es «normal» por separado; el problema aparece al sumar.</p>
+</main>
+<script>
+const N={D:{x:80,y:150,l:'Dueño'},C:{x:270,y:150,l:'Cuenta / caja empresa'},E:{x:470,y:50,l:'Empleado'},P:{x:640,y:150,l:'Proveedor personal'},K:{x:470,y:250,l:'Contabilidad'}};
+const R={r1:{n:'Pago directo a proveedor personal',b:'1 · Pago directo',ch:'WhatsApp',msg:'«Pagale a Ramón lo de mi camioneta con la plata de la empresa.»',path:['D','C','P'],via:'Cuenta → proveedor',reg:'Proveedores varios',ev:'Captura de chat; factura a nombre del dueño o sin factura',fm:.3,col:'var(--c1)'},
+r2:{n:'Transferencia al empleado para que pague por el jefe',b:'2 · Vía empleado',ch:'Llamada telefónica',msg:'«Te transfiero ahora, pagá la cuota del colegio y después vemos.»',path:['D','C','E','P'],via:'Cuenta → empleado → proveedor',reg:'Sueldos / anticipo a empleado',ev:'Ninguna; el empleado guarda un recibo, si acaso',fm:.1,col:'var(--c2)'},
+r3:{n:'Retiro de efectivo sin explicación',b:'3 · Retiro en efectivo',ch:'Verbal, en persona',msg:'«Sacá efectivo de la caja, lo necesito hoy.»',path:['D','C','D'],via:'Caja → dueño',reg:'Retiro sin clasificar',ev:'Ninguna',fm:0,col:'var(--c4)'}};
+const sv=document.getElementById('sv'),cap=document.getElementById('cap'),lg=document.getElementById('lg');let busy=false,cnt=0;
+sv.innerHTML=`<path class="ln" d="M80 150H270M270 150L470 50M470 50L640 150M270 150H640M270 150L470 250M640 150L470 250"/>`+Object.entries(N).map(([k,n])=>`<g class="nd" id="n${k}"><rect x="${n.x-65}" y="${n.y-22}" width="130" height="44" rx="8"/><text x="${n.x}" y="${n.y+4}">${n.l}</text></g>`).join('')+`<circle id="dot" r="9" cx="80" cy="150" fill="var(--c2)" opacity="0"/>`;
+document.getElementById('rb').innerHTML=Object.entries(R).map(([k,r])=>`<button class="p" data-r="${k}">${r.b}</button>`).join('');
+const sl=ms=>new Promise(r=>setTimeout(r,ms)),lit=(k,on)=>document.getElementById('n'+k).classList.toggle('on',on);
+function mv(a,b){return new Promise(res=>{const d=document.getElementById('dot'),t0=performance.now(),A=N[a],B=N[b];(function f(t){const p=Math.min(1,(t-t0)/800);d.setAttribute('cx',A.x+(B.x-A.x)*p);d.setAttribute('cy',A.y+(B.y-A.y)*p);p<1?requestAnimationFrame(f):res()})(t0)})}
+const say=h=>cap.innerHTML=h;
+async function run(k,amt){if(busy)return;busy=true;const r=R[k],d=document.getElementById('dot');cap.classList.remove('mut');Object.keys(N).forEach(x=>lit(x,false));
+const a=amt??+(0.4+Math.random()*1.6).toFixed(1);
+say(`<p><b>1. Aprobación informal</b> por ${r.ch}: ${r.msg}</p><p>No hay orden de pago, firma ni registro del motivo.</p>`);lit('D',true);await sl(1600);
+d.setAttribute('opacity',1);d.setAttribute('fill',r.col);d.setAttribute('cx',N.D.x);d.setAttribute('cy',N.D.y);
+for(let i=1;i<r.path.length;i++){const s=r.path[i];say(`<p><b>${i+1}. ${s==='C'?'La empresa paga '+a.toFixed(1)+' M':s==='E'?'El empleado recibe el dinero y paga con su propia cuenta o efectivo':s==='P'?'El proveedor personal recibe el pago':'El dueño recibe el efectivo'}</b></p>`);await mv(r.path[i-1],s);lit(s,true);await sl(500)}
+lit('K',true);say(`<p><b>Contabilidad registra:</b> «${r.reg}» por ${a.toFixed(1)} M.</p><p><b>En realidad:</b> gasto personal del dueño. <b>Respaldo:</b> ${r.ev}.</p>`);d.setAttribute('opacity',0);
+const fm=Math.random()<r.fm;cnt++;const tr=lg.insertRow(1);tr.innerHTML=`<td>${cnt}</td><td>${r.ch}</td><td class="n">${a.toFixed(1)}</td><td>${r.via}</td><td>${r.reg}</td><td>Gasto personal del dueño</td><td>${fm?'Sí':'No'}</td>`;busy=false}
+document.getElementById('rb').onclick=e=>{if(e.target.dataset.r)run(e.target.dataset.r)};
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function year(){const n=+s1.value,avg=s2.value/10,w=[+s3.value,+s4.value,+s5.value],W=w[0]+w[1]+w[2]||1,r=rng(11),tot=[0,0,0],c=[0,0,0],fm=[.3,.1,0];let formal=0;
+v1.textContent=n;v2.textContent=avg.toFixed(1);v3.textContent=w[0];v4.textContent=w[1];v5.textContent=w[2];
+for(let i=0;i<12*n;i++){let q=r()*W,j=q<w[0]?0:q<w[0]+w[1]?1:2;const a=avg*(.4+1.2*r());tot[j]+=a;c[j]++;if(r()<fm[j])formal++}
+const T=tot[0]+tot[1]+tot[2],cnt=12*n,names=['Pago directo','Vía empleado','Retiro en efectivo'],cols=['var(--c1)','var(--c2)','var(--c4)'];
+res.innerHTML=`<div class="grid"><div class="card k"><b>${T.toFixed(0)} M</b><span>gasto personal pagado por la empresa</span></div><div class="card k"><b>${cnt}</b><span>pedidos aprobados por chat o llamada</span></div><div class="card k"><b>${tot[1].toFixed(0)} M</b><span>manejados por empleados a cuenta del jefe</span></div><div class="card k"><b>${(T?100*(tot[0]+tot[1])/T:0).toFixed(0)}%</b><span>que contabilidad ve como gasto del negocio</span></div><div class="card k"><b>${(100*formal/cnt).toFixed(0)}%</b><span>con respaldo formal</span></div></div>
+<div class="bar">${tot.map((v,i)=>v?`<div style="width:${100*v/T}%;background:${cols[i]}" title="${names[i]}">${(100*v/T).toFixed(0)}%</div>`:'').join('')}</div><p class="mut">${names.map((x,i)=>`${x}: ${tot[i].toFixed(0)} M en ${c[i]} pedidos`).join(' · ')}</p>
+<p>Ningún pedido fue una decisión grave, pero juntos suman <b>${T.toFixed(0)} M</b> sin una sola aprobación escrita y con ${(100*(tot[0]+tot[1])/(T||1)).toFixed(0)}% disfrazado de gasto operativo. Los empleados quedan expuestos: anticipos sin rendir y pagos hechos con su propio dinero.</p>`}
+document.querySelectorAll('input[type=range]').forEach(i=>i.oninput=year);year();
+</script></body></html>
