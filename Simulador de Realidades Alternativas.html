@@ -1,0 +1,579 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Simulador de Realidades Alternativas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: expediente en una columna ancha. El centro es la comparación de dos realidades, fila por hipótesis. */
+:root{
+  --bg:#ECEFF1;
+  --surface:#F7F9FA;
+  --ink:#13202A;
+  --ink-2:#465662;
+  --line:#C7D0D6;
+  --track:#DCE3E7;
+  --vis:#55667A;
+  --conn:#0B7A85;
+  --conn-wash:#DDF0F2;
+  --warn:#B3203F;
+  --redact:#B9C4CC;
+  --btn-ink:#FFFFFF;
+  --font-display:'Bricolage Grotesque','Helvetica Neue',Arial,sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E161C;
+    --surface:#15212A;
+    --ink:#E8EEF2;
+    --ink-2:#9FB1BE;
+    --line:#2B3B47;
+    --track:#1F2D37;
+    --vis:#93A6BA;
+    --conn:#3FC3CE;
+    --conn-wash:#12353B;
+    --warn:#FF7D96;
+    --redact:#33475A;
+    --btn-ink:#04252A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E161C;
+  --surface:#15212A;
+  --ink:#E8EEF2;
+  --ink-2:#9FB1BE;
+  --line:#2B3B47;
+  --track:#1F2D37;
+  --vis:#93A6BA;
+  --conn:#3FC3CE;
+  --conn-wash:#12353B;
+  --warn:#FF7D96;
+  --redact:#33475A;
+  --btn-ink:#04252A;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:16px;
+  line-height:1.55;
+  padding-block:28px 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1040px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance}
+p{margin:0}
+:focus-visible{outline:2px solid var(--conn);outline-offset:2px}
+
+.eyebrow{
+  font-family:var(--font-mono);font-size:.75rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);
+}
+h1{
+  font-weight:800;font-size:clamp(2.1rem,6vw,3.6rem);line-height:1.02;letter-spacing:-.025em;margin:10px 0 16px;
+}
+.lead{font-size:1.125rem;max-width:62ch;color:var(--ink)}
+.premise{
+  margin-top:20px;font-family:var(--font-display);font-weight:600;font-size:clamp(1.15rem,2.6vw,1.45rem);line-height:1.25;max-width:34ch;color:var(--warn);text-wrap:balance;
+}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:20px}
+.section{margin-top:44px}
+h2{font-weight:700;font-size:1.55rem;line-height:1.12;letter-spacing:-.012em;margin-bottom:6px}
+.sub{color:var(--ink-2);max-width:66ch;margin-bottom:18px}
+
+/* caso */
+.case{display:grid;gap:18px;margin-top:28px}
+.case h2{font-size:1.3rem}
+.facts{display:flex;flex-wrap:wrap;gap:10px 28px;font-family:var(--font-mono);font-size:.875rem}
+.facts span b{font-weight:500;font-size:1.5rem;font-family:var(--font-display);margin-right:6px}
+
+/* controles */
+.controls{display:grid;gap:24px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:820px){.controls{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}}
+.ctl-title{font-family:var(--font-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin-bottom:10px}
+.regs{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.reg{
+  text-align:left;font:inherit;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:4px;padding:10px 12px;cursor:pointer;display:grid;gap:2px;min-width:0;
+}
+.reg strong{font-weight:600}
+.reg small{font-family:var(--font-mono);font-size:.6875rem;color:var(--ink-2)}
+.reg[aria-pressed="true"]{border-color:var(--conn);background:var(--conn-wash)}
+.reg[aria-pressed="true"] small{color:var(--conn)}
+.reg[disabled]{cursor:default;opacity:1}
+.field{display:grid;gap:6px;margin-bottom:18px}
+.field label,.field .lab{font-weight:600}
+.field .hint{font-size:.875rem;color:var(--ink-2)}
+.slider{display:grid;grid-template-columns:minmax(0,1fr) 3.2rem;align-items:center;gap:10px}
+input[type=range]{width:100%;accent-color:var(--conn)}
+output{font-family:var(--font-mono);text-align:right}
+.switch{display:flex;gap:10px;align-items:flex-start;font-weight:600;cursor:pointer}
+.switch input{width:1.15rem;height:1.15rem;margin-top:.2rem;accent-color:var(--conn);flex:none}
+select{
+  font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:8px 10px;max-width:100%;
+}
+.btnrow{display:flex;flex-wrap:wrap;gap:10px}
+.btn{
+  font:inherit;font-weight:600;border-radius:4px;padding:10px 16px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ink);
+}
+.btn.primary{background:var(--conn);border-color:var(--conn);color:var(--btn-ink)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn:not([disabled]):hover{filter:brightness(1.08)}
+.presets{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.preset{font-size:.875rem;padding:8px 12px}
+.preset[aria-pressed="true"]{border-color:var(--conn);background:var(--conn-wash);color:var(--ink)}
+
+/* dos realidades */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:8px}
+.stat .k{font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2)}
+.stat .v{font-family:var(--font-display);font-weight:700;font-size:clamp(1.6rem,6vw,2.4rem);line-height:1.1;font-variant-numeric:tabular-nums}
+.stat .v small{font-size:.9rem;font-weight:500;color:var(--ink-2);margin-left:4px}
+.stat.warn .v{color:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.875rem;color:var(--ink-2);margin:8px 0 4px}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:baseline}
+.legend .lv{background:var(--vis)}
+.legend .lc{background:var(--conn)}
+.rows{list-style:none;margin:0;padding:0}
+.row{display:grid;gap:12px;padding:16px 0;border-top:1px solid var(--line)}
+@media (min-width:760px){.row{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px;align-items:center}}
+.row-head{display:flex;gap:12px;align-items:flex-start;min-width:0}
+.row-id{font-family:var(--font-mono);font-size:.75rem;color:var(--ink-2);padding-top:3px;flex:none}
+.row-head strong{font-family:var(--font-display);font-weight:600;font-size:1.0625rem;display:block;line-height:1.2}
+.row-head p{font-size:.875rem;color:var(--ink-2);margin-top:2px}
+.tag{
+  display:inline-block;font-family:var(--font-mono);font-size:.6875rem;text-transform:uppercase;letter-spacing:.06em;color:var(--warn);border:1px solid var(--warn);padding:1px 6px;border-radius:3px;white-space:nowrap;margin-top:6px;
+}
+.bars{display:grid;gap:7px;min-width:0}
+.bar-line{display:grid;grid-template-columns:74px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:.8125rem}
+.bar-line .bl{color:var(--ink-2)}
+.track{height:12px;background:var(--track);border-radius:2px;overflow:hidden}
+.bar{height:100%;border-radius:2px;transition:width .45s ease}
+.bar.vis{background:var(--vis)}
+.bar.conn{background:var(--conn)}
+.pct{font-family:var(--font-mono);text-align:right;font-variant-numeric:tabular-nums}
+.meta{font-family:var(--font-mono);font-size:.6875rem;color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){.bar{transition:none}}
+
+/* gráfico */
+.chartbox{margin-top:10px}
+svg{display:block;width:100%;height:auto}
+.gl{stroke:var(--line);stroke-width:1}
+.tx{font-family:var(--font-mono);font-size:12px;fill:var(--ink-2)}
+.t-vis{font-family:var(--font-mono);font-size:12px;font-weight:500;fill:var(--vis)}
+.t-conn{font-family:var(--font-mono);font-size:12px;font-weight:500;fill:var(--conn)}
+.l-vis{fill:none;stroke:var(--vis);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.l-conn{fill:none;stroke:var(--conn);stroke-width:3;stroke-dasharray:7 6}
+.d-vis{fill:var(--vis)}
+
+/* registros */
+.ledger{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.reg-card{min-width:0}
+.reg-card h3{font-weight:600;font-size:1.0625rem;display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.state{font-family:var(--font-mono);font-size:.6875rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+.state.on{color:var(--conn)}
+.rec{padding:12px 0;border-top:1px dashed var(--line);display:grid;gap:6px}
+.rec:first-of-type{margin-top:10px}
+.rec-id{font-family:var(--font-mono);font-size:.6875rem;color:var(--ink-2);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rec p{font-size:.9375rem}
+.redact{display:block;height:10px;background:var(--redact);border-radius:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--font-mono);font-size:.6875rem;border:1px solid var(--line);border-radius:3px;padding:1px 6px;white-space:nowrap}
+.chip.up{color:var(--conn);border-color:var(--conn)}
+.chip.down{color:var(--ink-2);border-style:dashed}
+.badge{font-family:var(--font-mono);font-size:.625rem;text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--warn);color:var(--warn);border-radius:3px;padding:0 5px}
+.fb-list{max-height:300px;overflow-y:auto}
+.empty{font-size:.9375rem;color:var(--ink-2);padding-top:10px}
+
+/* alertas */
+.alerts{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.alert{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;padding:12px 14px;border:1px solid var(--line);background:var(--surface);border-radius:4px}
+.alert .sev{font-family:var(--font-mono);font-size:.6875rem;font-weight:500;letter-spacing:.07em;text-transform:uppercase;padding-top:3px;color:var(--ink-2)}
+.alert.hi{border-color:var(--warn)}
+.alert.hi .sev{color:var(--warn)}
+.alert.good{border-color:var(--conn)}
+.alert.good .sev{color:var(--conn)}
+.alert p+p{font-size:.875rem;color:var(--ink-2);margin-top:2px}
+
+/* jóvenes */
+.trio{display:grid;gap:26px;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}
+.trio h3{font-weight:700;font-size:1.25rem;margin:4px 0 6px}
+.trio p{color:var(--ink-2)}
+.trio .try{margin-top:10px;font-size:.875rem;color:var(--ink)}
+.closing{margin-top:34px;max-width:66ch}
+blockquote{
+  margin:44px 0 0;font-family:var(--font-display);font-weight:700;font-size:clamp(1.5rem,4vw,2.4rem);line-height:1.12;letter-spacing:-.015em;max-width:24ch;text-wrap:balance;
+}
+.note{margin-top:30px;font-size:.8125rem;color:var(--ink-2);max-width:70ch}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Expediente 0417 · caso ficticio para practicar</p>
+    <h1>Simulador de realidades alternativas</h1>
+    <p class="lead">La desconexión entre registros, la información incompleta y los sistemas que no se comunican pueden hacer que una investigación se concentre en ciertas personas o hipótesis, mientras otras explicaciones quedan fuera de la vista. Acá puedes mover los registros conectados y el sesgo, y ver cómo cambia la realidad que ve la investigación.</p>
+    <p class="premise">Cuando el Estado no puede conectar los datos, puede terminar investigando una realidad distorsionada.</p>
+  </header>
+
+  <section class="panel case" aria-labelledby="caso-h">
+    <div>
+      <h2 id="caso-h">El caso</h2>
+      <p class="sub" style="margin-bottom:0">El inventario de un depósito de barrio dice que hay 40 cajas. En el estante hay 28. Nadie sabe por qué faltan 12. Hay cinco explicaciones posibles y cada registro guarda un pedazo de la historia. La investigación empieza con el único registro que tiene a mano: el policial.</p>
+    </div>
+    <div class="facts" aria-label="Datos del caso">
+      <span><b>40</b>cajas en el inventario</span>
+      <span><b>28</b>cajas en el estante</span>
+      <span><b>12</b>cajas sin explicar</span>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="ctl-h">
+    <h2 id="ctl-h">Armar la investigación</h2>
+    <p class="sub">Conecta registros, ajusta cuánta atención recibe la hipótesis líder y corre rondas de investigación. Los escenarios rápidos dejan comparar configuraciones completas.</p>
+    <div class="panel">
+      <div class="controls">
+        <div>
+          <p class="ctl-title">Registros conectados al caso</p>
+          <div class="regs" id="regs"></div>
+        </div>
+        <div>
+          <div class="field">
+            <label for="bias">Sesgo punitivo</label>
+            <div class="slider"><input type="range" id="bias" min="0" max="100" step="10" value="70"><output id="bias-out" for="bias">70%</output></div>
+            <p class="hint">Con 0% se revisan todas las hipótesis por igual. Con valores altos, la líder recibe más diligencias en cada ronda y cada diligencia queda registrada como si fuera prueba nueva.</p>
+          </div>
+          <div class="field">
+            <label class="switch" for="verify"><input type="checkbox" id="verify"><span>Regla de verificación</span></label>
+            <p class="hint">Las declaraciones sin verificar y los registros que genera la propia investigación dejan de contar como prueba.</p>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary" id="run" type="button">Correr una ronda</button>
+            <button class="btn" id="reset" type="button">Reiniciar rondas</button>
+          </div>
+        </div>
+      </div>
+      <div class="presets">
+        <p class="ctl-title">Escenarios rápidos</p>
+        <div class="btnrow" id="presets">
+          <button class="btn preset" type="button" data-preset="hoy" aria-pressed="false">Como está hoy</button>
+          <button class="btn preset" type="button" data-preset="conectar" aria-pressed="false">Solo conectar</button>
+          <button class="btn preset" type="button" data-preset="verificar" aria-pressed="false">Solo verificar</button>
+          <button class="btn preset" type="button" data-preset="ambos" aria-pressed="false">Conectar y verificar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="real-h">
+    <h2 id="real-h">Dos realidades para el mismo caso</h2>
+    <p class="sub">La realidad visible es lo que concluye la investigación con los registros que lee y las diligencias que acumula. La realidad conectada es lo que surge al leer todos los registros, sin refuerzos.</p>
+    <div class="panel">
+      <div class="stats" id="stats"></div>
+      <div class="legend"><span><i class="lv"></i>Realidad visible</span><span><i class="lc"></i>Realidad conectada</span></div>
+      <ul class="rows" id="rows"></ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="evo-h">
+    <h2 id="evo-h">Cómo crece una primera hipótesis</h2>
+    <p class="sub">Elige una hipótesis y mira su confianza ronda tras ronda en las dos realidades.</p>
+    <div class="panel">
+      <div class="field" style="margin-bottom:6px">
+        <label for="track">Hipótesis a seguir</label>
+        <select id="track"></select>
+      </div>
+      <div class="chartbox" id="chart"></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="led-h">
+    <h2 id="led-h">Lo que guarda cada registro</h2>
+    <p class="sub">Los registros sin conexión no se pueden leer, y la investigación no sabe qué contienen. Los marcados como sin verificar pesan solo mientras la regla está apagada.</p>
+    <div class="ledger" id="ledger"></div>
+  </section>
+
+  <section class="section" aria-labelledby="al-h">
+    <h2 id="al-h">Señales de alerta</h2>
+    <p class="sub">Estas señales se calculan con la configuración actual. Detectarlas a tiempo es una forma de prevención.</p>
+    <ul class="alerts" id="alerts"></ul>
+  </section>
+
+  <section class="section" aria-labelledby="jov-h">
+    <h2 id="jov-h">Qué pueden hacer los jóvenes</h2>
+    <p class="sub">Detectar una falla temprano es una forma de prevención. Convertir esa preocupación en un desafío técnico deja participar a quienes aprenden a construir.</p>
+    <div class="trio">
+      <div>
+        <p class="eyebrow">Detectar</p>
+        <h3>Reconocer cuándo una conclusión se sostiene sola</h3>
+        <p>Una sola fuente, datos incompletos o registros que se alimentan entre sí son señales de que algo puede estar distorsionado.</p>
+        <p class="try">En el simulador: revisa las señales de alerta mientras cambias la configuración.</p>
+      </div>
+      <div>
+        <p class="eyebrow">Diseñar</p>
+        <h3>Plantear soluciones pequeñas que se puedan comprobar</h3>
+        <p>Una regla de contraste o un campo que indique qué registro dice qué se prueban con pocos datos y se corrigen rápido.</p>
+        <p class="try">En el simulador: activa la regla de verificación y compara el resultado.</p>
+      </div>
+      <div>
+        <p class="eyebrow">Construir</p>
+        <h3>Armar componentes que sumen a sistemas más grandes</h3>
+        <p>Un conector entre dos registros o un validador de datos son piezas pequeñas que, con el tiempo, mejoran sistemas más complejos.</p>
+        <p class="try">En el simulador: cada registro que conectas representa una pieza de ese tipo.</p>
+      </div>
+    </div>
+    <p class="closing">La madurez digital no consiste solamente en tener más computadoras, más datos o inteligencia artificial. Consiste en desarrollar la capacidad de conectar información, verificarla, comprender sus límites y corregir los errores antes de que afecten a las personas.</p>
+    <blockquote>Una institución no puede tomar mejores decisiones que las que su infraestructura le permite comprender.</blockquote>
+    <p class="note">Modelo didáctico con datos inventados. Los porcentajes salen de un cálculo simple de pesos de evidencia y no describen casos reales ni instituciones reales.</p>
+  </section>
+</div>
+
+<script>
+(function(){
+  var H = [
+    {name:'Joven con antecedente', short:'Antecedente', desc:'Un joven del barrio con un hurto previo se llevó la mercadería.'},
+    {name:'Ex-empleado con llave', short:'Llave', desc:'Un ex-empleado entró con una llave que nunca devolvió.'},
+    {name:'Error de inventario', short:'Inventario', desc:'El sistema cuenta cajas que nunca estuvieron en el estante.'},
+    {name:'Entrega incompleta', short:'Proveedor', desc:'El proveedor entregó menos cajas de las que facturó.'},
+    {name:'Ingreso por el portón', short:'Portón', desc:'Alguien entró por el portón trasero dañado.'}
+  ];
+  var REG = [
+    {id:'pol', name:'Policial', locked:true},
+    {id:'lab', name:'Laboral'},
+    {id:'fac', name:'Facturación'},
+    {id:'man', name:'Mantenimiento'},
+    {id:'log', name:'Logística'}
+  ];
+  var EV = [
+    {id:'POL-1', reg:'pol', text:'Antecedente por hurto menor hace tres años. Vive en el barrio.', lr:[2.5,1,1,1,1]},
+    {id:'POL-2', reg:'pol', text:'Una vecina denunció ruidos cerca del portón trasero esa madrugada.', lr:[1,1,1,1,1.4]},
+    {id:'POL-3', reg:'pol', text:'Declaración sin verificar: alguien dice haber visto a un joven cerca del depósito.', lr:[1.6,1,1,1,1], unverified:true},
+    {id:'LAB-1', reg:'lab', text:'El joven figura en planilla de turno nocturno en otro local esa misma noche.', lr:[0.08,1,1,1,1]},
+    {id:'LAB-2', reg:'lab', text:'Un empleado fue desvinculado hace dos meses y no devolvió la llave.', lr:[1,2,1,1,1]},
+    {id:'FAC-1', reg:'fac', text:'El remito del proveedor dice 40 cajas y el ingreso físico registró 28.', lr:[1,1,1.5,3,1]},
+    {id:'FAC-2', reg:'fac', text:'Una partida está cargada dos veces con códigos distintos.', lr:[1,1,3,1,1]},
+    {id:'MAN-1', reg:'man', text:'Reporte de portón trasero roto hace 15 días, sin reparar.', lr:[1,1,1,1,3]},
+    {id:'LOG-1', reg:'log', text:'El GPS del camión del proveedor marca una descarga parcial en el depósito.', lr:[1,1,1,2,1]}
+  ];
+  var ALL = {pol:1,lab:1,fac:1,man:1,log:1};
+  var PRESETS = {
+    hoy:      {conn:{pol:1,lab:0,fac:0,man:0,log:0}, bias:70, verify:false, rounds:5},
+    conectar: {conn:ALL, bias:70, verify:false, rounds:5},
+    verificar:{conn:{pol:1,lab:0,fac:0,man:0,log:0}, bias:70, verify:true, rounds:5},
+    ambos:    {conn:ALL, bias:70, verify:true, rounds:5}
+  };
+  var MAXR = 12;
+  var state = {conn:{}, bias:70, verify:false, rounds:5, track:0, preset:'hoy'};
+
+  function $(s){ return document.querySelector(s); }
+  function copyConn(c){ var o={}; REG.forEach(function(r){ o[r.id]=c[r.id]?1:0; }); return o; }
+  function effLR(e){ return (state.verify && e.unverified) ? [1,1,1,1,1] : e.lr; }
+  function baseScores(onlyConnected){
+    var s=[0,0,0,0,0];
+    EV.forEach(function(e){
+      if(onlyConnected && !state.conn[e.reg]) return;
+      effLR(e).forEach(function(v,i){ s[i]+=Math.log(v); });
+    });
+    return s;
+  }
+  function probs(s){
+    var m=Math.max.apply(null,s);
+    var ex=s.map(function(x){ return Math.exp(x-m); });
+    var t=ex.reduce(function(a,b){ return a+b; },0);
+    return ex.map(function(x){ return x/t; });
+  }
+  function argmax(a){ var k=0; a.forEach(function(v,i){ if(v>a[k]) k=i; }); return k; }
+  function simulate(){
+    var s=baseScores(true), hist=[probs(s)], fb=[];
+    var f=1+0.8*state.bias/100;
+    for(var r=1;r<=state.rounds;r++){
+      if(state.bias>0){
+        var lead=argmax(probs(s));
+        if(state.verify){ fb.push({round:r,target:lead,f:f,counted:false}); }
+        else { s[lead]+=Math.log(f); fb.push({round:r,target:lead,f:f,counted:true}); }
+      }
+      hist.push(probs(s));
+    }
+    return {hist:hist, fb:fb, final:hist[hist.length-1]};
+  }
+  function pct(p){ return Math.round(p*100); }
+  function regCount(id){ return EV.filter(function(e){ return e.reg===id; }).length; }
+  function connectedCount(){ return REG.filter(function(r){ return state.conn[r.id]; }).length; }
+  function arrow(v){ return v>=2?'↑↑':(v>1?'↑':(v<=0.5?'↓↓':'↓')); }
+  function chips(lr){
+    return lr.map(function(v,i){
+      if(v===1) return '';
+      return '<span class="chip '+(v>1?'up':'down')+'" aria-label="'+H[i].short+': '+(v>1?'refuerza':'debilita')+'">'+H[i].short+' '+arrow(v)+'</span>';
+    }).join('');
+  }
+
+  /* controles */
+  function buildControls(){
+    $('#regs').innerHTML = REG.map(function(r){
+      return '<button type="button" class="reg" data-reg="'+r.id+'"'+(r.locked?' disabled':'')+' aria-pressed="false"><strong>'+r.name+'</strong><small></small></button>';
+    }).join('');
+    $('#track').innerHTML = H.map(function(h,i){ return '<option value="'+i+'">H'+(i+1)+' · '+h.name+'</option>'; }).join('');
+    $('#regs').addEventListener('click', function(ev){
+      var b=ev.target.closest('.reg'); if(!b || b.disabled) return;
+      state.conn[b.getAttribute('data-reg')] = state.conn[b.getAttribute('data-reg')] ? 0 : 1;
+      state.preset=null; render();
+    });
+    $('#bias').addEventListener('input', function(){ state.bias=+this.value; state.preset=null; render(); });
+    $('#verify').addEventListener('change', function(){ state.verify=this.checked; state.preset=null; render(); });
+    $('#track').addEventListener('change', function(){ state.track=+this.value; render(); });
+    $('#run').addEventListener('click', function(){ if(state.rounds<MAXR){ state.rounds++; state.preset=null; render(); } });
+    $('#reset').addEventListener('click', function(){ state.rounds=0; state.preset=null; render(); });
+    $('#presets').addEventListener('click', function(ev){
+      var b=ev.target.closest('.preset'); if(!b) return;
+      var p=PRESETS[b.getAttribute('data-preset')];
+      state.conn=copyConn(p.conn); state.bias=p.bias; state.verify=p.verify; state.rounds=p.rounds;
+      state.preset=b.getAttribute('data-preset'); render();
+    });
+  }
+  function syncControls(){
+    REG.forEach(function(r){
+      var b=document.querySelector('.reg[data-reg="'+r.id+'"]');
+      var on=!!state.conn[r.id];
+      b.setAttribute('aria-pressed', on?'true':'false');
+      b.querySelector('small').textContent = (r.locked?'Fuente actual':(on?'Conectado':'Sin conexión'))+' · '+regCount(r.id)+(regCount(r.id)===1?' registro':' registros');
+    });
+    $('#bias').value=state.bias; $('#bias-out').textContent=state.bias+'%';
+    $('#verify').checked=state.verify;
+    $('#track').value=state.track;
+    $('#run').disabled = state.rounds>=MAXR;
+    $('#run').textContent = state.rounds>=MAXR ? 'Máximo de rondas' : 'Correr una ronda';
+    Array.prototype.forEach.call(document.querySelectorAll('.preset'), function(b){
+      b.setAttribute('aria-pressed', b.getAttribute('data-preset')===state.preset ? 'true':'false');
+    });
+  }
+
+  /* salidas */
+  function renderStats(sim, full){
+    var tv=0; sim.final.forEach(function(p,i){ tv+=Math.abs(p-full[i]); });
+    var dist=Math.round(50*tv);
+    $('#stats').innerHTML =
+      '<div class="stat'+(dist>=25?' warn':'')+'"><div class="k">Distorsión</div><div class="v">'+dist+'<small>pts</small></div></div>'+
+      '<div class="stat"><div class="k">Ronda</div><div class="v">'+state.rounds+'<small>de '+MAXR+'</small></div></div>'+
+      '<div class="stat"><div class="k">Registros leídos</div><div class="v">'+connectedCount()+'<small>de '+REG.length+'</small></div></div>';
+    return dist;
+  }
+  function renderRows(sim, full){
+    $('#rows').innerHTML = H.map(function(h,i){
+      var ps=sim.final[i], pf=full[i], support=0, own=0;
+      EV.forEach(function(e){ if(state.conn[e.reg] && effLR(e)[i]>1) support++; });
+      sim.fb.forEach(function(f){ if(f.counted && f.target===i){ support++; own++; } });
+      var tag=(pf>=0.2 && ps<0.1) ? '<br><span class="tag">Fuera de la vista</span>' : '';
+      return '<li class="row">'+
+        '<div class="row-head"><span class="row-id">H'+(i+1)+'</span><div><strong>'+h.name+'</strong><p>'+h.desc+'</p>'+tag+'</div></div>'+
+        '<div class="bars" role="group" aria-label="'+h.name+': visible '+pct(ps)+'%, conectada '+pct(pf)+'%">'+
+          '<div class="bar-line"><span class="bl">Visible</span><div class="track"><div class="bar vis" style="width:'+pct(ps)+'%"></div></div><span class="pct">'+pct(ps)+'%</span></div>'+
+          '<div class="bar-line"><span class="bl">Conectada</span><div class="track"><div class="bar conn" style="width:'+pct(pf)+'%"></div></div><span class="pct">'+pct(pf)+'%</span></div>'+
+          '<p class="meta">Registros a favor: '+support+(own?' · '+own+' generados por la propia investigación':'')+'</p>'+
+        '</div></li>';
+    }).join('');
+  }
+  function renderChart(sim, full){
+    var k=state.track, W=480, HH=250, L=42, R=96, T=14, B=40, pw=W-L-R, ph=HH-T-B;
+    function X(r){ return L+pw*r/MAXR; }
+    function Y(p){ return T+ph*(1-p); }
+    var g='';
+    [0,0.25,0.5,0.75,1].forEach(function(v){
+      g+='<line class="gl" x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'"/><text class="tx" x="'+(L-8)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+Math.round(v*100)+'%</text>';
+    });
+    [0,3,6,9,12].forEach(function(r){ g+='<text class="tx" x="'+X(r)+'" y="'+(HH-B+18)+'" text-anchor="middle">'+r+'</text>'; });
+    g+='<text class="tx" x="'+(L+pw/2)+'" y="'+(HH-6)+'" text-anchor="middle">rondas de investigación</text>';
+    var pf=full[k], ps=sim.final[k];
+    g+='<line class="l-conn" x1="'+X(0)+'" x2="'+X(MAXR)+'" y1="'+Y(pf)+'" y2="'+Y(pf)+'"/>';
+    var pts=sim.hist.map(function(p,r){ return X(r)+','+Y(p[k]); }).join(' ');
+    g+='<polyline class="l-vis" points="'+pts+'"/>';
+    sim.hist.forEach(function(p,r){ g+='<circle class="d-vis" cx="'+X(r)+'" cy="'+Y(p[k])+'" r="'+(r===state.rounds?5:3)+'"/>'; });
+    var ys=Y(ps), yf=Y(pf);
+    if(Math.abs(ys-yf)<16){ if(ys<=yf){ ys-=8; yf+=10; } else { ys+=10; yf-=8; } }
+    g+='<text class="t-vis" x="'+(W-R+8)+'" y="'+(ys+4)+'">Visible '+pct(ps)+'%</text>';
+    g+='<text class="t-conn" x="'+(W-R+8)+'" y="'+(yf+4)+'">Conectada '+pct(pf)+'%</text>';
+    var label='Confianza en '+H[k].name+': visible '+pct(ps)+'%, conectada '+pct(pf)+'% tras '+state.rounds+' rondas.';
+    $('#chart').innerHTML='<svg viewBox="0 0 '+W+' '+HH+'" role="img" aria-label="'+label+'">'+g+'</svg>';
+  }
+  function renderLedger(sim){
+    var out=REG.map(function(r){
+      var on=!!state.conn[r.id];
+      var recs=EV.filter(function(e){ return e.reg===r.id; }).map(function(e){
+        if(!on){
+          var w1=48+(e.text.length*7)%40, w2=30+(e.text.length*11)%45;
+          return '<div class="rec"><div class="rec-id"><span>'+e.id+'</span><span>contenido no visible</span></div>'+
+            '<span class="redact" style="width:'+w1+'%"></span><span class="redact" style="width:'+w2+'%"></span></div>';
+        }
+        var badge = e.unverified ? '<span class="badge">'+(state.verify?'sin verificar · no cuenta':'sin verificar')+'</span>' : '';
+        return '<div class="rec"><div class="rec-id"><span>'+e.id+'</span>'+badge+'</div><p>'+e.text+'</p><div class="chips">'+chips(effLR(e))+'</div></div>';
+      }).join('');
+      return '<div class="panel reg-card"><h3>'+r.name+'<span class="state'+(on?' on':'')+'">'+(on?'Conectado':'Sin conexión')+'</span></h3>'+recs+'</div>';
+    }).join('');
+    var fb;
+    if(!sim.fb.length){
+      fb='<p class="empty">'+(state.bias===0?'Con sesgo 0% la investigación no genera registros propios.':'Corre una ronda para ver qué registra la investigación sobre su hipótesis líder.')+'</p>';
+    } else {
+      fb='<div class="fb-list">'+sim.fb.map(function(f){
+        var lr=[1,1,1,1,1]; lr[f.target]=f.counted?f.f:1;
+        return '<div class="rec"><div class="rec-id"><span>RON-'+f.round+'</span><span class="badge">'+(f.counted?'generado por la investigación':'no cuenta con la regla')+'</span></div>'+
+          '<p>Nueva diligencia sobre «'+H[f.target].short+'», la hipótesis que lidera en esa ronda.</p>'+
+          '<div class="chips">'+(f.counted?'<span class="chip up">'+H[f.target].short+' ↑ ×'+f.f.toFixed(2)+'</span>':'<span class="chip">sin efecto</span>')+'</div></div>';
+      }).join('')+'</div>';
+    }
+    out+='<div class="panel reg-card"><h3>Registros de la investigación<span class="state">'+sim.fb.length+(sim.fb.length===1?' registro':' registros')+'</span></h3>'+fb+'</div>';
+    $('#ledger').innerHTML=out;
+  }
+  function renderAlerts(sim, full, dist){
+    var lead=argmax(sim.final), fullLead=argmax(full), items=[];
+    var off=REG.filter(function(r){ return !state.conn[r.id]; }).map(function(r){ return r.name; });
+    if(off.length){
+      items.push({hi:false, t:'No se consultaron '+off.length+(off.length===1?' registro':' registros')+': '+off.join(', ')+'.', h:'Pregunta qué contiene cada registro que no se leyó antes de cerrar una hipótesis.'});
+    }
+    if(lead!==fullLead){
+      items.push({hi:true, t:'La hipótesis líder («'+H[lead].name+'») no coincide con la que surge al leer todos los registros («'+H[fullLead].name+'»).', h:'Compara la conclusión actual contra todas las fuentes disponibles.'});
+    }
+    var supReg={}, unv=false, sup=0, own=0;
+    EV.forEach(function(e){ if(state.conn[e.reg] && effLR(e)[lead]>1){ supReg[e.reg]=1; sup++; if(e.unverified) unv=true; } });
+    sim.fb.forEach(function(f){ if(f.counted && f.target===lead){ sup++; own++; } });
+    var nsrc=Object.keys(supReg).length;
+    if(own>0 && sup>0 && own/sup>=0.4){
+      items.push({hi:true, t:own+' de '+sup+' registros que apoyan a «'+H[lead].name+'» los generó la propia investigación.', h:'Separa la prueba independiente de lo que produce la investigación al mirar siempre el mismo lugar.'});
+    }
+    if(nsrc<=1){
+      items.push({hi:false, t:'La hipótesis líder se apoya en '+(nsrc===1?'un solo registro externo':'ningún registro externo')+'.', h:'Pide contraste con al menos dos registros independientes antes de seguir.'});
+    }
+    if(unv && !state.verify){
+      items.push({hi:false, t:'Una declaración sin verificar pesa a favor de «'+H[lead].name+'».', h:'Marca y verifica cada declaración antes de usarla como prueba.'});
+    }
+    if(dist>=25){
+      items.push({hi:true, t:'La realidad visible se aleja '+dist+' puntos de la realidad conectada.', h:'Conectar los registros ayuda a ver más. Sin verificación, el refuerzo de las diligencias sigue empujando hacia la hipótesis líder.'});
+    }
+    if(!items.length){
+      items.push({good:true, t:'Sin señales de alerta con esta configuración.', h:'Los registros están conectados y las pruebas verificadas. Las dos realidades coinciden.'});
+    }
+    $('#alerts').innerHTML=items.map(function(a){
+      return '<li class="alert'+(a.good?' good':(a.hi?' hi':''))+'"><span class="sev">'+(a.good?'Bien':(a.hi?'Alerta':'Aviso'))+'</span><div><p>'+a.t+'</p><p>'+a.h+'</p></div></li>';
+    }).join('');
+  }
+
+  function render(){
+    syncControls();
+    var sim=simulate(), full=probs(baseScores(false));
+    var dist=renderStats(sim, full);
+    renderRows(sim, full);
+    renderChart(sim, full);
+    renderLedger(sim);
+    renderAlerts(sim, full, dist);
+  }
+
+  buildControls();
+  var p0=PRESETS.hoy;
+  state.conn=copyConn(p0.conn); state.bias=p0.bias; state.verify=p0.verify; state.rounds=p0.rounds;
+  render();
+})();
+</script>
+
+</body></html>
