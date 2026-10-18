@@ -1,0 +1,557 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Bloques con Bitácora</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@500;700;800&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: escenario de juego a la izquierda (canvas, controles, revisión de cuentas) y cuaderno de bitácora a la derecha; en teléfono el cuaderno pasa debajo. */
+:root{
+  --bg:#e3edfc; --fg:#14193a; --muted:#4b5580;
+  --panel:#ffffff; --panel2:#eef3ff; --edge:#14193a; --rule:#d5deef;
+  --paper:#fbfcf6; --margin:#e0707a;
+  --sky-top:#3f7df0; --sky-bot:#a8d0ff; --cloud:#ffffff;
+  --hill:#3dbb5c; --hill2:#2f9a49; --brick:#c4572a; --brick-dark:#8f3b17;
+  --gold:#f9b800; --on-gold:#14193a;
+  --pipe:#1f9d4a; --pipe-dark:#146c32; --pipe-hi:#4cc578;
+  --accent:#3b5bdb;
+  --ok:#13763a; --ok-bg:#dcf5e4; --bad:#c62828; --bad-bg:#fde3e3; --neutral-bg:#e8edf8;
+  --warn:#a14d00;
+  --f-display:"Press Start 2P", ui-monospace, monospace;
+  --f-body:"Nunito", system-ui, sans-serif;
+  --f-log:"Courier Prime", "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1226; --fg:#e8ecff; --muted:#a3add8;
+    --panel:#161d3a; --panel2:#222c55; --edge:#05081a; --rule:#2b3566;
+    --paper:#1b2347; --margin:#c25a66;
+    --sky-top:#0f1c4d; --sky-bot:#2c4a9a; --cloud:#5d78c9;
+    --hill:#238a45; --hill2:#1a6a35; --brick:#a14522; --brick-dark:#6f2d12;
+    --gold:#ffc928; --on-gold:#14193a;
+    --pipe:#2fb860; --pipe-dark:#1a7b3d; --pipe-hi:#6fe09a;
+    --accent:#8ea2ff;
+    --ok:#5fe08f; --ok-bg:#12351f; --bad:#ff8a8a; --bad-bg:#3d1b1f; --neutral-bg:#222c55;
+    --warn:#ffb25c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1226; --fg:#e8ecff; --muted:#a3add8;
+  --panel:#161d3a; --panel2:#222c55; --edge:#05081a; --rule:#2b3566;
+  --paper:#1b2347; --margin:#c25a66;
+  --sky-top:#0f1c4d; --sky-bot:#2c4a9a; --cloud:#5d78c9;
+  --hill:#238a45; --hill2:#1a6a35; --brick:#a14522; --brick-dark:#6f2d12;
+  --gold:#ffc928; --on-gold:#14193a;
+  --pipe:#2fb860; --pipe-dark:#1a7b3d; --pipe-hi:#6fe09a;
+  --accent:#8ea2ff;
+  --ok:#5fe08f; --ok-bg:#12351f; --bad:#ff8a8a; --bad-bg:#3d1b1f; --neutral-bg:#222c55;
+  --warn:#ffb25c;
+  color-scheme: dark;
+}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:var(--f-body); font-size:16px; line-height:1.5;
+  padding-block:20px 48px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap{max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:20px}
+header{display:flex; flex-direction:column; gap:8px}
+.kicker{font-family:var(--f-display); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0}
+h1{font-family:var(--f-display); font-weight:400; font-size:clamp(20px,4.6vw,34px); line-height:1.25; margin:0; text-wrap:balance}
+.lede{margin:0; max-width:62ch; color:var(--muted); font-size:17px}
+h2{font-family:var(--f-display); font-weight:400; font-size:12px; line-height:1.5; margin:0; letter-spacing:.04em; text-transform:uppercase}
+
+.board{display:grid; grid-template-columns:minmax(0,1fr) 350px; gap:22px; align-items:start}
+@media (max-width:900px){ .board{grid-template-columns:minmax(0,1fr)} }
+
+.card{background:var(--panel); border:3px solid var(--edge); border-radius:6px; box-shadow:0 6px 0 var(--edge); min-width:0}
+.stage{display:flex; flex-direction:column; gap:0}
+.view{border-bottom:3px solid var(--edge); border-radius:3px 3px 0 0; overflow:hidden; line-height:0}
+#cv{display:block; width:100%}
+.panelbody{padding:16px; display:flex; flex-direction:column; gap:18px}
+
+.controls{display:flex; flex-wrap:wrap; gap:16px 22px; align-items:flex-end}
+.group{display:flex; flex-direction:column; gap:8px; min-width:0; border:0; padding:0; margin:0}
+.group > legend, .group > .lab{font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:0}
+.row{display:flex; flex-wrap:wrap; gap:10px}
+
+.btn{
+  font:800 14px var(--f-body); color:var(--fg); background:var(--panel2);
+  border:3px solid var(--edge); border-radius:4px; padding:8px 14px; min-height:44px;
+  box-shadow:0 4px 0 var(--edge); cursor:pointer;
+}
+.btn:active{transform:translateY(3px); box-shadow:0 1px 0 var(--edge)}
+.btn:focus-visible, .seg input:focus-visible + span, .switch input:focus-visible + .track{outline:3px solid var(--accent); outline-offset:2px}
+.btn.coin{font-family:var(--f-display); font-size:12px; background:var(--gold); color:var(--on-gold); min-width:64px}
+.btn.go{background:var(--accent); color:#fff}
+:root[data-theme="dark"] .btn.go{color:#0d1226}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .btn.go{color:#0d1226} }
+
+.seg{display:flex}
+.seg label{display:block}
+.seg input{position:absolute; opacity:0; pointer-events:none}
+.seg span{
+  display:flex; align-items:center; justify-content:center; min-height:44px; padding:8px 16px;
+  font:800 14px var(--f-body); border:3px solid var(--edge); background:var(--panel2); cursor:pointer;
+}
+.seg label:first-child span{border-radius:4px 0 0 4px}
+.seg label:last-child span{border-radius:0 4px 4px 0; border-left:0}
+.seg input:checked + span{background:var(--accent); color:#fff}
+:root[data-theme="dark"] .seg input:checked + span{color:#0d1226}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .seg input:checked + span{color:#0d1226} }
+
+.switch{display:flex; align-items:center; gap:10px; min-height:44px; cursor:pointer; font-weight:800; font-size:14px}
+.switch input{position:absolute; opacity:0; pointer-events:none}
+.track{width:48px; height:26px; border:3px solid var(--edge); border-radius:4px; background:var(--panel2); position:relative; flex:none}
+.track::after{content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; background:var(--edge); transition:transform .15s}
+.switch input:checked + .track{background:var(--ok-bg)}
+.switch input:checked + .track::after{transform:translateX(22px); background:var(--ok)}
+@media (prefers-reduced-motion: reduce){ .track::after{transition:none} }
+
+.say{margin:0; min-height:1.5em; font-weight:700; color:var(--warn)}
+
+.audit{display:flex; flex-direction:column; gap:12px; border-top:3px dashed var(--rule); padding-top:16px}
+.audit-head{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px}
+.pill{display:inline-block; font:800 12px var(--f-body); letter-spacing:.06em; text-transform:uppercase; padding:4px 10px; border-radius:4px; border:2px solid currentColor}
+.pill.neutral{color:var(--muted); background:var(--neutral-bg)}
+.pill.ok{color:var(--ok); background:var(--ok-bg)}
+.pill.bad{color:var(--bad); background:var(--bad-bg)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums}
+th,td{text-align:left; padding:8px 10px; border-bottom:2px solid var(--rule); font-size:15px}
+thead th{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+td.num{font-family:var(--f-display); font-size:12px}
+td.res.ok{color:var(--ok); font-weight:800}
+td.res.bad{color:var(--bad); font-weight:800}
+.result{margin:0; padding:12px 14px; border-radius:4px; background:var(--neutral-bg); font-weight:600}
+.result.ok{background:var(--ok-bg); color:var(--ok)}
+.result.bad{background:var(--bad-bg); color:var(--bad)}
+.result p{margin:0}
+.result p + p{margin-top:6px}
+
+.book{display:flex; flex-direction:column; background:var(--paper); position:sticky; top:16px; overflow:hidden}
+@media (max-width:900px){ .book{position:static} }
+.book-head{display:flex; flex-direction:column; gap:6px; padding:14px 16px 12px 60px; border-bottom:3px solid var(--edge); position:relative; background:var(--panel)}
+.book-head .top{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
+.count{font-size:13px; color:var(--muted); font-weight:700}
+.offnote{margin:0; font-size:14px; font-weight:800; color:var(--bad); background:var(--bad-bg); padding:6px 10px; border-radius:4px}
+.scroll{max-height:620px; min-height:260px; overflow-y:auto; position:relative}
+@media (max-width:900px){ .scroll{max-height:420px} }
+.scroll::before{content:""; position:absolute; top:0; bottom:0; left:44px; width:2px; background:var(--margin); opacity:.7; pointer-events:none}
+#log{list-style:none; margin:0; padding:0}
+.entry{display:grid; grid-template-columns:44px minmax(0,1fr); border-bottom:1px solid var(--rule); font-family:var(--f-log); font-size:15px; line-height:1.4}
+.entry .no{padding:10px 0 0 6px; font-weight:700; color:var(--muted); font-size:13px}
+.entry .body{padding:8px 12px 10px 16px; min-width:0}
+.entry .meta{display:flex; gap:8px; align-items:center; font-size:12px; margin-bottom:2px}
+.entry .tag{font-weight:700; letter-spacing:.08em}
+.entry .when{color:var(--muted)}
+.entry p{margin:0}
+.entry.k-salida .tag{color:var(--warn)}
+.entry.k-llegada .tag{color:var(--ok)}
+.entry.k-audit .tag{color:var(--accent)}
+.entry.k-apertura .tag{color:var(--muted)}
+.entry.k-audit{background:var(--neutral-bg)}
+.entry.fresh{animation:slide .35s ease-out}
+@keyframes slide{from{opacity:0; transform:translateY(8px)}to{opacity:1; transform:none}}
+@media (prefers-reduced-motion: reduce){ .entry.fresh{animation:none} }
+
+.talk{padding:16px; display:flex; flex-direction:column; gap:10px}
+.talk ul{margin:0; padding-left:1.2em; display:flex; flex-direction:column; gap:6px; max-width:70ch}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="kicker">Juego para aprender</p>
+    <h1>Bloques con Bitácora</h1>
+    <p class="lede">Los bloques con $ viajan de una caja a la otra. Cada salida y cada llegada se anota en el cuaderno. Si algo se pierde, el cuaderno dice dónde.</p>
+  </header>
+
+  <div class="board">
+    <section class="card stage" aria-label="Juego">
+      <div class="view"><canvas id="cv" role="img" aria-label="Escena de juego: dos tubos verdes, Caja A y Caja B, con bloques dorados con signo de dinero saltando de uno a otro."></canvas></div>
+      <div class="panelbody">
+        <div class="controls">
+          <fieldset class="group">
+            <legend>Dirección</legend>
+            <div class="seg">
+              <label><input type="radio" name="dir" value="AB" checked><span>A → B</span></label>
+              <label><input type="radio" name="dir" value="BA"><span>B → A</span></label>
+            </div>
+          </fieldset>
+          <div class="group">
+            <span class="lab">Enviar un bloque de</span>
+            <div class="row">
+              <button class="btn coin" data-send="1" type="button">$1</button>
+              <button class="btn coin" data-send="5" type="button">$5</button>
+              <button class="btn coin" data-send="10" type="button">$10</button>
+            </div>
+          </div>
+          <div class="group">
+            <span class="lab">Opciones</span>
+            <div class="row">
+              <label class="switch"><input type="checkbox" id="auto"><span class="track"></span>Envío automático</label>
+              <label class="switch"><input type="checkbox" id="logOn" checked><span class="track"></span>Bitácora encendida</label>
+            </div>
+          </div>
+          <div class="group">
+            <span class="lab">Probar</span>
+            <div class="row">
+              <button class="btn" id="lose" type="button">¡Se pierde uno!</button>
+              <button class="btn" id="reset" type="button">Reiniciar</button>
+            </div>
+          </div>
+        </div>
+        <p class="say" id="msg" role="status" aria-live="polite"></p>
+
+        <div class="audit">
+          <div class="audit-head">
+            <h2>Revisar las cuentas</h2>
+            <div class="row" style="align-items:center">
+              <span class="pill neutral" id="pill">Sin revisar</span>
+              <button class="btn go" id="auditBtn" type="button">Auditar</button>
+            </div>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead><tr><th>Lugar</th><th>Realidad</th><th>Bitácora</th><th>Resultado</th></tr></thead>
+              <tbody id="auditRows"></tbody>
+            </table>
+          </div>
+          <div class="result" id="result" role="status" aria-live="polite"><p>Pulsa Auditar para comparar lo que hay en las cajas con lo que dice la bitácora.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="card book" aria-label="Bitácora">
+      <div class="book-head">
+        <div class="top"><h2>Bitácora</h2><span class="count" id="count"></span></div>
+        <p class="offnote" id="offnote" hidden>Apagada: lo que pase ahora no queda anotado.</p>
+      </div>
+      <div class="scroll" id="scroll"><ol id="log" aria-live="polite"></ol></div>
+    </aside>
+  </div>
+
+  <section class="card talk">
+    <h2>Para conversar</h2>
+    <ul>
+      <li>Apaguen la bitácora, envíen un par de bloques y pulsen Auditar. ¿Qué se puede saber?</li>
+      <li>Pulsen ¡Se pierde uno! con la bitácora encendida. ¿Qué anotación falta en el cuaderno?</li>
+      <li>¿Qué otras cosas de la escuela o de la casa conviene anotar para poder comprobarlas después?</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d');
+  const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+  const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const DUR = 2600;
+  let Wc = 720, Hc = 380;
+  let state = {};
+  let pal = readPal();
+  let autoTimer = null;
+
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function clock(){ const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+  function readPal(){
+    const cs = getComputedStyle(document.documentElement);
+    const g = n => cs.getPropertyValue(n).trim();
+    return {
+      skyTop:g('--sky-top'), skyBot:g('--sky-bot'), cloud:g('--cloud'),
+      hill:g('--hill'), hill2:g('--hill2'), brick:g('--brick'), brickDark:g('--brick-dark'),
+      pipe:g('--pipe'), pipeDark:g('--pipe-dark'), pipeHi:g('--pipe-hi'),
+      gold:g('--gold')
+    };
+  }
+  function say(t){ $('msg').textContent = t || ''; }
+
+  /* ---------- estado ---------- */
+  function fresh(){
+    state = { bal:{A:30,B:10}, open:{A:30,B:10}, flying:[], log:[], n:0, bid:0, unlogged:0, audit:null, fx:[] };
+    $('log').innerHTML = '';
+    $('logOn').checked = true;
+    syncOff();
+    record('apertura', {}, 'Apertura del día: la Caja A tiene $30 y la Caja B tiene $10.');
+    renderAudit();
+    say('');
+  }
+  function syncOff(){ $('offnote').hidden = $('logOn').checked; }
+
+  function record(kind, data, text){
+    if (kind !== 'apertura' && kind !== 'audit' && !$('logOn').checked){ state.unlogged++; return; }
+    const e = Object.assign({ n: ++state.n, t: clock(), kind: kind, text: text }, data);
+    state.log.push(e);
+    addEntry(e);
+    $('count').textContent = state.log.length + (state.log.length === 1 ? ' anotación' : ' anotaciones');
+  }
+  const TAGS = { apertura:'APERTURA', salida:'SALIDA', llegada:'LLEGADA', audit:'AUDITORÍA' };
+  function addEntry(e){
+    const li = document.createElement('li');
+    li.className = 'entry k-' + e.kind + (reduce ? '' : ' fresh');
+    const no = document.createElement('div'); no.className = 'no'; no.textContent = '#' + String(e.n).padStart(2, '0');
+    const body = document.createElement('div'); body.className = 'body';
+    const meta = document.createElement('div'); meta.className = 'meta';
+    const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = TAGS[e.kind];
+    const when = document.createElement('span'); when.className = 'when'; when.textContent = e.t;
+    meta.append(tag, when);
+    const p = document.createElement('p'); p.textContent = e.text;
+    body.append(meta, p);
+    li.append(no, body);
+    $('log').appendChild(li);
+    const sc = $('scroll'); sc.scrollTop = sc.scrollHeight;
+  }
+  function touch(){ if (state.audit){ state.audit = null; renderAudit(); } }
+  function flyingSum(){ return state.flying.reduce((s, b) => s + b.v, 0); }
+
+  /* ---------- movimiento de bloques ---------- */
+  function sendBlock(v, dir, opts){
+    const from = dir[0], to = dir[1];
+    if (state.bal[from] < v){ say('La Caja ' + from + ' no tiene $' + v + ' para enviar.'); return false; }
+    say('');
+    state.bal[from] -= v;
+    const b = { id: ++state.bid, v: v, from: from, to: to, t0: performance.now(), vanishAt: (opts && opts.vanishAt) || null };
+    state.flying.push(b);
+    touch();
+    record('salida', { bid: b.id, v: v, from: from, to: to }, 'Bloque #' + b.id + ' de $' + v + ' sale de la Caja ' + from + ' hacia la Caja ' + to + '.');
+    return true;
+  }
+  function step(now){
+    for (const b of state.flying.slice()){
+      const p = (now - b.t0) / DUR;
+      if (b.vanishAt !== null && p >= b.vanishAt){
+        state.flying.splice(state.flying.indexOf(b), 1);
+        const pos = blockPos(b, Math.min(1, Math.max(0, p)));
+        state.fx.push({ kind:'poof', x:pos.x, y:pos.y, t0:now, dur:800 });
+        touch();
+        say('¡Puf! Un bloque desapareció en el camino y nadie lo anotó. Pulsa Auditar para ver qué dice el cuaderno.');
+      } else if (p >= 1){
+        state.flying.splice(state.flying.indexOf(b), 1);
+        state.bal[b.to] += b.v;
+        const pos = blockPos(b, 1);
+        state.fx.push({ kind:'text', text:'+$' + b.v, x:pos.x, y:pos.y - 24, t0:now, dur:900 });
+        touch();
+        record('llegada', { bid: b.id, v: b.v, from: b.from, to: b.to }, 'Bloque #' + b.id + ' de $' + b.v + ' llega a la Caja ' + b.to + '.');
+      }
+    }
+    state.fx = state.fx.filter(f => now - f.t0 < f.dur);
+  }
+
+  /* ---------- revisión ---------- */
+  function compute(){
+    const lb = { A: state.open.A, B: state.open.B };
+    const sal = new Map(), arr = new Set();
+    for (const e of state.log){
+      if (e.kind === 'salida'){ lb[e.from] -= e.v; sal.set(e.bid, e); }
+      else if (e.kind === 'llegada'){ lb[e.to] += e.v; arr.add(e.bid); }
+    }
+    let transit = 0; const pending = [];
+    sal.forEach((e, id) => { if (!arr.has(id)){ transit += e.v; pending.push(e); } });
+    return { lb: lb, transit: transit, pending: pending };
+  }
+  function doAudit(){
+    const c = compute();
+    const rows = [
+      ['Caja A', state.bal.A, c.lb.A],
+      ['Caja B', state.bal.B, c.lb.B],
+      ['En camino', flyingSum(), c.transit]
+    ];
+    const lost = c.pending.filter(e => !state.flying.some(b => b.id === e.bid));
+    const same = rows.every(r => r[1] === r[2]);
+    const ok = same && state.unlogged === 0 && lost.length === 0;
+    const lines = [];
+    lost.forEach(e => lines.push('El bloque #' + e.bid + ' de $' + e.v + ' salió de la Caja ' + e.from + ' a las ' + e.t + ' y la bitácora nunca anotó su llegada. Ahí se perdió.'));
+    if (state.unlogged > 0) lines.push('Hubo ' + state.unlogged + (state.unlogged === 1 ? ' movimiento' : ' movimientos') + ' que nadie anotó. Sin anotaciones no hay forma de comprobar adónde fue cada bloque.');
+    if (!ok && lines.length === 0) lines.push('Las cuentas no coinciden.');
+    if (!ok) lines.push('Para empezar con cuentas limpias, pulsa Reiniciar.');
+    state.audit = { rows: rows, ok: ok, lines: ok ? ['Todo coincide. Lo que dice el cuaderno es lo que hay en las cajas.'] : lines };
+    record('audit', {}, ok ? 'Auditoría: las cuentas coinciden.' : 'Auditoría: las cuentas no coinciden.');
+    renderAudit();
+  }
+  function renderAudit(){
+    const a = state.audit;
+    const tb = $('auditRows'); tb.innerHTML = '';
+    const real = [state.bal.A, state.bal.B, flyingSum()];
+    ['Caja A', 'Caja B', 'En camino'].forEach((name, i) => {
+      const tr = document.createElement('tr');
+      const th = document.createElement('th'); th.scope = 'row'; th.textContent = name;
+      const t1 = document.createElement('td'); t1.className = 'num'; t1.textContent = '$' + real[i];
+      const t2 = document.createElement('td'); t2.className = 'num';
+      const t3 = document.createElement('td'); t3.className = 'res';
+      if (a){
+        const r = a.rows[i]; const match = r[1] === r[2];
+        t2.textContent = '$' + r[2];
+        t3.textContent = match ? '✔ coincide' : '✖ no coincide';
+        t3.classList.add(match ? 'ok' : 'bad');
+      } else { t2.textContent = '?'; t3.textContent = '—'; }
+      tr.append(th, t1, t2, t3); tb.appendChild(tr);
+    });
+    const pill = $('pill'), res = $('result');
+    res.innerHTML = '';
+    if (!a){
+      pill.className = 'pill neutral'; pill.textContent = 'Sin revisar';
+      res.className = 'result';
+      const p = document.createElement('p'); p.textContent = 'Pulsa Auditar para comparar lo que hay en las cajas con lo que dice la bitácora.'; res.appendChild(p);
+    } else {
+      pill.className = 'pill ' + (a.ok ? 'ok' : 'bad'); pill.textContent = a.ok ? 'Validado' : 'No coincide';
+      res.className = 'result ' + (a.ok ? 'ok' : 'bad');
+      a.lines.forEach(t => { const p = document.createElement('p'); p.textContent = t; res.appendChild(p); });
+    }
+  }
+
+  /* ---------- dibujo ---------- */
+  function geom(){
+    const W = Wc, H = Hc, narrow = W < 520;
+    const pw = narrow ? 64 : 84, gy = H - 56, top = gy - 110;
+    const hAB = Math.max(40, Math.min(130, top - 56));
+    return { W:W, H:H, pw:pw, gy:gy, top:top, ax:18 + pw / 2, bx:W - 18 - pw / 2, hAB:hAB, hBA:hAB * 0.5 };
+  }
+  function blockPos(b, p){
+    const g = geom();
+    const x0 = b.from === 'A' ? g.ax : g.bx, x1 = b.to === 'A' ? g.ax : g.bx;
+    const h = b.from === 'A' ? g.hAB : g.hBA;
+    return { x: x0 + (x1 - x0) * p, y: g.top - 4 * h * p * (1 - p) - 17 };
+  }
+  function cloud(x, y, s){
+    ctx.fillStyle = pal.cloud;
+    ctx.beginPath(); ctx.arc(x, y, 14 * s, 0, 7); ctx.arc(x + 20 * s, y - 9 * s, 19 * s, 0, 7); ctx.arc(x + 44 * s, y, 14 * s, 0, 7); ctx.fill();
+    ctx.fillRect(x, y, 44 * s, 14 * s);
+  }
+  function pipe(g, x, label, amount){
+    const top = g.top, gy = g.gy, pw = g.pw;
+    ctx.lineWidth = 3; ctx.strokeStyle = '#14193a';
+    ctx.fillStyle = pal.pipe; ctx.fillRect(x + 6, top + 22, pw - 12, gy - top - 22); ctx.strokeRect(x + 6, top + 22, pw - 12, gy - top - 22);
+    ctx.fillStyle = pal.pipeHi; ctx.fillRect(x + 12, top + 25, 8, gy - top - 28);
+    ctx.fillStyle = pal.pipeDark; ctx.fillRect(x + pw - 20, top + 25, 11, gy - top - 28);
+    ctx.fillStyle = pal.pipe; ctx.fillRect(x, top, pw, 22); ctx.strokeRect(x, top, pw, 22);
+    ctx.fillStyle = pal.pipeHi; ctx.fillRect(x + 5, top + 4, 8, 14);
+    ctx.fillStyle = pal.pipeDark; ctx.fillRect(x + pw - 14, top + 4, 9, 14);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#0b3d1c'; ctx.lineJoin = 'round'; ctx.lineWidth = 4;
+    ctx.font = '9px "Press Start 2P", monospace';
+    ctx.strokeText(label, x + pw / 2, top + 50); ctx.fillText(label, x + pw / 2, top + 50);
+    ctx.font = '14px "Press Start 2P", monospace';
+    ctx.strokeText('$' + amount, x + pw / 2, top + 82); ctx.fillText('$' + amount, x + pw / 2, top + 82);
+  }
+  function coinBlock(x, y, b){
+    const s = 34, x0 = x - s / 2, y0 = y - s / 2;
+    const fill = b.v === 1 ? '#ffd95a' : b.v === 5 ? '#f9b800' : '#f08a00';
+    ctx.fillStyle = fill; ctx.fillRect(x0, y0, s, s);
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(x0 + 3, y0 + 3, s - 6, 4);
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x0 + 3, y0 + s - 7, s - 6, 4);
+    ctx.lineWidth = 3; ctx.strokeStyle = '#14193a'; ctx.strokeRect(x0, y0, s, s);
+    ctx.fillStyle = '#14193a';
+    [[5, 5], [s - 8, 5], [5, s - 8], [s - 8, s - 8]].forEach(d => ctx.fillRect(x0 + d[0] - 0.5, y0 + d[1] + 3 - 0.5, 3, 3));
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '11px "Press Start 2P", monospace'; ctx.fillStyle = '#14193a';
+    ctx.fillText('$' + b.v, x, y + 1);
+    ctx.font = '8px "Press Start 2P", monospace'; ctx.lineWidth = 3; ctx.strokeStyle = '#14193a'; ctx.fillStyle = '#ffffff';
+    ctx.strokeText('#' + b.id, x, y0 - 9); ctx.fillText('#' + b.id, x, y0 - 9);
+  }
+  function draw(now){
+    const g = geom(), W = g.W, H = g.H, gy = g.gy;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, pal.skyTop); sky.addColorStop(1, pal.skyBot);
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    const drift = reduce ? 0 : now * 0.012;
+    [[0.12, 0.13, 1], [0.48, 0.07, 0.8], [0.8, 0.2, 1.1]].forEach((c, i) => {
+      cloud(((c[0] * W + drift * (0.6 + i * 0.3)) % (W + 160)) - 80, c[1] * H + 20, c[2]);
+    });
+    ctx.fillStyle = pal.hill2; ctx.beginPath(); ctx.arc(W * 0.33, gy, Math.min(110, W * 0.16), Math.PI, 0); ctx.fill();
+    ctx.fillStyle = pal.hill; ctx.beginPath(); ctx.arc(W * 0.64, gy, Math.min(80, W * 0.12), Math.PI, 0); ctx.fill();
+    ctx.fillStyle = pal.brick; ctx.fillRect(0, gy, W, H - gy);
+    ctx.fillStyle = pal.hill2; ctx.fillRect(0, gy, W, 6);
+    ctx.fillStyle = pal.brickDark;
+    ctx.fillRect(0, gy + 6 + 25, W, 3);
+    for (let x = 0; x < W; x += 48){ ctx.fillRect(x, gy + 6, 3, 25); ctx.fillRect(x + 24, gy + 34, 3, 22); }
+    pipe(g, 18, 'CAJA A', state.bal.A);
+    pipe(g, W - 18 - g.pw, 'CAJA B', state.bal.B);
+    state.flying.forEach(b => {
+      const p = Math.min(1, Math.max(0, (now - b.t0) / DUR));
+      const pos = blockPos(b, p);
+      const lift = 1 - Math.min(1, (g.top - pos.y) / 140);
+      ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(pos.x, gy - 3, 8 + 10 * lift, 3 + 2 * lift, 0, 0, 7); ctx.fill();
+      coinBlock(pos.x, pos.y, b);
+    });
+    state.fx.forEach(f => {
+      const k = (now - f.t0) / f.dur;
+      if (f.kind === 'text'){
+        ctx.globalAlpha = 1 - k; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = '14px "Press Start 2P", monospace'; ctx.lineWidth = 4; ctx.strokeStyle = '#14193a'; ctx.fillStyle = '#ffe27a';
+        const y = f.y - 34 * k; ctx.strokeText(f.text, f.x, y); ctx.fillText(f.text, f.x, y);
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.globalAlpha = 1 - k;
+        ctx.fillStyle = '#ffffff';
+        [[-14, -6], [12, -10], [0, 12], [16, 8], [-16, 10]].forEach((d, i) => {
+          ctx.beginPath(); ctx.arc(f.x + d[0] * (1 + k * 1.2), f.y + d[1] * (1 + k * 1.2), 7 + 9 * k - i, 0, 7); ctx.fill();
+        });
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '16px "Press Start 2P", monospace'; ctx.fillStyle = '#14193a';
+        ctx.fillText('?', f.x, f.y - 2);
+        ctx.globalAlpha = 1;
+      }
+    });
+  }
+  let frame = 0;
+  function loop(now){
+    frame++; if (frame % 30 === 0) pal = readPal();
+    step(now); draw(now);
+    requestAnimationFrame(loop);
+  }
+  function fit(){
+    const w = Math.floor(cv.parentElement.clientWidth) || 720;
+    Wc = Math.max(300, w);
+    Hc = Wc < 520 ? 340 : Math.round(Wc * 0.5);
+    cv.width = Math.round(Wc * dpr); cv.height = Math.round(Hc * dpr);
+    cv.style.height = Hc + 'px';
+  }
+
+  /* ---------- controles ---------- */
+  document.querySelectorAll('[data-send]').forEach(btn => btn.addEventListener('click', () => {
+    const dir = document.querySelector('input[name="dir"]:checked').value;
+    sendBlock(parseInt(btn.dataset.send, 10), dir);
+  }));
+  $('logOn').addEventListener('change', () => {
+    syncOff();
+    say($('logOn').checked ? 'Bitácora encendida otra vez.' : 'Bitácora apagada: los próximos movimientos no se anotan.');
+  });
+  $('auditBtn').addEventListener('click', doAudit);
+  $('reset').addEventListener('click', () => { fresh(); });
+  $('lose').addEventListener('click', () => {
+    if (state.flying.length){
+      state.flying[Math.floor(Math.random() * state.flying.length)].vanishAt = 0;
+    } else {
+      const dir = document.querySelector('input[name="dir"]:checked').value;
+      const other = dir === 'AB' ? 'BA' : 'AB';
+      if (!sendBlock(5, dir, { vanishAt: 0.5 })) sendBlock(5, other, { vanishAt: 0.5 });
+    }
+  });
+  function autoStep(){
+    if (state.flying.length >= 3) return;
+    const opts = [];
+    ['AB', 'BA'].forEach(d => [1, 5, 10].forEach(v => { if (state.bal[d[0]] >= v) opts.push([d, v]); }));
+    if (!opts.length) return;
+    const o = opts[Math.floor(Math.random() * opts.length)];
+    sendBlock(o[1], o[0]);
+  }
+  $('auto').addEventListener('change', () => {
+    if ($('auto').checked){ autoStep(); autoTimer = setInterval(autoStep, 1700); }
+    else { clearInterval(autoTimer); autoTimer = null; }
+  });
+
+  /* ---------- arranque ---------- */
+  fresh();
+  fit();
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(cv.parentElement);
+  else window.addEventListener('resize', fit);
+  requestAnimationFrame(loop);
+  setTimeout(() => sendBlock(5, 'AB'), 500);
+  setTimeout(() => sendBlock(1, 'BA'), 1500);
+})();
+</script>
+
+</body></html>
