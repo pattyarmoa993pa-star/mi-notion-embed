@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>La ironía del rastro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#f7f6f2;--fg:#1d2330;--mut:#667085;--card:#fff;--bd:#d9d6cc;--c1:#2a7ab0;--c2:#d9822b;--c4:#b04a6a;--c3:#4f8f4f;--hl:#fdecd0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171d;--fg:#e8e9ec;--mut:#9aa3b2;--card:#1d222b;--bd:#343b48;--c1:#5aa6dc;--c2:#f0a050;--c4:#e07a9a;--c3:#7ec07e;--hl:#4a3a1c}}
+:root[data-theme="dark"]{--bg:#14171d;--fg:#e8e9ec;--mut:#9aa3b2;--card:#1d222b;--bd:#343b48;--c1:#5aa6dc;--c2:#f0a050;--c4:#e07a9a;--c3:#7ec07e;--hl:#4a3a1c}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:860px;margin:0 auto;padding:16px}h1{font-size:21px;margin:0 0 4px}.mut{color:var(--mut);font-size:13px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin:10px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}button{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;cursor:pointer}button.on{background:var(--c1);color:#fff;border-color:var(--c1)}
+input[type=range]{width:100%}
+.flow{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.bub{border:2px dashed var(--c2);border-radius:14px;padding:10px;min-height:84px;transition:opacity .4s}
+.bank{border:2px solid var(--c4);border-radius:6px;padding:10px;min-height:84px;font-family:ui-monospace,Menlo,monospace;font-size:13px;background:var(--hl)}
+.arr{text-align:center;font-weight:700}.arr small{display:block;color:var(--mut);font-weight:400}
+.story{min-height:92px;border-left:4px solid var(--c4);padding:6px 12px;background:var(--card)}
+.m{margin:8px 0}.m div.t{height:14px;background:var(--bd);border-radius:7px;overflow:hidden}.m div.t i{display:block;height:100%;transition:width .4s}
+.q{font-size:17px;text-align:center;margin:14px 8px;font-weight:600}
+@media(max-width:600px){.flow{grid-template-columns:1fr}.arr{transform:rotate(90deg)}}
+</style></head><body><main>
+<h1>La ironía del rastro</h1>
+<p class="mut">Una transferencia de G. 1,5 M. Un empleado que obedeció. Mira cómo cambia la historia según qué quedó por escrito y cómo está la relación con el dueño. Caso ficticio; no es asesoría legal.</p>
+<div class="card">
+<div class="row" id="lens"></div>
+<div class="flow"><div class="bub" id="bub"></div><div class="arr">→ G. 1,5 M →<small>transferencia</small></div><div class="bank" id="bank"></div></div>
+<div class="story" id="story"></div></div>
+<div class="card">
+<label><b>¿Qué quedó por escrito sobre la instrucción?</b> <span id="evl"></span><input id="ev" type="range" min="0" max="3" value="0"></label>
+<div class="row"><span>Relación con el dueño:</span><button data-rel="0" class="on">Buena</button><button data-rel="1">Rota</button></div>
+<div class="m"><span>Cuánto respalda el papel al empleado («obedecí una instrucción»)</span><div class="t"><i id="b1" style="background:var(--c3)"></i></div></div>
+<div class="m"><span>Cuánto queda trazada la responsabilidad del dueño</span><div class="t"><i id="b2" style="background:var(--c2)"></i></div></div>
+<p class="mut">Barras ilustrativas, no probabilidades legales.</p></div>
+<div class="q" id="q"></div>
+<div class="card"><b>Cómo se rompe el círculo</b><p>Orden de pago escrita y firmada, concepto claro en cada transferencia, rendición con comprobantes y cuentas separadas: así el movimiento deja de ser la única prueba y el empleado deja de cargar con una decisión que no tomó.</p></div>
+</main>
+<script>
+let lens=0,rel=0;const $=i=>document.getElementById(i);
+const EV=['Nada: solo una llamada o un audio','Un mensaje de WhatsApp (se puede borrar o negar)','Una orden de pago firmada','Orden firmada y rendición con comprobantes'];
+const OP=[.2,.55,.9,1],B1=[8,35,78,95],B2=[5,30,70,90];
+const LN=['1 · Lo que ocurrió','2 · Lo que queda en el banco','3 · Lo que se dice después'];
+$('lens').innerHTML=LN.map((l,i)=>`<button data-l="${i}">${l}</button>`).join('');
+function render(){const e=+$('ev').value;
+document.querySelectorAll('#lens button').forEach((b,i)=>b.classList.toggle('on',i===lens));
+document.querySelectorAll('[data-rel]').forEach(b=>b.classList.toggle('on',+b.dataset.rel===rel));
+$('evl').textContent='→ '+EV[e];
+$('bub').style.opacity=OP[e];
+$('bub').innerHTML=e===0?'<b>Dueño (llamada):</b> «Pagá la cuota del colegio, después vemos.»<br><span class="mut">No queda registro.</span>':e===1?'<b>Dueño (WhatsApp):</b> «Pagá la cuota del colegio, después vemos.»<br><span class="mut">Captura posible, pero borrable.</span>':e===2?'<b>Orden de pago N.º 214</b><br>Concepto: gasto personal del propietario.<br><span class="mut">Firmada por el dueño.</span>':'<b>Orden firmada + rendición</b><br>Comprobante de la cuota adjunto.<br><span class="mut">Trazabilidad completa.</span>';
+$('bank').innerHTML='EXTRACTO<br>Débito: Empresa S.A.<br>Crédito: <b>Empleado (cuenta personal)</b><br>Concepto: —<br>Importe: 1.500.000';
+const S=[['El dueño pidió informalmente y el empleado, de buena fe, pagó el gasto personal del jefe con ese dinero.','Para el empleado era una tarea más. Nadie pensó en dejar constancia.'],
+['El único documento formal es el extracto: dinero de la empresa llegó a la cuenta personal del empleado, sin concepto.','La instrucción no figura; el nombre que sí figura es el del empleado.'],
+rel?(e>=2?['El dueño dice que no recuerda esa orden, pero existe un documento firmado'+(e===3?' y una rendición con comprobantes':'')+'. La historia completa está en el papel.']:['El dueño niega haber dado la instrucción. El papel solo muestra que el empleado recibió dinero de la empresa y no puede probar que lo gastó por orden de otro. <b>La transferencia que cumplió se lee como apropiación.</b>']):['Mientras la relación es buena, nadie pregunta: el movimiento pasa como «anticipo» y todo parece normal.','Funciona hasta que alguien revise o la confianza se rompa.']];
+$('story').innerHTML=S[lens].map(x=>`<p style="margin:2px 0">${x}</p>`).join('');
+const k=Math.max(3,B1[e]-(rel&&e<2?3:0));$('b1').style.width=k+'%';$('b2').style.width=B2[e]+'%';
+$('q').textContent=e<2?'La prueba de que obedeció es la misma que lo hace parecer culpable.':'Cuanto más queda escrito, menos puede el rastro volverse contra quien solo obedeció.'}
+$('lens').onclick=x=>{if(x.target.dataset.l){lens=+x.target.dataset.l;render()}};
+document.querySelector('[data-rel]').parentNode.onclick=x=>{if(x.target.dataset.rel){rel=+x.target.dataset.rel;render()}};
+$('ev').oninput=render;render();
+</script></body></html>
