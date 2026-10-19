@@ -1,0 +1,306 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Lunes Ordenado</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: encabezado corto, control de vistas, un escenario donde las mismas nueve tarjetas pasan de caos a orden, y un panel de lectura que resume cada vista. */
+:root {
+  --bg: #EDEFF5;
+  --surface: #FFFFFF;
+  --ink: #101531;
+  --muted: #565D7E;
+  --line: #CFD4E6;
+  --stage: #E2E5F1;
+  --dot: #C3C9E0;
+  --shadow: 0 8px 18px rgba(16, 21, 49, .18);
+  --hoy: #E4432D;
+  --semana: #2F5BEA;
+  --libre: #6B7391;
+  --display: "Syne", "Segoe UI", system-ui, sans-serif;
+  --body: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "DM Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B0F24; --surface: #151B3A; --ink: #EDF0FF; --muted: #9AA2C8; --line: #2A3260;
+    --stage: #10163A; --dot: #232B58; --shadow: 0 8px 18px rgba(0, 0, 0, .5);
+    --hoy: #FF7A66; --semana: #86A0FF; --libre: #9AA2C8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B0F24; --surface: #151B3A; --ink: #EDF0FF; --muted: #9AA2C8; --line: #2A3260;
+  --stage: #10163A; --dot: #232B58; --shadow: 0 8px 18px rgba(0, 0, 0, .5);
+  --hoy: #FF7A66; --semana: #86A0FF; --libre: #9AA2C8;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--body); font-size: 16px; line-height: 1.5;
+  padding-block: 36px 60px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(32px, 7vw, 56px); line-height: 1.02; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+header { display: flex; flex-direction: column; gap: 14px; }
+.lede { font-size: 18px; color: var(--muted); max-width: 56ch; }
+
+.controls { display: flex; flex-direction: column; gap: 10px; }
+.seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg button { font: inherit; font-weight: 500; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: background-color .15s, color .15s, border-color .15s; }
+.seg button:hover { border-color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.seg button:focus-visible, .cta:focus-visible { outline: 3px solid var(--semana); outline-offset: 3px; }
+
+.stage { position: relative; overflow: hidden; border-radius: 14px; background-color: var(--stage); background-image: radial-gradient(var(--dot) 1.2px, transparent 1.2px); background-size: 18px 18px; transition: height .7s cubic-bezier(.2,.8,.2,1); }
+.card { position: absolute; left: 0; top: 0; transition: transform .7s cubic-bezier(.2,.8,.2,1), width .4s, height .4s; }
+.card-in { height: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; overflow: hidden; transition: box-shadow .5s; }
+.stage[data-mode="chaos"] .card-in { box-shadow: var(--shadow); animation: jit var(--jd, .5s) linear infinite; }
+@keyframes jit {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  25% { transform: translate(1px, -1px) rotate(.4deg); }
+  50% { transform: translate(-1px, 1px) rotate(-.3deg); }
+  75% { transform: translate(1px, 1px) rotate(.2deg); }
+}
+.urg { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.urg::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.ct { font-weight: 600; font-size: 14px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.meta span + span::before { content: "· "; }
+.band { position: absolute; left: 0; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); opacity: 0; transition: opacity .4s; white-space: nowrap; }
+.band.on { opacity: 1; }
+.band em { font-style: normal; color: var(--muted); }
+
+.cta { position: absolute; left: 50%; top: 50%; translate: -50% -50%; z-index: 50; font: inherit; font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--bg); background: var(--ink); border: 0; border-radius: 999px; padding: 16px 28px; cursor: pointer; box-shadow: var(--shadow); }
+.cta:hover { scale: 1.04; }
+
+.readout { display: grid; grid-template-columns: auto 1fr; gap: 8px 28px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; }
+.big { font-family: var(--display); font-weight: 800; font-size: clamp(48px, 10vw, 76px); line-height: 1; letter-spacing: -0.03em; }
+.read-text { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.read-text .what { font-size: 18px; font-weight: 500; max-width: 52ch; }
+.quote { font-size: 16px; color: var(--muted); max-width: 56ch; }
+.quote b { color: var(--ink); font-weight: 500; }
+.closing { font-size: 18px; max-width: 58ch; }
+.closing strong { font-family: var(--display); font-weight: 700; }
+@media (max-width: 560px) {
+  .readout { grid-template-columns: 1fr; padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage, .card, .card-in, .band, .seg button { transition: none !important; }
+  .stage[data-mode="chaos"] .card-in { animation: none; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Lunes · 9:00 · primer empleo</p>
+    <h1>El mismo lunes, visto con orden</h1>
+    <p class="lede">Nueve pendientes, un equipo pequeño y poco tiempo para explicar qué está pasando. Nada del día cambia entre una vista y otra. Cambia lo que alcanzas a entender de un vistazo.</p>
+  </header>
+
+  <div class="controls">
+    <p class="eyebrow">Elige cómo mirar el mismo lunes</p>
+    <div class="seg" id="seg" role="group" aria-label="Vistas del lunes">
+      <button type="button" data-mode="chaos" aria-pressed="true">Todo junto</button>
+      <button type="button" data-mode="urg" aria-pressed="false">Por urgencia</button>
+      <button type="button" data-mode="eff" aria-pressed="false">Por esfuerzo</button>
+      <button type="button" data-mode="who" aria-pressed="false">Por persona</button>
+    </div>
+  </div>
+
+  <div class="stage" id="stage" data-mode="chaos">
+    <button type="button" class="cta" id="cta">Ordenar mi lunes</button>
+  </div>
+
+  <div class="readout" aria-live="polite">
+    <div class="big" id="big">9</div>
+    <div class="read-text">
+      <p class="what" id="what"></p>
+      <p class="quote" id="quote"></p>
+    </div>
+  </div>
+
+  <p class="closing"><strong>La tecnología no hizo el trabajo.</strong> Dio una manera de mirarlo. Las mismas nueve tareas cambian de sentido según la vista que armes, y quien aprende a armar sus propias vistas deja de reaccionar a lo que llega y empieza a decidir qué sigue.</p>
+</div>
+
+<script>
+var CARDS = [
+  { id: 1, t: "Enviar informe al cliente", urg: "Hoy", eff: "Medio día", who: "Cliente" },
+  { id: 2, t: "Responder 47 mensajes del grupo", urg: "Hoy", eff: "15 min", who: "Equipo" },
+  { id: 3, t: "Aprobar el presupuesto de diseño", urg: "Hoy", eff: "15 min", who: "Jefa" },
+  { id: 4, t: "Preparar la reunión del jueves", urg: "Esta semana", eff: "1 hora", who: "Jefa" },
+  { id: 5, t: "Pagar la factura del internet", urg: "Esta semana", eff: "15 min", who: "Para mí" },
+  { id: 6, t: "Ordenar la carpeta de contratos", urg: "Sin fecha", eff: "1 hora", who: "Equipo" },
+  { id: 7, t: "Aprender la herramienta nueva", urg: "Sin fecha", eff: "Medio día", who: "Para mí" },
+  { id: 8, t: "Confirmar la entrega con el cliente", urg: "Esta semana", eff: "15 min", who: "Cliente" },
+  { id: 9, t: "Revisar el correo acumulado", urg: "Hoy", eff: "1 hora", who: "Para mí" }
+];
+var MINUTES = { "15 min": 15, "1 hora": 60, "Medio día": 240 };
+var COLORS = { "Hoy": "var(--hoy)", "Esta semana": "var(--semana)", "Sin fecha": "var(--libre)" };
+var LENSES = {
+  urg: { key: "urg", buckets: ["Hoy", "Esta semana", "Sin fecha"] },
+  eff: { key: "eff", buckets: ["15 min", "1 hora", "Medio día"] },
+  who: { key: "who", buckets: ["Jefa", "Equipo", "Cliente", "Para mí"] }
+};
+/* Posiciones del caos: fracción horizontal, fracción vertical, giro en grados */
+var SCATTER = [
+  [0.05, 0.10, -5], [0.32, 0.02, 4], [0.64, 0.12, -3],
+  [0.14, 0.40, 6], [0.46, 0.30, -6], [0.80, 0.42, 3],
+  [0.06, 0.72, -3], [0.40, 0.64, 5], [0.72, 0.76, -4]
+];
+
+var stage = document.getElementById("stage");
+var cta = document.getElementById("cta");
+var mode = "chaos";
+var els = {};
+var bandEls = [];
+
+function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
+function fmt(min) {
+  var h = Math.floor(min / 60), m = min % 60;
+  return h + " h" + (m ? " " + m + " min" : "");
+}
+function by(key, value) { return CARDS.filter(function (c) { return c[key] === value; }); }
+
+function build() {
+  CARDS.forEach(function (c, i) {
+    var d = document.createElement("div");
+    d.className = "card";
+    d.style.zIndex = String(i + 1);
+    d.innerHTML =
+      '<div class="card-in" style="--jd:' + (0.38 + (i % 4) * 0.07).toFixed(2) + 's">' +
+      '<span class="urg" style="--c:' + COLORS[c.urg] + '">' + c.urg + '</span>' +
+      '<p class="ct"></p>' +
+      '<div class="meta"><span>' + c.eff + '</span><span>' + c.who + '</span></div>' +
+      '</div>';
+    d.querySelector(".ct").textContent = c.t;
+    stage.appendChild(d);
+    els[c.id] = d;
+  });
+}
+
+function layout() {
+  var W = stage.clientWidth;
+  var pad = 14, gap = 10;
+  var wide = W >= 700;
+  var cardW = wide ? 200 : Math.max(132, Math.floor((W - pad * 2 - gap) / 2));
+  var cardH = wide ? 92 : 108;
+  var inner = W - pad * 2;
+  var perRow = Math.max(1, Math.floor((inner + gap) / (cardW + gap)));
+
+  bandEls.forEach(function (b) { b.remove(); });
+  bandEls = [];
+
+  if (mode === "chaos") {
+    var H = wide ? 400 : 480;
+    stage.style.height = H + "px";
+    CARDS.forEach(function (c, i) {
+      var s = SCATTER[i];
+      var x = pad + s[0] * (inner - cardW);
+      var y = pad + s[1] * (H - pad * 2 - cardH);
+      place(c.id, x, y, s[2], cardW, cardH, i);
+    });
+    return;
+  }
+
+  var lens = LENSES[mode];
+  var y = pad;
+  var order = 0;
+  lens.buckets.forEach(function (bucket) {
+    var list = by(lens.key, bucket);
+    if (!list.length) return;
+    var lab = document.createElement("div");
+    lab.className = "band";
+    lab.style.top = y + "px";
+    lab.style.left = pad + "px";
+    lab.innerHTML = bucket + ' <em>· ' + list.length + '</em>';
+    stage.appendChild(lab);
+    bandEls.push(lab);
+    setTimeout(function () { lab.classList.add("on"); }, 350);
+    y += 26;
+    list.forEach(function (c, i) {
+      var col = i % perRow, row = Math.floor(i / perRow);
+      place(c.id, pad + col * (cardW + gap), y + row * (cardH + gap), 0, cardW, cardH, order++);
+    });
+    var rows = Math.ceil(list.length / perRow);
+    y += rows * (cardH + gap) + 12;
+  });
+  stage.style.height = (y - 12 + pad) + "px";
+}
+
+function place(id, x, y, rot, w, h, order) {
+  var el = els[id];
+  el.style.transitionDelay = (order * 35) + "ms";
+  el.style.width = w + "px";
+  el.style.height = h + "px";
+  el.style.transform = "translate(" + Math.round(x) + "px," + Math.round(y) + "px) rotate(" + rot + "deg)";
+}
+
+function readout() {
+  var big = document.getElementById("big");
+  var what = document.getElementById("what");
+  var quote = document.getElementById("quote");
+  var total = CARDS.length;
+
+  if (mode === "chaos") {
+    big.textContent = String(total);
+    what.textContent = "cosas pidiendo atención a la vez. Para contárselas a alguien hay que enumerarlas una por una.";
+    quote.textContent = "Cuando todo se ve igual de importante, nada se puede priorizar ni explicar rápido.";
+    return;
+  }
+  if (mode === "urg") {
+    var hoy = by("urg", "Hoy");
+    var biggest = hoy.reduce(function (a, c) { return MINUTES[c.eff] > MINUTES[a.eff] ? c : a; }, hoy[0]);
+    big.textContent = String(hoy.length);
+    what.textContent = "de " + total + " cosas son para hoy. Las otras " + (total - hoy.length) + " tienen espacio.";
+    quote.innerHTML = 'Para contarlo en una frase: <b>«Hoy cierro ' + plural(hoy.length, "cosa", "cosas") + '. La más grande: ' + biggest.t + '.»</b>';
+    return;
+  }
+  if (mode === "eff") {
+    var sum = CARDS.reduce(function (a, c) { return a + MINUTES[c.eff]; }, 0);
+    var quick = by("eff", "15 min").length;
+    big.textContent = fmt(sum);
+    what.textContent = "de trabajo sumando todo. Eso no entra en un día, y verlo a tiempo permite decidir qué no hacer hoy.";
+    quote.innerHTML = 'Hay ' + plural(quick, "tarea", "tareas") + ' de 15 minutos que caben entre reuniones. <b>«Tengo ' + fmt(sum) + ' en la lista; hoy elijo qué entra y qué espera.»</b>';
+    return;
+  }
+  var mine = by("who", "Para mí").length;
+  var others = LENSES.who.buckets.filter(function (b) { return b !== "Para mí" && by("who", b).length; }).length;
+  big.textContent = String(others);
+  what.textContent = (others === 1 ? "persona o grupo espera" : "personas o grupos esperan") + " algo de ti. " + plural(mine, "pendiente es", "pendientes son") + " solo tuyo" + (mine === 1 ? "" : "s") + ".";
+  quote.innerHTML = 'Antes de responder a otros, mira tu propia columna. <b>«' + others + ' ' + (others === 1 ? "persona espera" : "personas esperan") + ' algo de mí, y otras ' + mine + ' cosas dependen solo de mí.»</b>';
+}
+
+function setMode(next) {
+  mode = next;
+  stage.setAttribute("data-mode", next);
+  cta.hidden = next !== "chaos";
+  document.querySelectorAll("#seg button").forEach(function (b) {
+    b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === next));
+  });
+  layout();
+  readout();
+}
+
+document.getElementById("seg").addEventListener("click", function (e) {
+  var b = e.target.closest("button");
+  if (b) setMode(b.getAttribute("data-mode"));
+});
+cta.addEventListener("click", function () { setMode("urg"); });
+var pending = 0;
+window.addEventListener("resize", function () {
+  cancelAnimationFrame(pending);
+  pending = requestAnimationFrame(layout);
+});
+
+build();
+setMode("chaos");
+</script>
+
+</body></html>
