@@ -1,0 +1,541 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Paraguay en 1.000 personas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una columna. Arriba el pueblo de 1.000 puntos, luego el problema y los traductores lado a lado, al final los datos reales con fuentes. */
+:root {
+  --bg: #F2F4F8;
+  --surface: #FFFFFF;
+  --fg: #0F1A2B;
+  --muted: #55627A;
+  --line: #D7DDE8;
+  --dot: #C5CDDA;
+  --need: #3A4A66;
+  --warn: #C92F26;
+  --c-leyes: #2B59D6;
+  --c-tec: #0B8F6B;
+  --c-salud: #D3342B;
+  --c-educ: #B97A00;
+  --font-display: 'Bricolage Grotesque', 'Trebuchet MS', 'Segoe UI', sans-serif;
+  --font-body: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A1120;
+    --surface: #111B2E;
+    --fg: #E8EDF6;
+    --muted: #9AA7BF;
+    --line: #243149;
+    --dot: #26324A;
+    --need: #8FA0BF;
+    --warn: #FF7A70;
+    --c-leyes: #7C9CFF;
+    --c-tec: #3DD6A8;
+    --c-salud: #FF7A70;
+    --c-educ: #F0B64A;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0A1120;
+  --surface: #111B2E;
+  --fg: #E8EDF6;
+  --muted: #9AA7BF;
+  --line: #243149;
+  --dot: #26324A;
+  --need: #8FA0BF;
+  --warn: #FF7A70;
+  --c-leyes: #7C9CFF;
+  --c-tec: #3DD6A8;
+  --c-salud: #FF7A70;
+  --c-educ: #F0B64A;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+section { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.1rem, 7vw, 3.6rem);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  margin: 0;
+  text-wrap: balance;
+}
+h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.35rem, 3.6vw, 1.8rem);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  margin: 0;
+  text-wrap: balance;
+}
+h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 700; }
+p { margin: 0; max-width: 66ch; }
+.lead { font-size: 1.1rem; color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+a { color: var(--c-leyes); text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--c-leyes); outline-offset: 2px; border-radius: 6px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-width: 0; }
+
+/* Pueblo */
+.town { display: flex; flex-direction: column; gap: 14px; }
+.holder { width: 100%; }
+#town { display: block; width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: inherit; color: var(--fg); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 8px 14px; cursor: pointer; min-height: 40px;
+}
+.chip[aria-pressed="true"] { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+.chip .nums { color: var(--muted); font-size: 0.85rem; }
+.sw { width: 12px; height: 12px; border-radius: 50%; flex: none; display: inline-block; }
+.sw.leyes { background: var(--c-leyes); }
+.sw.tec { background: var(--c-tec); }
+.sw.salud { background: var(--c-salud); }
+.sw.educ { background: var(--c-educ); }
+.sw.gray { background: var(--dot); }
+.sw.trans { background: var(--fg); box-shadow: inset 0 0 0 3px var(--fg), inset 0 0 0 6px var(--surface); }
+.keyline { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.85rem; color: var(--muted); }
+.keyline span { display: inline-flex; align-items: center; gap: 6px; }
+.callout { font-size: 1.05rem; max-width: 70ch; }
+.callout strong { font-family: var(--font-display); font-weight: 800; font-size: 1.15em; }
+
+/* Simulador */
+.sim { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; align-items: start; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg button {
+  font: inherit; color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; cursor: pointer; min-height: 40px; text-align: left;
+}
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.story { color: var(--muted); font-size: 0.95rem; }
+.steps { display: flex; flex-wrap: wrap; gap: 8px; }
+.step-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px dashed var(--line); border-radius: 8px; padding: 4px 10px; font-size: 0.9rem; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat .big { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.7rem, 6vw, 2.4rem); line-height: 1; font-variant-numeric: tabular-nums; }
+.stat .lbl { font-size: 0.8rem; color: var(--muted); line-height: 1.3; }
+.stat.warn .big { color: var(--warn); }
+.bar { display: flex; height: 16px; border-radius: 8px; overflow: hidden; background: var(--line); }
+.bar .b-need { background: var(--need); transition: width .3s ease; }
+.bar .b-av { background: var(--warn); transition: width .3s ease; }
+.bar-key { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.8rem; color: var(--muted); }
+.bar-key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; }
+.verdict { font-size: 1.02rem; }
+
+.pairs { display: flex; flex-direction: column; gap: 4px; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.pair:last-child { border-bottom: 0; }
+.pair .name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.95rem; }
+.badge { font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; color: var(--bg); background: var(--fg); border-radius: 999px; padding: 1px 8px; }
+.stepper { display: inline-flex; align-items: center; gap: 8px; }
+.stepper button {
+  width: 40px; height: 40px; font: inherit; font-size: 1.2rem; line-height: 1; cursor: pointer;
+  background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 10px;
+}
+.stepper button:disabled { opacity: .35; cursor: not-allowed; }
+.stepper output { min-width: 1.6em; text-align: center; font-family: var(--font-mono); font-size: 1.05rem; }
+.total { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; font-size: 0.95rem; }
+.slider { display: flex; flex-direction: column; gap: 6px; font-size: 0.92rem; }
+.slider input { width: 100%; accent-color: var(--warn); }
+.note { font-size: 0.85rem; color: var(--muted); }
+
+/* Datos */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.92rem; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.75rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.caveats { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 6px; max-width: 72ch; color: var(--muted); font-size: 0.92rem; }
+.todo { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.todo li { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.todo b { font-family: var(--font-display); font-weight: 800; font-size: 1.05rem; }
+.todo span { color: var(--muted); font-size: 0.93rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bar .b-need, .bar .b-av { transition: none; }
+}
+@media (max-width: 420px) {
+  .stats { grid-template-columns: 1fr; gap: 10px; }
+  .stat { flex-direction: row; align-items: baseline; gap: 12px; }
+  .stat .big { min-width: 3.2ch; }
+}
+</style>
+
+<div class="wrap">
+  <section>
+    <h1>Paraguay en 1.000 personas</h1>
+    <p class="lead">Imagina que el país entero fuera un pueblo de mil habitantes. Cada punto es una persona. Los puntos de color son especialistas con datos públicos reales de Paraguay. Mira cuántos hay de cada área y qué pasa cuando cada una trabaja sola.</p>
+  </section>
+
+  <section aria-labelledby="t-pueblo">
+    <h2 id="t-pueblo">Así se reparten los especialistas</h2>
+    <div class="panel town">
+      <div class="holder" id="holder"><canvas id="town" role="img" aria-label="Cuadrícula de 1.000 puntos que representan a los habitantes del país"></canvas></div>
+      <div class="legend" id="legend" role="group" aria-label="Elegir un área para resaltarla"></div>
+      <div class="keyline">
+        <span><i class="sw gray"></i> Resto de la población</span>
+        <span><i class="sw trans"></i> Traductor entre dos áreas</span>
+        <span>Toca un área para resaltarla</span>
+      </div>
+    </div>
+    <p class="callout" id="callout"></p>
+  </section>
+
+  <section aria-labelledby="t-sim">
+    <h2 id="t-sim">Un problema que no es difícil</h2>
+    <p>Cada vez que un pedido pasa de un área a otra se llama traspaso. Si las áreas se entendieran, bastaría un traspaso por cada par. Cuando no hablan el mismo idioma, el pedido rebota de ida y vuelta. Pon traductores y mira cuánto baja.</p>
+    <div class="sim">
+      <div class="panel stack">
+        <h3>1. Elige el problema</h3>
+        <div class="seg" id="problems" role="group" aria-label="Problema a resolver"></div>
+        <p class="story" id="story"></p>
+        <div class="steps" id="steps" aria-label="Traspasos que necesita este problema"></div>
+        <h3>Resultado</h3>
+        <div class="stats">
+          <div class="stat"><span class="big mono" id="s-need">0</span><span class="lbl">traspasos si todos se entendieran</span></div>
+          <div class="stat"><span class="big mono" id="s-total">0</span><span class="lbl">traspasos con áreas desconectadas</span></div>
+          <div class="stat warn"><span class="big mono" id="s-av">0</span><span class="lbl">cuellos de botella evitables</span></div>
+        </div>
+        <div>
+          <div class="bar" role="img" id="bar" aria-label="Proporción de traspasos necesarios y evitables"><div class="b-need" id="b-need"></div><div class="b-av" id="b-av"></div></div>
+          <div class="bar-key"><span><i style="background:var(--need)"></i>Necesarios</span><span><i style="background:var(--warn)"></i>Evitables</span><span>Escala: el caso sin traductores</span></div>
+        </div>
+        <p class="verdict" id="verdict" aria-live="polite"></p>
+      </div>
+
+      <div class="panel stack">
+        <h3>2. Pon traductores</h3>
+        <p class="note">Un traductor es una persona que entiende dos áreas y explica a cada lado lo que necesita el otro. Cada uno sale de la población general. Máximo 12 en el pueblo.</p>
+        <div class="pairs" id="pairs"></div>
+        <div class="total"><span id="t-count"></span><span class="mono" id="t-pct"></span></div>
+        <div class="slider">
+          <label for="bounce">Idas y vueltas por traspaso sin traductor: <b class="mono" id="bounce-val">3</b></label>
+          <input type="range" id="bounce" min="0" max="6" step="1" value="3">
+          <span class="note">Supuesto del simulador, no un dato medido. Cámbialo para ver cómo se comporta el modelo. Con cada traductor del par, esas idas y vueltas se dividen entre 1 más el número de traductores.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-hacer">
+    <h2 id="t-hacer">Qué puedes hacer tú</h2>
+    <ul class="todo">
+      <li><b>Aprende el idioma del vecino</b><span>Pasa una tarde con alguien de otra área y anota las cinco palabras que más se malinterpretan entre ustedes.</span></li>
+      <li><b>Escribe qué necesita el otro</b><span>Antes de pasar un pedido, explica en palabras simples qué se necesita y para qué. Quien lo recibe no tiene tu contexto.</span></li>
+      <li><b>Pregunta: ¿qué entendiste?</b><span>Pide que repitan el pedido con sus palabras. Un malentendido que aparece en cinco minutos evita varias idas y vueltas.</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="t-datos">
+    <h2 id="t-datos">De dónde salen los números</h2>
+    <p id="pobline"></p>
+    <div class="tablewrap" tabindex="0" role="region" aria-label="Tabla de datos con fuentes">
+      <table>
+        <thead><tr><th>Área</th><th>Dato usado</th><th class="num">Total</th><th class="num">Por 1.000</th><th class="num">1 cada</th><th>Fuente</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <ul class="caveats">
+      <li>Los abogados son matriculados ante la Corte Suprema. No todos ejercen, así que quienes litigan hoy son menos.</li>
+      <li>No encontré un conteo oficial de profesionales en informática. Uso como aproximación a todos los ocupados en Información y Comunicación, que también incluye telecomunicaciones y medios. El número real de informáticos es menor, y la desproporción aún mayor. Una nota de La Tribuna de enero de 2026 cita unos 400 graduados informáticos por año y un déficit estimado de 20.000 profesionales.</li>
+      <li>Los médicos son los activos de un registro de 36.355 inscriptos en el Ministerio de Salud. Los docentes de la encuesta del INE excluyen Boquerón, Alto Paraguay, comunidades indígenas y viviendas colectivas.</li>
+      <li>Los totales son datos públicos. Los traspasos y las idas y vueltas son un modelo ilustrativo para entender la idea, no una medición de demoras reales.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var POB = 6109903, MAXT = 12, SEED = 2022;
+
+  var AREAS = [
+    { id: 'leyes', name: 'Leyes', n: 74500, dato: 'Abogados matriculados ante la Corte Suprema (2025)', src: 'Última Hora', url: 'https://www.ultimahora.com/un-pais-de-abogados' },
+    { id: 'tec', name: 'Tecnología', n: 24329, dato: 'Ocupados en Información y Comunicación (Censo 2022, aproximación)', src: 'INE, Censo 2022', url: 'https://www.ine.gov.py/Publicaciones/Biblioteca/documento/281/Actividad%20Laboral%20Censo%202022_web.pdf' },
+    { id: 'salud', name: 'Salud', n: 30053, dato: 'Médicos activos registrados (febrero 2025)', src: 'InfoNegocios, Ministerio de Salud', url: 'https://infonegocios.com.py/default/mas-demanda-menos-preparacion-el-diagnostico-actual-de-la-profesion-medica' },
+    { id: 'educ', name: 'Educación', n: 99382, dato: 'Personas que enseñan como ocupación principal (EPHC 2025)', src: 'INE', url: 'https://www.ine.gov.py/noticias/2856/el-ine-destaca-que-mas-de-99-mil-personas-ejercen-la-docencia-en-paraguay' }
+  ];
+  var byId = {};
+  AREAS.forEach(function (a) { byId[a.id] = a; a.count = Math.round(a.n / POB * 1000); });
+
+  var PAIRS = [];
+  for (var i = 0; i < AREAS.length; i++) {
+    for (var j = i + 1; j < AREAS.length; j++) {
+      PAIRS.push({ id: AREAS[i].id + '-' + AREAS[j].id, a: AREAS[i].id, b: AREAS[j].id });
+    }
+  }
+  var pairById = {};
+  PAIRS.forEach(function (p) { pairById[p.id] = p; });
+
+  var PROBLEMS = [
+    { name: 'Certificado de estudios en línea', story: 'Un estudiante pide su certificado desde el celular sin ir al colegio. Educación define los datos, Leyes valida que sea oficial y Tecnología lo construye.', steps: ['leyes-educ', 'leyes-tec', 'tec-educ'] },
+    { name: 'Ficha médica compartida', story: 'Un paciente llega a otro hospital y su historia ya está ahí. Salud define qué se comparte, Leyes cuida los datos personales y Tecnología lo conecta.', steps: ['leyes-salud', 'leyes-tec', 'tec-salud'] },
+    { name: 'Firma digital de un trámite', story: 'Firmar un trámite desde el celular. Leyes dice qué es válido y Tecnología lo hace funcionar. Es el caso más simple: un solo traspaso.', steps: ['leyes-tec'] }
+  ];
+
+  var state = { problem: 0, bounce: 3, focus: null, tlist: [] };
+
+  /* Utilidades */
+  function fmt(x, d) {
+    return x.toLocaleString('es-PY', { maximumFractionDigits: d == null ? 1 : d, minimumFractionDigits: 0 });
+  }
+  function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function el(id) { return document.getElementById(id); }
+  function sw(a) { return '<i class="sw ' + a + '"></i>'; }
+  function pairLabel(p) { return sw(p.a) + byId[p.a].name + ' ↔ ' + sw(p.b) + byId[p.b].name; }
+
+  /* Reparto fijo y desordenado de la población */
+  function mulberry(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var rnd = mulberry(SEED);
+  var perm = [];
+  for (var k = 0; k < 1000; k++) perm.push(k);
+  for (var m = 999; m > 0; m--) {
+    var r = Math.floor(rnd() * (m + 1));
+    var tmp = perm[m]; perm[m] = perm[r]; perm[r] = tmp;
+  }
+  var roleAt = new Array(1000).fill(null);
+  var dotsByArea = {};
+  var cursor = 0;
+  AREAS.forEach(function (a) {
+    dotsByArea[a.id] = [];
+    for (var c = 0; c < a.count; c++) {
+      var pos = perm[cursor++];
+      roleAt[pos] = a.id;
+      dotsByArea[a.id].push(pos);
+    }
+  });
+  var S = cursor; /* total de especialistas dibujados */
+
+  /* Dibujo */
+  var holder = el('holder'), canvas = el('town');
+  function draw() {
+    var W = holder.clientWidth;
+    if (!W) return;
+    var cols = W >= 640 ? 50 : 25, rows = 1000 / cols, cell = W / cols, H = rows * cell;
+    var dpr = window.devicePixelRatio || 1;
+    canvas.style.height = H + 'px';
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    var ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    function px(i) { return (i % cols + 0.5) * cell; }
+    function py(i) { return (Math.floor(i / cols) + 0.5) * cell; }
+    function dot(i, rad) { ctx.beginPath(); ctx.arc(px(i), py(i), rad, 0, Math.PI * 2); ctx.fill(); }
+
+    var cDot = css('--dot'), cFg = css('--fg'), cSurface = css('--surface');
+    var transPos = state.tlist.map(function (pid, idx) { return perm[S + idx]; });
+    var isTrans = {};
+    transPos.forEach(function (p) { isTrans[p] = true; });
+
+    var dim = state.focus !== null;
+    ctx.fillStyle = cDot;
+    ctx.globalAlpha = dim ? 0.6 : 1;
+    for (var i = 0; i < 1000; i++) {
+      if (roleAt[i] === null && !isTrans[i]) dot(i, cell * 0.28);
+    }
+
+    /* Líneas de cada traductor hacia los especialistas de sus dos áreas */
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = cFg;
+    ctx.lineWidth = 1;
+    state.tlist.forEach(function (pid, idx) {
+      var p = pairById[pid], tp = transPos[idx];
+      var targets = dotsByArea[p.a].concat(dotsByArea[p.b]);
+      ctx.beginPath();
+      targets.forEach(function (t) { ctx.moveTo(px(tp), py(tp)); ctx.lineTo(px(t), py(t)); });
+      ctx.stroke();
+    });
+
+    /* Especialistas */
+    AREAS.forEach(function (a) {
+      ctx.globalAlpha = (state.focus === null || state.focus === a.id) ? 1 : 0.22;
+      ctx.fillStyle = css('--c-' + a.id);
+      dotsByArea[a.id].forEach(function (pos) { dot(pos, cell * 0.44); });
+    });
+
+    /* Traductores */
+    ctx.globalAlpha = 1;
+    transPos.forEach(function (tp) {
+      ctx.fillStyle = cFg; dot(tp, cell * 0.5);
+      ctx.fillStyle = cSurface; dot(tp, cell * 0.17);
+    });
+
+    var parts = AREAS.map(function (a) { return a.count + ' de ' + a.name; }).join(', ');
+    canvas.setAttribute('aria-label', 'Cuadrícula de 1.000 puntos que representan a los habitantes. Especialistas: ' + parts + '. Traductores puestos: ' + state.tlist.length + '.');
+  }
+
+  /* Leyenda */
+  var legend = el('legend');
+  AREAS.forEach(function (a) {
+    var b = document.createElement('button');
+    b.className = 'chip';
+    b.type = 'button';
+    b.setAttribute('aria-pressed', 'false');
+    b.dataset.area = a.id;
+    b.innerHTML = sw(a.id) + '<strong>' + a.name + '</strong><span class="nums mono">' + a.count + ' de 1.000 · 1 cada ' + fmt(POB / a.n, 0) + '</span>';
+    b.addEventListener('click', function () {
+      state.focus = state.focus === a.id ? null : a.id;
+      Array.prototype.forEach.call(legend.children, function (c) {
+        c.setAttribute('aria-pressed', String(c.dataset.area === state.focus));
+      });
+      draw();
+    });
+    legend.appendChild(b);
+  });
+
+  /* Frase de contraste */
+  (function () {
+    var others = byId.leyes.n + byId.salud.n + byId.educ.n;
+    el('callout').innerHTML =
+      'Por cada especialista en tecnología hay <strong>' + fmt(others / byId.tec.n) + '</strong> de leyes, salud y educación. ' +
+      'Solo en leyes son <strong>' + fmt(byId.leyes.n / byId.tec.n) + ' abogados por cada tecnólogo</strong>. ' +
+      'Casi todos los problemas de un país necesitan a más de un área, pero casi nadie sabe hablar con la de al lado.';
+    el('pobline').innerHTML = 'Población total: <b class="mono">' + POB.toLocaleString('es-PY') + '</b> habitantes, según los resultados finales del Censo 2022 del INE. Para cada área divido el total de especialistas entre esa población.';
+  })();
+
+  /* Tabla */
+  el('tbody').innerHTML = AREAS.map(function (a) {
+    return '<tr><td><span style="display:inline-flex;align-items:center;gap:6px">' + sw(a.id) + a.name + '</span></td>' +
+      '<td>' + a.dato + '</td>' +
+      '<td class="num">' + a.n.toLocaleString('es-PY') + '</td>' +
+      '<td class="num">' + fmt(a.n / POB * 1000) + '</td>' +
+      '<td class="num">' + fmt(POB / a.n, 0) + '</td>' +
+      '<td><a href="' + a.url + '" target="_blank" rel="noopener">' + a.src + '</a></td></tr>';
+  }).join('');
+
+  /* Selector de problema */
+  var probWrap = el('problems');
+  PROBLEMS.forEach(function (p, idx) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = p.name;
+    b.setAttribute('aria-pressed', String(idx === state.problem));
+    b.addEventListener('click', function () {
+      state.problem = idx;
+      Array.prototype.forEach.call(probWrap.children, function (c, i2) { c.setAttribute('aria-pressed', String(i2 === idx)); });
+      update();
+    });
+    probWrap.appendChild(b);
+  });
+
+  /* Filas de traductores por par */
+  var pairsWrap = el('pairs');
+  PAIRS.forEach(function (p) {
+    var row = document.createElement('div');
+    row.className = 'pair';
+    row.dataset.id = p.id;
+    row.innerHTML =
+      '<div class="name">' + pairLabel(p) + ' <span class="badge" hidden>en este problema</span></div>' +
+      '<div class="stepper">' +
+      '<button type="button" data-act="minus" aria-label="Quitar un traductor entre ' + byId[p.a].name + ' y ' + byId[p.b].name + '">−</button>' +
+      '<output class="mono" aria-live="polite">0</output>' +
+      '<button type="button" data-act="plus" aria-label="Poner un traductor entre ' + byId[p.a].name + ' y ' + byId[p.b].name + '">+</button>' +
+      '</div>';
+    row.querySelector('[data-act="plus"]').addEventListener('click', function () {
+      if (state.tlist.length < MAXT) { state.tlist.push(p.id); update(); }
+    });
+    row.querySelector('[data-act="minus"]').addEventListener('click', function () {
+      var ix = state.tlist.lastIndexOf(p.id);
+      if (ix >= 0) { state.tlist.splice(ix, 1); update(); }
+    });
+    pairsWrap.appendChild(row);
+  });
+
+  el('bounce').addEventListener('input', function (e) {
+    state.bounce = Number(e.target.value);
+    update();
+  });
+
+  function countFor(pid) {
+    return state.tlist.filter(function (x) { return x === pid; }).length;
+  }
+
+  /* Modelo: cada traspaso necesario más las idas y vueltas por malentendido,
+     que se dividen entre (1 + traductores del par). */
+  function update() {
+    var prob = PROBLEMS[state.problem];
+    var n = prob.steps.length, B = state.bounce;
+    var avoid = 0;
+    prob.steps.forEach(function (pid) { avoid += B / (1 + countFor(pid)); });
+    var total = n + avoid, base = n * (1 + B), baseAvoid = n * B;
+
+    el('story').textContent = prob.story;
+    el('steps').innerHTML = prob.steps.map(function (pid) {
+      return '<span class="step-chip">' + pairLabel(pairById[pid]) + '</span>';
+    }).join('');
+
+    el('s-need').textContent = fmt(n);
+    el('s-total').textContent = fmt(total);
+    el('s-av').textContent = fmt(avoid);
+    el('b-need').style.width = (n / base * 100) + '%';
+    el('b-av').style.width = (avoid / base * 100) + '%';
+    el('bar').setAttribute('aria-label', 'De ' + fmt(base) + ' traspasos posibles sin traductores, ' + fmt(n) + ' son necesarios y ' + fmt(avoid) + ' son evitables.');
+    el('bounce-val').textContent = String(B);
+
+    var t = state.tlist.length;
+    if (B === 0) {
+      el('verdict').textContent = 'Con cero idas y vueltas las áreas se entienden solas y no hay nada que traducir. Sube el supuesto para ver el efecto.';
+    } else if (t === 0) {
+      el('verdict').innerHTML = 'Hoy nadie traduce: un problema de <b>' + fmt(n) + '</b> ' + (n === 1 ? 'traspaso' : 'traspasos') + ' termina en <b>' + fmt(base) + '</b>. Toda la diferencia es ruido entre áreas, no complejidad técnica.';
+    } else {
+      var cut = baseAvoid > 0 ? Math.round((1 - avoid / baseAvoid) * 100) : 0;
+      el('verdict').innerHTML = 'Con <b>' + t + '</b> ' + (t === 1 ? 'traductor' : 'traductores') + ' (<b>' + fmt(t / 10) + '%</b> del pueblo) los cuellos de botella evitables bajan de <b>' + fmt(baseAvoid) + '</b> a <b>' + fmt(avoid) + '</b>, un ' + cut + '% menos.';
+    }
+
+    el('t-count').textContent = 'Traductores puestos: ' + t + ' de ' + MAXT;
+    el('t-pct').textContent = fmt(t / 10) + ' de cada 100 personas';
+
+    Array.prototype.forEach.call(pairsWrap.children, function (row) {
+      var pid = row.dataset.id, c = countFor(pid);
+      row.querySelector('output').textContent = String(c);
+      row.querySelector('[data-act="minus"]').disabled = c === 0;
+      row.querySelector('[data-act="plus"]').disabled = t >= MAXT;
+      row.querySelector('.badge').hidden = prob.steps.indexOf(pid) === -1;
+    });
+
+    draw();
+  }
+
+  /* Redibujo ante cambios de tamaño y de tema */
+  if (window.ResizeObserver) { new ResizeObserver(draw).observe(holder); }
+  else { window.addEventListener('resize', draw); }
+  try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw); } catch (e) {}
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  update();
+})();
+</script>
+
+</body></html>
