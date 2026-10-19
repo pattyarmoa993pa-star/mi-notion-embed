@@ -1,0 +1,721 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Flujo de causas del Ministerio Público</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Diseño: tablero de auditoría. Controles a la izquierda, resultado a la derecha; el recorrido de la causa
+   se lee de arriba hacia abajo como un expediente que pasa de mesa en mesa. */
+:root {
+  --bg: #eceff3;
+  --surface: #f8f9fb;
+  --ink: #131d27;
+  --muted: #536371;
+  --rule: #cbd3dc;
+  --accent: #1d4f7c;
+  --accent-soft: #d5e1ee;
+  --free: #8aa4bb;
+  --held: #c2441c;
+  --warn: #a8710f;
+  --ok: #26704f;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e151b; --surface: #151f27; --ink: #e5ebf0; --muted: #93a2af; --rule: #2a3a47;
+    --accent: #78afe0; --accent-soft: #1d3346; --free: #5b7c97; --held: #ee8156; --warn: #e0a640; --ok: #5fc08f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e151b; --surface: #151f27; --ink: #e5ebf0; --muted: #93a2af; --rule: #2a3a47;
+  --accent: #78afe0; --accent-soft: #1d3346; --free: #5b7c97; --held: #ee8156; --warn: #e0a640; --ok: #5fc08f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+h1, h2, h3 { font-family: var(--font-display); font-variation-settings: "wdth" 85; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(1.9rem, 4.4vw, 3rem); font-weight: 800; line-height: 1.04; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; font-weight: 700; }
+h3 { font-size: 0.98rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); }
+.eyebrow { font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+
+header.top { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
+.lede { font-size: 1.05rem; max-width: 62ch; }
+.source {
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+  padding-block: 10px; font-size: 0.86rem; color: var(--muted); max-width: 86ch;
+}
+.source strong { color: var(--ink); font-weight: 600; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (min-width: 980px) { .grid { grid-template-columns: 300px minmax(0, 1fr); } .controls { position: sticky; top: 16px; } }
+
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 18px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.results { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+/* controles */
+.presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.presets button {
+  font: inherit; font-size: 0.84rem; font-weight: 600; text-align: left; line-height: 1.25;
+  padding: 9px 10px; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); border-radius: 4px; cursor: pointer;
+}
+.presets button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.presets button:hover { border-color: var(--accent); }
+.presets .wide { grid-column: 1 / -1; }
+.ctl { display: flex; flex-direction: column; gap: 4px; }
+.ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: 0.86rem; font-weight: 600; }
+.ctl output { font-family: var(--font-data); font-weight: 500; color: var(--accent); }
+.ctl small { font-size: 0.78rem; color: var(--muted); line-height: 1.35; }
+input[type="range"] { width: 100%; accent-color: var(--accent); margin: 2px 0; }
+button:focus-visible, input:focus-visible, summary:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* tiempo */
+.timebar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.btn { font: inherit; font-weight: 700; font-size: 0.88rem; padding: 8px 14px; border-radius: 4px; border: 1px solid var(--accent); background: var(--accent); color: var(--surface); cursor: pointer; min-width: 7.2rem; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.timelabel { font-family: var(--font-data); font-size: 0.86rem; white-space: nowrap; text-align: right; }
+.timebar select { font: inherit; font-size: 0.82rem; background: var(--bg); color: var(--ink); border: 1px solid var(--rule); border-radius: 4px; padding: 6px; }
+.timerow2 { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.kpi .k { font-size: 0.72rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.kpi .v { font-family: var(--font-data); font-size: 1.85rem; font-weight: 500; line-height: 1.1; }
+.kpi .d { font-size: 0.8rem; color: var(--muted); font-family: var(--font-data); }
+.kpi .d.good { color: var(--ok); } .kpi .d.bad { color: var(--held); }
+.reading { font-size: 0.95rem; max-width: 80ch; padding-left: 14px; border-left: 3px solid var(--accent); }
+
+/* recorrido */
+.pipe { display: flex; flex-direction: column; gap: 4px; }
+.stage { display: grid; grid-template-columns: 11.5rem minmax(0, 1fr) 6.2rem; gap: 12px; align-items: center; }
+.stage .nm { font-weight: 600; font-size: 0.9rem; line-height: 1.2; }
+.stage .nm span { display: block; font-weight: 400; font-size: 0.76rem; color: var(--muted); }
+.bars { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.bar { height: 20px; display: flex; background: var(--bg); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; }
+.bar .f { background: var(--free); } .bar .h { background: var(--held); }
+.dorm { height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+.dorm i { display: block; height: 100%; background: var(--warn); }
+.stage .ct { font-family: var(--font-data); font-size: 0.92rem; text-align: right; }
+.flow { padding-left: calc(11.5rem + 12px); font-size: 0.76rem; color: var(--muted); font-family: var(--font-data); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.sw.line { height: 0; border-top: 2px dashed var(--ink); border-radius: 0; width: 18px; }
+.sw.dot { height: 0; border-top: 2px dotted var(--muted); border-radius: 0; width: 18px; }
+.outs { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.out { border-top: 2px solid var(--rule); padding-top: 6px; }
+.out b { display: block; font-family: var(--font-data); font-weight: 500; font-size: 1.15rem; }
+.out span { font-size: 0.78rem; color: var(--muted); }
+
+/* gráfico */
+#chart { width: 100%; min-width: 0; }
+#chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+#chart text { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+
+/* dos vistas */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.view { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.view ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+.view li { display: flex; justify-content: space-between; gap: 12px; padding-block: 7px; border-bottom: 1px solid var(--rule); font-size: 0.9rem; }
+.view li b { font-family: var(--font-data); font-weight: 500; text-align: right; }
+.view.hidden-side li b { color: var(--held); }
+.meter { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; border: 1px solid var(--rule); }
+.meter i { display: block; height: 100%; background: var(--accent); }
+
+/* tabla de auditoría */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.88rem; }
+th { text-align: left; font-size: 0.72rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 2px solid var(--rule); }
+td { padding: 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+td.num { font-family: var(--font-data); white-space: nowrap; }
+.pill { display: inline-block; font-size: 0.74rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; border: 1px solid currentColor; white-space: nowrap; }
+.pill.no { color: var(--held); } .pill.part { color: var(--warn); } .pill.open { color: var(--ok); }
+
+details summary { cursor: pointer; font-weight: 700; }
+details .doc { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; max-width: 76ch; font-size: 0.9rem; }
+details ul { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+.copyrow { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.status { font-size: 0.82rem; color: var(--muted); }
+
+@media (max-width: 640px) {
+  .stage { grid-template-columns: minmax(0, 1fr) auto; }
+  .stage .bars { grid-column: 1 / -1; grid-row: 2; }
+  .flow { padding-left: 0; }
+  .timebar { grid-template-columns: auto minmax(0, 1fr); }
+  .timelabel { grid-column: 1 / -1; text-align: left; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bar i, .dorm i, .meter i { transition: width 0.25s ease; }
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Serie de demostraciones · madurez digital y auditoría ciudadana</p>
+    <h1>Flujo de causas del Ministerio Público</h1>
+    <p class="lede">Una simulación del recorrido de las causas penales, desde la denuncia hasta la sentencia, con las personas que esperan privadas de libertad en el camino. Cambia un control y compara con el escenario en que nada cambia.</p>
+    <p class="source"><strong>Qué es real y qué no.</strong> El escenario base está ajustado a dos cifras publicadas: 60&nbsp;% de las personas privadas de libertad sin condena firme y 147&nbsp;% de superpoblación promedio, según el informe 2025 del Ministerio de Justicia presentado por el Centro de Estudios Judiciales (<a href="https://www.abc.com.py/nacionales/2026/08/01/cej-dice-que-60-de-presos-no-tienen-condena-firme-lanzan-campana-para-visibilizar-hacinamiento/" target="_blank" rel="noopener">ABC Color, 1 ago 2026</a>). Todo lo demás son supuestos ilustrativos que puedes mover. No representa causas ni personas concretas.</p>
+  </header>
+
+  <div class="grid">
+    <aside class="panel controls" aria-label="Controles del escenario">
+      <h2>Escenario</h2>
+      <div class="presets" id="presets">
+        <button type="button" data-p="base" class="wide" aria-pressed="true">Seguir igual (base calibrada)</button>
+        <button type="button" data-p="digital" aria-pressed="false">Trazabilidad digital</button>
+        <button type="button" data-p="prev" aria-pressed="false">Menos preventiva</button>
+        <button type="button" data-p="cap" aria-pressed="false">Más capacidad</button>
+        <button type="button" data-p="todo" aria-pressed="false">Todo junto</button>
+      </div>
+      <div class="ctl"><label for="c-m">Madurez digital del trámite <output id="o-m"></output></label>
+        <input type="range" id="c-m" min="0" max="100" step="5">
+        <small>Estado de cada causa consultable, alertas de plazo y prioridad a causas con personas presas.</small></div>
+      <div class="ctl"><label for="c-q">Imputados con prisión preventiva <output id="o-q"></output></label>
+        <input type="range" id="c-q" min="0" max="100" step="5">
+        <small>Valor de ajuste del modelo para reproducir el 60&nbsp;%. No es una estadística publicada.</small></div>
+      <div class="ctl"><label for="c-f">Capacidad de fiscalía <output id="o-f"></output></label>
+        <input type="range" id="c-f" min="0.6" max="1.8" step="0.05">
+        <small>Multiplica la velocidad de asignación, investigación y etapa preparatoria.</small></div>
+      <div class="ctl"><label for="c-t">Capacidad de juicio <output id="o-t"></output></label>
+        <input type="range" id="c-t" min="0.6" max="1.8" step="0.05">
+        <small>Multiplica la velocidad de la etapa intermedia y de los juicios.</small></div>
+      <div class="ctl"><label for="c-k">Plazas penitenciarias <output id="o-k"></output></label>
+        <input type="range" id="c-k" min="1000" max="3500" step="50">
+        <small>Por cada 1.000 denuncias nuevas al mes. El base equivale a 147&nbsp;% de ocupación.</small></div>
+      <div class="ctl"><label for="c-i">Denuncias nuevas por mes <output id="o-i"></output></label>
+        <input type="range" id="c-i" min="600" max="1600" step="50">
+        <small>Escala del modelo. Importan las proporciones, no los totales.</small></div>
+    </aside>
+
+    <main class="results">
+      <section class="panel" aria-label="Tiempo de la simulación">
+        <div class="timebar">
+          <button type="button" class="btn" id="play">Reproducir</button>
+          <input type="range" id="c-time" min="0" max="60" step="1" aria-label="Mes de la simulación">
+          <div class="timelabel" id="timelabel"></div>
+        </div>
+        <div class="timerow2">
+          <span class="muted" style="font-size:0.82rem">Mes 0 es hoy. Los cambios de escenario rigen desde el mes 1.</span>
+          <label style="font-size:0.82rem" class="muted">Velocidad
+            <select id="speed"><option value="700">Lenta</option><option value="380" selected>Media</option><option value="160">Rápida</option></select></label>
+        </div>
+      </section>
+
+      <section aria-label="Indicadores">
+        <div class="kpis" id="kpis"></div>
+      </section>
+      <p class="reading" id="reading"></p>
+
+      <section class="panel" aria-labelledby="h-pipe">
+        <div>
+          <h2 id="h-pipe">Dónde está cada causa</h2>
+          <p class="muted" style="font-size:0.86rem">Cada fila es una mesa por la que pasa el expediente. La barra fina marca las causas que llevan más de 6 meses sin moverse. Escala lineal.</p>
+        </div>
+        <div class="legend"><span><i class="sw" style="background:var(--free)"></i>Persona en libertad</span><span><i class="sw" style="background:var(--held)"></i>Persona privada de libertad</span><span><i class="sw" style="background:var(--warn)"></i>Sin movimiento más de 6 meses</span></div>
+        <div class="pipe" id="pipe"></div>
+        <h3>Cómo terminaron las causas desde el mes 0</h3>
+        <div class="outs" id="outs"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-chart">
+        <div>
+          <h2 id="h-chart">Personas privadas de libertad frente a las plazas</h2>
+          <p class="muted" style="font-size:0.86rem">Personas, a escala del modelo (1.000 denuncias nuevas al mes en el base). La parte clara del gráfico es lo que todavía no ocurrió en el mes elegido.</p>
+        </div>
+        <div class="legend"><span><i class="sw" style="background:var(--held)"></i>Sin condena firme</span><span><i class="sw" style="background:var(--accent)"></i>Con condena</span><span><i class="sw line"></i>Plazas</span><span><i class="sw dot"></i>Total si nada cambia</span></div>
+        <div id="chart" role="img" aria-label="Gráfico de personas privadas de libertad sin condena y con condena en 60 meses, frente a las plazas disponibles"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-two">
+        <h2 id="h-two">El mismo sistema visto de dos maneras</h2>
+        <div class="two">
+          <div class="view">
+            <h3>Lo que informa un registro en papel</h3>
+            <ul id="v-inform"></ul>
+            <div><div class="meter" aria-hidden="true"><i id="m-vis"></i></div>
+            <small class="muted" id="m-vis-t"></small></div>
+          </div>
+          <div class="view hidden-side">
+            <h3>Lo que revela la simulación</h3>
+            <ul id="v-reveal"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-aud">
+        <div>
+          <h2 id="h-aud">Qué puede auditar la ciudadanía y con qué dato</h2>
+          <p class="muted" style="font-size:0.86rem">Una pregunta solo se puede responder con análisis si el dato por causa está publicado. El estado de cada fila sigue el control de madurez digital.</p>
+        </div>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Pregunta ciudadana</th><th>Dato mínimo por causa</th><th>Disponibilidad</th><th>Este escenario</th><th>Seguir igual</th></tr></thead>
+          <tbody id="audit"></tbody>
+        </table></div>
+        <div class="copyrow">
+          <button type="button" class="btn ghost" id="copy">Copiar resumen del escenario</button>
+          <span class="status" id="copystatus" aria-live="polite"></span>
+        </div>
+        <textarea id="copyfallback" hidden readonly rows="7" style="width:100%;font-family:var(--font-data);font-size:0.8rem;background:var(--bg);color:var(--ink);border:1px solid var(--rule);border-radius:4px;padding:8px"></textarea>
+      </section>
+
+      <section class="panel">
+        <details>
+          <summary>Cómo funciona el modelo</summary>
+          <div class="doc">
+            <p>Cada mes entran denuncias a la mesa de entrada. De ahí pasan a investigación, etapa preparatoria (cuando hay imputación), etapa intermedia y juicio. En cada mesa una fracción avanza, otra se archiva, otra sale por una salida alternativa y otra se pierde por vencimiento de plazos. Es un modelo de stocks y flujos con cálculo mensual, sin azar, para que cualquiera pueda repetir el resultado.</p>
+            <p>Una parte de los imputados entra en prisión preventiva. Esa persona sigue a su causa: se libera si la causa se archiva, se extingue, termina en salida alternativa o absolución, o si se revisa la medida. Pasa a cumplir condena si la sentencia es condenatoria.</p>
+            <p>La madurez digital hace cuatro cosas en el modelo: acorta el tiempo muerto entre mesas, da prioridad a las causas con personas presas, reduce las causas que vencen por plazo y aumenta la frecuencia con que se revisa la prisión preventiva. Son supuestos, no mediciones.</p>
+            <ul>
+              <li>Ajustado a datos publicados: 60&nbsp;% sin condena firme y 147&nbsp;% de ocupación en el base.</li>
+              <li>Ilustrativo: todas las tasas de avance, los porcentajes de archivo, el 60&nbsp;% de imputados con preventiva, la duración de las condenas y los efectos de la madurez digital.</li>
+              <li>Para pasar de demostración a auditoría hacen falta los datos por causa de la tabla anterior, con fechas y situación procesal.</li>
+            </ul>
+            <p class="muted">Fuente de las dos cifras: <a href="https://www.abc.com.py/nacionales/2026/08/01/cej-dice-que-60-de-presos-no-tienen-condena-firme-lanzan-campana-para-visibilizar-hacinamiento/" target="_blank" rel="noopener">ABC Color, 1 de agosto de 2026</a>, sobre el informe 2025 del Ministerio de Justicia y la campaña del Centro de Estudios Judiciales.</p>
+          </div>
+        </details>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+// Modelo de flujo de causas (stock-and-flow mensual, determinista).
+// Etapas: D mesa de entrada, I investigación, P etapa preparatoria (imputados),
+// A etapa intermedia (acusación), J juicio. Cada etapa tiene f (en libertad) y h (privados de libertad).
+var CAL = { q: 0.6, sent: 30, cprison: 0.5, K: 2190 };
+
+var RATES = {
+  D: { I: 0.55, arch: 0.12 },
+  I: { P: 0.025, arch: 0.05, alt: 0.01 },
+  P: { A: 0.055, arch: 0.02, alt: 0.03, ext: 0.006 },
+  A: { J: 0.15, arch: 0.02, alt: 0.03, ext: 0.003 },
+  J: { res: 0.07, ext: 0.008 }
+};
+var P_CONDENA = 0.7;
+
+function zeroState() {
+  return {
+    D: { f: 0, h: 0 }, I: { f: 0, h: 0 }, P: { f: 0, h: 0 }, A: { f: 0, h: 0 }, J: { f: 0, h: 0 },
+    conv: 0,
+    cum: { arch: 0, alt: 0, ext: 0, cond: 0, abs: 0, ingr: 0, lib: 0 }
+  };
+}
+
+function cloneState(s) { return JSON.parse(JSON.stringify(s)); }
+
+// params: m (0..1 madurez digital), q (prob. prisión preventiva al imputar), fisc, trib (multiplicadores), intake
+function step(s, p) {
+  var m = p.m;
+  var speed = 1 / (1 - 0.35 * m);
+  var extMult = 1 - 0.7 * m;
+  var pr = 1 + 0.8 * m;
+  var rev = 0.008 + 0.025 * m;
+  var mult = { D: Math.sqrt(p.fisc), I: p.fisc, P: p.fisc, A: p.trib, J: p.trib };
+  var n = cloneState(s);
+  var out = { exitPre: 0, flow: {} };
+
+  function rateSet(stage, prio) {
+    var r = RATES[stage], o = {}, tot = 0, k;
+    for (k in r) {
+      var v = r[k] * speed * mult[stage];
+      if (k === 'ext') v *= extMult;
+      if (prio && (k === 'A' || k === 'J' || k === 'res')) v *= pr;
+      o[k] = v; tot += v;
+    }
+    if (tot > 0.95) { for (k in o) o[k] *= 0.95 / tot; }
+    return o;
+  }
+
+  // ingreso
+  n.D.f += p.intake; n.cum.ingr += p.intake;
+
+  // D
+  var rd = rateSet('D', false), fD = s.D.f;
+  n.D.f -= fD * (rd.I + rd.arch);
+  n.I.f += fD * rd.I; n.cum.arch += fD * rd.arch;
+  out.flow.DI = fD * rd.I;
+
+  // I
+  var ri = rateSet('I', false), fI = s.I.f;
+  n.I.f -= fI * (ri.P + ri.arch + ri.alt);
+  var toP = fI * ri.P;
+  n.P.h += toP * p.q; n.P.f += toP * (1 - p.q);
+  n.cum.arch += fI * ri.arch; n.cum.alt += fI * ri.alt;
+  out.flow.IP = toP;
+
+  // P, A (comparten estructura)
+  function mid(stage, next, nextKey) {
+    var rf = rateSet(stage, false), rh = rateSet(stage, true);
+    var f = s[stage].f, h = s[stage].h;
+    var advF = f * rf[nextKey], advH = h * rh[nextKey];
+    var archF = f * rf.arch, archH = h * rh.arch;
+    var altF = f * rf.alt, altH = h * rh.alt;
+    var extF = f * rf.ext, extH = h * rh.ext;
+    var revH = h * rev;
+    n[stage].f += -f * (rf[nextKey] + rf.arch + rf.alt + rf.ext) + revH;
+    n[stage].h += -h * (rh[nextKey] + rh.arch + rh.alt + rh.ext) - revH;
+    n[next].f += advF; n[next].h += advH;
+    n.cum.arch += archF + archH; n.cum.alt += altF + altH; n.cum.ext += extF + extH;
+    var released = archH + altH + extH + revH;
+    n.cum.lib += released;
+    out.exitPre += released; // salidas de la población sin condena por la vía de liberación
+    out.flow[stage + next] = advF + advH;
+  }
+  mid('P', 'A', 'A');
+  mid('A', 'J', 'J');
+
+  // J
+  var rjf = rateSet('J', false), rjh = rateSet('J', true);
+  var jf = s.J.f, jh = s.J.h;
+  var resF = jf * rjf.res, resH = jh * rjh.res;
+  var extF = jf * rjf.ext, extH = jh * rjh.ext;
+  var revJ = jh * rev;
+  n.J.f += -jf * (rjf.res + rjf.ext) + revJ;
+  n.J.h += -jh * (rjh.res + rjh.ext) - revJ;
+  var condH = resH * P_CONDENA, condF = resF * P_CONDENA;
+  var absH = resH * (1 - P_CONDENA), absF = resF * (1 - P_CONDENA);
+  n.cum.cond += condH + condF; n.cum.abs += absH + absF; n.cum.ext += extF + extH;
+  n.cum.lib += absH + extH + revJ;
+  out.exitPre += absH + extH + revJ + condH; // condena: sale de la categoría "sin condena"
+  n.conv += condH + condF * CAL.cprison - s.conv / CAL.sent;
+  out.flow.JR = resF + resH;
+  out.pre = n.P.h + n.A.h + n.J.h;
+  return { s: n, out: out };
+}
+
+function summarize(s, o, p) {
+  var pre = s.P.h + s.A.h + s.J.h;
+  var pop = pre + s.conv;
+  var inSys = 0, dorm = 0, k, dormStage = {};
+  var st = ['D', 'I', 'P', 'A', 'J'];
+  for (var i = 0; i < st.length; i++) {
+    var tot = s[st[i]].f + s[st[i]].h;
+    inSys += tot;
+    // prob. de no haber salido de la etapa en 6 meses ≈ (1 - tasa de salida)^6
+    var r = RATES[st[i]], sp = 1 / (1 - 0.35 * p.m), te = 0;
+    var mm = { D: Math.sqrt(p.fisc), I: p.fisc, P: p.fisc, A: p.trib, J: p.trib }[st[i]];
+    for (k in r) { var v = r[k] * sp * mm; if (k === 'ext') v *= (1 - 0.7 * p.m); te += v; }
+    te = Math.min(te, 0.95);
+    var dst = tot * Math.pow(1 - te, 6);
+    dormStage[st[i]] = dst;
+    dorm += dst;
+  }
+  return {
+    pre: pre, conv: s.conv, pop: pop,
+    pctSinCondena: pop > 0 ? pre / pop : 0,
+    ocup: CAL.K > 0 ? pop / CAL.K : 0,
+    mesesPre: o && o.exitPre > 0 ? pre / o.exitPre : 0,
+    inSys: inSys, dormidas: dorm, dormStage: dormStage, ext: s.cum.ext
+  };
+}
+
+function runSim(p, months, init, initOut) {
+  var s = cloneState(init), rows = [], o = null;
+  var io = initOut || { exitPre: 0, flow: {} };
+  rows.push({ s: cloneState(s), sum: summarize(s, io, p), flow: io.flow });
+  for (var t = 1; t <= months; t++) {
+    var r = step(s, p); s = r.s; o = r.out;
+    rows.push({ s: cloneState(s), sum: summarize(s, o, p), flow: o.flow });
+  }
+  return rows;
+}
+
+function steadyState(p) {
+  var s = zeroState(), o = null;
+  for (var t = 0; t < 900; t++) { var r = step(s, p); s = r.s; o = r.out; }
+  s.cum = { arch: 0, alt: 0, ext: 0, cond: 0, abs: 0, ingr: 0, lib: 0 };
+  return { s: s, o: o };
+}
+
+if (typeof module !== 'undefined') module.exports = { step: step, runSim: runSim, steadyState: steadyState, summarize: summarize, CAL: CAL, RATES: RATES, zeroState: zeroState };
+
+</script>
+<script>
+(function () {
+  var BASE = { m: 0.1, q: 0.6, fisc: 1, trib: 1, intake: 1000, K: CAL.K };
+  var PRESETS = {
+    base: { m: 0.1, q: 0.6, fisc: 1, trib: 1, intake: 1000, K: CAL.K },
+    digital: { m: 0.8, q: 0.6, fisc: 1, trib: 1, intake: 1000, K: CAL.K },
+    prev: { m: 0.1, q: 0.3, fisc: 1, trib: 1, intake: 1000, K: CAL.K },
+    cap: { m: 0.1, q: 0.6, fisc: 1.4, trib: 1.3, intake: 1000, K: CAL.K },
+    todo: { m: 0.8, q: 0.35, fisc: 1.3, trib: 1.3, intake: 1000, K: CAL.K }
+  };
+  var MONTHS = 60;
+  var ss = steadyState({ m: BASE.m, q: BASE.q, fisc: 1, trib: 1, intake: 1000 });
+  var cur = Object.assign({}, BASE);
+  var activePreset = 'base';
+  var t = 24, rows = [], baseRows = [], timer = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var nf0, nf1;
+  try { nf0 = new Intl.NumberFormat('es-PY', { maximumFractionDigits: 0 }); nf1 = new Intl.NumberFormat('es-PY', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+  catch (e) { nf0 = { format: function (v) { return String(Math.round(v)); } }; nf1 = { format: function (v) { return v.toFixed(1); } }; }
+  var n0 = function (v) { return nf0.format(v); };
+  var n1 = function (v) { return nf1.format(v); };
+  var pct = function (v) { return n0(v * 100) + ' %'; };
+
+  function simParams(p) { return { m: p.m, q: p.q, fisc: p.fisc, trib: p.trib, intake: p.intake }; }
+  function run(p) {
+    CAL.q = p.q; CAL.K = p.K;
+    return runSim(simParams(p), MONTHS, ss.s, ss.o);
+  }
+  function compute() {
+    var K = cur.K;
+    CAL.K = K;
+    rows = run(cur);
+    // el modelo usa CAL.K solo para la ocupación: se recalcula por fila
+    rows.forEach(function (r) { r.sum.ocup = r.sum.pop / cur.K; });
+    var b = run(BASE);
+    b.forEach(function (r) { r.sum.ocup = r.sum.pop / BASE.K; });
+    baseRows = b;
+    CAL.K = K;
+  }
+
+  function monthLabel(i) {
+    try { return new Date(2026, 9 + i, 1).toLocaleDateString('es-PY', { month: 'short', year: 'numeric' }); }
+    catch (e) { return ''; }
+  }
+
+  function delta(cur, base, fmt, unit, lowerIsBetter) {
+    var d = cur - base, thr = Math.abs(base) * 0.005 + 1e-9;
+    if (Math.abs(d) <= thr) return { txt: 'igual que seguir igual', cls: '' };
+    var arrow = d < 0 ? '▼ ' : '▲ ';
+    var good = lowerIsBetter ? d < 0 : d > 0;
+    return { txt: arrow + fmt(Math.abs(d)) + unit + ' vs seguir igual', cls: good ? 'good' : 'bad' };
+  }
+
+  function renderKpis() {
+    var r = rows[t], b = baseRows[t], s = r.sum, bs = b.sum;
+    var items = [
+      { k: 'Sin condena firme', v: pct(s.pctSinCondena), d: delta(s.pctSinCondena * 100, bs.pctSinCondena * 100, n1, ' pts', true) },
+      { k: 'Ocupación de plazas', v: pct(s.ocup), d: delta(s.ocup * 100, bs.ocup * 100, n0, ' pts', true) },
+      { k: 'Espera sin condena', v: n1(s.mesesPre) + ' meses', d: delta(s.mesesPre, bs.mesesPre, n1, ' meses', true) },
+      { k: 'Causas sin movimiento', v: pct(s.dormidas / s.inSys), d: delta(s.dormidas / s.inSys * 100, bs.dormidas / bs.inSys * 100, n1, ' pts', true) },
+      { k: 'Perdidas por plazo', v: n0(r.s.cum.ext), d: delta(r.s.cum.ext, b.s.cum.ext, n0, '', true) }
+    ];
+    $('kpis').innerHTML = items.map(function (it) {
+      return '<div class="kpi"><span class="k">' + it.k + '</span><span class="v">' + it.v + '</span><span class="d ' + it.d.cls + '">' + it.d.txt + '</span></div>';
+    }).join('');
+
+    var same = (activePreset === 'base');
+    var txt;
+    if (same) {
+      txt = 'Si nada cambia, de cada 100 personas privadas de libertad ' + n0(s.pctSinCondena * 100) + ' siguen esperando sentencia, y esa espera dura en promedio ' + n1(s.mesesPre) + ' meses. En el trámite, ' + pct(s.dormidas / s.inSys) + ' de las causas lleva más de 6 meses sin moverse.';
+    } else {
+      txt = 'Mes ' + t + ' frente a seguir igual: sin condena firme pasa de ' + pct(bs.pctSinCondena) + ' a ' + pct(s.pctSinCondena) + ', la espera de ' + n1(bs.mesesPre) + ' a ' + n1(s.mesesPre) + ' meses y la ocupación de ' + pct(bs.ocup) + ' a ' + pct(s.ocup) + '.';
+      if (r.sum.conv > bs.conv * 1.1) txt += ' Parte de la mejora se traslada a condenas: más personas cumplen pena, por eso la ocupación baja menos que la espera sin condena.';
+    }
+    $('reading').textContent = txt;
+  }
+
+  var STAGES = [
+    { k: 'D', nm: 'Mesa de entrada', sub: 'denuncia recibida, sin fiscal', next: 'DI' },
+    { k: 'I', nm: 'Investigación', sub: 'fiscal asignado', next: 'IP' },
+    { k: 'P', nm: 'Etapa preparatoria', sub: 'persona imputada', next: 'PA' },
+    { k: 'A', nm: 'Etapa intermedia', sub: 'acusación y audiencia', next: 'AJ' },
+    { k: 'J', nm: 'Juicio oral', sub: 'espera de fecha y sentencia', next: 'JR' }
+  ];
+  var maxStock = 1;
+  function computeMax() {
+    maxStock = 1;
+    [rows, baseRows].forEach(function (rs) {
+      rs.forEach(function (r) { STAGES.forEach(function (st) { var v = r.s[st.k].f + r.s[st.k].h; if (v > maxStock) maxStock = v; }); });
+    });
+  }
+  function renderPipe() {
+    var r = rows[t], html = '';
+    STAGES.forEach(function (st, i) {
+      var f = r.s[st.k].f, h = r.s[st.k].h, tot = f + h;
+      var dm = r.sum.dormStage[st.k];
+      html += '<div class="stage"><div class="nm">' + st.nm + '<span>' + st.sub + '</span></div>' +
+        '<div class="bars"><div class="bar"><i class="f" style="width:' + (f / maxStock * 100) + '%"></i><i class="h" style="width:' + (h / maxStock * 100) + '%"></i></div>' +
+        '<div class="dorm"><i style="width:' + (dm / maxStock * 100) + '%"></i></div></div>' +
+        '<div class="ct">' + n0(tot) + (h > 0.5 ? '<br><span style="color:var(--held);font-size:0.76rem">' + n0(h) + ' presas</span>' : '') + '</div></div>';
+      var fl = r.flow[st.next];
+      var lab = i < 4 ? 'pasan a la siguiente mesa' : 'se resuelven por sentencia';
+      html += '<div class="flow">↓ ' + (fl === undefined ? '—' : n0(fl)) + ' por mes ' + lab + '</div>';
+    });
+    $('pipe').innerHTML = html;
+    var c = r.s.cum;
+    var o = [
+      ['Archivadas y desestimadas', c.arch], ['Salida alternativa', c.alt], ['Perdidas por plazo vencido', c.ext],
+      ['Con absolución', c.abs], ['Con condena', c.cond], ['Personas liberadas de preventiva', c.lib]
+    ];
+    $('outs').innerHTML = o.map(function (x) { return '<div class="out"><b>' + n0(x[1]) + '</b><span>' + x[0] + '</span></div>'; }).join('');
+  }
+
+  function niceMax(v) {
+    var p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p;
+    var n = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+    return n * p;
+  }
+  function renderChart() {
+    var el = $('chart');
+    var W = Math.max(280, el.clientWidth || 600), H = W < 480 ? 240 : 290;
+    var L = 46, R = 14, T = 14, B = 30;
+    var K = cur.K;
+    var maxV = 0;
+    rows.forEach(function (r) { if (r.sum.pop > maxV) maxV = r.sum.pop; });
+    baseRows.forEach(function (r) { if (r.sum.pop > maxV) maxV = r.sum.pop; });
+    maxV = Math.max(maxV, K);
+    var ymax = niceMax(maxV * 1.08);
+    var x = function (i) { return L + i / MONTHS * (W - L - R); };
+    var y = function (v) { return T + (1 - v / ymax) * (H - T - B); };
+    var convPts = [], topPts = [], i;
+    for (i = 0; i <= MONTHS; i++) { convPts.push([x(i), y(rows[i].sum.conv)]); topPts.push([x(i), y(rows[i].sum.pop)]); }
+    var poly = function (pts) { return pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' '); };
+    var y0 = y(0).toFixed(1);
+    var convArea = poly(convPts) + ' ' + x(MONTHS).toFixed(1) + ',' + y0 + ' ' + x(0).toFixed(1) + ',' + y0;
+    var preArea = poly(topPts) + ' ' + poly(convPts.slice().reverse());
+    var basePts = baseRows.map(function (r, j) { return [x(j), y(r.sum.pop)]; });
+    var grid = '', ticks = 4, k;
+    for (k = 0; k <= ticks; k++) {
+      var v = ymax * k / ticks, yy = y(v).toFixed(1);
+      grid += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + yy + '" y2="' + yy + '" stroke="var(--rule)" stroke-width="1"/>' +
+        '<text x="' + (L - 6) + '" y="' + (parseFloat(yy) + 4) + '" text-anchor="end">' + n0(v) + '</text>';
+    }
+    for (k = 0; k <= MONTHS; k += 12) {
+      grid += '<text x="' + x(k).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="' + (k === 0 ? 'start' : k === MONTHS ? 'end' : 'middle') + '">' + (k === 0 ? 'hoy' : '+' + (k / 12) + (k === 12 ? ' año' : ' años')) + '</text>';
+    }
+    var series =
+      '<polygon points="' + convArea + '" fill="var(--accent)"/>' +
+      '<polygon points="' + preArea + '" fill="var(--held)"/>' +
+      '<polyline points="' + poly(basePts) + '" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="2 4"/>';
+    var capY = y(K).toFixed(1);
+    var cap = '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + capY + '" y2="' + capY + '" stroke="var(--ink)" stroke-width="2" stroke-dasharray="7 4"/>' +
+      '<text x="' + (W - R - 2) + '" y="' + (parseFloat(capY) - 6) + '" text-anchor="end" style="fill:var(--ink)">Plazas ' + n0(K) + '</text>';
+    var xn = x(t).toFixed(1);
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs><clipPath id="clipNow"><rect x="0" y="0" width="' + xn + '" height="' + H + '"/></clipPath></defs>' + grid +
+      '<g opacity="0.3">' + series + '</g><g clip-path="url(#clipNow)">' + series + '</g>' + cap +
+      '<line x1="' + xn + '" x2="' + xn + '" y1="' + T + '" y2="' + y0 + '" stroke="var(--ink)" stroke-width="1.5"/>' +
+      '<circle cx="' + xn + '" cy="' + y(rows[t].sum.pop).toFixed(1) + '" r="4" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>' +
+      '</svg>';
+    el.innerHTML = svg;
+    el.setAttribute('aria-label', 'Mes ' + t + ': ' + n0(rows[t].sum.pre) + ' personas sin condena y ' + n0(rows[t].sum.conv) + ' con condena, frente a ' + n0(K) + ' plazas.');
+  }
+
+  function vis() { return Math.min(0.95, 0.12 + 0.8 * cur.m); }
+  function renderViews() {
+    var r = rows[t], c = r.s.cum, s = r.sum;
+    var resolved = c.arch + c.alt + c.ext + c.abs + c.cond;
+    $('v-inform').innerHTML =
+      '<li><span>Denuncias ingresadas desde el mes 0</span><b>' + n0(c.ingr) + '</b></li>' +
+      '<li><span>Causas resueltas desde el mes 0</span><b>' + n0(resolved) + '</b></li>' +
+      '<li><span>Personas privadas de libertad</span><b>' + n0(s.pop) + '</b></li>';
+    var v = vis();
+    $('m-vis').style.width = (v * 100) + '%';
+    $('m-vis-t').textContent = 'Causas cuyo estado puede consultarse hoy: ' + pct(v) + ' (supuesto del modelo según madurez digital).';
+    $('v-reveal').innerHTML =
+      '<li><span>Causas en trámite</span><b>' + n0(s.inSys) + '</b></li>' +
+      '<li><span>Sin movimiento más de 6 meses</span><b>' + n0(s.dormidas) + '</b></li>' +
+      '<li><span>Presas sin condena firme</span><b>' + n0(s.pre) + '</b></li>' +
+      '<li><span>Causas perdidas por plazo vencido</span><b>' + n0(c.ext) + '</b></li>';
+  }
+
+  var AUDIT = [
+    { q: '¿Cuánto espera una persona presa antes de tener sentencia?', d: 'Fecha de ingreso al penal y fecha de sentencia', th: [0.35, 0.65], f: function (r) { return n1(r.sum.mesesPre) + ' meses'; }, n: function (r) { return r.sum.mesesPre; } },
+    { q: '¿Qué parte de las causas lleva más de 6 meses sin movimiento?', d: 'Fecha de la última actuación de cada causa', th: [0.45, 0.7], f: function (r) { return pct(r.sum.dormidas / r.sum.inSys); }, n: function (r) { return r.sum.dormidas / r.sum.inSys; } },
+    { q: '¿Cuántas causas se pierden por vencimiento de plazos?', d: 'Fecha de inicio del proceso y plazo máximo aplicable', th: [0.5, 0.75], f: function (r) { return n0(r.s.cum.ext); }, n: function (r) { return r.s.cum.ext; } },
+    { q: '¿Se revisa a tiempo la prisión preventiva?', d: 'Fecha de la última revisión de la medida cautelar', th: [0.6, 0.85], f: function (r) { return n0(r.s.cum.lib) + ' liberadas'; }, n: function (r) { return r.s.cum.lib; } },
+    { q: '¿Alcanzan las plazas de cada penal?', d: 'Plazas y población por establecimiento', th: [0.05, 0.3], f: function (r) { return pct(r.sum.ocup); }, n: function (r) { return r.sum.ocup; } }
+  ];
+  function renderAudit() {
+    var r = rows[t], b = baseRows[t];
+    $('audit').innerHTML = AUDIT.map(function (a) {
+      var st = cur.m >= a.th[1] ? ['open', 'Abierto'] : cur.m >= a.th[0] ? ['part', 'Parcial'] : ['no', 'No publicado'];
+      return '<tr><td>' + a.q + '</td><td>' + a.d + '</td><td><span class="pill ' + st[0] + '">' + st[1] + '</span></td><td class="num">' + a.f(r) + '</td><td class="num">' + a.f(b) + '</td></tr>';
+    }).join('');
+  }
+
+  function renderTime() {
+    $('c-time').value = t;
+    $('timelabel').textContent = 'Mes ' + t + ' · ' + monthLabel(t);
+    $('play').textContent = timer ? 'Pausar' : (t >= MONTHS ? 'Repetir' : 'Reproducir');
+  }
+  function renderAll() { renderTime(); renderKpis(); renderPipe(); renderChart(); renderViews(); renderAudit(); }
+
+  function syncControls() {
+    $('c-m').value = Math.round(cur.m * 100); $('o-m').textContent = Math.round(cur.m * 100) + ' %';
+    $('c-q').value = Math.round(cur.q * 100); $('o-q').textContent = Math.round(cur.q * 100) + ' %';
+    $('c-f').value = cur.fisc; $('o-f').textContent = '× ' + cur.fisc.toFixed(2).replace('.', ',');
+    $('c-t').value = cur.trib; $('o-t').textContent = '× ' + cur.trib.toFixed(2).replace('.', ',');
+    $('c-k').value = cur.K; $('o-k').textContent = n0(cur.K);
+    $('c-i').value = cur.intake; $('o-i').textContent = n0(cur.intake);
+    var btns = $('presets').querySelectorAll('button');
+    for (var i = 0; i < btns.length; i++) btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-p') === activePreset ? 'true' : 'false');
+  }
+  function refresh() { compute(); computeMax(); syncControls(); renderAll(); }
+
+  function stop() { if (timer) { clearInterval(timer); timer = null; } }
+  function start() {
+    stop();
+    if (t >= MONTHS) t = 0;
+    timer = setInterval(function () {
+      if (t >= MONTHS) { stop(); renderTime(); return; }
+      t++; renderAll();
+      if (t >= MONTHS) { stop(); renderTime(); }
+    }, parseInt($('speed').value, 10));
+    renderTime();
+  }
+
+  $('presets').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    activePreset = b.getAttribute('data-p');
+    cur = Object.assign({}, PRESETS[activePreset]);
+    stop(); t = 0; refresh();
+    if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches) start();
+  });
+  function bind(id, key, scale) {
+    $(id).addEventListener('input', function () {
+      cur[key] = parseFloat(this.value) / (scale || 1);
+      activePreset = '';
+      for (var k in PRESETS) { var same = true; for (var kk in PRESETS[k]) if (Math.abs(PRESETS[k][kk] - cur[kk]) > 1e-9) same = false; if (same) activePreset = k; }
+      refresh();
+    });
+  }
+  bind('c-m', 'm', 100); bind('c-q', 'q', 100); bind('c-f', 'fisc'); bind('c-t', 'trib'); bind('c-k', 'K'); bind('c-i', 'intake');
+  $('c-time').addEventListener('input', function () { stop(); t = parseInt(this.value, 10); renderAll(); });
+  $('play').addEventListener('click', function () { if (timer) { stop(); renderTime(); } else start(); });
+  $('speed').addEventListener('change', function () { if (timer) start(); });
+
+  $('copy').addEventListener('click', function () {
+    var r = rows[t], b = baseRows[t], s = r.sum, bs = b.sum;
+    var txt = 'Flujo de causas del Ministerio Público (simulación didáctica, mes ' + t + ')\n' +
+      'Madurez digital ' + Math.round(cur.m * 100) + ' %, preventiva ' + Math.round(cur.q * 100) + ' % de imputados, fiscalía × ' + cur.fisc.toFixed(2) + ', juicio × ' + cur.trib.toFixed(2) + '\n' +
+      'Sin condena firme: ' + pct(s.pctSinCondena) + ' (seguir igual ' + pct(bs.pctSinCondena) + ')\n' +
+      'Ocupación de plazas: ' + pct(s.ocup) + ' (seguir igual ' + pct(bs.ocup) + ')\n' +
+      'Espera sin condena: ' + n1(s.mesesPre) + ' meses (seguir igual ' + n1(bs.mesesPre) + ')\n' +
+      'Causas sin movimiento: ' + pct(s.dormidas / s.inSys) + ' (seguir igual ' + pct(bs.dormidas / bs.inSys) + ')\n' +
+      'Base ajustada a: 60 % sin condena y 147 % de superpoblación (Ministerio de Justicia 2025, vía CEJ). Resto: supuestos ilustrativos.';
+    var done = function () { $('copystatus').textContent = 'Resumen copiado.'; $('copyfallback').hidden = true; };
+    var fallback = function () { var ta = $('copyfallback'); ta.value = txt; ta.hidden = false; ta.select(); $('copystatus').textContent = 'Selecciona y copia el texto.'; };
+    try { navigator.clipboard.writeText(txt).then(done, fallback); } catch (e) { fallback(); }
+  });
+
+  var rz = null;
+  window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(renderChart, 120); });
+
+  refresh();
+})();
+</script>
+
+</body></html>
