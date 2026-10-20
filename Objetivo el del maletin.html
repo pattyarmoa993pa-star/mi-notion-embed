@@ -1,0 +1,841 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Objetivo: el del maletín</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* Layout: una máquina arcade en una sola columna. Marquesina arriba, pantalla CRT con tres escenas (inicio, juego, final). El maletín de cuero con herrajes de latón es el objeto central de la escena de juego. */
+:root{
+  --bg:#150f2e; --panel:#1d1745; --panel-2:#2a2262; --line:#4a3fa0;
+  --ink:#f4eeff; --dim:#a99fdc;
+  --coin:#ffc933; --cyan:#43e6d6; --pink:#ff5d94; --ok:#80f08c;
+  --leather:#85482a; --leather-d:#5b2f19; --brass:#ecbe50; --velvet:#10102a;
+  --font-d:'Press Start 2P',ui-monospace,'Courier New',monospace;
+  --font-b:'VT323',ui-monospace,'Courier New',monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--ink);font-family:var(--font-b);font-size:21px;line-height:1.2;
+  padding-block:14px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+.cab{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.px{font-family:var(--font-d);font-weight:400}
+
+.marquee{display:flex;align-items:center;justify-content:center;gap:14px;text-align:center;flex-wrap:wrap}
+.marquee h1{font-family:var(--font-d);font-weight:400;font-size:clamp(13px,3.6vw,22px);line-height:1.6;margin:0;color:var(--coin);
+  text-shadow:0 0 14px #ffc93388,3px 3px 0 #7a3b00;text-wrap:balance}
+.mini{position:relative;width:46px;height:30px;background:linear-gradient(var(--leather),var(--leather-d));border:3px solid #2e170b;border-radius:5px;flex:none;margin-top:8px}
+.mini::before{content:"";position:absolute;left:12px;top:-12px;width:18px;height:10px;border:4px solid var(--leather-d);border-bottom:none;border-radius:6px 6px 0 0}
+.mini::after{content:"";position:absolute;left:17px;top:11px;width:8px;height:6px;background:var(--brass)}
+
+.screen{position:relative;background:var(--panel);border:4px solid var(--line);border-radius:16px;padding:16px;
+  box-shadow:0 0 0 3px #0b0720,inset 0 0 40px #4a3fa044}
+.screen::after{content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.15) 0 1px,transparent 1px 3px)}
+.scene{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+.lbl{font-family:var(--font-d);font-size:8px;color:var(--dim);letter-spacing:.08em;line-height:1.4}
+.btn{font-family:var(--font-d);font-size:11px;line-height:1.4;padding:13px 16px;border-radius:6px;border:3px solid #0b0720;
+  background:var(--panel-2);color:var(--ink);box-shadow:0 5px 0 #0b0720}
+.btn:hover{background:#352c7a}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 #0b0720}
+.btn.go{background:var(--coin);color:#2a1a00}
+.btn.go:hover{background:#ffd95e}
+.btn.big{font-size:14px;padding:16px 22px}
+.btn[disabled]{opacity:.4;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* inicio */
+.title h2{font-family:var(--font-d);font-weight:400;font-size:clamp(14px,3.4vw,20px);line-height:1.6;margin:0;color:var(--ink);text-wrap:balance}
+.title p{margin:0;max-width:62ch}
+.steps{margin:0;padding-left:1.2em;display:grid;gap:4px;color:var(--dim)}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.mode{text-align:left;background:var(--panel-2);border:3px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:6px;min-width:0}
+.mode h3{font-family:var(--font-d);font-weight:400;font-size:11px;margin:0;line-height:1.5}
+.mode p{margin:0;color:var(--dim)}
+.mode[aria-pressed="true"]{border-color:var(--coin);box-shadow:0 0 0 2px var(--coin) inset,0 0 18px #ffc93344}
+.zones{display:flex;gap:8px;flex-wrap:wrap}
+.zone{font-family:var(--font-d);font-size:9px;padding:9px 10px;border-radius:5px;border:2px solid var(--line);background:transparent}
+.zone[aria-pressed="true"]{background:var(--cyan);color:#06222a;border-color:var(--cyan)}
+.opts{display:flex;gap:18px;flex-wrap:wrap}
+.opts label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.opts input{width:18px;height:18px;accent-color:var(--coin)}
+.credit{color:var(--dim);font-size:18px}
+.blink{animation:bl 1s steps(2,start) infinite}
+@keyframes bl{50%{opacity:.55}}
+
+/* juego */
+.hud{display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:8px}
+.hud>div{background:var(--panel-2);padding:8px;border-radius:6px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.hud b{font-family:var(--font-d);font-weight:400;font-size:11px;color:var(--coin);white-space:nowrap}
+.timebar{height:8px;background:var(--velvet);border-radius:4px;overflow:hidden}
+.timebar i{display:block;height:100%;width:100%;background:var(--cyan);transition:width 1s linear,background .3s}
+.timebar.low i{background:var(--pink)}
+.sit{display:grid;gap:10px}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-family:var(--font-d);font-size:8px;padding:5px 7px;border-radius:4px;background:var(--panel-2);color:var(--cyan);text-transform:uppercase}
+.tag.m{color:var(--pink)}
+.sit h2{font-family:var(--font-d);font-weight:400;font-size:13px;line-height:1.6;margin:0;text-wrap:balance}
+.who{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.face{font-size:32px;line-height:1}
+.who .name{font-size:23px}
+.dots{display:flex;gap:2px;flex-wrap:wrap;max-width:150px}
+.dots i{width:7px;height:7px;background:var(--cyan)}
+.mission{border-left:4px solid var(--coin);padding:2px 0 2px 10px;display:grid;gap:3px}
+.orig{background:var(--velvet);border-radius:8px;padding:10px 12px;display:grid;gap:4px}
+.orig q{color:var(--ink);quotes:"«" "»";overflow-wrap:anywhere}
+.hintbox{color:var(--coin);display:flex;gap:6px;flex-wrap:wrap}
+.hintbox span{background:var(--velvet);padding:2px 8px;border-radius:4px}
+
+.case{position:relative;margin-top:14px}
+.handle{position:absolute;left:50%;top:-15px;width:96px;height:22px;transform:translateX(-50%);border:7px solid var(--leather-d);border-bottom:none;border-radius:16px 16px 0 0}
+.case-body{position:relative;background:linear-gradient(var(--leather),var(--leather-d));border-radius:12px;padding:10px 12px 16px;border:3px solid #2e170b;box-shadow:inset 0 0 0 3px #b9733f55}
+.latch{position:absolute;bottom:-7px;width:22px;height:12px;background:var(--brass);border:2px solid #7a5a12;border-radius:2px}
+.latch.l{left:18%}.latch.r{right:18%}
+.case-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-family:var(--font-d);font-size:9px;color:#ffe6b8;margin-bottom:8px;line-height:1.5}
+.inside{--u:34px;display:flex;flex-wrap:wrap;align-content:flex-start;min-height:64px;padding:6px;background:var(--velvet);border-radius:8px;box-shadow:inset 0 4px 14px #000a}
+.chip{height:46px;width:calc(var(--c) * var(--u));display:flex;align-items:center;justify-content:center;padding:0 2px;border:2px solid var(--velvet);border-radius:6px;
+  background:#3a3290;color:var(--ink);font-size:19px;white-space:nowrap;overflow:hidden;animation:pop .18s ease-out}
+.chip.e{background:#2b4f86;font-size:23px}
+.chip.combo{background:#6e4d05;border-color:var(--coin);font-size:15px;box-shadow:0 0 12px #ffc93366}
+.chip.combo.m{font-size:17px}
+.chip:hover{filter:brightness(1.25)}
+.ghost{height:46px;width:calc(var(--c) * var(--u));border:2px dashed #3c3470;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#5b4fa8;font-size:18px;overflow:hidden;white-space:nowrap}
+@keyframes pop{from{transform:scale(.6);opacity:.4}to{transform:scale(1);opacity:1}}
+.shake{animation:shake .32s}
+@keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.msg{min-height:1.3em;color:var(--coin)}
+
+.shelf{display:grid;gap:10px}
+.shelf h3{font-family:var(--font-d);font-weight:400;font-size:9px;color:var(--dim);margin:0 0 8px;line-height:1.5}
+.pieces{display:flex;flex-wrap:wrap;gap:10px 8px}
+.piece{position:relative;min-height:42px;padding:6px 14px 6px 10px;border-radius:6px;border:2px solid var(--line);background:var(--panel-2);font-size:21px}
+.piece.e{font-size:25px;padding:4px 14px 4px 10px}
+.piece .k{position:absolute;right:-6px;top:-9px;background:var(--coin);color:#2a1a00;font-family:var(--font-d);font-size:8px;padding:3px 4px;border-radius:3px;line-height:1}
+.piece:hover:not([disabled]){border-color:var(--cyan)}
+.piece[disabled]{opacity:.22;cursor:default}
+.piece.nocode{border-style:dashed}
+.codebook{background:var(--velvet);border-radius:8px;padding:10px 12px}
+.codebook summary{font-family:var(--font-d);font-size:9px;color:var(--cyan);cursor:pointer;line-height:1.6}
+.codebook ul{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px 12px;color:var(--dim)}
+.codebook li b{color:var(--ink);font-weight:400}
+.tip{color:var(--dim);border-top:2px dashed #3c3470;padding-top:10px}
+
+.res{display:grid;gap:12px;background:var(--panel-2);padding:14px;border-radius:10px;border:3px solid var(--line)}
+.res-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.verdict{font-size:12px;line-height:1.6}
+.stars{font-size:28px;letter-spacing:4px;color:var(--coin);line-height:1}
+.mine-box{background:var(--velvet);border-radius:6px;padding:8px 10px;font-size:23px;overflow-wrap:anywhere;margin-top:6px}
+.lines{display:grid;gap:4px;margin-top:6px}
+.ln{display:flex;gap:8px}
+.ln .s{flex:none;width:1.1em}
+.ln.ok .s{color:var(--ok)}.ln.part .s{color:var(--coin)}.ln.no .s{color:var(--pink)}
+.ln.no .t{color:var(--dim)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:8px}
+.stat{background:var(--velvet);border-radius:6px;padding:8px;min-width:0}
+.stat b{display:block;font-family:var(--font-d);font-weight:400;font-size:11px;margin-top:6px;line-height:1.5;overflow-wrap:anywhere}
+.notes{display:grid;gap:4px;color:var(--dim)}
+.notes div::before{content:"› ";color:var(--cyan)}
+
+/* final */
+.final h2{font-family:var(--font-d);font-weight:400;font-size:clamp(14px,3.4vw,20px);line-height:1.6;margin:0}
+.final .score{font-family:var(--font-d);font-size:26px;color:var(--coin)}
+.tbl{overflow-x:auto}
+.tbl table{border-collapse:collapse;width:100%;min-width:420px}
+.tbl th{font-family:var(--font-d);font-size:8px;font-weight:400;color:var(--dim);text-align:left;padding:6px;line-height:1.4}
+.tbl td{padding:6px;border-top:2px solid #352c7a}
+.tbl td.n{font-variant-numeric:tabular-nums}
+
+@media (prefers-reduced-motion:reduce){
+  .blink,.chip,.shake{animation:none}
+  .timebar i{transition:none}
+}
+</style>
+
+<main class="cab">
+  <header class="marquee">
+    <div class="mini" aria-hidden="true"></div>
+    <h1>OBJETIVO: EL DEL MALETÍN</h1>
+  </header>
+
+  <div class="screen">
+    <!-- INICIO -->
+    <section class="scene title" id="sTitle">
+      <h2>Todo lo que querés decir tiene que entrar en el maletín.</h2>
+      <p>Cada palabra, cada emoji y cada combinación ocupa lugar, como un objeto. Ganás con la representación más chica que todavía se entiende bien.</p>
+      <ol class="steps">
+        <li>Leé la situación y fijate a quién le escribís.</li>
+        <li>Guardá piezas en el maletín. No entra más que su capacidad.</li>
+        <li>Enviá y mirá qué entendió el receptor.</li>
+      </ol>
+      <div class="modes" role="group" aria-label="Dimensión">
+        <button class="mode" id="modeH" aria-pressed="true">
+          <h3>🧑 HUMANO</h3>
+          <p>Otra persona tiene que entenderte. Los emojis ayudan, pero no reemplazan una hora ni un lugar concreto.</p>
+        </button>
+        <button class="mode" id="modeM" aria-pressed="false">
+          <h3>🤖 MÁQUINA</h3>
+          <p>Un bot lee tu mensaje. Solo conoce palabras y los símbolos de su diccionario compartido. Acá el maletín se mide en bytes.</p>
+        </button>
+      </div>
+      <div>
+        <div class="lbl" style="margin-bottom:8px">ZONA</div>
+        <div class="zones" id="zones" role="group" aria-label="Zona"></div>
+      </div>
+      <div class="opts">
+        <label><input type="checkbox" id="optRelax"> Sin reloj</label>
+        <label><input type="checkbox" id="optSound" checked> Sonido</label>
+      </div>
+      <div class="row">
+        <button class="btn go big blink" id="btnStart">▶ START</button>
+        <span class="credit" id="credit"></span>
+      </div>
+    </section>
+
+    <!-- JUEGO -->
+    <section class="scene" id="sPlay" hidden>
+      <div class="hud">
+        <div><span class="lbl">RONDA</span><b id="hRound">1/6</b></div>
+        <div><span class="lbl">PUNTOS</span><b id="hScore">00000</b></div>
+        <div><span class="lbl">VIDAS</span><b id="hLives">♥♥♥</b></div>
+        <div><span class="lbl">TIEMPO</span><b id="hTime">60</b></div>
+      </div>
+      <div class="timebar" id="timebar"><i id="timeFill"></i></div>
+
+      <div class="sit">
+        <div class="tags"><span class="tag" id="tEnv"></span><span class="tag m" id="tMode"></span></div>
+        <h2 id="sTitleTxt"></h2>
+        <div class="who">
+          <span class="face" id="face" aria-hidden="true"></span>
+          <div>
+            <div class="lbl">PARA</div>
+            <div class="name" id="whoName"></div>
+          </div>
+          <div>
+            <div class="lbl" id="pplLbl"></div>
+            <div class="dots" id="dots" aria-hidden="true"></div>
+          </div>
+        </div>
+        <div class="mission"><span class="lbl">QUE ENTIENDA</span><span id="mission"></span></div>
+        <div class="orig"><span class="lbl" id="origLbl"></span><q id="origTxt"></q></div>
+        <div class="row">
+          <button class="btn" id="btnHint">PISTA (−100)</button>
+          <div class="hintbox" id="hintBox"></div>
+        </div>
+      </div>
+
+      <div class="case" id="case">
+        <div class="handle" aria-hidden="true"></div>
+        <div class="case-body">
+          <div class="case-head"><span>MALETÍN</span><span id="capTxt"></span></div>
+          <div class="inside" id="inside" aria-label="Contenido del maletín"></div>
+          <span class="latch l" aria-hidden="true"></span><span class="latch r" aria-hidden="true"></span>
+        </div>
+      </div>
+      <div class="msg" id="msg" aria-live="polite"></div>
+
+      <div class="row" id="actions">
+        <button class="btn go" id="btnSend">ENVIAR ▶</button>
+        <button class="btn" id="btnClear">VACIAR</button>
+      </div>
+
+      <div class="shelf" id="shelf">
+        <div><h3>PALABRAS</h3><div class="pieces" id="pWords"></div></div>
+        <div><h3>SÍMBOLOS</h3><div class="pieces" id="pEmoji"></div></div>
+      </div>
+      <details class="codebook" id="codebook" hidden open>
+        <summary>📖 DICCIONARIO COMPARTIDO DEL BOT</summary>
+        <ul id="codeList"></ul>
+      </details>
+
+      <div class="res" id="res" hidden>
+        <div class="res-top"><div class="verdict px" id="verdict"></div><div class="stars" id="stars" aria-label="Estrellas"></div></div>
+        <div><span class="lbl">TU MENSAJE</span><div class="mine-box" id="mine"></div></div>
+        <div><span class="lbl" id="readLbl"></span><div class="lines" id="lines"></div></div>
+        <div class="stats" id="stats"></div>
+        <div class="notes" id="notes"></div>
+        <div class="row"><button class="btn go" id="btnNext">SIGUIENTE ▶</button></div>
+      </div>
+
+      <div class="tip" id="tip"></div>
+    </section>
+
+    <!-- FINAL -->
+    <section class="scene final" id="sEnd" hidden>
+      <h2 id="endTitle"></h2>
+      <div class="score" id="endScore"></div>
+      <div id="endRank"></div>
+      <div class="tbl"><table><thead><tr><th>SITUACIÓN</th><th>ENTENDIÓ</th><th>TAMAÑO</th><th>★</th></tr></thead><tbody id="endRows"></tbody></table></div>
+      <div class="row">
+        <button class="btn go big" id="btnAgain">▶ OTRA PARTIDA</button>
+        <button class="btn" id="btnMenu">MENÚ</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+'use strict';
+const DB = {"situaciones":[{"id":"S001","entorno":"oficina","tipo":"solicitud","situacion":"Solicitar ayuda a otra área","destinatario":"Colega de otra área","mensaje_original":"Faltan datos de ventas para terminar el informe. ¿Podrían enviarlos hoy?","conceptos_clave":["datos de ventas","informe","enviar","hoy"],"elementos_visuales":["📊","📄","📩","⏰"],"significado_esencial":"Solicitar los datos faltantes para completar el informe hoy"},{"id":"S002","entorno":"oficina","tipo":"resumen","situacion":"Pedir revisión de un documento","destinatario":"Compañero de trabajo","mensaje_original":"¿Podés revisar el documento y confirmar si ya fue aprobado?","conceptos_clave":["revisar","documento","confirmar","aprobado"],"elementos_visuales":["🔍","📄","✅"],"significado_esencial":"Revisar el documento y confirmar su estado de aprobación"},{"id":"S003","entorno":"oficina","tipo":"difusion","situacion":"Avisar mantenimiento del sistema","destinatario":"Toda la empresa","mensaje_original":"El sistema no estará disponible el viernes de 18:00 a 19:00. Guardá tu trabajo antes de esa hora.","conceptos_clave":["sistema","no disponible","viernes","18:00–19:00","guardar trabajo"],"elementos_visuales":["💻","⚠️","🕒","💾"],"significado_esencial":"Avisar indisponibilidad, horario y acción preventiva"},{"id":"S004","entorno":"oficina","tipo":"coordinacion","situacion":"Coordinar una reunión","destinatario":"Equipo de proyecto","mensaje_original":"La reunión de revisión del proyecto será el martes a las 10:30 en la sala 2.","conceptos_clave":["reunión","revisión","martes","10:30","sala 2"],"elementos_visuales":["📅","🕒","📍"],"significado_esencial":"Comunicar evento, fecha, hora y lugar"},{"id":"S005","entorno":"oficina","tipo":"priorizacion","situacion":"Informar una avería","destinatario":"Responsable técnico","mensaje_original":"La impresora del segundo piso no funciona y necesitamos imprimir el contrato antes del mediodía.","conceptos_clave":["impresora","segundo piso","avería","contrato","antes del mediodía"],"elementos_visuales":["🖨️","⚠️","📄","⏰"],"significado_esencial":"Identificar problema, ubicación e impacto urgente"},{"id":"S006","entorno":"oficina","tipo":"tecnologia","situacion":"Explicar qué es un servidor","destinatario":"Persona no especialista","mensaje_original":"Un servidor es un sistema que guarda o proporciona información y permite que otros equipos accedan a ella.","conceptos_clave":["servidor","guardar","proporcionar información","otros equipos","acceso"],"elementos_visuales":["🖥️","📁","🔗"],"significado_esencial":"Explicar la función del servidor sin depender de tecnicismos"},{"id":"S007","entorno":"oficina","tipo":"tecnologia","situacion":"Explicar una red informática","destinatario":"Persona no especialista","mensaje_original":"Una red conecta dispositivos para que puedan compartir información y recursos.","conceptos_clave":["red","conectar","dispositivos","compartir información"],"elementos_visuales":["🔗","💻","📱","📂"],"significado_esencial":"Explicar conexión y propósito"},{"id":"S008","entorno":"hogar","tipo":"lista","situacion":"Preparar una lista de compras","destinatario":"Familiar","mensaje_original":"Por favor, comprá leche, pan y huevos cuando vayas al supermercado.","conceptos_clave":["comprar","leche","pan","huevos","supermercado"],"elementos_visuales":["🛒","🥛","🍞","🥚"],"significado_esencial":"Comunicar la acción de comprar y los tres productos"},{"id":"S009","entorno":"hogar","tipo":"recordatorio","situacion":"Recordar apagar las luces","destinatario":"Familiar","mensaje_original":"Antes de salir, acordate de apagar las luces de todas las habitaciones.","conceptos_clave":["antes de salir","apagar","luces","habitaciones"],"elementos_visuales":["🚪","💡","✅"],"significado_esencial":"Conservar acción y momento"},{"id":"S010","entorno":"hogar","tipo":"coordinacion","situacion":"Avisar que faltan productos","destinatario":"Familiar","mensaje_original":"Se terminó la leche y queda poco pan; compralos cuando puedas.","conceptos_clave":["leche","poco pan","comprar"],"elementos_visuales":["🥛","🍞","🛒"],"significado_esencial":"Comunicar qué productos hacen falta"},{"id":"S011","entorno":"hogar","tipo":"explicacion","situacion":"Explicar una copia de seguridad a un niño","destinatario":"Niño","mensaje_original":"Guardar una copia ayuda a recuperar el dibujo si el dispositivo se rompe o se pierde el archivo.","conceptos_clave":["guardar copia","recuperar","dibujo","dispositivo","pérdida"],"elementos_visuales":["💾","🖼️","🔧"],"significado_esencial":"Explicar la finalidad de una copia con palabras familiares"},{"id":"S012","entorno":"hogar","tipo":"instruccion","situacion":"Explicar cómo ordenar una habitación","destinatario":"Niño","mensaje_original":"Primero guardá los juguetes, después poné la ropa en el cesto y finalmente despejá la mesa.","conceptos_clave":["primero","juguetes","ropa","cesto","mesa","orden"],"elementos_visuales":["🧸","👕","🧺","🧹"],"significado_esencial":"Convertir instrucciones largas en pasos ordenados"},{"id":"S013","entorno":"vacaciones","tipo":"coordinacion","situacion":"Compartir punto de encuentro","destinatario":"Compañero de viaje","mensaje_original":"Nos encontramos en la entrada principal del museo a las 14:15.","conceptos_clave":["entrada principal del museo","14:15"],"elementos_visuales":["📍","🕒","🏛️"],"significado_esencial":"Comunicar ubicación concreta y hora"},{"id":"S014","entorno":"vacaciones","tipo":"cambio","situacion":"Avisar cambio de horario","destinatario":"Compañero de viaje","mensaje_original":"El autobús saldrá a las 9:30 en lugar de las 9:00. Nos reunimos en la misma parada.","conceptos_clave":["autobús","9:00","9:30","misma parada"],"elementos_visuales":["🚌","🕒","📍"],"significado_esencial":"Transmitir nueva hora y confirmar lugar"},{"id":"S015","entorno":"vacaciones","tipo":"equipaje","situacion":"Preparar equipaje limitado","destinatario":"Viajero","mensaje_original":"Llevá documento, agua, teléfono, cargador y una campera liviana para la salida de un día.","conceptos_clave":["documento","agua","teléfono","cargador","campera"],"elementos_visuales":["🪪","💧","📱","🔌","🧥"],"significado_esencial":"Elegir y comunicar los elementos necesarios"},{"id":"S016","entorno":"vacaciones","tipo":"difusion","situacion":"Avisar retraso al grupo","destinatario":"Grupo de viaje","mensaje_original":"El recorrido empieza 30 minutos más tarde; esperen junto a la entrada principal.","conceptos_clave":["recorrido","retraso de 30 minutos","entrada principal"],"elementos_visuales":["🕒","⚠️","📍"],"significado_esencial":"Comunicar retraso, duración y punto de espera"},{"id":"S017","entorno":"general","tipo":"simplificacion","situacion":"Explicar una idea compleja a un niño","destinatario":"Niño","mensaje_original":"La electricidad viaja por cables y permite que funcionen algunos aparatos, como una lámpara.","conceptos_clave":["electricidad","cables","aparatos","lámpara"],"elementos_visuales":["⚡","🔌","💡"],"significado_esencial":"Explicar un concepto con un ejemplo cotidiano"},{"id":"S018","entorno":"general","tipo":"analogia","situacion":"Explicar una base de datos","destinatario":"Persona no especialista","mensaje_original":"Una base de datos organiza información para encontrarla y actualizarla cuando se necesita.","conceptos_clave":["base de datos","organizar","información","encontrar","actualizar"],"elementos_visuales":["🗃️","🔎","✏️"],"significado_esencial":"Describir función con palabras familiares"},{"id":"S019","entorno":"general","tipo":"difusion","situacion":"Enviar un aviso breve a muchas personas","destinatario":"Grupo amplio","mensaje_original":"La actividad cambia de lugar: ahora será en el salón principal a las 16:00.","conceptos_clave":["actividad","cambio de lugar","salón principal","16:00"],"elementos_visuales":["📢","📍","🕒"],"significado_esencial":"Comunicar cambio y datos esenciales"},{"id":"S020","entorno":"general","tipo":"desambiguacion","situacion":"Dar una instrucción clara","destinatario":"Compañero","mensaje_original":"Dejá el paquete en recepción antes de las 12:00 y avisame cuando lo hayas entregado.","conceptos_clave":["paquete","recepción","antes de 12:00","avisar","entregado"],"elementos_visuales":["📦","📍","⏰","✅"],"significado_esencial":"Conservar objeto, lugar, plazo y confirmación"}],"vocabulario":[{"id":"V001","tipo":"palabra","texto":"revisar","significado":"examinar algo","categoria":"accion"},{"id":"V002","tipo":"palabra","texto":"confirmar","significado":"comunicar que algo fue comprobado","categoria":"accion"},{"id":"V003","tipo":"palabra","texto":"enviar","significado":"hacer llegar información o un archivo","categoria":"accion"},{"id":"V004","tipo":"palabra","texto":"solicitar","significado":"pedir algo de manera formal","categoria":"accion"},{"id":"V005","tipo":"palabra","texto":"pedir","significado":"solicitar algo","categoria":"accion"},{"id":"V006","tipo":"palabra","texto":"comenzar","significado":"dar inicio a algo","categoria":"accion"},{"id":"V007","tipo":"palabra","texto":"iniciar","significado":"dar inicio a algo; suele sonar más formal","categoria":"accion"},{"id":"V008","tipo":"palabra","texto":"urgente","significado":"requiere atención pronta","categoria":"estado"},{"id":"V009","tipo":"palabra","texto":"pendiente","significado":"todavía no está terminado o resuelto","categoria":"estado"},{"id":"V010","tipo":"palabra","texto":"aprobado","significado":"aceptado formalmente","categoria":"estado"},{"id":"V011","tipo":"palabra","texto":"documento","significado":"archivo o documento de trabajo","categoria":"objeto"},{"id":"V012","tipo":"palabra","texto":"reunión","significado":"encuentro coordinado entre personas","categoria":"objeto"},{"id":"V013","tipo":"palabra","texto":"tarea","significado":"trabajo que debe realizarse","categoria":"objeto"},{"id":"V014","tipo":"palabra","texto":"servidor","significado":"sistema que ofrece información o servicios a otros equipos","categoria":"tecnologia"},{"id":"V015","tipo":"palabra","texto":"red informática","significado":"dispositivos conectados para compartir información o recursos","categoria":"tecnologia"},{"id":"V016","tipo":"frase","texto":"como una red de caminos","significado":"analogía para explicar conexiones","categoria":"analogia"},{"id":"V017","tipo":"emoji","texto":"🔍","significado":"buscar o examinar","categoria":"simbolo"},{"id":"V018","tipo":"emoji","texto":"📄","significado":"documento o archivo","categoria":"simbolo"},{"id":"V019","tipo":"emoji","texto":"✅","significado":"confirmado o completado, según el contexto","categoria":"simbolo"},{"id":"V020","tipo":"emoji","texto":"⚠️","significado":"advertencia o atención especial","categoria":"simbolo"},{"id":"V021","tipo":"emoji","texto":"📩","significado":"mensaje enviado o por enviar, según el contexto","categoria":"simbolo"},{"id":"V022","tipo":"emoji","texto":"🛒","significado":"compra o lista de compras","categoria":"simbolo"},{"id":"V023","tipo":"emoji","texto":"🥛","significado":"leche","categoria":"simbolo"},{"id":"V024","tipo":"emoji","texto":"🍞","significado":"pan","categoria":"simbolo"},{"id":"V025","tipo":"emoji","texto":"🥚","significado":"huevos","categoria":"simbolo"},{"id":"V026","tipo":"emoji","texto":"🕒","significado":"hora o tiempo; no sustituye una hora concreta","categoria":"simbolo"},{"id":"V027","tipo":"emoji","texto":"📍","significado":"ubicación; no sustituye una ubicación concreta","categoria":"simbolo"},{"id":"V028","tipo":"emoji","texto":"💾","significado":"guardar o almacenar información","categoria":"simbolo"},{"id":"V029","tipo":"emoji","texto":"🔗","significado":"conexión","categoria":"simbolo"},{"id":"V030","tipo":"emoji","texto":"📢","significado":"anuncio dirigido a varias personas","categoria":"simbolo"}],"sinonimos":[{"grupo":"inicio","elementos":["comenzar","iniciar"],"nota":"Equivalentes aproximados; el tono y el contexto pueden cambiar."},{"grupo":"peticion","elementos":["pedir","solicitar"],"nota":"Solicitar suele ser más formal."},{"grupo":"comprobacion","elementos":["revisar","examinar","verificar"],"nota":"No siempre significan exactamente lo mismo."}],"combinaciones":[{"id":"C001","elementos":["🔍","📄"],"significado":"revisar un documento","nota":"Válida si el contexto permite interpretar la lupa como acción."},{"id":"C002","elementos":["📄","✅"],"significado":"documento confirmado o aprobado","nota":"Puede ser ambiguo: no demuestra por sí solo que alguien lo haya revisado."},{"id":"C003","elementos":["🛒","🥛","🍞","🥚"],"significado":"comprar leche, pan y huevos","nota":"La acción de comprar se interpreta por el contexto de la lista."},{"id":"C004","elementos":["📍","🕒"],"significado":"lugar y hora de encuentro","nota":"Necesita valores concretos de ubicación y hora."}]};
+
+/* ---------- utilidades ---------- */
+const $ = (s) => document.querySelector(s);
+const enc = new TextEncoder();
+const norm = (t) => t.replace(/️/g, '');
+const isEmoji = (t) => /\p{Extended_Pictographic}/u.test(t);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* ---------- datos crudos ---------- */
+const SIT = new Map(DB.situaciones.map((s) => [s.id, s]));
+const CODE = new Map(DB.vocabulario.filter((v) => v.tipo === 'emoji').map((v) => [norm(v.texto), v.significado]));
+const canon = new Map();
+const reg = (t) => { if (isEmoji(t)) canon.set(norm(t), t); };
+DB.vocabulario.forEach((v) => reg(v.texto));
+DB.situaciones.forEach((s) => s.elementos_visuales.forEach(reg));
+DB.combinaciones.forEach((c) => c.elementos.forEach(reg));
+const disp = (t) => canon.get(norm(t)) || t;
+const COMBOS = DB.combinaciones.map((c) => ({ id: c.id, el: c.elementos.map(norm), sig: c.significado, nota: c.nota })).sort((a, b) => b.el.length - a.el.length);
+const COMBO_BY_ID = Object.fromEntries(COMBOS.map((c) => [c.id, c]));
+
+/* ---------- capa de juego: qué entiende el receptor ----------
+   concepto: [id, lo que entendió, lo que se perdió, [pieza|calidad]]
+   calidad 1 por defecto; menos de 1 significa ambiguo o incompleto. */
+const G = {
+  S001:{ppl:1,av:'🧑‍💼',c:[
+    ['datos','Faltan datos de ventas','No sabe qué datos hacen falta',['datos de ventas','ventas|.8','📊|.5','datos|.6']],
+    ['informe','Son para terminar el informe','No sabe para qué los necesitás',['informe','📄|.7']],
+    ['enviar','Le pedís que los envíe','No sabe qué tiene que hacer',['enviar','📩|.9','pedir|.5','solicitar|.5']],
+    ['hoy','Los necesitás hoy','No sabe el plazo',['hoy','⏰|.6','urgente|.6']]]},
+  S002:{ppl:1,av:'🧑‍💻',combos:{C001:{revisar:1,documento:1},C002:{documento:1,estado:.5}},c:[
+    ['revisar','Tiene que revisar algo','No sabe qué hacer con eso',['🔍','revisar','examinar|.9','verificar|.9']],
+    ['documento','Es un documento','No sabe qué archivo es',['📄','documento']],
+    ['estado','Querés saber si ya fue aprobado','No sabe qué querés confirmar',['aprobado','confirmar|.7','✅|.5']]]},
+  S003:{ppl:140,av:'🏢',c:[
+    ['sistema','Habla del sistema','No sabe de qué sistema',['sistema','💻|.8']],
+    ['caida','No va a estar disponible','No sabe que se corta',['no disponible','⚠️|.6']],
+    ['dia','Es el viernes','No sabe qué día',['viernes']],
+    ['hora','De 18:00 a 19:00','No sabe a qué hora',['18:00–19:00','18:00|.6']],
+    ['guardar','Tiene que guardar su trabajo antes','No sabe qué tiene que hacer',['guardar trabajo','💾|.8','guardar|.8']]]},
+  S004:{ppl:8,av:'👥',combos:{C004:{lugar:.3,hora:.3}},c:[
+    ['reunion','Hay una reunión','No sabe qué evento es',['reunión','📅|.8']],
+    ['tema','Es la revisión del proyecto','No sabe de qué trata',['revisión','🔍|.6']],
+    ['dia','Es el martes','No sabe qué día',['martes','📅|.4']],
+    ['hora','A las 10:30','No sabe la hora',['10:30']],
+    ['lugar','En la sala 2','No sabe dónde',['sala 2']]]},
+  S005:{ppl:1,av:'🛠️',c:[
+    ['impresora','Es la impresora','No sabe qué equipo falla',['🖨️','impresora']],
+    ['piso','Del segundo piso','No sabe cuál impresora es',['segundo piso','piso|.5']],
+    ['averia','No funciona','No sabe qué pasa',['avería','⚠️|.7']],
+    ['contrato','Hay que imprimir el contrato','No sabe por qué importa',['contrato','📄|.7']],
+    ['plazo','Antes del mediodía','No sabe cuánta urgencia hay',['antes del mediodía','mediodía|.9','12:00|.9','⏰|.5','urgente|.5']]]},
+  S006:{ppl:1,av:'🙂',c:[
+    ['servidor','Habla de un servidor','No sabe qué le explicás',['servidor','🖥️|.8']],
+    ['guarda','Guarda y da información','No sabe qué hace',['información','📁','💾|.8','guardar|.7']],
+    ['acceso','Otros equipos pueden acceder','No sabe quién lo usa',['otros equipos','🔗|.8','acceso|.6']]]},
+  S007:{ppl:1,av:'🙂',c:[
+    ['red','Habla de una red','No sabe qué le explicás',['red informática','red|.8','🔗|.6','como una red de caminos|.8']],
+    ['conectar','Que conecta cosas','No sabe qué hace',['conectar','🔗|.9']],
+    ['disp','Entre dispositivos','No sabe qué conecta',['dispositivos','💻|.6','📱|.6']],
+    ['compartir','Para compartir información','No sabe para qué sirve',['compartir información','compartir|.8','📂|.9']]]},
+  S008:{ppl:1,av:'👨‍👩‍👧',combos:{C003:{comprar:1,leche:1,pan:1,huevos:1}},c:[
+    ['comprar','Hay que comprar','No sabe qué tiene que hacer',['🛒','comprar']],
+    ['leche','Leche','Falta la leche',['🥛','leche']],
+    ['pan','Pan','Falta el pan',['🍞','pan']],
+    ['huevos','Huevos','Faltan los huevos',['🥚','huevos']]]},
+  S009:{ppl:1,av:'👨‍👩‍👧',c:[
+    ['momento','Antes de salir','No sabe cuándo',['antes de salir','🚪|.8','salir|.7']],
+    ['apagar','Hay que apagar','No sabe qué acción es',['apagar','✅|.5']],
+    ['luces','Las luces','No sabe qué apagar',['luces','💡|.9']]]},
+  S010:{ppl:1,av:'👨‍👩‍👧',c:[
+    ['leche','Se terminó la leche','No sabe qué falta',['🥛','leche']],
+    ['pan','Queda poco pan','No sabe cuánto pan queda',['poco pan','pan|.6','🍞|.6']],
+    ['comprar','Que los compre','No sabe qué pedís',['🛒','comprar']]]},
+  S011:{ppl:1,av:'🧒',c:[
+    ['copia','Guardar una copia','No entiende la idea de copia',['guardar copia','copia|.8','💾|.7']],
+    ['recuperar','Sirve para recuperarlo','No sabe para qué sirve',['recuperar']],
+    ['dibujo','Es el dibujo','No sabe de qué cosa hablás',['🖼️','dibujo']],
+    ['problema','Si se rompe o se pierde','No sabe cuándo importa',['se rompe','🔧|.9','pérdida|.6','dispositivo|.5']]]},
+  S012:{ppl:1,av:'🧒',order:['juguetes','ropa','mesa'],c:[
+    ['juguetes','Primero los juguetes','No sabe por dónde empezar',['🧸','juguetes']],
+    ['ropa','Después la ropa en el cesto','Se olvida de la ropa',['ropa','👕','🧺|.8','cesto|.8']],
+    ['mesa','Al final despejar la mesa','Deja la mesa sin despejar',['mesa','🧹|.8']]]},
+  S013:{ppl:1,av:'🧳',combos:{C004:{lugar:.3,hora:.3}},c:[
+    ['lugar','En la entrada principal del museo','No sabe dónde encontrarse',['entrada principal del museo','entrada principal|.7','museo|.6','🏛️|.5']],
+    ['hora','A las 14:15','No sabe a qué hora',['14:15']]]},
+  S014:{ppl:1,av:'🧳',c:[
+    ['bus','Habla del autobús','No sabe qué sale',['🚌','autobús']],
+    ['nueva','Sale a las 9:30','No sabe la hora nueva',['9:30']],
+    ['cambio','Cambió el horario','No sabe que hubo un cambio',['cambio','9:00|.7','⚠️|.8']],
+    ['lugar','Misma parada','No sabe dónde esperar',['misma parada','parada|.7','📍|.5']]]},
+  S015:{ppl:1,av:'🧳',c:[
+    ['doc','Documento','No lleva el documento',['🪪','documento']],
+    ['agua','Agua','No lleva agua',['💧','agua']],
+    ['tel','Teléfono','No lleva el teléfono',['📱','teléfono']],
+    ['carg','Cargador','No lleva el cargador',['🔌','cargador']],
+    ['camp','Campera liviana','No lleva la campera',['🧥','campera']]]},
+  S016:{ppl:12,av:'👫',c:[
+    ['recorrido','Habla del recorrido','No sabe qué se retrasa',['recorrido']],
+    ['retraso','Empieza 30 minutos más tarde','No sabe cuánto se retrasa',['retraso de 30 minutos','+30 min','⚠️|.4','🕒|.3']],
+    ['lugar','Esperar en la entrada principal','No sabe dónde esperar',['entrada principal','entrada|.7','📍|.4']]]},
+  S017:{ppl:1,av:'🧒',order:['elec','cables','lampara'],c:[
+    ['elec','Electricidad','No sabe de qué hablás',['⚡','electricidad']],
+    ['cables','Viaja por cables','No sabe por dónde va',['cables','🔌|.9']],
+    ['lampara','Hasta una lámpara','No ve el ejemplo',['💡','lámpara','aparatos|.6']]]},
+  S018:{ppl:1,av:'🙂',c:[
+    ['bd','Una base de datos','No sabe qué le explicás',['base de datos','🗃️|.9','datos|.6']],
+    ['organizar','Organiza la información','No sabe qué hace con la información',['organizar','información|.6']],
+    ['encontrar','Sirve para encontrar','No sabe para qué se usa',['encontrar','🔎']],
+    ['actualizar','Y para actualizar','No sabe que se puede cambiar',['actualizar','✏️']]]},
+  S019:{ppl:60,av:'👥',combos:{C004:{lugar:.3,hora:.3}},c:[
+    ['actividad','Habla de la actividad','No sabe qué cambia',['actividad']],
+    ['cambio','Cambió de lugar','No sabe que hubo cambio',['cambio de lugar','cambio|.8','⚠️|.5','📍|.4']],
+    ['lugar','Ahora es en el salón principal','No sabe el lugar nuevo',['salón principal','salón|.7']],
+    ['hora','A las 16:00','No sabe la hora',['16:00']]]},
+  S020:{ppl:1,av:'🧑‍💼',c:[
+    ['paquete','Es un paquete','No sabe qué dejar',['📦','paquete']],
+    ['lugar','En recepción','No sabe dónde dejarlo',['recepción','📍|.6']],
+    ['plazo','Antes de las 12:00','No sabe el plazo',['antes de 12:00','12:00|.9','⏰|.5']],
+    ['aviso','Que le avise cuando lo entregue','No sabe que tiene que avisar',['avisar entregado','✅|.7','avisar|.7','entregado|.6']]]}
+};
+for (const g of Object.values(G)) {
+  g.cidx = {};
+  g.c = g.c.map((c, i) => {
+    g.cidx[c[0]] = i;
+    const acc = new Map();
+    c[3].forEach((s) => { const [t, q] = s.split('|'); acc.set(norm(t), q === undefined ? 1 : parseFloat(q)); });
+    return { id: c[0], ok: c[1], no: c[2], acc };
+  });
+}
+
+/* ---------- costo: cuánto espacio ocupa cada cosa ---------- */
+const tokCost = (t, mode) => mode === 'm' ? enc.encode(t).length : (isEmoji(t) ? 1 : Math.max(1, Math.ceil(t.length / 4)));
+const unitCost = (u, mode) => u.combo ? (mode === 'h' ? Math.ceil(u.toks.length / 2) : 4) : tokCost(u.toks[0].t, mode);
+const unitsCost = (us, mode) => us.reduce((a, u) => a + unitCost(u, mode), 0);
+
+function layout(seq) {
+  const units = []; let i = 0;
+  while (i < seq.length) {
+    let hit = null;
+    for (const c of COMBOS) {
+      const n = c.el.length;
+      if (i + n > seq.length) continue;
+      let ok = true;
+      for (let k = 0; k < n; k++) if (seq[i + k].n !== c.el[k]) { ok = false; break; }
+      if (ok) { hit = c; break; }
+    }
+    if (hit) { units.push({ combo: hit, toks: seq.slice(i, i + hit.el.length) }); i += hit.el.length; }
+    else { units.push({ toks: [seq[i]] }); i++; }
+  }
+  return units;
+}
+
+/* el mínimo: la forma más barata de cubrir todos los conceptos sin pérdida */
+function computeMin(id, mode) {
+  const g = G[id], n = g.c.length;
+  const best = new Array(1 << n).fill(Infinity); best[0] = 0;
+  const units = [];
+  g.c.forEach((c, ci) => {
+    for (const [tk, q] of c.acc) {
+      if (q < .9) continue;
+      if (mode === 'm' && isEmoji(tk) && !CODE.has(tk)) continue;
+      units.push({ mask: 1 << ci, cost: tokCost(disp(tk), mode) });
+    }
+  });
+  if (g.combos) for (const [cid, r] of Object.entries(g.combos)) {
+    let mask = 0, ok = true;
+    for (const [k, q] of Object.entries(r)) { if (q < .9) ok = false; mask |= 1 << g.cidx[k]; }
+    if (ok) units.push({ mask, cost: mode === 'h' ? Math.ceil(COMBO_BY_ID[cid].el.length / 2) : 4 });
+  }
+  for (let m = 0; m < (1 << n); m++) {
+    if (best[m] === Infinity) continue;
+    for (const u of units) { const nm = m | u.mask, c = best[m] + u.cost; if (c < best[nm]) best[nm] = c; }
+  }
+  return best[(1 << n) - 1];
+}
+const MIN = { h: {}, m: {} };
+for (const id of Object.keys(G)) { MIN.h[id] = computeMin(id, 'h'); MIN.m[id] = computeMin(id, 'm'); }
+
+/* ---------- evaluación: qué entendió el receptor ---------- */
+function evaluate(sit, units, mode) {
+  const g = G[sit.id], ppl = g.ppl;
+  const cand = [];
+  units.forEach((u, ui) => {
+    if (u.combo) {
+      const r = g.combos && g.combos[u.combo.id];
+      if (r) for (const [cid, q] of Object.entries(r)) cand.push({ ci: g.cidx[cid], ui, q });
+    } else {
+      const t = u.toks[0];
+      g.c.forEach((c, ci) => {
+        let q = c.acc.get(t.n);
+        if (q === undefined) return;
+        if (mode === 'm' && t.type === 'e' && !CODE.has(t.n)) q = 0;
+        if (q > 0) cand.push({ ci, ui, q });
+      });
+    }
+  });
+  cand.sort((a, b) => b.q - a.q);
+  const got = new Array(g.c.length).fill(null);
+  const used = new Set();
+  for (const x of cand) {
+    if (got[x.ci]) continue;
+    const u = units[x.ui];
+    if (!u.combo && used.has(x.ui)) continue;
+    got[x.ci] = x; used.add(x.ui);
+  }
+  const expo = 1 + 0.6 * Math.log10(ppl);
+  const qa = (q) => q >= 1 ? 1 : Math.pow(q, expo);
+  let sum = 0, anyAmb = false;
+  const lines = g.c.map((c, ci) => {
+    const x = got[ci], q = x ? x.q : 0, e = x ? qa(x.q) : 0;
+    if (x && x.q < 1) anyAmb = true;
+    sum += e;
+    return { state: e >= .9 ? 'ok' : e > 0 ? 'part' : 'no', text: x ? c.ok : c.no };
+  });
+  let comp = sum / g.c.length, orderBroken = false;
+  if (g.order) {
+    const pos = g.order.map((id) => got[g.cidx[id]]).filter(Boolean).map((x) => x.ui);
+    for (let k = 1; k < pos.length; k++) if (pos[k] < pos[k - 1]) orderBroken = true;
+    if (orderBroken) comp *= .75;
+  }
+  const wasted = units.filter((u, ui) => !used.has(ui));
+  return { got, lines, comp, expo, anyAmb, orderBroken, wasted, used };
+}
+
+/* ---------- audio ---------- */
+let actx = null;
+const opt = { relax: false, sound: true };
+function initAudio() { if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; } } }
+function beep(f, d, type, v, when) {
+  if (!opt.sound || !actx) return;
+  try {
+    const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + (when || 0);
+    o.type = type || 'square'; o.frequency.value = f;
+    g.gain.setValueAtTime(v || .05, t0); g.gain.exponentialRampToValueAtTime(.0001, t0 + d);
+    o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + d);
+  } catch (e) {}
+}
+const sfx = {
+  place: () => beep(520, .06), remove: () => beep(300, .06), deny: () => beep(110, .18, 'sawtooth', .06),
+  combo: () => { beep(660, .08); beep(880, .08, 'square', .05, .08); beep(1320, .12, 'square', .05, .16); },
+  win: () => [523, 659, 784, 1047].forEach((f, i) => beep(f, .12, 'square', .05, i * .1)),
+  mid: () => [440, 523].forEach((f, i) => beep(f, .12, 'square', .05, i * .12)),
+  lose: () => [300, 220, 160].forEach((f, i) => beep(f, .16, 'sawtooth', .05, i * .14))
+};
+
+/* ---------- estado y pantallas ---------- */
+const S = { mode: 'h', zone: 'mix' };
+let st = null;
+const ZONES = [['mix', 'MIX · 6 RONDAS'], ['oficina', 'OFICINA'], ['hogar', 'HOGAR'], ['vacaciones', 'VACACIONES'], ['general', 'GENERAL']];
+const TIPS = {
+  h: ['Un maletín chico te obliga a elegir. Elegir es entender qué importa.',
+      '🕒 no dice la hora y 📍 no dice el lugar. Para eso hacen falta los valores.',
+      'Mucha gente recibiendo el mismo mensaje: cada ambigüedad se multiplica.',
+      'Algunas combinaciones valen más que la suma de sus partes.',
+      'Un niño no lee igual que un compañero de oficina. Cambiá la representación, no la idea.',
+      '¿Con pérdida o sin pérdida? Fijate cuánto del mensaje sobrevive.',
+      'Huffman lo sabía: lo que se usa mucho tiene que ocupar poco.'],
+  m: ['Un emoji pesa unos 4 bytes. «hoy» pesa 3. El dibujito no siempre gana.',
+      'Sin diccionario compartido, un emoji es ruido para el bot.',
+      'Un macro es un código corto que representa varias piezas: C003 pesa 4 bytes y dice cuatro cosas.',
+      'Los bots no adivinan el contexto. Lo que no esté escrito o en el diccionario, no existe.',
+      'Menos tokens, más claro: ese es el trabajo de un buen prompt.',
+      'Lossless: se comprime sin perder el significado. Ese es el objetivo.']
+};
+function show(id) {
+  ['sTitle', 'sPlay', 'sEnd'].forEach((s) => { $('#' + s).hidden = s !== id; });
+  window.scrollTo({ top: 0 });
+}
+function setPressed(el, v) { el.setAttribute('aria-pressed', v ? 'true' : 'false'); }
+
+function initTitle() {
+  const z = $('#zones');
+  z.innerHTML = '';
+  ZONES.forEach(([k, label]) => {
+    const b = document.createElement('button');
+    b.className = 'zone'; b.textContent = label; b.dataset.k = k;
+    setPressed(b, k === S.zone);
+    b.onclick = () => { S.zone = k; z.querySelectorAll('.zone').forEach((x) => setPressed(x, x.dataset.k === k)); };
+    z.append(b);
+  });
+  $('#modeH').onclick = () => { S.mode = 'h'; setPressed($('#modeH'), 1); setPressed($('#modeM'), 0); };
+  $('#modeM').onclick = () => { S.mode = 'm'; setPressed($('#modeM'), 1); setPressed($('#modeH'), 0); };
+  $('#optRelax').onchange = (e) => { opt.relax = e.target.checked; };
+  $('#optSound').onchange = (e) => { opt.sound = e.target.checked; };
+  $('#credit').textContent = DB.situaciones.length + ' situaciones · ' + DB.vocabulario.length + ' piezas de vocabulario · ' + DB.combinaciones.length + ' combinaciones';
+  $('#btnStart').onclick = startGame;
+  $('#btnAgain').onclick = startGame;
+  $('#btnMenu').onclick = () => show('sTitle');
+}
+
+function startGame() {
+  initAudio();
+  let ids = DB.situaciones.filter((s) => S.zone === 'mix' || s.entorno === S.zone).map((s) => s.id);
+  if (S.zone === 'mix') ids = shuffle(ids).slice(0, 6);
+  ids.sort((a, b) => MIN[S.mode][a] - MIN[S.mode][b]);
+  st = { ids, r: 0, score: 0, lives: 3, res: [], seq: [], locked: false, hint: false, mode: S.mode, relax: opt.relax, t: 60, iv: null, pool: [] };
+  show('sPlay');
+  loadRound();
+}
+
+function buildPool(sit) {
+  const g = G[sit.id], map = new Map();
+  const add = (t) => { const n = norm(t); if (!map.has(n)) map.set(n, { t: disp(t), n, type: isEmoji(t) ? 'e' : 'w' }); };
+  g.c.forEach((c) => c.acc.forEach((q, n) => add(canon.get(n) || n)));
+  sit.conceptos_clave.forEach(add);
+  sit.elementos_visuales.forEach(add);
+  if (g.combos) Object.keys(g.combos).forEach((id) => COMBO_BY_ID[id].el.forEach((n) => add(canon.get(n) || n)));
+  DB.sinonimos.forEach((gr) => { if (gr.elementos.some((e) => map.has(e))) gr.elementos.forEach(add); });
+  const decoyW = shuffle(DB.vocabulario.filter((v) => v.tipo === 'palabra' && !map.has(v.texto)).map((v) => v.texto)).slice(0, 2);
+  const decoyE = shuffle(DB.vocabulario.filter((v) => v.tipo === 'emoji' && !map.has(norm(v.texto))).map((v) => v.texto)).slice(0, 1);
+  decoyW.concat(decoyE).forEach(add);
+  return [...map.values()];
+}
+
+const pieceBtns = new Map();
+function loadRound() {
+  const id = st.ids[st.r], sit = SIT.get(id), g = G[id], mode = st.mode;
+  st.sit = sit; st.g = g; st.seq = []; st.locked = false; st.hint = false;
+  st.min = MIN[mode][id];
+  st.cap = Math.ceil(Math.max(st.min * 1.5, st.min + (mode === 'h' ? 4 : 8)));
+  st.pool = buildPool(sit);
+  const unit = mode === 'h' ? 'espacios' : 'bytes';
+
+  $('#hRound').textContent = (st.r + 1) + '/' + st.ids.length;
+  $('#tEnv').textContent = sit.entorno;
+  $('#tMode').textContent = mode === 'h' ? 'humano' : 'máquina';
+  $('#sTitleTxt').textContent = sit.situacion;
+  $('#face').textContent = mode === 'h' ? g.av : '🤖';
+  $('#whoName').textContent = (mode === 'h' ? '' : 'Bot de: ') + sit.destinatario;
+  $('#pplLbl').textContent = g.ppl === 1 ? '1 DESTINATARIO' : g.ppl + ' DESTINATARIOS';
+  $('#dots').innerHTML = '<i></i>'.repeat(Math.min(g.ppl, 24)) + (g.ppl > 24 ? '<span class="lbl">+</span>' : '');
+  $('#mission').textContent = sit.significado_esencial;
+  const origCost = mode === 'h' ? Math.ceil(sit.mensaje_original.length / 4) : enc.encode(sit.mensaje_original).length;
+  st.origCost = origCost;
+  $('#origLbl').textContent = 'EL MENSAJE LARGO · OCUPARÍA ' + origCost + ' ' + unit.toUpperCase();
+  $('#origTxt').textContent = sit.mensaje_original;
+  $('#hintBox').innerHTML = '';
+  $('#btnHint').disabled = false;
+  $('#msg').textContent = '';
+  $('#res').hidden = true;
+  $('#actions').hidden = false;
+  $('#shelf').hidden = false;
+  $('#tip').textContent = 'TIP · ' + shuffle(TIPS[mode])[0];
+  $('#inside').style.setProperty('--u', mode === 'h' ? '34px' : '10px');
+  $('#codebook').hidden = mode !== 'm';
+
+  if (mode === 'm') {
+    const items = [...CODE.entries()].map(([n, m]) => '<li><b>' + esc(canon.get(n) || n) + '</b> ' + esc(m) + '</li>');
+    COMBOS.slice().sort((a, b) => a.id.localeCompare(b.id)).forEach((c) => items.push('<li><b>' + c.id + '</b> = ' + c.el.map((n) => canon.get(n) || n).join('') + ' · ' + esc(c.sig) + '</li>'));
+    $('#codeList').innerHTML = items.join('');
+  }
+
+  const pw = $('#pWords'), pe = $('#pEmoji');
+  pw.innerHTML = ''; pe.innerHTML = ''; pieceBtns.clear();
+  shuffle(st.pool).forEach((tok) => {
+    const b = document.createElement('button');
+    b.className = 'piece ' + tok.type + (mode === 'm' && tok.type === 'e' && !CODE.has(tok.n) ? ' nocode' : '');
+    b.innerHTML = esc(tok.t) + '<span class="k">' + tokCost(tok.t, mode) + '</span>';
+    if (b.classList.contains('nocode')) b.title = 'Sin código en el diccionario del bot';
+    b.onclick = () => place(tok);
+    (tok.type === 'e' ? pe : pw).append(b);
+    pieceBtns.set(tok.n, b);
+  });
+  renderCase();
+  startTimer();
+}
+
+function renderCase() {
+  const mode = st.mode, units = layout(st.seq), used = unitsCost(units, mode);
+  const el = $('#inside'); el.innerHTML = '';
+  units.forEach((u, ui) => {
+    const c = unitCost(u, mode), b = document.createElement('button');
+    b.className = 'chip ' + (u.combo ? 'combo ' + mode : u.toks[0].type);
+    b.style.setProperty('--c', c);
+    b.textContent = u.combo ? (mode === 'h' ? u.toks.map((t) => t.t).join('') : u.combo.id) : u.toks[0].t;
+    b.title = u.combo ? 'Combinación ' + u.combo.id + ': ' + u.combo.sig + '. Tocá para sacarla.' : 'Tocá para sacarla.';
+    b.disabled = st.locked;
+    b.onclick = () => removeUnit(ui);
+    el.append(b);
+  });
+  const rem = st.cap - used;
+  if (rem > 0) {
+    const gh = document.createElement('div');
+    gh.className = 'ghost'; gh.style.setProperty('--c', rem); gh.textContent = units.length ? rem : 'Tocá piezas para guardarlas';
+    el.append(gh);
+  }
+  $('#capTxt').textContent = used + ' / ' + st.cap + (mode === 'h' ? ' ESPACIOS' : ' BYTES');
+  st.used = used;
+  const inSeq = new Set(st.seq.map((t) => t.n));
+  pieceBtns.forEach((b, n) => { b.disabled = st.locked || inSeq.has(n); });
+}
+
+function place(tok) {
+  if (!st || st.locked) return;
+  const before = layout(st.seq), next = st.seq.concat(tok), after = layout(next);
+  if (unitsCost(after, st.mode) > st.cap) {
+    sfx.deny(); $('#msg').textContent = 'No entra. El maletín está lleno.';
+    const c = $('#case'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake');
+    return;
+  }
+  st.seq = next;
+  const cb = before.filter((u) => u.combo).length, ca = after.filter((u) => u.combo).length;
+  if (ca > cb) {
+    const u = after.filter((x) => x.combo).pop();
+    sfx.combo();
+    $('#msg').textContent = '¡COMBO! ' + u.combo.id + ' junta ' + u.toks.length + ' piezas en ' + unitCost(u, st.mode) + (st.mode === 'h' ? ' espacios.' : ' bytes.');
+  } else { sfx.place(); $('#msg').textContent = ''; }
+  renderCase();
+}
+function removeUnit(ui) {
+  if (!st || st.locked) return;
+  const units = layout(st.seq);
+  let start = 0;
+  for (let i = 0; i < ui; i++) start += units[i].toks.length;
+  st.seq.splice(start, units[ui].toks.length);
+  sfx.remove(); $('#msg').textContent = '';
+  renderCase();
+}
+
+function startTimer() {
+  clearInterval(st.iv);
+  st.t = 60;
+  const fill = $('#timeFill'), bar = $('#timebar');
+  bar.classList.remove('low');
+  if (st.relax) { $('#hTime').textContent = '∞'; fill.style.width = '100%'; return; }
+  $('#hTime').textContent = st.t; fill.style.width = '100%';
+  st.iv = setInterval(() => {
+    st.t--;
+    $('#hTime').textContent = Math.max(0, st.t);
+    fill.style.width = Math.max(0, st.t / 60 * 100) + '%';
+    if (st.t <= 10) bar.classList.add('low');
+    if (st.t <= 0) { clearInterval(st.iv); submit(); }
+  }, 1000);
+}
+
+function hint() {
+  if (!st || st.locked || st.hint) return;
+  st.hint = true; $('#btnHint').disabled = true;
+  $('#hintBox').innerHTML = st.sit.conceptos_clave.map((c) => '<span>' + esc(c) + '</span>').join('');
+}
+
+function submit() {
+  if (!st || st.locked) return;
+  clearInterval(st.iv);
+  st.locked = true;
+  const mode = st.mode, sit = st.sit, g = st.g, units = layout(st.seq);
+  const ev = evaluate(sit, units, mode);
+  const used = unitsCost(units, mode);
+  const eff = used > 0 ? st.min / used : 0;
+  const comp = used > 0 ? ev.comp : 0;
+  const stars = comp >= .95 && eff >= .85 ? 3 : comp >= .8 ? 2 : comp >= .5 ? 1 : 0;
+  let pts = Math.round(comp * 600 + comp * Math.min(eff, 1.3) * 400);
+  if (comp < .5) pts = Math.round(pts * .5);
+  if (st.hint) pts -= 100;
+  if (!st.relax && comp >= .6) pts += Math.min(100, Math.max(0, st.t) * 2);
+  pts = Math.max(0, pts);
+  const lost = comp < .6;
+  if (lost) st.lives--;
+  st.score += pts;
+
+  const m = mode === 'm';
+  const verdict = comp >= .95 && eff >= .85 ? (m ? 'SYNC OK' : '¡MENSAJE RECIBIDO!')
+    : comp >= .8 ? (m ? 'PARSE CON ADVERTENCIAS' : 'SE ENTIENDE, CON DUDAS')
+    : comp >= .5 ? (m ? 'DECODIFICACIÓN PARCIAL' : 'ENTENDIÓ A MEDIAS')
+    : (m ? 'ERROR 404: SIGNIFICADO NO ENCONTRADO' : 'SE PERDIÓ EN EL CAMINO');
+  (stars === 3 ? sfx.win : stars >= 1 ? sfx.mid : sfx.lose)();
+
+  $('#verdict').textContent = verdict;
+  $('#verdict').style.color = stars === 3 ? 'var(--ok)' : stars >= 1 ? 'var(--coin)' : 'var(--pink)';
+  $('#stars').textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+  $('#mine').textContent = units.length ? units.map((u) => u.toks.map((t) => t.t).join('')).join(' ') : '(maletín vacío)';
+  $('#readLbl').textContent = m ? 'LO QUE DECODIFICÓ EL BOT' : 'LO QUE ENTENDIÓ ' + sit.destinatario.toUpperCase();
+  $('#lines').innerHTML = ev.lines.map((l) =>
+    '<div class="ln ' + l.state + '"><span class="s">' + (l.state === 'ok' ? '✓' : l.state === 'part' ? '~' : '✗') + '</span><span class="t">' + esc(l.text) + (l.state === 'part' ? ' (¿seguro?)' : '') + '</span></div>').join('');
+
+  const unit = m ? 'bytes' : 'espacios';
+  const confused = Math.round(g.ppl * (1 - comp));
+  const red = used > 0 ? Math.round((1 - used / st.origCost) * 100) : 0;
+  const stat = (l, v) => '<div class="stat"><span class="lbl">' + l + '</span><b>' + v + '</b></div>';
+  $('#stats').innerHTML =
+    stat('ENTENDIÓ', Math.round(comp * 100) + '%') +
+    stat(g.ppl > 1 ? 'NO ENTENDIERON' : 'RECEPTOR', g.ppl > 1 ? confused + ' de ' + g.ppl : (comp >= .9 ? 'entendió' : comp >= .6 ? 'dudó' : 'se perdió')) +
+    stat('TAMAÑO', st.origCost + ' → ' + used + ' ' + unit + ' (' + (red >= 0 ? '−' : '+') + Math.abs(red) + '%)') +
+    stat('MÍNIMO POSIBLE', st.min + ' ' + unit) +
+    stat('PUNTOS', '+' + pts);
+
+  const notes = [];
+  if (comp >= .95 && used > 0 && used < st.min) notes.push('Por debajo del mínimo. Encontraste un atajo.');
+  else if (comp >= .95 && eff >= .85) notes.push('Sin pérdida: entró todo lo importante y casi nada de más.');
+  else if (comp >= .95) notes.push('Se entiende todo, pero se podía más chico. El mínimo era ' + st.min + ' ' + unit + '.');
+  if (ev.orderBroken) notes.push('Los pasos llegaron mezclados. Acá el orden también es información.');
+  units.forEach((u, ui) => {
+    if (u.combo && ev.used.has(ui)) notes.push(u.toks.map((t) => t.t).join('') + ' = ' + u.combo.sig + '. ' + u.combo.nota);
+  });
+  const seen = new Set();
+  ev.wasted.forEach((u) => u.toks.forEach((t) => {
+    if (seen.has(t.n)) return; seen.add(t.n);
+    if (t.n === '🕒' || t.n === '📍') notes.push(t.t + ': ' + CODE.get(t.n) + '.');
+    else if (m && t.type === 'e' && !CODE.has(t.n)) notes.push(t.t + ' no está en el diccionario del bot. Para él es ruido.');
+  }));
+  const dead = [];
+  ev.wasted.forEach((u) => { const lbl = u.toks.map((t) => t.t).join(''); if (!dead.includes(lbl)) dead.push(lbl); });
+  if (dead.length) notes.push('Sobró: ' + dead.join(', ') + '. Ocupó lugar y no dijo nada.');
+  if (g.ppl >= 8 && ev.anyAmb) notes.push('Con ' + g.ppl + ' destinatarios, lo ambiguo falla más. Alguien siempre lo lee mal.');
+  if (!units.length) notes.push('No guardaste nada.');
+  $('#notes').innerHTML = notes.map((n) => '<div>' + esc(n) + '</div>').join('');
+
+  const lastRound = st.r >= st.ids.length - 1, over = st.lives <= 0;
+  $('#btnNext').textContent = over ? 'GAME OVER ▶' : lastRound ? 'VER RESULTADO ▶' : 'SIGUIENTE ▶';
+  $('#btnNext').onclick = () => (over || lastRound) ? endGame(over) : (st.r++, loadRound());
+  st.res.push({ title: sit.situacion, comp, used, red, stars, pts });
+
+  $('#hScore').textContent = String(st.score).padStart(5, '0');
+  $('#hLives').textContent = '♥'.repeat(Math.max(0, st.lives)) + '♡'.repeat(3 - Math.max(0, st.lives));
+  $('#actions').hidden = true; $('#shelf').hidden = true; $('#codebook').hidden = true;
+  $('#res').hidden = false;
+  renderCase();
+  $('#res').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function endGame(over) {
+  clearInterval(st.iv);
+  const maxPts = st.ids.length * 1000;
+  const pct = st.score / maxPts;
+  const rank = pct >= .85 ? 'Huffman en persona. Todo entra y todo se entiende.'
+    : pct >= .65 ? 'Compresor con pérdida, pero el mensaje llega.'
+    : pct >= .4 ? 'Mochila desordenada. Se entiende más o menos.'
+    : 'Valija con todo adentro. Probá elegir qué importa.';
+  $('#endTitle').textContent = over ? 'GAME OVER' : '¡MALETÍN CERRADO!';
+  $('#endScore').textContent = String(st.score).padStart(5, '0') + ' PTS';
+  $('#endRank').textContent = rank;
+  $('#endRows').innerHTML = st.res.map((r) =>
+    '<tr><td>' + esc(r.title) + '</td><td class="n">' + Math.round(r.comp * 100) + '%</td><td class="n">' + (r.used ? (r.red >= 0 ? '−' : '+') + Math.abs(r.red) + '%' : '—') + '</td><td>' + '★'.repeat(r.stars) + '</td></tr>').join('');
+  (over ? sfx.lose : sfx.win)();
+  show('sEnd');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!st || $('#sPlay').hidden) return;
+  if (e.key === 'Backspace' && !st.locked && st.seq.length && !e.target.closest('input')) {
+    e.preventDefault(); const units = layout(st.seq); removeUnit(units.length - 1);
+  } else if (e.key === 'Enter' && !e.target.closest('button,input,summary')) {
+    e.preventDefault();
+    if (!st.locked) submit(); else $('#btnNext').click();
+  }
+});
+$('#btnSend').onclick = submit;
+$('#btnClear').onclick = () => { if (st && !st.locked) { st.seq = []; sfx.remove(); $('#msg').textContent = ''; renderCase(); } };
+$('#btnHint').onclick = hint;
+
+initTitle();
+})();
+</script>
+
+</body></html>
