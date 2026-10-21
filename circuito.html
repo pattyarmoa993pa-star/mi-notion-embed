@@ -1,0 +1,750 @@
+<title>Circuito Kernel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Layout: una sola consola arcade. Pantallas apiladas (título, dificultad, juego); en el juego, tablero SVG a la izquierda y bitácora "cadáver exquisito" a la derecha, apiladas en móvil. */
+:root{
+  --bg:#0a0618; --panel:#140c2e; --panel2:#1b1140; --line:#3b2a7a;
+  --ink:#ebe6ff; --dim:#9388cc; --cyan:#35e6ff; --mag:#ff4fd8;
+  --rojo:#ff3b52; --rojo-bg:#3a0d1c;
+  --naranja:#ffa21a; --naranja-bg:#3b2406;
+  --verde:#2dff7e; --verde-bg:#0b3a22;
+  --f-px:'Press Start 2P','Courier New',monospace;
+  --f-tx:'VT323','Courier New',monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-tx);font-size:21px;line-height:1.15;
+  padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-height:100vh}
+#app{max-width:1180px;margin:0 auto;position:relative}
+#app::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.22) 3px);mix-blend-mode:multiply}
+h1,h2,h3{font-family:var(--f-px);font-weight:400;margin:0;text-wrap:balance}
+button{font-family:var(--f-px);font-size:11px;letter-spacing:.04em;color:var(--ink);background:var(--panel2);
+  border:3px solid var(--cyan);padding:12px 14px;cursor:pointer;box-shadow:4px 4px 0 #000;text-transform:uppercase}
+button:hover:not(:disabled){background:var(--cyan);color:#06121a}
+button:active:not(:disabled){transform:translate(3px,3px);box-shadow:1px 1px 0 #000}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,.blk:focus-visible,[tabindex]:focus-visible{outline:3px dashed var(--mag);outline-offset:3px}
+.scr[hidden]{display:none}
+
+/* TÍTULO */
+.title{display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center;padding-block:20px}
+.logo{font-size:clamp(26px,7vw,60px);line-height:1.2;color:var(--cyan);text-shadow:4px 4px 0 var(--mag),0 0 24px rgba(53,230,255,.55)}
+.sub{font-family:var(--f-px);font-size:clamp(9px,2vw,13px);color:var(--naranja);line-height:1.7}
+.demo{display:flex;gap:0;align-items:center;justify-content:center;flex-wrap:wrap}
+.demo i{display:block;width:70px;height:16px;background:var(--line);position:relative;overflow:hidden}
+.demo i::after{content:"";position:absolute;inset:0;width:16px;background:var(--cyan);animation:run 1.6s linear infinite}
+.demo b{display:grid;place-items:center;width:82px;height:62px;border:4px solid;font-family:var(--f-px);font-size:11px;box-shadow:5px 5px 0 #000}
+.demo .r{border-color:var(--rojo);background:repeating-linear-gradient(45deg,var(--rojo-bg) 0 6px,#240812 6px 12px);color:var(--rojo)}
+.demo .o{border-color:var(--naranja);background:var(--naranja-bg);color:var(--naranja)}
+.demo .g{border-color:var(--verde);background:var(--verde-bg);color:var(--verde);box-shadow:5px 5px 0 #000,0 0 18px rgba(45,255,126,.5)}
+@keyframes run{from{transform:translateX(-16px)}to{transform:translateX(70px)}}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;width:100%;max-width:880px;text-align:left}
+.rule{border:3px solid var(--line);background:var(--panel);padding:12px 14px}
+.rule h3{font-size:10px;margin-bottom:8px}
+.rule p{margin:0;color:var(--ink)}
+.rule.R{border-color:var(--rojo)}.rule.R h3{color:var(--rojo)}
+.rule.O{border-color:var(--naranja)}.rule.O h3{color:var(--naranja)}
+.rule.G{border-color:var(--verde)}.rule.G h3{color:var(--verde)}
+.blink{animation:blink 1s steps(2) infinite;font-family:var(--f-px);font-size:11px;color:var(--mag)}
+@keyframes blink{50%{opacity:0}}
+.big{font-size:14px;padding:18px 26px}
+.mute{position:absolute;top:0;right:0}
+
+/* DIFICULTAD */
+.sel{display:flex;flex-direction:column;gap:20px;align-items:center;padding-block:10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;width:100%}
+.card{border:4px solid var(--line);background:var(--panel);padding:16px;display:flex;flex-direction:column;gap:12px;text-align:left;cursor:pointer;font-family:var(--f-tx);font-size:21px;text-transform:none;color:var(--ink);box-shadow:6px 6px 0 #000;letter-spacing:0}
+.card:hover{border-color:var(--cyan);background:var(--panel2);color:var(--ink)}
+.card h3{font-size:16px}
+.card .n{font-family:var(--f-px);font-size:11px;color:var(--cyan)}
+.card .hi{font-family:var(--f-px);font-size:9px;color:var(--dim)}
+.c-facil h3{color:var(--verde)}.c-media h3{color:var(--naranja)}.c-dificil h3{color:var(--rojo)}
+.mini{display:flex;gap:4px}.mini s{width:14px;height:14px;display:block}
+
+/* JUEGO */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.bar h2{font-size:12px;color:var(--cyan);line-height:1.6}
+.hud{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-bottom:12px}
+.stat{border:3px solid var(--line);background:var(--panel);padding:8px 10px;min-width:0}
+.stat small{display:block;font-family:var(--f-px);font-size:8px;color:var(--dim);margin-bottom:6px;letter-spacing:.05em}
+.stat b{font-family:var(--f-px);font-weight:400;font-size:15px;font-variant-numeric:tabular-nums}
+.stat.estado b{font-size:12px}
+.stat.rojos b{color:var(--rojo)}.stat.naranjas b{color:var(--naranja)}.stat.verdes b{color:var(--verde)}
+.est-ab{color:var(--rojo)}.est-idle{color:var(--verde);animation:breath 2.4s ease-in-out infinite}
+@keyframes breath{50%{opacity:.55}}
+.msg{min-height:30px;border:3px solid var(--line);background:var(--panel);padding:6px 12px;margin-bottom:12px;color:var(--ink)}
+.msg.good{border-color:var(--verde)}.msg.bad{border-color:var(--rojo)}.msg.info{border-color:var(--cyan)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.boardwrap{border:4px solid var(--line);background:#07041433;background:#070414;overflow-x:auto;box-shadow:6px 6px 0 #000}
+.board{display:block;width:100%;min-width:640px;height:auto}
+.ctrl{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;color:var(--dim)}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;margin-right:6px;vertical-align:-1px}
+.legend .lr::before{background:var(--rojo)}.legend .lo::before{background:var(--naranja)}.legend .lg::before{background:var(--verde)}
+
+/* SVG board */
+.wire{stroke-width:6;stroke-linecap:square;fill:none}
+.w-off{stroke:#2a1f55}
+.w-wait{stroke:#5b4aa8}
+.w-act{stroke:var(--cyan);stroke-dasharray:14 10;animation:flow 1.1s linear infinite}
+.idle .w-act{animation-duration:2.6s;filter:drop-shadow(0 0 5px var(--cyan))}
+@keyframes flow{to{stroke-dashoffset:-24}}
+.blk{cursor:pointer}
+.blk .sh{fill:#000}
+.blk .bd{stroke-width:4}
+.blk.ROJO .bd{fill:url(#hatch);stroke:var(--rojo)}
+.blk.NARANJA .bd{fill:var(--naranja-bg);stroke:var(--naranja)}
+.blk.VERDE .bd{fill:var(--verde-bg);stroke:var(--verde)}
+.blk.VERDE{filter:drop-shadow(0 0 7px rgba(45,255,126,.55))}
+.blk.ROJO .tx{fill:var(--rojo)}.blk.NARANJA .tx{fill:var(--naranja)}.blk.VERDE .tx{fill:var(--verde)}
+.blk .nm{font-family:var(--f-tx);font-size:19px;fill:var(--ink)}
+.blk .id{font-family:var(--f-px);font-size:9px}
+.blk .st{font-family:var(--f-tx);font-size:19px}
+.blk .tg{font-family:var(--f-px);font-size:9px;fill:var(--cyan)}
+.blk .ring{fill:none;stroke:var(--cyan);stroke-width:2;stroke-dasharray:4 4;opacity:0}
+.blk.onpath .ring{opacity:.9}
+.blk.wait{opacity:.8}
+.blk:hover .bd,.blk:focus .bd{stroke:#fff}
+.blk.spark .bd{animation:spark .12s steps(2) 5}
+@keyframes spark{50%{fill:#fff}}
+.idle .blk.onpath{animation:breath 2.4s ease-in-out infinite}
+.pulse{fill:#fff;stroke:var(--cyan);stroke-width:4;filter:drop-shadow(0 0 8px var(--cyan))}
+
+/* BITÁCORA */
+.log{border:4px solid var(--line);background:var(--panel);padding:12px;box-shadow:6px 6px 0 #000}
+.log h3{font-size:10px;color:var(--mag);line-height:1.6;margin-bottom:4px}
+.log .hint{color:var(--dim);margin:0 0 8px}
+.log ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:430px;overflow-y:auto}
+.log li{padding:4px 8px;border-left:5px solid var(--line);font-size:20px;line-height:1.1}
+.log li b{font-family:var(--f-px);font-weight:400;font-size:8px;display:block;margin-bottom:2px;color:var(--dim)}
+.log li.ROJO{color:var(--dim);border-color:var(--rojo);letter-spacing:.1em}
+.log li.NARANJA{color:var(--naranja);border-color:var(--naranja)}
+.log li.VERDE{color:var(--verde);border-color:var(--verde)}
+.log li.new{animation:newline 1.2s ease-out 1}
+@keyframes newline{from{background:rgba(255,255,255,.25)}to{background:transparent}}
+
+/* MODAL */
+.modal{position:fixed;inset:0;z-index:60;background:rgba(5,2,15,.88);display:grid;place-items:center;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));overflow-y:auto}
+.modal[hidden]{display:none}
+.pz{width:100%;max-width:640px;border:4px solid var(--cyan);background:var(--panel);padding:16px;box-shadow:8px 8px 0 #000;display:flex;flex-direction:column;gap:12px;margin:auto}
+.pz-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pz-head h2{font-size:14px;flex:1;min-width:120px;line-height:1.5}
+.pz-id{font-family:var(--f-px);font-size:10px;color:var(--dim)}
+.chip{font-family:var(--f-px);font-size:9px;padding:6px 8px;border:3px solid}
+.chip.ROJO{color:var(--rojo);border-color:var(--rojo)}.chip.NARANJA{color:var(--naranja);border-color:var(--naranja)}.chip.VERDE{color:var(--verde);border-color:var(--verde)}
+.pz p{margin:0}
+.pz-exist{color:var(--mag);font-size:22px}
+.pz-goal{color:var(--dim)}
+.pz-area{border:3px solid var(--line);background:#0a0620;padding:12px;min-height:130px;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center}
+.pz-area.lock{opacity:.55;pointer-events:none}
+.pz-status{font-family:var(--f-px);font-size:10px;color:var(--cyan);min-height:14px;line-height:1.6}
+.pz-msg{min-height:26px}
+.pz-msg.bad{color:var(--rojo)}.pz-msg.good{color:var(--verde)}.pz-msg.mid{color:var(--naranja)}
+.pz-btns{display:flex;gap:10px;flex-wrap:wrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.tile{min-width:60px;font-size:16px;padding:14px 10px}
+.tile.sel{background:var(--mag);border-color:var(--mag);color:#17031a}
+.tile.on{background:var(--cyan);color:#06121a}
+.tile.bit{min-width:54px;display:flex;flex-direction:column;gap:6px;align-items:center}
+.tile.bit small{font-size:8px;opacity:.8}
+.pz-svg{width:100%;max-width:560px;height:auto}
+.pz-svg .nd{cursor:pointer}
+.pz-svg text{font-family:var(--f-px)}
+.routes{display:grid;gap:10px;width:100%}
+.route{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:3px solid var(--line);padding:8px 10px}
+.route.off{opacity:.35}
+.route .steps{font-size:24px;letter-spacing:.04em}
+.rule-line{width:100%;color:var(--naranja);text-align:center}
+.props{display:grid;gap:8px;width:100%}
+.prop{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:3px solid var(--line);padding:8px 10px}
+.prop.off{opacity:.3}
+.prop .t{font-size:25px;min-width:0;flex:1 1 180px}
+.prop .v{font-family:var(--f-px);font-size:9px}
+.prop .v.T{color:var(--verde)}.prop .v.F{color:var(--rojo)}
+.prop button{font-size:9px;padding:8px 9px}
+.sumline{font-family:var(--f-px);font-size:12px;color:var(--ink)}
+.win{text-align:center;align-items:center}
+.win h2{font-size:clamp(16px,4vw,26px);color:var(--verde);text-shadow:3px 3px 0 #000,0 0 20px rgba(45,255,126,.6);line-height:1.4}
+.kernel{text-align:left;border:3px solid var(--verde);background:var(--verde-bg);padding:10px 12px;max-height:240px;overflow-y:auto;width:100%;font-size:21px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+
+<div id="app">
+  <button id="mute" class="mute" type="button" aria-pressed="false">Sonido: on</button>
+
+  <!-- TÍTULO -->
+  <section id="scr-title" class="scr title">
+    <div class="sub">PRESENTA UNA BITÁCORA CON FORMA DE JUEGO</div>
+    <h1 class="logo">CIRCUITO</h1>
+    <div class="sub">EL KERNEL DE LAS DECISIONES</div>
+    <div class="demo" aria-hidden="true"><b class="g">VERDE</b><i></i><b class="o">NARANJA</b><i></i><b class="r">ROJO</b></div>
+    <div class="rules">
+      <div class="rule R"><h3>ROJO · v0</h3><p>Pendiente. Bloque acorazado: no deja pasar la corriente, así que el circuito no cierra.</p></div>
+      <div class="rule O"><h3>NARANJA · v1</h3><p>Atajo válido, en espera. Cierra el circuito, pero lento. Se puede mejorar.</p></div>
+      <div class="rule G"><h3>VERDE · v2</h3><p>El camino más conveniente: eficiente y eficaz. La corriente corre el doble de rápido.</p></div>
+    </div>
+    <p style="max-width:720px;margin:0;color:var(--dim)">Sin cajas rojas el circuito se cierra y pasa a IDLE: listo para usar, aunque nadie lo esté usando. Después solo queda mejorar colores.</p>
+    <button id="btn-start" class="big" type="button">Start</button>
+    <div class="blink">INSERT COIN</div>
+  </section>
+
+  <!-- DIFICULTAD -->
+  <section id="scr-select" class="scr sel" hidden>
+    <h2 style="font-size:14px;color:var(--cyan);line-height:1.6">ELIGE DIFICULTAD</h2>
+    <div class="cards" id="cards"></div>
+    <button id="btn-back" type="button">Volver</button>
+  </section>
+
+  <!-- JUEGO -->
+  <section id="scr-game" class="scr" hidden>
+    <div class="bar">
+      <h2 id="g-title">CIRCUITO</h2>
+      <div class="row"><button id="btn-menu" type="button">Menú</button></div>
+    </div>
+    <div class="hud">
+      <div class="stat estado"><small>ESTADO</small><b id="h-estado">ABIERTO</b></div>
+      <div class="stat rojos"><small>ROJOS</small><b id="h-r">0</b></div>
+      <div class="stat naranjas"><small>NARANJAS</small><b id="h-o">0</b></div>
+      <div class="stat verdes"><small>VERDES</small><b id="h-g">0</b></div>
+      <div class="stat"><small>VELOCIDAD Σ</small><b id="h-v">0</b></div>
+      <div class="stat"><small>PUNTOS</small><b id="h-p">0</b></div>
+      <div class="stat"><small>RÉCORD</small><b id="h-hi">0</b></div>
+    </div>
+    <div class="msg info" id="msg" role="status" aria-live="polite"></div>
+    <div class="main">
+      <div>
+        <div class="boardwrap" id="boardwrap"><svg id="board" class="board" viewBox="0 0 880 440" role="group" aria-label="Tablero del circuito"></svg></div>
+        <div class="ctrl">
+          <button id="btn-pulse" type="button">▶ Enviar corriente</button>
+          <button id="btn-restart" type="button">Reiniciar</button>
+        </div>
+        <div class="legend"><span class="lr">rojo: pendiente, v0</span><span class="lo">naranja: atajo, v1</span><span class="lg">verde: óptimo, v2</span></div>
+      </div>
+      <aside class="log">
+        <h3>BITÁCORA · CADÁVER EXQUISITO</h3>
+        <p class="hint">Cada bloque escribe una línea doblada. Resuélvelo para verla; mejóralo para reescribirla.</p>
+        <ol id="log"></ol>
+      </aside>
+    </div>
+  </section>
+
+  <div class="modal" id="modal" hidden><div class="pz" id="pz" role="dialog" aria-modal="true" aria-labelledby="pz-title"></div></div>
+</div>
+
+<script>
+const DB = {"juego":{"id":"circuito_kernel","nombre":"Circuito: El Kernel de las Decisiones","version":"1.0","descripcion":"Juego de ordenar y resolver bloques para conectar un circuito. La progresión se realiza mejorando el estado de color de los bloques.","objetivo":"Resolver todos los bloques rojos, conectar el circuito y, cuando sea posible, optimizar los bloques naranjas hasta volverlos verdes.","estados_circuito":{"ABIERTO":"Existe al menos un bloque rojo que impide cerrar el circuito.","CERRADO":"No hay bloques rojos y existe un recorrido funcional completo.","IDLE":"El circuito está cerrado y preparado para utilizarse, aunque no esté ejecutando una tarea."}},"reglas":{"colores":{"rojo":{"codigo":"ROJO","orden":1,"significado":"Pendiente: el camino no está resuelto o no es válido.","permite_paso":false,"velocidad":0,"accion_jugador":"Resolver el puzzle para encontrar un camino válido."},"naranja":{"codigo":"NARANJA","orden":2,"significado":"Camino auxiliar válido: permite completar el circuito, pero no es la alternativa más conveniente.","permite_paso":true,"velocidad":1,"accion_jugador":"Puede mantenerse como solución funcional o mejorarse."},"verde":{"codigo":"VERDE","orden":3,"significado":"Camino óptimo: solución válida considerada más eficiente y eficaz para el puzzle.","permite_paso":true,"velocidad":2,"accion_jugador":"Bloque optimizado."}},"progresion":["ROJO -> NARANJA: se encuentra un camino auxiliar válido.","NARANJA -> VERDE: se encuentra el camino más conveniente.","VERDE: estado optimizado; no requiere mejora adicional."],"condiciones":["El circuito no puede cerrarse mientras exista al menos un bloque rojo.","Los bloques naranjas permiten cerrar el circuito si las conexiones forman un recorrido completo.","Los bloques verdes hacen circular la electricidad más rápido que los naranjas.","Los bloques conservan su estado hasta que el jugador encuentra una mejora.","Cerrar el circuito no obliga a que todos los bloques sean verdes."],"validacion_circuito":{"regla_basica":"El circuito está cerrado cuando todos los bloques pertenecientes al recorrido requerido están conectados y no queda ningún bloque rojo.","nota":"En esta base de datos inicial, la conectividad se representa mediante las conexiones de cada bloque; la comprobación física del recorrido debe implementarse en el juego."}},"dificultades":[{"id":"facil","nombre":"Fácil","descripcion":"Pocos bloques, conexiones directas y pocas alternativas.","cantidad_bloques":5,"conexiones_por_bloque":"1-2","alternativas":"Bajas","velocidad_naranja":1,"velocidad_verde":2},{"id":"media","nombre":"Media","descripcion":"Más bloques, ramificaciones y alternativas que requieren comparar soluciones.","cantidad_bloques":8,"conexiones_por_bloque":"1-3","alternativas":"Medias","velocidad_naranja":1,"velocidad_verde":2},{"id":"dificil","nombre":"Difícil","descripcion":"Más bloques, rutas auxiliares y conexiones que exigen planificar el recorrido.","cantidad_bloques":12,"conexiones_por_bloque":"1-4","alternativas":"Altas","velocidad_naranja":1,"velocidad_verde":2}],"inicio_partida":{"paso_1":"El jugador elige una dificultad antes de comenzar.","paso_2":"El juego carga el circuito correspondiente a esa dificultad.","paso_3":"Los bloques empiezan con los colores definidos por el escenario.","paso_4":"El jugador resuelve los bloques y mejora sus colores.","paso_5":"Cuando no quedan bloques rojos y el recorrido requerido está conectado, el circuito puede cerrarse y pasar a IDLE."},"bloques":[{"id":"B01","nombre":"Entrada","tipo_puzzle":"conectar","estado_inicial":"VERDE","conexiones":["B02"],"puzzle":{"instruccion":"Identifica la salida que conduce al siguiente bloque.","solucion_auxiliar":"Elegir una conexión válida aunque no sea la más corta.","solucion_optima":"Elegir la conexión válida con menor coste."}},{"id":"B02","nombre":"Orden","tipo_puzzle":"secuencia","estado_inicial":"ROJO","conexiones":["B01","B03"],"puzzle":{"instruccion":"Ordena las piezas para que la señal pueda continuar.","solucion_auxiliar":"Encontrar una secuencia válida.","solucion_optima":"Encontrar una secuencia válida con menos pasos."}},{"id":"B03","nombre":"Bifurcación","tipo_puzzle":"seleccion_ruta","estado_inicial":"NARANJA","conexiones":["B02","B04"],"puzzle":{"instruccion":"Compara dos rutas y selecciona una.","solucion_auxiliar":"Seleccionar una ruta que llegue al destino.","solucion_optima":"Seleccionar la ruta de menor coste sin incumplir las restricciones."}},{"id":"B04","nombre":"Filtro","tipo_puzzle":"logica","estado_inicial":"ROJO","conexiones":["B03","B05"],"puzzle":{"instruccion":"Descarta la opción que rompe la continuidad del circuito.","solucion_auxiliar":"Eliminar la opción inválida.","solucion_optima":"Eliminar la opción inválida con el menor número de comprobaciones."}},{"id":"B05","nombre":"Salida","tipo_puzzle":"conectar","estado_inicial":"NARANJA","conexiones":["B04"],"puzzle":{"instruccion":"Conecta el último bloque para completar el recorrido.","solucion_auxiliar":"Conectar una salida válida.","solucion_optima":"Conectar la salida válida de menor coste."}}],"escenarios":[{"id":"facil_01","dificultad":"facil","bloques_activos":["B01","B02","B03","B04","B05"],"inicio":"B01","destino":"B05","objetivo":"Conectar la entrada con la salida mejorando los bloques rojos.","estado_esperado_al_inicio":"ABIERTO"},{"id":"media_01","dificultad":"media","bloques_activos":["B01","B02","B03","B04","B05","B06","B07","B08"],"inicio":"B01","destino":"B08","objetivo":"Resolver una ruta con ramificaciones y comparar caminos auxiliares.","estado_esperado_al_inicio":"ABIERTO","nota":"B06-B08 deben definirse en el contenido del escenario antes de cargarlo."},{"id":"dificil_01","dificultad":"dificil","bloques_activos":["B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12"],"inicio":"B01","destino":"B12","objetivo":"Resolver un circuito con múltiples ramificaciones y optimizar los caminos disponibles.","estado_esperado_al_inicio":"ABIERTO","nota":"B06-B12 deben definirse en el contenido del escenario antes de cargarlo."}],"progreso":{"guardar_por_bloque":["id_bloque","estado_actual","intentos","fecha_resolucion","mejoras_realizadas"],"estadisticas":["bloques_rojos_restantes","bloques_naranjas","bloques_verdes","velocidad_total_del_recorrido","circuito_cerrado"],"regla_velocidad":"La velocidad total puede calcularse como la suma de la velocidad de los bloques del recorrido activo. Rojo aporta 0, naranja aporta 1 y verde aporta 2."}};
+
+/* ---------- utilidades ---------- */
+const $ = s => document.querySelector(s);
+const rnd = n => Math.floor(Math.random() * n);
+const ri = (a, b) => a + rnd(b - a + 1);
+const pick = a => a[rnd(a.length)];
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const SPEED = { ROJO: 0, NARANJA: DB.reglas.colores.naranja.velocidad, VERDE: DB.reglas.colores.verde.velocidad };
+const LABEL = { ROJO: 'ROJO', NARANJA: 'NARANJA', VERDE: 'VERDE' };
+
+/* ---------- sonido (solo tras interacción) ---------- */
+let ac = null, muted = false;
+function tone(f, d, type = 'square', v = .05, at = 0) {
+  if (muted) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + at;
+    o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d);
+  } catch (e) { }
+}
+const sfx = {
+  click: () => tone(440, .06),
+  aux: () => { tone(523, .1); tone(659, .14, 'square', .05, .09); },
+  opt: () => { tone(659, .1); tone(784, .1, 'square', .05, .09); tone(988, .22, 'square', .05, .18); },
+  fail: () => tone(130, .25, 'sawtooth', .06),
+  close: () => [392, 523, 659, 784, 1046].forEach((f, i) => tone(f, .14, 'square', .05, i * .09)),
+  spark: () => tone(90, .3, 'sawtooth', .07)
+};
+$('#mute').onclick = () => { muted = !muted; $('#mute').textContent = 'Sonido: ' + (muted ? 'off' : 'on'); $('#mute').setAttribute('aria-pressed', muted); };
+
+/* ---------- escenarios (la BD define B01-B05; B06-B12 se completan aquí) ---------- */
+const EXT = {
+  B06: { nombre: 'Balanza', tipo: 'equilibrio' }, B07: { nombre: 'Bits', tipo: 'binario' },
+  B08: { nombre: 'Núcleo', tipo: 'seleccion_ruta' }, B09: { nombre: 'Eco', tipo: 'secuencia' },
+  B10: { nombre: 'Paradoja', tipo: 'logica' }, B11: { nombre: 'Puente', tipo: 'equilibrio' },
+  B12: { nombre: 'Kernel', tipo: 'conectar' }
+};
+const LAY = {
+  facil_01: { pos: { B01: [90, 220], B02: [260, 220], B03: [440, 220], B04: [620, 220], B05: [790, 220] }, edges: null, over: {} },
+  media_01: {
+    pos: { B01: [70, 220], B02: [215, 220], B03: [360, 220], B04: [515, 110], B06: [515, 330], B05: [660, 110], B07: [660, 330], B08: [810, 220] },
+    edges: [['B01', 'B02'], ['B02', 'B03'], ['B03', 'B04'], ['B03', 'B06'], ['B04', 'B05'], ['B06', 'B07'], ['B05', 'B08'], ['B07', 'B08']],
+    estados: { B01: 'VERDE', B02: 'ROJO', B03: 'NARANJA', B04: 'ROJO', B05: 'NARANJA', B06: 'ROJO', B07: 'NARANJA', B08: 'ROJO' },
+    over: { B05: { nombre: 'Relé', tipo: 'binario' }, B08: { nombre: 'Destino', tipo: 'conectar' } }
+  },
+  dificil_01: {
+    pos: { B01: [70, 220], B02: [210, 90], B03: [210, 350], B04: [350, 90], B05: [350, 220], B06: [350, 350], B07: [500, 150], B08: [500, 290], B09: [650, 90], B10: [650, 220], B11: [650, 350], B12: [800, 220] },
+    edges: [['B01', 'B02'], ['B01', 'B03'], ['B02', 'B04'], ['B02', 'B05'], ['B03', 'B05'], ['B03', 'B06'], ['B04', 'B07'], ['B05', 'B07'], ['B05', 'B08'], ['B06', 'B08'], ['B07', 'B09'], ['B07', 'B10'], ['B08', 'B10'], ['B08', 'B11'], ['B09', 'B12'], ['B10', 'B12'], ['B11', 'B12']],
+    estados: { B01: 'VERDE', B02: 'ROJO', B03: 'NARANJA', B04: 'ROJO', B05: 'ROJO', B06: 'NARANJA', B07: 'ROJO', B08: 'NARANJA', B09: 'ROJO', B10: 'NARANJA', B11: 'ROJO', B12: 'ROJO' },
+    over: { B05: { nombre: 'Relé', tipo: 'equilibrio' } }
+  }
+};
+const INSTR = {
+  conectar: 'Conecta la entrada con la salida. Elige un nodo por capa.',
+  secuencia: 'Ordena las piezas para que la señal pueda continuar.',
+  seleccion_ruta: 'Compara las rutas y selecciona una que cumpla las restricciones.',
+  logica: 'Descarta la proposición que rompe la continuidad del circuito.',
+  equilibrio: 'Suma las piezas hasta igualar la meta exacta.',
+  binario: 'Ajusta los interruptores hasta que el valor binario iguale la meta.'
+};
+const EXIST = {
+  conectar: '«Hay un camino de S a T. ¿Cuánto cuesta ser quien llega?»  min Σ w(e)',
+  secuencia: '«Existir es ocupar un lugar. Ordena tus instantes.»  a₁ < a₂ < … < aₙ',
+  seleccion_ruta: '«Elegir es renunciar.»  ∀ r : coste(r) ≤ L ∧ máx(r) ≤ M',
+  logica: '«Pienso, luego existo. Una de estas proposiciones me niega.»  ∃! p : ¬p',
+  equilibrio: '«Soy la suma de mis partes. ¿Cuántas necesito para ser?»  Σ pᵢ = T',
+  binario: '«Ser o no ser.»  bᵢ ∈ {0,1} ,  Σ bᵢ·2ⁱ = T'
+};
+
+/* ---------- bitácora: cadáver exquisito ---------- */
+const SUJ = ['El yo que duda', 'La sombra del orden', 'Una decisión sin testigos', 'El kernel dormido', 'Quien elige', 'La corriente', 'El instante previo', 'La bitácora', 'El bloque cerrado', 'Lo que no elegí', 'El camino corto', 'La falta'];
+const VERB = {
+  NARANJA: { secuencia: 'ordena a tientas', conectar: 'cruza por un atajo', seleccion_ruta: 'renuncia a una ruta y rodea', logica: 'sospecha de una proposición', equilibrio: 'se suma como puede', binario: 'enciende y apaga hasta ser' },
+  VERDE: { secuencia: 'se ordena sin sobrar un paso', conectar: 'llega por donde menos cuesta', seleccion_ruta: 'elige y no se arrepiente', logica: 'descarta lo falso y permanece', equilibrio: 'pesa exacto lo que es', binario: 'es 1 donde debe y 0 donde calla' }
+};
+const OBJ = ['porque existir es escoger.', 'y la nada espera su turno.', 'mientras la corriente decide.', 'sin garantía de retorno.', 'como quien se escribe a ciegas.', 'y aun así sigue siendo yo.', 'en la página que otro doblará.', 'con la libertad de equivocarse.', 'antes de que alguien lo lea.', 'aunque nadie lo mire.', 'hasta que el sentido cierre.', 'y el silencio también cuenta.'];
+function fragment(b) {
+  const i = Number(b.id.slice(1)) - 1;
+  if (b.estado === 'ROJO') return '░░░░░░░░ (doblado) ░░░░░░░░';
+  const k = b.estado === 'VERDE' ? 5 : 0;
+  return `${SUJ[(i + k) % SUJ.length]} ${VERB[b.estado][b.tipo]} ${OBJ[(i * 5 + k + 3) % OBJ.length]}`;
+}
+
+/* ---------- estado del juego ---------- */
+let G = null;
+const hiKey = id => 'circuito-hi-' + id;
+function loadHi(id) { try { return Number(localStorage.getItem(hiKey(id))) || 0; } catch (e) { return 0; } }
+function saveHi(id, v) { try { localStorage.setItem(hiKey(id), String(v)); } catch (e) { } }
+
+function newGame(difId) {
+  const dif = DB.dificultades.find(d => d.id === difId);
+  const sc = DB.escenarios.find(s => s.dificultad === difId);
+  const L = LAY[sc.id];
+  const blocks = {};
+  sc.bloques_activos.forEach(id => {
+    const base = DB.bloques.find(b => b.id === id);
+    const ov = L.over[id];
+    const e = { ...(EXT[id] || {}), ...(ov || {}) };
+    const tipo = e.tipo || base.tipo_puzzle;
+    blocks[id] = {
+      id, nombre: e.nombre || base.nombre, tipo,
+      estado: L.estados ? L.estados[id] : base.estado_inicial,
+      x: L.pos[id][0], y: L.pos[id][1], adj: new Set(), intentos: 0, mejoras: 0,
+      instr: (base && !ov && base.puzzle) ? base.puzzle.instruccion : INSTR[tipo]
+    };
+  });
+  const edges = L.edges || sc.bloques_activos.flatMap(id => (DB.bloques.find(b => b.id === id).conexiones || []).map(o => [id, o]));
+  edges.forEach(([a, b]) => { if (blocks[a] && blocks[b]) { blocks[a].adj.add(b); blocks[b].adj.add(a); } });
+  const seen = new Set(); const uniq = [];
+  edges.forEach(([a, b]) => { const k = [a, b].sort().join('|'); if (!seen.has(k)) { seen.add(k); uniq.push([a, b]); } });
+  G = {
+    dif, difIdx: ['facil', 'media', 'dificil'].indexOf(difId), sc, blocks, ids: sc.bloques_activos, edges: uniq,
+    score: 0, hi: loadHi(difId), everClosed: false, pulsing: false, raf: 0, won: false
+  };
+  $('#g-title').textContent = `CIRCUITO · ${dif.nombre.toUpperCase()} · ${dif.cantidad_bloques} BLOQUES`;
+  setMsg('Toca un bloque ROJO para descifrarlo. El circuito sigue ABIERTO mientras quede alguno.', 'info');
+  render(); renderLog();
+}
+
+/* ---------- análisis del circuito ---------- */
+function analyze() {
+  const B = G.blocks, ids = G.ids;
+  const cost = id => B[id].estado === 'ROJO' ? 60 : (B[id].estado === 'VERDE' ? 1 : 2);
+  const dist = {}, prev = {}, done = new Set();
+  ids.forEach(i => dist[i] = Infinity); dist[G.sc.inicio] = cost(G.sc.inicio);
+  for (; ;) {
+    let u = null; ids.forEach(i => { if (!done.has(i) && dist[i] < Infinity && (u === null || dist[i] < dist[u])) u = i; });
+    if (u === null) break; done.add(u);
+    B[u].adj.forEach(v => { const nd = dist[u] + cost(v); if (nd < dist[v]) { dist[v] = nd; prev[v] = u; } });
+  }
+  const path = []; for (let c = G.sc.destino; c; c = prev[c]) { path.unshift(c); if (c === G.sc.inicio) break; }
+  const cnt = { ROJO: 0, NARANJA: 0, VERDE: 0 }; ids.forEach(i => cnt[B[i].estado]++);
+  const connected = path[0] === G.sc.inicio;
+  const closed = cnt.ROJO === 0 && connected;
+  const speed = path.reduce((s, i) => s + SPEED[B[i].estado], 0);
+  return { path, cnt, closed, speed, connected };
+}
+
+/* ---------- render del tablero ---------- */
+const BW = 108, BH = 76;
+function render() {
+  cancelAnimationFrame(G.raf); G.pulsing = false; $('#btn-pulse').disabled = false;
+  const A = analyze(), B = G.blocks, onP = new Set(A.path);
+  const pe = new Set(); for (let i = 0; i < A.path.length - 1; i++) pe.add([A.path[i], A.path[i + 1]].sort().join('|'));
+  let s = `<defs><pattern id="hatch" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="12" height="12" fill="#2d0a17"/><rect width="6" height="12" fill="#4a1022"/></pattern></defs>`;
+  G.edges.forEach(([a, b]) => {
+    const p = B[a], q = B[b], red = p.estado === 'ROJO' || q.estado === 'ROJO';
+    const cls = red ? 'w-off' : (pe.has([a, b].sort().join('|')) && A.closed ? 'w-act' : (pe.has([a, b].sort().join('|')) ? 'w-act' : 'w-wait'));
+    s += `<line class="wire ${cls}" x1="${p.x}" y1="${p.y}" x2="${q.x}" y2="${q.y}"/>`;
+  });
+  G.ids.forEach(id => {
+    const b = B[id], x = b.x - BW / 2, y = b.y - BH / 2, tg = id === G.sc.inicio ? 'IN' : (id === G.sc.destino ? 'OUT' : '');
+    const sym = b.estado === 'ROJO' ? '✕' : (b.estado === 'NARANJA' ? '~' : '✓');
+    s += `<g class="blk ${b.estado} ${onP.has(id) ? 'onpath' : 'wait'}" data-id="${id}" tabindex="0" role="button" aria-label="${id} ${esc(b.nombre)}, ${LABEL[b.estado]}, puzzle de ${b.tipo}">
+      <rect class="sh" x="${x + 6}" y="${y + 6}" width="${BW}" height="${BH}"/>
+      <rect class="bd" x="${x}" y="${y}" width="${BW}" height="${BH}"/>
+      <rect class="ring" x="${x - 7}" y="${y - 7}" width="${BW + 14}" height="${BH + 14}"/>
+      <text class="id tx" x="${x + 8}" y="${y + 17}">${id}</text>
+      <text class="id tx" x="${x + BW - 8}" y="${y + 17}" text-anchor="end">v${SPEED[b.estado]}</text>
+      <text class="tg" x="${b.x}" y="${y - 12}" text-anchor="middle">${tg}</text>
+      <text class="nm" x="${b.x}" y="${b.y + 6}" text-anchor="middle">${esc(b.nombre)}</text>
+      <text class="st tx" x="${x + 8}" y="${y + BH - 9}">${sym} ${LABEL[b.estado]}</text>
+    </g>`;
+  });
+  s += `<circle id="pulse" class="pulse" r="9" cx="-50" cy="-50"/>`;
+  $('#board').innerHTML = s;
+  $('#board').classList.toggle('idle', A.closed);
+  updateHUD(A);
+}
+function updateHUD(A) {
+  A = A || analyze();
+  const e = $('#h-estado');
+  e.textContent = A.closed ? 'IDLE' : 'ABIERTO'; e.className = A.closed ? 'est-idle' : 'est-ab';
+  $('#h-r').textContent = A.cnt.ROJO; $('#h-o').textContent = A.cnt.NARANJA; $('#h-g').textContent = A.cnt.VERDE;
+  $('#h-v').textContent = A.closed ? A.speed : 0; $('#h-p').textContent = G.score;
+  if (G.score > G.hi) { G.hi = G.score; saveHi(G.dif.id, G.hi); }
+  $('#h-hi').textContent = G.hi;
+}
+function renderLog(newId) {
+  $('#log').innerHTML = G.ids.map(id => {
+    const b = G.blocks[id];
+    return `<li class="${b.estado}${id === newId ? ' new' : ''}"><b>${id} · ${esc(b.nombre).toUpperCase()}</b>${esc(fragment(b))}</li>`;
+  }).join('');
+}
+function setMsg(t, cls) { const m = $('#msg'); m.textContent = t; m.className = 'msg ' + (cls || 'info'); }
+
+$('#board').addEventListener('click', e => { const g = e.target.closest('.blk'); if (g) openPuzzle(g.dataset.id); });
+$('#board').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { const g = e.target.closest('.blk'); if (g) { e.preventDefault(); openPuzzle(g.dataset.id); } } });
+
+/* ---------- pulso eléctrico ---------- */
+const DUR = { VERDE: 380, NARANJA: 1000, ROJO: 600 };
+$('#btn-pulse').onclick = () => {
+  if (G.pulsing) return; sfx.click();
+  const A = analyze(), B = G.blocks, ids = A.path;
+  const stop = ids.findIndex(id => B[id].estado === 'ROJO');
+  const keys = [{ x: B[ids[0]].x, y: B[ids[0]].y, t: 0 }];
+  let t = 0;
+  for (let i = 1; i < ids.length; i++) {
+    const p = B[ids[i - 1]], q = B[ids[i]], red = i === stop;
+    const d = red ? DUR[p.estado] * .8 + 200 : (DUR[p.estado] + DUR[q.estado]) / 2; t += d;
+    const f = red ? .6 : 1; keys.push({ x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f, t });
+    if (red) break;
+  }
+  const first = ids.length === 1 || stop === 0;
+  if (stop === 0) keys.push({ x: keys[0].x, y: keys[0].y, t: 500 });
+  const total = keys[keys.length - 1].t || 1, pl = $('#pulse'); let t0 = null; G.pulsing = true; $('#btn-pulse').disabled = true;
+  setMsg(A.closed ? 'Corriente en tránsito por el circuito…' : 'Corriente en tránsito: prueba de continuidad…', 'info');
+  const step = ts => {
+    if (t0 === null) t0 = ts; const el = Math.min(ts - t0, total);
+    let k = 1; while (k < keys.length - 1 && keys[k].t < el) k++;
+    const a = keys[k - 1] || keys[0], b = keys[k] || keys[0], f = b.t === a.t ? 1 : (el - a.t) / (b.t - a.t);
+    pl.setAttribute('cx', a.x + (b.x - a.x) * Math.max(0, Math.min(1, f))); pl.setAttribute('cy', a.y + (b.y - a.y) * Math.max(0, Math.min(1, f)));
+    if (el < total) { G.raf = requestAnimationFrame(step); return; }
+    G.pulsing = false; $('#btn-pulse').disabled = false;
+    if (stop >= 0) {
+      const g = document.querySelector(`.blk[data-id="${ids[stop]}"]`); if (g) g.classList.add('spark'); sfx.spark();
+      setMsg(`Corriente bloqueada en ${ids[stop]} ${B[ids[stop]].nombre}: bloque acorazado. El circuito sigue ABIERTO.`, 'bad');
+    } else if (A.closed) {
+      setMsg(`Corriente entregada en ${(total / 1000).toFixed(2)} s con velocidad Σ ${A.speed}. El circuito vuelve a IDLE.`, 'good'); sfx.aux();
+    } else {
+      setMsg(`La corriente llegó, pero quedan ${A.cnt.ROJO} bloque(s) rojo(s) en espera de ser resueltos. Circuito ABIERTO.`, 'bad'); sfx.fail();
+    }
+    setTimeout(() => { pl.setAttribute('cx', -50); }, 700);
+  };
+  G.raf = requestAnimationFrame(step);
+};
+$('#btn-restart').onclick = () => { sfx.click(); newGame(G.dif.id); };
+
+/* ---------- modal y puzzles ---------- */
+let CUR = null;
+function openPuzzle(id) {
+  if (G.pulsing || G.won) return;
+  const b = G.blocks[id]; sfx.click();
+  if (b.estado === 'VERDE') { setMsg(`${id} ${b.nombre} ya es VERDE: bloque optimizado, no requiere mejora.`, 'good'); return; }
+  const goal = b.estado === 'ROJO' ? 'Meta: cualquier solución válida lo vuelve NARANJA; la óptima lo vuelve VERDE directamente.' : 'Meta: encuentra la solución óptima para volverlo VERDE.';
+  $('#pz').innerHTML = `
+    <div class="pz-head"><span class="pz-id">${id}</span><h2 id="pz-title">${esc(b.nombre)}</h2><span class="chip ${b.estado}">${LABEL[b.estado]} · v${SPEED[b.estado]}</span></div>
+    <p>${esc(b.instr)}</p>
+    <p class="pz-exist">${esc(EXIST[b.tipo])}</p>
+    <p class="pz-goal">${goal}</p>
+    <div class="pz-area" id="pz-area"></div>
+    <div class="pz-status" id="pz-status"></div>
+    <div class="pz-msg" id="pz-msg" role="status" aria-live="polite"></div>
+    <div class="pz-btns"><button id="pz-reset" type="button">Reiniciar</button><button id="pz-exit" type="button">Salir</button></div>`;
+  $('#modal').hidden = false;
+  CUR = { id, b, locked: false };
+  const run = () => {
+    CUR.locked = false; $('#pz-area').className = 'pz-area'; $('#pz-area').innerHTML = ''; $('#pz-msg').textContent = ''; $('#pz-msg').className = 'pz-msg'; $('#pz-status').textContent = '';
+    PZ[b.tipo](G.difIdx, $('#pz-area'), api);
+  };
+  const api = {
+    status: t => { $('#pz-status').textContent = t; },
+    msg: (t, c) => { $('#pz-msg').textContent = t; $('#pz-msg').className = 'pz-msg ' + (c || ''); },
+    get locked() { return CUR.locked; },
+    fail: t => { b.intentos++; api.msg(t, 'bad'); sfx.fail(); },
+    finish: (res, t) => { CUR.locked = true; $('#pz-area').classList.add('lock'); resolve(b, res, t, api); }
+  };
+  $('#pz-reset').onclick = () => { sfx.click(); run(); };
+  $('#pz-exit').onclick = closeModal;
+  run();
+  const f = $('#pz-area button, #pz-area [tabindex]'); if (f) f.focus();
+}
+function closeModal() {
+  if ($('#modal').hidden) return; $('#modal').hidden = true; CUR = null;
+  const A = analyze();
+  if (A.closed && !G.everClosed) {
+    G.everClosed = true; G.score += 500; sfx.close(); updateHUD(A);
+    setMsg(`CIRCUITO CERRADO: sin bloques rojos. Estado IDLE, velocidad Σ ${A.speed}. +500. Ahora mejora los naranjas a verde.`, 'good');
+  }
+  if (A.cnt.NARANJA === 0 && A.cnt.ROJO === 0) { showWin(A); }
+}
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal' && CUR) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden && CUR) closeModal(); });
+
+function resolve(b, res, txt, api) {
+  const prev = b.estado; let gain = 0, line = txt;
+  if (res === 'opt') { if (prev !== 'VERDE') { b.estado = 'VERDE'; gain = prev === 'ROJO' ? 300 : 200; b.mejoras++; } }
+  else if (prev === 'ROJO') { b.estado = 'NARANJA'; gain = 100; b.mejoras++; }
+  else line += ' Ya tenías un camino auxiliar: busca uno más conveniente.';
+  G.score += gain;
+  if (b.estado !== prev) {
+    line += `  ${LABEL[prev]} → ${LABEL[b.estado]} (+${gain})`;
+    (b.estado === 'VERDE' ? sfx.opt : sfx.aux)();
+    chipUpdate(b); render(); renderLog(b.id);
+  } else sfx.click();
+  api.msg(line, b.estado === 'VERDE' ? 'good' : 'mid');
+  const btn = $('#pz-exit'); if (btn) { btn.textContent = 'Continuar'; btn.focus(); }
+}
+function chipUpdate(b) { const c = document.querySelector('.pz-head .chip'); if (c) { c.className = 'chip ' + b.estado; c.textContent = `${LABEL[b.estado]} · v${SPEED[b.estado]}`; } }
+
+function showWin(A) {
+  if (G.won) return;
+  G.won = true;
+  const allG = A.cnt.VERDE === G.ids.length;
+  if (!allG) { G.won = false; return; }
+  G.score += 1000; updateHUD(A); sfx.close();
+  const lines = G.ids.map(id => esc(fragment(G.blocks[id]))).join(' ');
+  $('#pz').innerHTML = `<div class="win" style="display:flex;flex-direction:column;gap:14px;align-items:center">
+    <h2>KERNEL ÓPTIMO</h2>
+    <p>Todos los bloques son verdes. El circuito en IDLE corre a velocidad Σ ${A.speed}. Bonus +1000.</p>
+    <p class="sumline">PUNTOS ${G.score} · RÉCORD ${G.hi}</p>
+    <div class="kernel">${lines}</div>
+    <div class="pz-btns"><button id="w-again" type="button">Jugar otra vez</button><button id="w-menu" type="button">Elegir dificultad</button></div></div>`;
+  $('#modal').hidden = false; CUR = null;
+  $('#w-again').onclick = () => { $('#modal').hidden = true; newGame(G.dif.id); };
+  $('#w-menu').onclick = () => { $('#modal').hidden = true; go('select'); };
+}
+
+const PZ = {};
+
+/* secuencia: ordenar con intercambios */
+PZ.secuencia = (d, area, api) => {
+  const n = [4, 5, 6][d]; let vals, minSw;
+  do {
+    vals = shuffle(Array.from({ length: 24 }, (_, i) => i + 1)).slice(0, n);
+    const sorted = [...vals].sort((a, b) => a - b), perm = vals.map(v => sorted.indexOf(v)), vis = new Array(n).fill(false); let cyc = 0;
+    for (let i = 0; i < n; i++) if (!vis[i]) { cyc++; for (let j = i; !vis[j]; j = perm[j]) vis[j] = true; }
+    minSw = n - cyc;
+  } while (minSw < 2);
+  let sel = -1, moves = 0;
+  const draw = () => {
+    area.innerHTML = '<div class="row">' + vals.map((v, i) => `<button type="button" class="tile${i === sel ? ' sel' : ''}" data-i="${i}">${v}</button>`).join('') + '</div><div>Toca dos piezas para intercambiarlas. Orden creciente.</div>';
+    api.status(`INTERCAMBIOS ${moves} · ÓPTIMO ${minSw}`);
+  };
+  area.onclick = e => {
+    const t = e.target.closest('.tile'); if (!t || api.locked) return; const i = +t.dataset.i; sfx.click();
+    if (sel < 0) sel = i; else if (sel === i) sel = -1; else {
+      [vals[sel], vals[i]] = [vals[i], vals[sel]]; moves++; sel = -1;
+      draw();
+      if (vals.every((v, k) => k === 0 || vals[k - 1] < v)) {
+        const ok = moves <= minSw;
+        api.finish(ok ? 'opt' : 'aux', ok ? `Orden perfecto en ${moves} intercambios.` : `Ordenado en ${moves}; se podía en ${minSw}.`);
+      }
+      return;
+    }
+    draw();
+  };
+  draw();
+};
+
+/* conectar: camino de coste mínimo en grafo por capas */
+PZ.conectar = (d, area, api) => {
+  const L = [2, 2, 3][d], W = [2, 2, 3][d];
+  const layers = [['S']]; for (let l = 0; l < L; l++) layers.push(Array.from({ length: W }, (_, j) => String.fromCharCode(65 + l * W + j)));
+  layers.push(['T']);
+  const w = {}; for (let l = 0; l < layers.length - 1; l++) layers[l].forEach(a => layers[l + 1].forEach(b => w[a + b] = ri(1, 9)));
+  const best = {}; best.S = 0;
+  for (let l = 1; l < layers.length; l++) layers[l].forEach(b => best[b] = Math.min(...layers[l - 1].map(a => best[a] + w[a + b])));
+  const minC = best.T, X = 40, VW = 560, VH = 250, cols = layers.length;
+  const pos = {}, layerOf = {};
+  layers.forEach((ly, l) => ly.forEach((id, j) => { pos[id] = [X + l * (VW - 2 * X) / (cols - 1), VH * (j + 1) / (ly.length + 1)]; layerOf[id] = l; }));
+  let path = ['S'];
+  const draw = () => {
+    let s = `<svg class="pz-svg" viewBox="0 0 ${VW} ${VH}" role="group" aria-label="Grafo de caminos">`;
+    for (const k in w) {
+      const a = k[0], b = k[1], [x1, y1] = pos[a], [x2, y2] = pos[b], on = path.includes(a) && path.includes(b) && path.indexOf(b) === path.indexOf(a) + 1;
+      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${on ? '#35e6ff' : '#4a3a99'}" stroke-width="${on ? 6 : 3}"/>`;
+    }
+    for (const k in w) {
+      const a = k[0], b = k[1], [x1, y1] = pos[a], [x2, y2] = pos[b], lx = x1 + (x2 - x1) * .3, ly = y1 + (y2 - y1) * .3;
+      s += `<rect x="${lx - 9}" y="${ly - 9}" width="18" height="18" fill="#0a0620"/><text x="${lx}" y="${ly + 4}" font-size="10" fill="#ffa21a" text-anchor="middle">${w[k]}</text>`;
+    }
+    for (const id in pos) {
+      const [x, y] = pos[id], on = path.includes(id), fill = on ? '#35e6ff' : '#1b1140', col = on ? '#06121a' : '#ebe6ff';
+      s += `<g class="nd" data-n="${id}" tabindex="0" role="button" aria-label="Nodo ${id}"><rect x="${x - 18}" y="${y - 18}" width="36" height="36" fill="${fill}" stroke="#35e6ff" stroke-width="3"/><text x="${x}" y="${y + 5}" font-size="13" fill="${col}" text-anchor="middle">${id}</text></g>`;
+    }
+    area.innerHTML = s + '</svg><div>Toca los nodos de izquierda a derecha. Toca el último para deshacer.</div>';
+    const cost = path.slice(1).reduce((c, id, i) => c + w[path[i] + id], 0);
+    api.status(`COSTE ${cost} · ${path.join(' → ')}`);
+  };
+  const onNode = e => {
+    const g = e.target.closest('.nd'); if (!g || api.locked) return; const id = g.dataset.n; sfx.click();
+    if (id === path[path.length - 1] && path.length > 1) path.pop();
+    else if (layerOf[id] === path.length) path.push(id);
+    draw();
+    if (path[path.length - 1] === 'T') {
+      const cost = path.slice(1).reduce((c, id2, i) => c + w[path[i] + id2], 0);
+      api.finish(cost <= minC ? 'opt' : 'aux', cost <= minC ? `Camino mínimo: coste ${cost}.` : `Camino válido con coste ${cost}; el mínimo era ${minC}.`);
+    }
+  };
+  area.onclick = onNode; area.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onNode(e); } };
+  draw();
+};
+
+/* seleccion_ruta: restricciones sobre sumas */
+PZ.seleccion_ruta = (d, area, api) => {
+  const nr = [3, 3, 4][d], ns = [3, 4, 4][d]; let R, Lim, M, valid;
+  for (let t = 0; t < 800; t++) {
+    R = Array.from({ length: nr }, () => Array.from({ length: ns }, () => ri(1, 9)));
+    M = ri(6, 8); const tots = R.map(r => r.reduce((a, b) => a + b, 0)); Lim = pick(tots);
+    valid = R.map((r, i) => tots[i] <= Lim && Math.max(...r) <= M);
+    const vt = tots.filter((_, i) => valid[i]);
+    if (vt.length >= 2 && vt.length < nr && Math.min(...vt) < Math.max(...vt)) break;
+  }
+  const tots = R.map(r => r.reduce((a, b) => a + b, 0)), minV = Math.min(...tots.filter((_, i) => valid[i])), off = new Set();
+  const draw = () => {
+    area.innerHTML = `<div class="rule-line">Restricciones: suma total ≤ ${Lim} y ningún paso mayor que ${M}.</div><div class="routes">` +
+      R.map((r, i) => `<div class="route${off.has(i) ? ' off' : ''}"><span class="steps">${String.fromCharCode(65 + i)}: ${r.join(' + ')}</span><button type="button" data-i="${i}" ${off.has(i) ? 'disabled' : ''}>Elegir</button></div>`).join('') + '</div>';
+    api.status('ELIGE LA RUTA VÁLIDA DE MENOR COSTE');
+  };
+  area.onclick = e => {
+    const b = e.target.closest('button[data-i]'); if (!b || api.locked) return; const i = +b.dataset.i;
+    if (!valid[i]) {
+      off.add(i); const why = tots[i] > Lim ? `suma ${tots[i]} > ${Lim}` : `tiene un paso de ${Math.max(...R[i])} > ${M}`;
+      draw(); api.fail(`Ruta ${String.fromCharCode(65 + i)} rompe la restricción: ${why}.`); return;
+    }
+    draw();
+    api.finish(tots[i] <= minV ? 'opt' : 'aux', tots[i] <= minV ? `Ruta ${String.fromCharCode(65 + i)}: válida y de menor coste (${tots[i]}).` : `Ruta ${String.fromCharCode(65 + i)} es válida (${tots[i]}), pero había una de ${minV}.`);
+  };
+  draw();
+};
+
+/* logica: descartar la proposición falsa */
+PZ.logica = (d, area, api) => {
+  const n = [4, 5, 5][d], x = ri(2, 9), y = ri(2, 9), sq = Number.isInteger(Math.sqrt(x));
+  const T = [
+    t => `x² = ${x * x + (t ? 0 : ri(1, 3))}`,
+    t => `x + y = ${x + y + (t ? 0 : pick([-2, -1, 1, 2]))}`,
+    t => `x · y > ${x * y + (t ? -ri(1, 3) : ri(0, 2))}`,
+    t => `x es ${((x % 2 === 0) === t) ? 'par' : 'impar'}`,
+    t => `x mod 3 = ${x % 3 + (t ? 0 : ri(1, 2))}`,
+    t => `y − x = ${y - x + (t ? 0 : pick([-2, -1, 1, 2]))}`,
+    t => `x ${(sq === t) ? 'es' : 'no es'} un cuadrado perfecto`
+  ];
+  const f = rnd(n), items = shuffle([...T.keys()]).slice(0, n).map((k, i) => ({ txt: T[k](i !== f), truth: i !== f }));
+  const rev = new Array(n).fill(null), gone = new Array(n).fill(false); let peeks = 0;
+  const draw = () => {
+    area.innerHTML = `<div class="sumline">x = ${x} · y = ${y}</div><div class="props">` + items.map((it, i) =>
+      `<div class="prop${gone[i] ? ' off' : ''}"><span class="t">${esc(it.txt)}</span>${rev[i] === null ? '' : `<span class="v ${rev[i] ? 'T' : 'F'}">${rev[i] ? 'VERDADERA' : 'FALSA'}</span>`}<span class="row"><button type="button" data-a="e" data-i="${i}" ${gone[i] ? 'disabled' : ''}>Evaluar</button><button type="button" data-a="d" data-i="${i}" ${gone[i] ? 'disabled' : ''}>Descartar</button></span></div>`).join('') + '</div>';
+    api.status(`COMPROBACIONES ${peeks} · ÓPTIMO ≤ 1`);
+  };
+  area.onclick = e => {
+    const b = e.target.closest('button[data-a]'); if (!b || api.locked) return; const i = +b.dataset.i; sfx.click();
+    if (b.dataset.a === 'e') { rev[i] = items[i].truth; peeks++; draw(); return; }
+    if (items[i].truth) { rev[i] = true; gone[i] = true; peeks++; draw(); api.fail('Esa proposición era verdadera: no rompía nada. Cuenta como comprobación.'); return; }
+    rev[i] = false; gone[i] = true; draw();
+    api.finish(peeks <= 1 ? 'opt' : 'aux', peeks <= 1 ? 'Descartaste la falsa con una comprobación o menos.' : `Descartada la falsa tras ${peeks} comprobaciones.`);
+  };
+  draw();
+};
+
+/* equilibrio: suma exacta con las menos piezas */
+PZ.equilibrio = (d, area, api) => {
+  const n = [5, 6, 7][d]; let vals, T, minK;
+  for (let t = 0; t < 500; t++) {
+    vals = Array.from({ length: n }, () => ri(1, 14)); const m = {};
+    for (let mask = 1; mask < (1 << n); mask++) { let s = 0, c = 0; for (let i = 0; i < n; i++) if (mask >> i & 1) { s += vals[i]; c++; } const o = m[s] || (m[s] = { lo: 99, hi: 0 }); o.lo = Math.min(o.lo, c); o.hi = Math.max(o.hi, c); }
+    const cand = Object.keys(m).filter(s => +s >= 10 && +s <= 34 && m[s].hi > m[s].lo);
+    if (cand.length) { T = +pick(cand); minK = m[T].lo; break; }
+  }
+  const on = new Set();
+  const draw = () => {
+    const sum = [...on].reduce((a, i) => a + vals[i], 0);
+    area.innerHTML = `<div class="sumline">META ${T}</div><div class="row">` + vals.map((v, i) => `<button type="button" class="tile${on.has(i) ? ' on' : ''}" data-i="${i}">${v}</button>`).join('') + `</div><div class="sumline">SUMA ${sum} · PIEZAS ${on.size}</div><button type="button" data-w="1">Pesar</button>`;
+    api.status(`PIEZAS ${on.size} · ÓPTIMO ${minK}`);
+  };
+  area.onclick = e => {
+    if (api.locked) return; const t = e.target.closest('.tile'), w = e.target.closest('[data-w]'); sfx.click();
+    if (t) { const i = +t.dataset.i; on.has(i) ? on.delete(i) : on.add(i); draw(); return; }
+    if (w) {
+      const sum = [...on].reduce((a, i) => a + vals[i], 0);
+      if (sum !== T) { api.fail(`La balanza marca ${sum}: ${sum > T ? 'te pasaste' : 'te faltan'} ${Math.abs(T - sum)}.`); return; }
+      api.finish(on.size <= minK ? 'opt' : 'aux', on.size <= minK ? `Equilibrio exacto con ${on.size} piezas.` : `Equilibrio con ${on.size} piezas; bastaban ${minK}.`);
+    }
+  };
+  draw();
+};
+
+/* binario: interruptores con el mínimo de cambios */
+PZ.binario = (d, area, api) => {
+  const nb = [4, 5, 6][d], max = (1 << nb) - 1; let init, target, minT;
+  do { init = ri(0, max); target = ri(0, max); minT = (init ^ target).toString(2).replace(/0/g, '').length; } while (minT < 2);
+  let val = init, tog = 0;
+  const draw = () => {
+    let bits = ''; for (let i = nb - 1; i >= 0; i--) bits += `<button type="button" class="tile bit${val >> i & 1 ? ' on' : ''}" data-b="${i}"><span>${val >> i & 1}</span><small>${1 << i}</small></button>`;
+    area.innerHTML = `<div class="sumline">META ${target}</div><div class="row">${bits}</div><div class="sumline">VALOR ${val} · ${val.toString(2).padStart(nb, '0')}</div>`;
+    api.status(`INTERRUPTORES ${tog} · ÓPTIMO ${minT}`);
+  };
+  area.onclick = e => {
+    const b = e.target.closest('[data-b]'); if (!b || api.locked) return; sfx.click();
+    val ^= 1 << +b.dataset.b; tog++; draw();
+    if (val === target) api.finish(tog <= minT ? 'opt' : 'aux', tog <= minT ? `Meta ${target} con ${tog} cambios, el mínimo.` : `Meta ${target} con ${tog} cambios; bastaban ${minT}.`);
+  };
+  draw();
+};
+
+/* ---------- pantallas ---------- */
+function go(name) {
+  $('#modal').hidden = true; CUR = null;
+  ['title', 'select', 'game'].forEach(n => $('#scr-' + n).hidden = n !== name);
+  if (name === 'select') drawCards();
+  if (name !== 'game' && G) { cancelAnimationFrame(G.raf); }
+  window.scrollTo(0, 0);
+}
+function drawCards() {
+  const cls = { facil: 'c-facil', media: 'c-media', dificil: 'c-dificil' }, mini = { facil: ['v', 'o', 'r', 'o', 'r'], media: ['v', 'o', 'r', 'o', 'r', 'r', 'o', 'r'], dificil: ['v', 'o', 'r', 'o', 'r', 'o', 'r', 'o', 'r', 'o', 'r', 'r'] };
+  const col = { r: 'var(--rojo)', o: 'var(--naranja)', v: 'var(--verde)' };
+  $('#cards').innerHTML = DB.dificultades.map(d => `<button type="button" class="card ${cls[d.id]}" data-d="${d.id}">
+    <h3>${esc(d.nombre.toUpperCase())}</h3><span class="n">${d.cantidad_bloques} BLOQUES · CONEXIONES ${d.conexiones_por_bloque}</span>
+    <span>${esc(d.descripcion)}</span><span class="mini">${mini[d.id].map(c => `<s style="background:${col[c]}"></s>`).join('')}</span>
+    <span class="hi">RÉCORD ${loadHi(d.id)}</span></button>`).join('');
+}
+$('#cards').onclick = e => { const c = e.target.closest('.card'); if (c) { sfx.click(); go('game'); newGame(c.dataset.d); } };
+$('#btn-start').onclick = () => { sfx.click(); go('select'); };
+$('#btn-back').onclick = () => { sfx.click(); go('title'); };
+$('#btn-menu').onclick = () => { sfx.click(); go('select'); };
+</script>
