@@ -1,0 +1,271 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Radar de Culpabilidad</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: el radar a la izquierda y los controles con las probabilidades a la derecha.
+   Un solo mundo visual oscuro, tipo pantalla de monitoreo. La nota fuerte es el rojo del centro. */
+:root {
+  --bg: #0d141b;
+  --surface: #141e28;
+  --ink: #e4eaf0;
+  --muted: #8d9bab;
+  --line: #2a3846;
+  --amber: #f2b441;
+  --red: #ff6b5f;
+  --f-display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; margin: 0;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+h1 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: clamp(2.3rem, 7.5vw, 3.6rem); line-height: .95; letter-spacing: .01em; text-transform: uppercase; text-wrap: balance; }
+.label { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.lede { max-width: 60ch; color: var(--muted); margin: 10px 0 0; }
+.stage { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 800px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+.radar { width: 100%; max-width: 600px; aspect-ratio: 1; margin: 0 auto; }
+canvas { width: 100%; height: 100%; display: block; }
+.panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.param { display: flex; flex-direction: column; gap: 6px; }
+.param-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.param b { font-weight: 600; font-size: .92rem; }
+.val { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; accent-color: var(--amber); }
+input:focus-visible, button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px; cursor: pointer; text-align: center; }
+button:hover { border-color: var(--ink); }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btns button { flex: 1 1 140px; font-size: .88rem; }
+.odds { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.big { font-family: var(--f-display); font-weight: 800; font-size: 3.4rem; line-height: .9; color: var(--red); font-variant-numeric: tabular-nums; }
+.odds-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.odds-row span { color: var(--muted); font-size: .9rem; flex: 1 1 160px; }
+.bars { display: flex; flex-direction: column; gap: 6px; }
+.bar-row { display: grid; grid-template-columns: 112px 1fr 40px; gap: 8px; align-items: center; font-family: var(--f-mono); font-size: .74rem; }
+.bar-row .t { height: 8px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+.bar-row .t i { display: block; height: 100%; }
+.bar-row em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; }
+.verdict { font-size: .9rem; color: var(--muted); margin: 0; }
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px 16px; }
+.legend div { display: flex; align-items: center; gap: 8px; font-size: .84rem; }
+.legend i { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 1px solid var(--line); }
+.note { color: var(--muted); font-size: .88rem; max-width: 70ch; margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="label">Ilustración · riesgo sistémico del trabajador</div>
+    <h1>Radar de Culpabilidad</h1>
+    <p class="lede">Cada vuelta de la simulación deja un rastro distinto. Empresa inmadura, Estado inmaduro y desconfianza alta empujan a Carlos hacia el centro del radar, donde él es el culpable más conveniente.</p>
+  </header>
+
+  <div class="stage">
+    <div class="radar"><canvas id="cv" role="img" aria-label="Radar con cuatro zonas concéntricas y el rastro de Carlos acercándose al centro de riesgo de culpabilidad"></canvas></div>
+
+    <div class="panel">
+      <div class="param">
+        <div class="param-top"><label for="empresa"><b>Madurez digital de la empresa</b></label><span class="val" id="v-empresa"></span></div>
+        <input type="range" id="empresa" min="0" max="100" step="5">
+      </div>
+      <div class="param">
+        <div class="param-top"><label for="estado"><b>Madurez digital del Estado</b></label><span class="val" id="v-estado"></span></div>
+        <input type="range" id="estado" min="0" max="100" step="5">
+      </div>
+      <div class="param">
+        <div class="param-top"><label for="desc"><b>Desconfianza corporativa</b></label><span class="val" id="v-desc"></span></div>
+        <input type="range" id="desc" min="0" max="100" step="5">
+      </div>
+      <div class="btns">
+        <button id="again">Generar otro rastro</button>
+        <button id="mature">Probar entorno maduro</button>
+        <button id="worst">Volver al escenario crítico</button>
+      </div>
+
+      <div class="odds">
+        <div class="label">Probabilidad de terminar en la zona de culpabilidad</div>
+        <div class="odds-row"><div class="big" id="p-center">0%</div><span id="p-text"></span></div>
+        <div class="bars" id="bars"></div>
+        <p class="verdict" id="main-end"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+  <p class="note">El punto con aro es Carlos en este rastro. Los trazos tenues son otros rastros posibles con el mismo entorno. En cada paso, la probabilidad de acercarse al centro crece con el promedio de los tres factores de riesgo; con un entorno trazable, el rastro tiende a quedarse en el borde.</p>
+</div>
+
+<script>
+(function () {
+  var P = { empresa: 10, estado: 20, desc: 90 };
+  var N = 44, RUNS = 600, GHOSTS = 24;
+  var AX = [-Math.PI / 2, Math.PI / 6, 5 * Math.PI / 6]; // empresa, estado, desconfianza
+  var AXLABEL = ['EMPRESA', 'ESTADO', 'DESCONFIANZA'];
+  var ZONES = [
+    { name: 'Zona segura', fill: '#16232f', col: '#5f86a8' },
+    { name: 'Alerta', fill: '#1d2530', col: '#e0c46a' },
+    { name: 'Riesgo alto', fill: '#2c2229', col: '#f2954a' },
+    { name: 'Zona de riesgo de culpabilidad', fill: '#44202a', col: '#ff6b5f' }
+  ];
+  var RAD = [1, .75, .5, .25];
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var main, ghosts, stats, t0;
+
+  function gauss() { var u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function angdiff(a, b) { var d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; }
+  function factors() { return [1 - P.empresa / 100, 1 - P.estado / 100, P.desc / 100]; }
+  function zoneOf(r) { return r < .25 ? 3 : r < .5 ? 2 : r < .75 ? 1 : 0; }
+
+  function run() {
+    var f = factors(), m = (f[0] + f[1] + f[2]) / 3, p = 0.05 + 0.9 * m;
+    var tx = 0, ty = 0;
+    f.forEach(function (v, i) { tx += v * Math.cos(AX[i]); ty += v * Math.sin(AX[i]); });
+    var target = Math.atan2(ty, tx);
+    var r = 1, th = Math.random() * 2 * Math.PI, pts = [{ r: r, th: th }];
+    for (var i = 0; i < N; i++) {
+      if (Math.random() < p) r -= 0.045; else r += 0.03;
+      r = Math.max(0, Math.min(1, r));
+      th += 0.22 * angdiff(target, th) + 0.28 * gauss();
+      pts.push({ r: r, th: th });
+    }
+    return pts;
+  }
+
+  function simulate() {
+    main = run();
+    ghosts = []; for (var i = 0; i < GHOSTS; i++) ghosts.push(run());
+    var c = [0, 0, 0, 0];
+    for (var k = 0; k < RUNS; k++) { var z = zoneOf(run()[N].r); c[z]++; }
+    stats = c.map(function (n) { return Math.round(100 * n / RUNS); });
+    t0 = performance.now();
+    updateText();
+  }
+
+  function updateText() {
+    document.getElementById('v-empresa').textContent = P.empresa + '%';
+    document.getElementById('v-estado').textContent = P.estado + '%';
+    document.getElementById('v-desc').textContent = P.desc + '%';
+    ['empresa', 'estado', 'desc'].forEach(function (k) { document.getElementById(k).value = P[k]; });
+    document.getElementById('p-center').textContent = stats[3] + '%';
+    var s = stats[3];
+    document.getElementById('p-text').textContent = s >= 70 ? 'En casi cualquier rastro posible, Carlos termina en el centro.' : s >= 30 ? 'El resultado depende del azar: es un entorno peligroso.' : 'El entorno deja pocas formas de que Carlos quede atrapado.';
+    var bars = '';
+    for (var z = 3; z >= 0; z--) {
+      bars += '<div class="bar-row"><span>' + ZONES[z].name.replace('Zona de riesgo de culpabilidad', 'Culpabilidad').replace('Zona segura', 'Segura') + '</span><div class="t"><i style="width:' + stats[z] + '%;background:' + ZONES[z].col + '"></i></div><em>' + stats[z] + '%</em></div>';
+    }
+    document.getElementById('bars').innerHTML = bars;
+    var zEnd = zoneOf(main[N].r);
+    document.getElementById('main-end').textContent = 'En este rastro, Carlos terminó en: ' + ZONES[zEnd].name.toLowerCase() + '.';
+  }
+
+  function buildLegend() {
+    var h = '';
+    for (var z = 3; z >= 0; z--) h += '<div><i style="background:' + ZONES[z].col + '"></i>' + ZONES[z].name + '</div>';
+    document.getElementById('legend').innerHTML = h;
+  }
+
+  function fit() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    return dpr;
+  }
+
+  function draw(now) {
+    var dpr = fit(), W = cv.width, cx = W / 2, cy = W / 2, R = W * 0.455, u = W / 600;
+    ctx.clearRect(0, 0, W, W);
+
+    // zonas
+    for (var i = 0; i < 4; i++) {
+      ctx.beginPath(); ctx.arc(cx, cy, R * RAD[i], 0, 2 * Math.PI);
+      ctx.fillStyle = ZONES[i].fill; ctx.fill();
+      ctx.lineWidth = 1.2 * dpr; ctx.strokeStyle = 'rgba(141,155,171,0.35)'; ctx.stroke();
+    }
+    var g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * .25);
+    g.addColorStop(0, 'rgba(255,107,95,0.45)'); g.addColorStop(1, 'rgba(255,107,95,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * .25, 0, 2 * Math.PI); ctx.fill();
+
+    // divisiones de sectores
+    ctx.strokeStyle = 'rgba(141,155,171,0.3)'; ctx.lineWidth = 1 * dpr; ctx.setLineDash([4 * dpr, 5 * dpr]);
+    [-Math.PI / 6, Math.PI / 2, 7 * Math.PI / 6].forEach(function (a) {
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a)); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+
+    // barrido
+    var sweep = reduce ? -Math.PI / 3 : (now / 4200) * 2 * Math.PI;
+    for (var k = 0; k < 36; k++) {
+      var a = sweep - k * 0.022;
+      ctx.strokeStyle = 'rgba(242,180,65,' + (0.22 * (1 - k / 36)).toFixed(3) + ')';
+      ctx.lineWidth = 3 * dpr;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * Math.cos(a), cy + R * Math.sin(a)); ctx.stroke();
+    }
+
+    // etiquetas de sector
+    ctx.font = '500 ' + Math.max(9 * dpr, 10.5 * u) + 'px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = 'rgba(228,234,240,0.7)';
+    for (var s = 0; s < 3; s++) {
+      ctx.fillText(AXLABEL[s], cx + R * 0.87 * Math.cos(AX[s]), cy + R * 0.87 * Math.sin(AX[s]));
+    }
+
+    // rastros fantasma
+    ghosts.forEach(function (pts) {
+      ctx.beginPath();
+      pts.forEach(function (q, j) { var x = cx + R * q.r * Math.cos(q.th), y = cy + R * q.r * Math.sin(q.th); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.strokeStyle = 'rgba(242,180,65,0.13)'; ctx.lineWidth = 1.2 * dpr; ctx.lineJoin = 'round'; ctx.stroke();
+      var e = pts[pts.length - 1];
+      ctx.beginPath(); ctx.arc(cx + R * e.r * Math.cos(e.th), cy + R * e.r * Math.sin(e.th), 2.2 * dpr, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(242,180,65,0.3)'; ctx.fill();
+    });
+
+    // rastro principal
+    var shown = reduce ? N : Math.min(N, (now - t0) / 70);
+    var last = Math.floor(shown), pos = [];
+    for (var j = 0; j <= last; j++) pos.push({ x: cx + R * main[j].r * Math.cos(main[j].th), y: cy + R * main[j].r * Math.sin(main[j].th), r: main[j].r });
+    if (last < N) {
+      var f = shown - last, a0 = main[last], a1 = main[last + 1];
+      var rr = a0.r + (a1.r - a0.r) * f, tt = a0.th + (a1.th - a0.th) * f;
+      pos.push({ x: cx + R * rr * Math.cos(tt), y: cy + R * rr * Math.sin(tt), r: rr });
+    }
+    for (var m = 1; m < pos.length; m++) {
+      var t = m / pos.length, c = pos[m].r < .5 ? '255,107,95' : '242,180,65';
+      ctx.strokeStyle = 'rgba(' + c + ',' + (0.3 + 0.7 * t).toFixed(2) + ')'; ctx.lineWidth = 2.4 * dpr;
+      ctx.beginPath(); ctx.moveTo(pos[m - 1].x, pos[m - 1].y); ctx.lineTo(pos[m].x, pos[m].y); ctx.stroke();
+    }
+    for (var d = 0; d < pos.length - 1; d++) {
+      ctx.beginPath(); ctx.arc(pos[d].x, pos[d].y, 2.4 * dpr, 0, 2 * Math.PI);
+      ctx.fillStyle = pos[d].r < .5 ? '#ff6b5f' : '#f2b441'; ctx.fill();
+    }
+    var h = pos[pos.length - 1];
+    ctx.beginPath(); ctx.arc(h.x, h.y, 6 * dpr, 0, 2 * Math.PI); ctx.fillStyle = '#e4eaf0'; ctx.fill();
+    ctx.beginPath(); ctx.arc(h.x, h.y, 11 * dpr, 0, 2 * Math.PI); ctx.strokeStyle = 'rgba(228,234,240,0.8)'; ctx.lineWidth = 1.6 * dpr; ctx.stroke();
+  }
+
+  function frame(now) { draw(now); if (!reduce) requestAnimationFrame(frame); }
+
+  function change() { simulate(); if (reduce) draw(performance.now()); }
+
+  ['empresa', 'estado', 'desc'].forEach(function (k) {
+    document.getElementById(k).addEventListener('input', function (e) { P[k] = parseInt(e.target.value, 10); change(); });
+  });
+  document.getElementById('again').addEventListener('click', change);
+  document.getElementById('mature').addEventListener('click', function () { P.empresa = 80; P.estado = 70; P.desc = 30; change(); });
+  document.getElementById('worst').addEventListener('click', function () { P.empresa = 10; P.estado = 20; P.desc = 90; change(); });
+  window.addEventListener('resize', function () { if (reduce) draw(performance.now()); });
+
+  buildLegend();
+  simulate();
+  if (reduce) draw(performance.now()); else requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>

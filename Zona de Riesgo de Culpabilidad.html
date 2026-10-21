@@ -1,0 +1,341 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Zona de Riesgo de Culpabilidad</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: un expediente en una columna. Parámetros arriba, la jornada de Carlos en el medio,
+   el rastro y el veredicto abajo. La única nota fuerte es el sello del veredicto. */
+:root {
+  --bg: #e6eaef;
+  --surface: #f6f8fa;
+  --ink: #131f2d;
+  --muted: #566475;
+  --line: #c3ccd7;
+  --red: #b3261e;
+  --green: #1c7560;
+  --amber: #9a5b07;
+  --f-display: "Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f151c; --surface: #17202a; --ink: #e5eaf0; --muted: #93a0af; --line: #2b3846;
+    --red: #ff7468; --green: #52c7a5; --amber: #e8a640; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f151c; --surface: #17202a; --ink: #e5eaf0; --muted: #93a0af; --line: #2b3846;
+  --red: #ff7468; --green: #52c7a5; --amber: #e8a640; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(2.4rem, 8vw, 3.9rem); line-height: .95; letter-spacing: .01em; text-transform: uppercase; }
+h2 { font-family: var(--f-display); font-weight: 700; font-size: 1.45rem; letter-spacing: .04em; text-transform: uppercase; }
+.label { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.lede { max-width: 62ch; color: var(--muted); margin: 12px 0 0; font-size: 1.02rem; }
+section { display: flex; flex-direction: column; gap: 14px; }
+.head-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* presets */
+.presets { display: flex; gap: 8px; flex-wrap: wrap; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 7px 12px; font-size: .85rem; }
+.chip:hover { border-color: var(--ink); }
+
+/* sliders */
+.params { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.param { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.param-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.param b { font-weight: 600; }
+.val { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 1.05rem; }
+.param small { color: var(--muted); font-size: .82rem; line-height: 1.4; }
+input[type=range] { width: 100%; accent-color: var(--ink); margin: 2px 0; }
+
+/* situations */
+.sits { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.sit { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.sit p { margin: 0; }
+.sit .quote { font-size: .95rem; }
+.status { font-family: var(--f-mono); font-size: .78rem; padding: 6px 9px; border-radius: 3px; border: 1px solid var(--line); }
+.status.ok { color: var(--green); border-color: var(--green); }
+.status.down { color: var(--red); border-color: var(--red); }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.choice { text-align: left; padding: 10px 12px; border: 1px solid var(--line); background: var(--bg); border-radius: 4px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.choice b { font-size: .9rem; font-weight: 600; }
+.choice span { font-size: .78rem; color: var(--muted); line-height: 1.35; }
+.choice[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: var(--surface); }
+.choice:disabled { opacity: .45; cursor: not-allowed; }
+.outcome { font-size: .86rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
+@media (max-width: 460px) { .choices { grid-template-columns: 1fr; } }
+
+/* file */
+.file { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.col { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.col ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.col li { font-size: .9rem; padding-left: 12px; border-left: 3px solid var(--line); }
+.col.against li { border-left-color: var(--red); }
+.col.backup li { border-left-color: var(--green); }
+.none { font-family: var(--f-mono); font-size: .82rem; color: var(--red); }
+.empty { color: var(--muted); font-size: .88rem; }
+.meter { display: flex; flex-direction: column; gap: 6px; }
+.bar { height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--green); }
+.bar i.low { background: var(--amber); }
+.bar i.crit { background: var(--red); }
+.meter-row { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: .78rem; font-variant-numeric: tabular-nums; }
+
+/* verdict */
+.verdict { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 20px; display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+.stamp { font-family: var(--f-display); font-weight: 800; font-size: clamp(1.9rem, 6vw, 2.8rem); line-height: 1; letter-spacing: .06em; text-transform: uppercase; border: 4px solid currentColor; padding: 8px 16px; transform: rotate(-3deg); white-space: nowrap; }
+.verdict .why { flex: 1 1 280px; min-width: 0; }
+.verdict .why p { margin: 6px 0 0; }
+.v-culpable, .v-despido { color: var(--red); }
+.v-protegido, .v-limpio { color: var(--green); }
+.v-salvado, .v-aviso { color: var(--amber); }
+
+/* both paths */
+.paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.path { border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); min-width: 0; }
+.path .res { font-family: var(--f-display); font-weight: 700; font-size: 1.35rem; letter-spacing: .05em; text-transform: uppercase; }
+.path p { margin: 0; font-size: .86rem; color: var(--muted); }
+.note { max-width: 70ch; color: var(--muted); font-size: .9rem; margin: 0; }
+
+.reads { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; border-top: 1px solid var(--line); padding-top: 22px; }
+.reads h3 { font-size: .95rem; font-weight: 600; font-family: var(--f-body); margin-bottom: 4px; }
+.reads p { margin: 0; color: var(--muted); font-size: .88rem; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="label">Simulación didáctica · riesgo sistémico del trabajador</div>
+    <h1>Zona de Riesgo de Culpabilidad</h1>
+    <p class="lede">Carlos es analista operativo y no cometió ningún fraude. Mueve la madurez digital de la empresa y del Estado, decide cómo resuelve cada situación y mira qué queda registrado cuando llega una auditoría.</p>
+  </header>
+
+  <section aria-labelledby="h-params">
+    <div class="head-row">
+      <h2 id="h-params">El entorno</h2>
+      <div class="presets" role="group" aria-label="Escenarios">
+        <button class="chip" data-preset="codigo">Escenario del código</button>
+        <button class="chip" data-preset="estado">Estado falla, empresa ordenada</button>
+        <button class="chip" data-preset="maduro">Entorno con trazabilidad</button>
+      </div>
+    </div>
+    <div class="params">
+      <div class="param">
+        <div class="param-top"><label for="empresa"><b>Madurez de la empresa</b></label><span class="val" id="v-empresa"></span></div>
+        <input type="range" id="empresa" min="0" max="100" step="5">
+        <small>Bajo: órdenes verbales y canales informales. Desde 50% las órdenes quedan por escrito y hay herramientas oficiales.</small>
+      </div>
+      <div class="param">
+        <div class="param-top"><label for="estado"><b>Madurez del Estado</b></label><span class="val" id="v-estado"></span></div>
+        <input type="range" id="estado" min="0" max="100" step="5">
+        <small>Bajo: plataformas lentas o caídas que obligan a improvisar parches. Desde 50% el canal oficial responde.</small>
+      </div>
+      <div class="param">
+        <div class="param-top"><label for="desc"><b>Desconfianza corporativa</b></label><span class="val" id="v-desc"></span></div>
+        <input type="range" id="desc" min="0" max="100" step="5">
+        <small>Alto: si algo falla, la directiva busca un culpable externo a ella para protegerse.</small>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-day">
+    <h2 id="h-day">La jornada de Carlos</h2>
+    <div class="sits" id="sits"></div>
+  </section>
+
+  <section aria-labelledby="h-file">
+    <h2 id="h-file">Lo que queda en el expediente</h2>
+    <div class="file">
+      <div class="col against">
+        <div class="label">Rastro digital de Carlos</div>
+        <div id="against"></div>
+      </div>
+      <div class="col backup">
+        <div class="label">Respaldo institucional</div>
+        <div id="backup"></div>
+      </div>
+    </div>
+    <div class="col meter" style="gap:6px">
+      <div class="meter-row"><span class="label">Productividad medida por la empresa</span><span id="prod-val"></span></div>
+      <div class="bar" role="img" aria-label="Productividad"><i id="prod-bar"></i></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-verdict">
+    <h2 id="h-verdict">Si hoy explota una auditoría</h2>
+    <div class="verdict" id="verdict"></div>
+  </section>
+
+  <section aria-labelledby="h-paths">
+    <h2 id="h-paths">La paradoja, con este entorno</h2>
+    <div class="paths" id="paths"></div>
+    <p class="note">Cuando el entorno es inmaduro, las dos formas de cumplir terminan mal. Sube la madurez de la empresa hasta 50% o más y observa cómo el mismo atajo deja de ser una trampa.</p>
+  </section>
+
+  <div class="reads">
+    <div><h3>Asimetría de registro</h3><p>La orden del jefe fue una llamada o una frase en el pasillo. La acción de Carlos dejó una IP, una cuenta y un historial.</p></div>
+    <div><h3>Vacío del Estado</h3><p>Si la plataforma pública cae, el negocio no puede esperar. Alguien improvisa y ese alguien queda expuesto.</p></div>
+    <div><h3>Escudo de la desconfianza</h3><p>Sin un sistema que pruebe quién pidió qué, la gerencia muestra los registros de Carlos y dice que fue una acción aislada.</p></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var P = { empresa: 10, estado: 20, desc: 90 };
+  var choice = { s1: 'atajo', s2: 'atajo' };
+  var PRESETS = {
+    codigo: { empresa: 10, estado: 20, desc: 90 },
+    estado: { empresa: 80, estado: 20, desc: 60 },
+    maduro: { empresa: 80, estado: 70, desc: 30 }
+  };
+
+  var SITS = [
+    {
+      id: 's1', titulo: 'Impuestos a las 23:55', depende: 'estado',
+      texto: 'La plataforma del Estado para declarar impuestos está caída. El jefe llama y dice que use su clave personal en otra computadora para que no los multen.',
+      evidencia: 'Acceso desde una IP residencial no autorizada con tokens personales de Carlos.',
+      orden: 'La orden del jefe quedó registrada por escrito en el sistema de tickets.',
+      okTxt: 'La plataforma del Estado responde. Carlos declara por el canal oficial.',
+      downTxt: 'La plataforma del Estado está caída.',
+      espera: 'Carlos espera. Vence el plazo y la empresa recibe una multa.'
+    },
+    {
+      id: 's2', titulo: 'Base de datos para el proveedor', depende: 'empresa',
+      texto: 'La empresa no tiene un software para transferir bases de datos grandes. El gerente le pide que "vea cómo hace" para enviar la información al proveedor hoy mismo.',
+      evidencia: 'Historial de Carlos subiendo datos confidenciales a su cuenta gratuita de WeTransfer.',
+      orden: 'El pedido del gerente quedó registrado por escrito en el sistema de tickets.',
+      okTxt: 'La empresa tiene una herramienta de transferencia segura. Carlos la usa.',
+      downTxt: 'La empresa no tiene una herramienta de transferencia.',
+      espera: 'Carlos no envía nada. El proveedor se retrasa y el gerente dice que Carlos no resuelve.'
+    }
+  ];
+
+  function available(s, p) { return (s.depende === 'estado' ? p.estado : p.empresa) >= 50; }
+
+  function evaluate(p, ch) {
+    var r = { prod: 100, ev: [], resp: [], sinResp: 0, esperas: 0, atajos: 0, status: {} };
+    var logged = p.empresa >= 50;
+    SITS.forEach(function (s) {
+      if (available(s, p)) {
+        r.status[s.id] = 'oficial';
+        r.resp.push('Proceso completado por canal seguro: ' + s.titulo + '.');
+      } else if (ch[s.id] === 'atajo') {
+        r.status[s.id] = 'atajo'; r.atajos++;
+        r.ev.push(s.evidencia);
+        if (logged) r.resp.push(s.orden); else r.sinResp++;
+      } else {
+        r.status[s.id] = 'espera'; r.esperas++; r.prod -= 30;
+      }
+    });
+    r.verdict = verdict(p, r);
+    return r;
+  }
+
+  function verdict(p, r) {
+    var hi = p.desc >= 60;
+    if (r.sinResp > 0 && hi) return { c: 'culpable', sello: 'Culpable', txt: 'Las órdenes fueron verbales y no existen en ningún registro. El rastro de Carlos sí existe. La directiva responde que fue una acción aislada de este trabajador.' };
+    if (r.esperas > 0 && r.prod <= 70 && p.desc >= 50) return { c: 'despido', sello: 'Despedido', txt: 'Siguió las reglas y la empresa perdió plazos. Con tan poca confianza interna, lo califican como improductivo.' };
+    if (r.sinResp > 0) return { c: 'salvado', sello: 'Salvado', txt: 'Con baja desconfianza, la directiva reconoce lo que pidió de palabra. Carlos se salva por buena voluntad y no por un registro.' };
+    if (r.atajos > 0) return { c: 'protegido', sello: 'Protegido', txt: 'Hizo un atajo, pero la orden quedó registrada. La empresa no puede decir que no sabía.' };
+    if (r.esperas > 0) return { c: 'aviso', sello: 'Con reproche', txt: 'Su productividad bajó, pero no llega a una sanción. Sigue en observación.' };
+    return { c: 'limpio', sello: 'Sin riesgo', txt: 'Todo pasó por canales con trazabilidad. No hay nada que atribuirle.' };
+  }
+
+  function el(id) { return document.getElementById(id); }
+
+  function renderSits(res) {
+    var html = '';
+    SITS.forEach(function (s) {
+      var ok = available(s, P);
+      var st = res.status[s.id];
+      var out;
+      if (st === 'oficial') out = 'Se completó con trazabilidad. No queda nada que atribuirle.';
+      else if (st === 'atajo') out = P.empresa >= 50 ? 'Resolvió con un atajo. La orden quedó registrada.' : 'Resolvió con un atajo. La orden fue verbal y no deja registro.';
+      else out = s.espera;
+      html += '<div class="sit">' +
+        '<div class="label">' + s.titulo + '</div>' +
+        '<p class="quote">' + s.texto + '</p>' +
+        '<div class="status ' + (ok ? 'ok' : 'down') + '">' + (ok ? s.okTxt : s.downTxt) + '</div>' +
+        '<div class="choices" role="group" aria-label="Decisión de Carlos">' +
+          '<button class="choice" data-sit="' + s.id + '" data-c="espera" aria-pressed="' + (!ok && choice[s.id] === 'espera') + '"' + (ok ? ' disabled' : '') + '><b>Seguir el proceso oficial</b><span>Espera, cumple la norma y baja su productividad.</span></button>' +
+          '<button class="choice" data-sit="' + s.id + '" data-c="atajo" aria-pressed="' + (!ok && choice[s.id] === 'atajo') + '"' + (ok ? ' disabled' : '') + '><b>Resolver con un atajo</b><span>Usa sus propias cuentas y dispositivos para salvar el día.</span></button>' +
+        '</div>' +
+        '<div class="outcome">' + out + '</div>' +
+      '</div>';
+    });
+    el('sits').innerHTML = html;
+  }
+
+  function renderFile(res) {
+    el('against').innerHTML = res.ev.length
+      ? '<ul>' + res.ev.map(function (e) { return '<li>' + e + '</li>'; }).join('') + '</ul>'
+      : '<div class="empty">Sin evidencias en su contra.</div>';
+    el('backup').innerHTML = res.resp.length
+      ? '<ul>' + res.resp.map(function (e) { return '<li>' + e + '</li>'; }).join('') + '</ul>'
+      : '<div class="none">NINGUNO. Todo se manejó con acuerdos verbales.</div>';
+    var bar = el('prod-bar');
+    bar.style.width = res.prod + '%';
+    bar.className = res.prod <= 40 ? 'crit' : (res.prod <= 70 ? 'low' : '');
+    el('prod-val').textContent = res.prod + ' / 100';
+  }
+
+  function renderVerdict(res) {
+    var v = res.verdict;
+    el('verdict').innerHTML =
+      '<div class="stamp v-' + v.c + '">' + v.sello + '</div>' +
+      '<div class="why"><div class="label">Cometió fraude real: no</div><p>' + v.txt + '</p></div>';
+  }
+
+  function renderPaths() {
+    var rules = { s1: 'espera', s2: 'espera' }, cuts = { s1: 'atajo', s2: 'atajo' };
+    var a = evaluate(P, rules).verdict, b = evaluate(P, cuts).verdict;
+    function card(title, v, note) {
+      return '<div class="path"><div class="label">' + title + '</div><div class="res v-' + v.c + '">' + v.sello + '</div><p>' + note + '</p></div>';
+    }
+    el('paths').innerHTML =
+      card('Siempre sigue las reglas lentas', a, 'Si el canal oficial cae, pierde plazos y su productividad se hunde.') +
+      card('Siempre usa atajos', b, 'Cumple con el negocio y deja un rastro propio que la empresa puede señalar.');
+  }
+
+  function render() {
+    var res = evaluate(P, choice);
+    el('v-empresa').textContent = P.empresa + '%';
+    el('v-estado').textContent = P.estado + '%';
+    el('v-desc').textContent = P.desc + '%';
+    ['empresa', 'estado', 'desc'].forEach(function (k) { el(k).value = P[k]; });
+    renderSits(res); renderFile(res); renderVerdict(res); renderPaths();
+  }
+
+  ['empresa', 'estado', 'desc'].forEach(function (k) {
+    el(k).addEventListener('input', function (e) { P[k] = parseInt(e.target.value, 10); render(); });
+  });
+  document.querySelectorAll('[data-preset]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var p = PRESETS[b.getAttribute('data-preset')];
+      P.empresa = p.empresa; P.estado = p.estado; P.desc = p.desc; render();
+    });
+  });
+  el('sits').addEventListener('click', function (e) {
+    var b = e.target.closest('.choice');
+    if (!b || b.disabled) return;
+    choice[b.getAttribute('data-sit')] = b.getAttribute('data-c');
+    render();
+  });
+
+  render();
+})();
+</script>
+
+</body></html>
