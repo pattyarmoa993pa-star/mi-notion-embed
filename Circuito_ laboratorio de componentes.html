@@ -1,0 +1,443 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Circuito: laboratorio de componentes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap">
+<style>
+/* Concepto: tablero de circuito impreso con cabina arcade; una sola pantalla con barra de marcador y cuatro salas. */
+:root{
+  --board:#0a1713; --board2:#10241d; --trace:#1d3b30;
+  --copper:#e0883a; --silver:#d4dde0; --signal:#52e5ff;
+  --led:#ff4d6a; --warn:#ffd23f; --ok:#6df29a;
+  --font-d:'Press Start 2P',ui-monospace,monospace;
+  --font-b:'Share Tech Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:auto}
+body{background:var(--board);color:var(--silver);font-family:var(--font-b);font-size:16px;line-height:1.45;
+  padding-block:12px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  background-image:radial-gradient(var(--trace) 1px,transparent 1.5px);background-size:22px 22px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--font-d);font-weight:400;text-wrap:balance;margin:0;letter-spacing:.02em}
+h1{font-size:clamp(18px,4.6vw,34px);color:var(--copper);line-height:1.3}
+h2{font-size:13px;color:var(--signal);line-height:1.6}
+h3{font-size:10px;color:var(--warn);line-height:1.7;text-transform:uppercase}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--warn);outline-offset:2px}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;border:2px solid var(--copper);background:var(--board2);padding:10px 12px;font-family:var(--font-d);font-size:10px}
+.hud div{display:flex;flex-direction:column;gap:6px;min-width:0}
+.hud b{font-weight:400;color:var(--signal);font-size:13px;font-variant-numeric:tabular-nums}
+.hud span{color:var(--copper)}
+nav{display:flex;flex-wrap:wrap;gap:8px}
+nav button{font-family:var(--font-d);font-size:10px;padding:11px 12px;background:var(--board2);border:2px solid var(--trace);color:var(--silver)}
+nav button[aria-selected="true"]{border-color:var(--signal);color:var(--signal);box-shadow:0 0 0 2px var(--board),0 0 0 4px var(--signal)}
+.panel{border:2px solid var(--trace);background:var(--board2);padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px}
+@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}.hud{grid-template-columns:repeat(2,1fr)}}
+canvas{width:100%;height:auto;aspect-ratio:16/9;background:#07110d;border:2px solid var(--trace);display:block;image-rendering:auto}
+.btn{font-family:var(--font-d);font-size:10px;padding:12px 14px;background:var(--copper);color:#1a0f05;border:0;box-shadow:0 4px 0 #8a4f19}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #8a4f19}
+.btn.alt{background:var(--signal);color:#04222a;box-shadow:0 4px 0 #1b7e90}
+.btn.ghost{background:transparent;color:var(--silver);border:2px solid var(--trace);box-shadow:none}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:8px 10px;border:2px solid var(--trace);background:#0b1b15;font-size:14px}
+.chip[aria-pressed="true"]{border-color:var(--copper);color:var(--copper)}
+.chip.done::after{content:" ✓";color:var(--ok)}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;padding:10px 12px;border:2px solid var(--trace);background:#0b1b15}
+.opt:hover:not(:disabled){border-color:var(--signal)}
+.opt.good{border-color:var(--ok);background:#0f2a1b}
+.opt.bad{border-color:var(--led);background:#2a1017}
+.note{border-left:4px solid var(--warn);padding:6px 10px;background:#17210f;font-size:14px}
+.note.err{border-color:var(--led);background:#2a1017}
+.note.ok{border-color:var(--ok);background:#0f2a1b}
+.cap{font-size:14px;color:var(--signal);min-height:2.9em}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.kv dt{color:var(--copper)}.kv dd{margin:0;font-variant-numeric:tabular-nums}
+label{display:flex;flex-direction:column;gap:4px;font-size:14px}
+label span{color:var(--copper)}
+input[type=range]{width:100%;accent-color:var(--copper)}
+select,textarea,input[type=text]{font:inherit;background:#07110d;color:var(--silver);border:2px solid var(--trace);padding:8px;width:100%}
+textarea{min-height:64px;resize:vertical}
+ul.clean{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.bar{height:10px;background:#07110d;border:1px solid var(--trace)}
+.bar i{display:block;height:100%;background:var(--signal);width:0}
+.title-screen{align-items:flex-start;gap:16px}
+.blink{animation:bl 1.1s steps(2) infinite;color:var(--warn);font-family:var(--font-d);font-size:11px}
+@keyframes bl{50%{opacity:.15}}
+@media(prefers-reduced-motion:reduce){.blink{animation:none}}
+.small{font-size:13px;color:#9db4ab}
+</style>
+<div class="wrap">
+  <header class="panel title-screen" id="title">
+    <h1>CIRCUITO</h1>
+    <h2>La electrónica como gimnasio para el pensamiento analógico</h2>
+    <p>Analiza un sistema que ya conoces, extrae sus principios y reutilízalos para interpretar situaciones nuevas. No se trata de memorizar respuestas: se trata de entrenar un procedimiento propio.</p>
+    <div class="row" id="diffRow" role="group" aria-label="Dificultad"></div>
+    <p class="small" id="diffDesc"></p>
+    <div class="row"><button class="btn" id="startBtn">INSERTAR MONEDA</button><span class="blink">PULSA PARA EMPEZAR</span></div>
+    <p class="small">Modelo didáctico de corriente continua de baja tensión. No reemplaza hojas de datos ni sirve para montar circuitos reales sin verificar límites.</p>
+  </header>
+
+  <main id="game" hidden>
+    <div class="hud" aria-live="polite">
+      <div><span>PUNTOS</span><b id="hScore">0</b></div>
+      <div><span>VIDAS</span><b id="hLives">♥♥♥</b></div>
+      <div><span>COMBO</span><b id="hCombo">x1</b></div>
+      <div><span>NIVEL</span><b id="hLevel">Explorador</b></div>
+    </div>
+    <nav role="tablist" aria-label="Salas" style="margin-top:14px">
+      <button role="tab" data-room="lab">1 LABORATORIO</button>
+      <button role="tab" data-room="circ">2 CIRCUITOS</button>
+      <button role="tab" data-room="cod">3 CÓDIGOS</button>
+      <button role="tab" data-room="bridge">4 PUENTE</button>
+    </nav>
+    <section id="room" class="panel" style="margin-top:14px"></section>
+  </main>
+</div>
+<script>
+const DB={"project":{"name":"Circuito: laboratorio de componentes","purpose":"Juego educativo para aprender funciones, códigos, relaciones, límites y comportamiento temporal de componentes electrónicos mediante circuitos y animaciones.","scope":{"domain":"circuitos de corriente continua de baja tensión","model_type":"didáctico, con cálculos básicos y simplificaciones declaradas","safety_note":"Usar fuentes de baja tensión y componentes adecuados. No conectar directamente un LED a una fuente sin limitar corriente. No invertir condensadores electrolíticos polarizados. No usar la simulación como sustituto de hojas de datos."},"simulation_conventions":{"voltage_unit":"V","current_unit":"A","resistance_unit":"ohm","capacitance_unit":"F","time_unit":"s","conventional_current_direction":"del potencial positivo al negativo por el circuito externo","led_model":"caída de tensión aproximadamente constante dentro del rango operativo","diode_model":"caída directa aproximada y bloqueo inverso idealizado","capacitor_model":"C * dV/dt = I; descarga depende del camino y de la resistencia equivalente","transistor_model":"modo interruptor simplificado; no sustituye un modelo SPICE ni una hoja de datos","unknown_behavior":"Si faltan parámetros esenciales, mostrar 'no se puede predecir con los datos actuales' en vez de inventar un resultado."}},"classification_system":{"by_function":[{"id":"source","label":"Fuente","description":"Proporciona energía eléctrica al circuito."},{"id":"passive_linear","label":"Pasivo","description":"Resiste, almacena o disipa energía sin amplificación activa."},{"id":"protection","label":"Protección","description":"Limita o bloquea condiciones eléctricas no deseadas."},{"id":"control","label":"Control","description":"Permite abrir, cerrar o regular el funcionamiento."},{"id":"semiconductor","label":"Semiconductor","description":"Conduce o controla corriente de forma dependiente de la polarización."},{"id":"output","label":"Salida","description":"Convierte una señal eléctrica en una respuesta observable."},{"id":"measurement","label":"Medición","description":"Permite observar magnitudes del circuito."}],"by_circuit_position":[{"id":"series","label":"En serie","description":"Los elementos comparten la misma corriente de rama."},{"id":"parallel","label":"En paralelo","description":"Los elementos comparten los mismos dos nodos y la misma tensión."},{"id":"shunt","label":"Rama derivada","description":"Conectado entre un nodo y el retorno para desviar o medir corriente."},{"id":"control_path","label":"Trayectoria de control","description":"Controla otro elemento sin necesariamente llevar la corriente principal."},{"id":"across_supply","label":"Entre alimentación y retorno","description":"Conectado a los nodos de alimentación, respetando polaridad cuando corresponda."},{"id":"depends_on_topology","label":"Depende del circuito","description":"La función depende de la red y de los nodos conectados."}]},"code_systems":{"resistor_color_code":{"description":"Bandas para indicar dígitos significativos, multiplicador y tolerancia. La cantidad de bandas determina cómo se interpreta.","digit_colors":{"negro":0,"marron":1,"rojo":2,"naranja":3,"amarillo":4,"verde":5,"azul":6,"violeta":7,"gris":8,"blanco":9},"multiplier":{"negro":1,"marron":10,"rojo":100,"naranja":1000,"amarillo":10000,"verde":100000,"azul":1000000,"oro":0.1,"plata":0.01},"tolerance_percent":{"marron":1,"rojo":2,"verde":0.5,"azul":0.25,"violeta":0.1,"gris":0.05,"oro":5,"plata":10,"sin_banda":20},"reading_rule":"Para resistencias de 4 bandas: dígito 1, dígito 2, multiplicador, tolerancia. Para 5 bandas: tres dígitos, multiplicador, tolerancia. Para 6 bandas: igual que 5 bandas y una banda adicional de coeficiente térmico; este esquema inicial no calcula el coeficiente térmico.","example":{"bands":["marron","negro","rojo","oro"],"nominal_ohms":1000,"tolerance_percent":5,"range_ohms":[950,1050]}},"capacitor_markings":{"description":"La marca puede incluir capacitancia, tensión nominal, tolerancia, polaridad y código de fabricante.","three_digit_pF_code":{"rule":"Dos primeros dígitos significativos y tercer dígito como multiplicador en pF.","example":{"marking":"104","capacitance_F":1e-07,"capacitance_display":"100 nF"}},"unit_note":"1 uF = 1000 nF; 1 nF = 1000 pF.","polarized_note":"Los condensadores electrolíticos suelen indicar el terminal negativo con una franja; verificar siempre el componente real."},"diode_markings":{"description":"El código impreso identifica el modelo, no una propiedad universal. Consultar la hoja de datos para pinout, corriente y tensión inversa.","polarity":"En muchos diodos axiales, una banda marca el cátodo."},"transistor_markings":{"description":"El número de parte identifica el dispositivo; el orden de pines varía según modelo y encapsulado.","rule":"No inferir el pinout únicamente por la forma del encapsulado."},"integrated_circuit_markings":{"description":"El número de parte identifica la familia y el modelo; la muesca o punto suele marcar el pin 1, pero debe confirmarse en la hoja de datos."}},"components":[{"id":"battery_dc","name":"Batería / fuente de CC","category":["source"],"role":"Mantiene una diferencia de potencial que puede impulsar corriente por un circuito cerrado.","code_meaning":{"type":"voltage_rating_and_polarity","details":"La tensión nominal se expresa en V; los símbolos + y − indican polaridad. Las baterías pueden incluir códigos de tamaño y química."},"classification_in_circuit":{"by_function":"source","typical_positions":["across_supply"],"terminals":["positivo","negativo"]},"limits":["La tensión real depende de la química, carga y estado de la batería.","Tiene límites de corriente, capacidad y temperatura.","Una fuente ideal de tensión no representa toda la resistencia interna real."],"connections":[{"component_id":"switch_spst","relationship":"El interruptor puede abrir o cerrar el camino de corriente."},{"component_id":"resistor","relationship":"La resistencia limita corriente en una rama cuando se elige adecuadamente."},{"component_id":"led","relationship":"El LED necesita una trayectoria con limitación de corriente."},{"component_id":"capacitor","relationship":"El condensador puede cargarse al conectarse a una diferencia de potencial."}],"simulation":{"inputs":["voltage_V","internal_resistance_ohm_optional"],"states":["disconnected","connected"],"rules":[{"when":"connected_and_closed_path","then":"can_drive_current"},{"when":"open_path","then":"steady_current_is_zero"}],"animation":{"visual":"battery_plus_minus","frames":["mostrar polos","resaltar diferencia de potencial","mostrar corriente solo si hay camino cerrado"],"flow_direction":"conventional_current"}}},{"id":"resistor","name":"Resistencia","category":["passive_linear"],"role":"Se opone al paso de corriente y permite controlar tensiones y corrientes; en un LED común suele limitar la corriente para mantenerla dentro de un rango seguro.","code_meaning":{"type":"color_bands_or_numeric_marking","details":"Las bandas identifican valor nominal y tolerancia; en resistencias SMD pueden aparecer códigos numéricos.","color_code_reference":"resistor_color_code"},"classification_in_circuit":{"by_function":"passive_linear","typical_positions":["series","parallel","shunt","depends_on_topology"],"terminals":["terminal_1","terminal_2"],"placement_rule":"Para limitar corriente de un LED, se coloca en serie con el LED. Una resistencia en paralelo tiene una función distinta."},"limits":["Potencia nominal en W: excederla puede sobrecalentar o dañar la resistencia.","Tolerancia: el valor real puede variar dentro del porcentaje indicado.","La tensión máxima y el coeficiente térmico dependen del tipo y del modelo."],"connections":[{"component_id":"led","relationship":"En serie, ayuda a fijar la corriente del LED."},{"component_id":"battery_dc","relationship":"La tensión de la fuente y el valor de resistencia determinan la corriente aproximada."},{"component_id":"capacitor","relationship":"Puede formar una red RC que determina la rapidez de carga o descarga."},{"component_id":"transistor_npn","relationship":"Puede limitar la corriente de base o actuar como carga/colector según el circuito."}],"simulation":{"inputs":["resistance_ohm","tolerance_percent","power_rating_W_optional"],"states":["within_limits","over_power","open_circuit"],"rules":[{"formula":"I = V / R","when":"resistive_element_and_known_voltage"},{"formula":"P = I^2 * R","when":"current_known"},{"formula":"R_min = R_nominal * (1 - tolerance/100); R_max = R_nominal * (1 + tolerance/100)","when":"tolerance_known"}],"animation":{"visual":"resistor_with_color_bands","frames":["leer bandas","mostrar valor nominal y rango","mostrar caída de tensión","mostrar disipación como calor si corresponde"],"flow_direction":"current_through_component"}}},{"id":"led","name":"LED","category":["semiconductor","output"],"role":"Emite luz cuando está polarizado directamente y circula suficiente corriente.","code_meaning":{"type":"part_number_and_polarity","details":"El color de emisión no basta para conocer todos los parámetros. El ánodo suele ser la pata larga en un LED nuevo, pero debe confirmarse; la pata corta o lado plano suele indicar cátodo."},"classification_in_circuit":{"by_function":"output","typical_positions":["series"],"terminals":["anode","cathode"],"placement_rule":"Conectar en polaridad correcta y usar un limitador de corriente o un controlador adecuado."},"limits":["Corriente directa máxima y tensión inversa máxima dependen del modelo.","La tensión directa depende del color, corriente y temperatura.","Puede dañarse si la corriente no se limita."],"connections":[{"component_id":"resistor","relationship":"Una resistencia en serie limita la corriente."},{"component_id":"battery_dc","relationship":"La fuente proporciona energía cuando existe un camino cerrado."},{"component_id":"switch_spst","relationship":"El interruptor controla si circula corriente."}],"simulation":{"inputs":["forward_voltage_V","max_current_A_optional","polarity_correct"],"states":["off","emitting","reverse_biased","overcurrent_risk"],"rules":[{"formula":"I ≈ (V_supply - V_forward) / R_series","when":"source_resistor_led_series_and_V_supply > V_forward"},{"condition":"polarity_correct_and_current_above_visibility_threshold","then":"emitting"},{"condition":"reverse_polarity","then":"off_and_check_reverse_rating"}],"animation":{"visual":"led_emission_rays","frames":["apagado","corriente entra por ánodo","LED emite luz","si corriente estimada excede límite, mostrar advertencia"],"flow_direction":"anode_to_cathode_conventional_current"}}},{"id":"switch_spst","name":"Interruptor simple (SPST)","category":["control"],"role":"Abre o cierra una trayectoria eléctrica.","code_meaning":{"type":"symbol_and_contact_configuration","details":"SPST significa un polo y una vía. Los símbolos ON/OFF indican estado o función, no un código de valor universal."},"classification_in_circuit":{"by_function":"control","typical_positions":["series"],"terminals":["terminal_1","terminal_2"]},"limits":["Tiene límites de tensión y corriente.","Los contactos pueden tener resistencia, rebote mecánico y desgaste.","No debe utilizarse por encima de sus especificaciones."],"connections":[{"component_id":"battery_dc","relationship":"Suele ponerse en serie para controlar la alimentación de una rama."},{"component_id":"resistor","relationship":"Al cerrar el interruptor, puede habilitar corriente por la resistencia."},{"component_id":"led","relationship":"Permite encender o apagar el LED al abrir o cerrar el camino."}],"simulation":{"inputs":["is_closed"],"states":["open","closed"],"rules":[{"condition":"is_closed","then":"path_connected"},{"condition":"not_is_closed","then":"path_open"}],"animation":{"visual":"moving_switch_contact","frames":["contacto separado","palanca se mueve","contacto unido","actualizar corriente del circuito"],"flow_direction":"path_enabled_or_blocked"}}},{"id":"capacitor","name":"Condensador","category":["passive_linear"],"role":"Almacena energía en un campo eléctrico y puede liberar esa energía a través de un camino de descarga.","code_meaning":{"type":"capacitance_voltage_tolerance_polarity","details":"Las marcas pueden indicar capacitancia, tensión máxima, tolerancia y serie. En algunos condensadores cerámicos, un código de tres dígitos expresa capacitancia en pF.","marking_reference":"capacitor_markings"},"classification_in_circuit":{"by_function":"passive_linear","typical_positions":["across_supply","parallel","depends_on_topology"],"terminals":["terminal_1","terminal_2"],"placement_rule":"En circuitos RC, la resistencia y el condensador suelen crear una respuesta temporal. Los condensadores polarizados deben conectarse respetando polaridad."},"limits":["No superar la tensión nominal.","La capacitancia y tolerancia varían según el tipo.","La descarga depende del camino disponible; no necesariamente ocurre a una velocidad fija.","Los electrolíticos polarizados pueden dañarse por inversión de polaridad."],"connections":[{"component_id":"resistor","relationship":"Juntos forman un circuito RC; la constante de tiempo ideal es tau = R * C."},{"component_id":"battery_dc","relationship":"Puede cargarse a partir de una fuente de tensión."},{"component_id":"led","relationship":"En un circuito apropiado, su descarga puede alimentar temporalmente un LED, con corriente limitada."},{"component_id":"switch_spst","relationship":"Puede iniciar o interrumpir la carga; una ruta separada puede permitir descarga."}],"simulation":{"inputs":["capacitance_F","initial_voltage_V","resistance_path_ohm_optional","supply_voltage_V_optional"],"states":["discharged","charging","charged_approximately","discharging"],"rules":[{"formula":"tau = R * C","when":"R_and_C_known"},{"formula":"V_C(t) = V_supply * (1 - exp(-t/(R*C)))","when":"ideal_RC_charging_from_zero_with_constant_supply"},{"formula":"V_C(t) = V_initial * exp(-t/(R*C))","when":"ideal_RC_discharge_through_R"}],"animation":{"visual":"capacitor_fill_meter","frames":["nivel inicial","carga aumenta gradualmente","carga se aproxima al nivel final","al habilitar descarga, nivel disminuye"],"flow_direction":"energy_storage_not_one_way_particle_flow"}}},{"id":"diode","name":"Diodo rectificador","category":["semiconductor","protection"],"role":"Permite principalmente el paso de corriente en polarización directa y bloquea en polarización inversa dentro de sus límites.","code_meaning":{"type":"part_number_and_cathode_mark","details":"El número de modelo identifica sus características. En muchos diodos axiales, la banda marca el cátodo."},"classification_in_circuit":{"by_function":"protection","typical_positions":["series","shunt","depends_on_topology"],"terminals":["anode","cathode"]},"limits":["Tensión inversa máxima, corriente directa y disipación dependen del modelo.","La caída de tensión directa no es exactamente constante.","Una conexión invertida puede bloquear la corriente o causar daño si se exceden límites."],"connections":[{"component_id":"battery_dc","relationship":"La polaridad de la fuente determina si queda polarizado directa o inversamente."},{"component_id":"resistor","relationship":"Puede necesitar limitación de corriente en serie."},{"component_id":"capacitor","relationship":"Puede dirigir corriente durante carga o descarga en redes específicas."}],"simulation":{"inputs":["forward_voltage_V","reverse_voltage_V","max_current_A_optional"],"states":["forward_conducting","reverse_blocking","limit_exceeded"],"rules":[{"condition":"anode_potential_sufficiently_above_cathode","then":"conducts_approximately"},{"condition":"reverse_bias_within_rating","then":"blocks_approximately"}],"animation":{"visual":"diode_arrow_flow","frames":["mostrar ánodo y cátodo","polaridad directa: paso permitido","polaridad inversa: paso bloqueado"],"flow_direction":"anode_to_cathode_conventional_current"}}},{"id":"transistor_npn","name":"Transistor NPN (modelo como interruptor)","category":["semiconductor","control"],"role":"Una señal pequeña en la base puede controlar una corriente mayor entre colector y emisor, dentro de las condiciones del dispositivo.","code_meaning":{"type":"part_number_and_pinout","details":"El número impreso identifica el modelo. Los pines base, colector y emisor deben verificarse en la hoja de datos."},"classification_in_circuit":{"by_function":"control","typical_positions":["control_path","depends_on_topology"],"terminals":["base","collector","emitter"],"placement_rule":"En un circuito típico de conmutación de lado bajo, la carga va desde la alimentación al colector y el emisor al retorno; la base requiere control de corriente."},"limits":["Tensión máxima colector-emisor, corriente máxima y potencia dependen del modelo.","La corriente de base debe limitarse.","La ganancia varía y no debe asumirse constante.","El modelo de interruptor simplificado no describe todas las regiones de operación."],"connections":[{"component_id":"resistor","relationship":"Una resistencia puede limitar la corriente de base y otra la corriente de la carga."},{"component_id":"led","relationship":"Puede conmutar un LED como carga."},{"component_id":"battery_dc","relationship":"La fuente alimenta la carga y el transistor controla la trayectoria de corriente."},{"component_id":"switch_spst","relationship":"Un interruptor puede proporcionar la señal de control de base mediante una resistencia."}],"simulation":{"inputs":["base_drive","load_current_A_optional","pinout_verified"],"states":["off","switching_on","on_saturated","limit_exceeded","unknown"],"rules":[{"condition":"no_sufficient_base_drive","then":"off_in_simple_switch_model"},{"condition":"sufficient_base_drive_and_within_ratings","then":"load_path_conducts"},{"condition":"pinout_not_verified","then":"unknown_do_not_simulate_as_wired"}],"animation":{"visual":"base_control_collector_emitter","frames":["transistor apagado","señal llega a base","trayectoria de carga conduce","quitar señal y apagar"],"flow_direction":"show_control_signal_separately_from_load_current"}}},{"id":"ground_reference","name":"Referencia de retorno (GND)","category":["measurement"],"role":"Define un nodo de referencia de tensión; en circuitos sencillos suele coincidir con el retorno de la fuente, pero no significa necesariamente tierra física.","code_meaning":{"type":"schematic_symbol","details":"El símbolo GND identifica una referencia de potencial elegida en el esquema."},"classification_in_circuit":{"by_function":"measurement","typical_positions":["depends_on_topology"],"terminals":["reference_node"]},"limits":["La referencia de esquema no garantiza una conexión física a tierra.","Los nodos etiquetados igual se consideran conectados en el esquema.","La seguridad de una conexión a tierra real requiere un diseño adecuado."],"connections":[{"component_id":"battery_dc","relationship":"Puede marcar el nodo negativo como referencia en un circuito de CC simple."},{"component_id":"led","relationship":"Puede ser parte de la ruta de retorno de corriente."},{"component_id":"transistor_npn","relationship":"En conmutación de lado bajo, suele conectarse al emisor y al negativo de la fuente."}],"simulation":{"inputs":["node_label"],"states":["reference_defined","reference_missing"],"rules":[{"condition":"node_selected_as_reference","then":"node_voltage_is_0V_by_definition"}],"animation":{"visual":"highlight_reference_node","frames":["marcar nodo de referencia","resaltar conexiones que comparten el mismo nodo"],"flow_direction":"not_a_component_that_consumes_current"}}},{"id":"multimeter","name":"Multímetro (instrumento de medición)","category":["measurement"],"role":"Mide magnitudes como tensión, corriente y resistencia según el modo y la conexión.","code_meaning":{"type":"dial_labels_and_port_labels","details":"V mide tensión, A mide corriente y Ω mide resistencia. Los puertos y rangos varían según el instrumento."},"classification_in_circuit":{"by_function":"measurement","typical_positions":["parallel","series"],"placement_rule":"Medir tensión en paralelo; medir corriente en serie; medir resistencia con el circuito desenergizado y, normalmente, aislando el componente cuando sea necesario."},"limits":["El rango máximo depende del instrumento y del puerto utilizado.","Una conexión incorrecta puede fundir el fusible o causar daños.","No medir resistencia en un circuito energizado."],"connections":[{"component_id":"battery_dc","relationship":"El voltímetro se conecta entre los dos nodos cuya tensión se quiere medir."},{"component_id":"resistor","relationship":"La resistencia se mide con el circuito sin alimentación."},{"component_id":"led","relationship":"Puede comprobarse la caída de tensión en modo adecuado, siguiendo las instrucciones del instrumento."}],"simulation":{"inputs":["mode","range","connection_correct"],"states":["measuring","over_range","incorrect_connection","unsafe_condition"],"rules":[{"condition":"mode_voltage_and_parallel_connection","then":"measure_voltage"},{"condition":"mode_current_and_series_connection","then":"measure_current"},{"condition":"mode_resistance_and_circuit_energized","then":"warn_unsafe_measurement"}],"animation":{"visual":"multimeter_probes","frames":["seleccionar modo","colocar puntas","mostrar lectura","avisar si la conexión no corresponde"],"flow_direction":"measurement_not_current_source"}}}],"starter_circuits":[{"id":"circuit_led_basic","name":"Encender un LED con resistencia","difficulty":1,"purpose":"Aprender fuente, camino cerrado, polaridad y limitación de corriente.","components":[{"component_id":"battery_dc","instance_id":"B1","parameters":{"voltage_V":5}},{"component_id":"switch_spst","instance_id":"S1","parameters":{"is_closed":true}},{"component_id":"resistor","instance_id":"R1","parameters":{"resistance_ohm":330,"tolerance_percent":5,"power_rating_W":0.25}},{"component_id":"led","instance_id":"D1","parameters":{"forward_voltage_V":2.0,"max_current_A_optional":0.02,"polarity_correct":true}},{"component_id":"ground_reference","instance_id":"GND1","parameters":{"node_label":"0V"}}],"connections":[{"from":"B1.positive","to":"S1.terminal_1"},{"from":"S1.terminal_2","to":"R1.terminal_1"},{"from":"R1.terminal_2","to":"D1.anode"},{"from":"D1.cathode","to":"B1.negative"},{"from":"B1.negative","to":"GND1.reference_node"}],"expected_behavior":{"switch_closed":"LED encendido si la corriente estimada está dentro de límites.","switch_open":"La corriente estable de la rama es aproximadamente cero y el LED está apagado.","estimated_current_A":0.00909,"calculation":"I ≈ (5 V - 2 V) / 330 Ω = 0.00909 A (9.1 mA)","note":"Cálculo aproximado; la tensión directa real del LED depende del dispositivo y de la corriente."},"animation_sequence":[{"t":0,"event":"mostrar circuito y componentes identificados"},{"t":1,"event":"resaltar que el interruptor está abierto"},{"t":2,"event":"cerrar interruptor y resaltar camino de corriente convencional"},{"t":3,"event":"mostrar caída de tensión en resistencia y LED encendido"},{"t":4,"event":"abrir interruptor y mostrar corriente igual a cero"}]},{"id":"circuit_rc_charge_discharge","name":"Carga y descarga de un condensador","difficulty":2,"purpose":"Aprender almacenamiento de energía, dependencia de una ruta y evolución temporal.","components":[{"component_id":"battery_dc","instance_id":"B1","parameters":{"voltage_V":5}},{"component_id":"resistor","instance_id":"R1","parameters":{"resistance_ohm":10000,"tolerance_percent":5}},{"component_id":"capacitor","instance_id":"C1","parameters":{"capacitance_F":0.0001,"initial_voltage_V":0}},{"component_id":"switch_spst","instance_id":"S1","parameters":{"is_closed":true}}],"connections":[{"from":"B1.positive","to":"S1.terminal_1"},{"from":"S1.terminal_2","to":"R1.terminal_1"},{"from":"R1.terminal_2","to":"C1.terminal_1"},{"from":"C1.terminal_2","to":"B1.negative"}],"expected_behavior":{"time_constant_s":1.0,"formula":"tau = R * C = 10000 Ω * 0.0001 F = 1 s","charging_note":"En el modelo RC ideal, tras una constante de tiempo la tensión alcanza aproximadamente el 63% del valor final; alrededor de 5τ se considera prácticamente cargado.","discharge_note":"Para descargar, debe existir un camino de descarga. Abrir el interruptor de carga por sí solo puede dejar el condensador cargado."},"animation_sequence":[{"t":0,"event":"condensador descargado, nivel visual en cero"},{"t":1,"event":"cerrar ruta de carga y aumentar nivel gradualmente"},{"t":2,"event":"mostrar curva exponencial de carga y valor de tau"},{"t":3,"event":"conectar una ruta de descarga y reducir el nivel gradualmente"}]},{"id":"circuit_npn_led_switch","name":"Transistor NPN como interruptor de un LED","difficulty":3,"purpose":"Separar señal de control y trayectoria de corriente de la carga.","components":[{"component_id":"battery_dc","instance_id":"B1","parameters":{"voltage_V":5}},{"component_id":"resistor","instance_id":"R_LED","parameters":{"resistance_ohm":330}},{"component_id":"led","instance_id":"D1","parameters":{"forward_voltage_V":2.0,"polarity_correct":true}},{"component_id":"resistor","instance_id":"R_BASE","parameters":{"resistance_ohm":1000}},{"component_id":"switch_spst","instance_id":"S1","parameters":{"is_closed":false}},{"component_id":"transistor_npn","instance_id":"Q1","parameters":{"base_drive":false,"pinout_verified":false}}],"connections":[{"from":"B1.positive","to":"R_LED.terminal_1"},{"from":"R_LED.terminal_2","to":"D1.anode"},{"from":"D1.cathode","to":"Q1.collector"},{"from":"Q1.emitter","to":"B1.negative"},{"from":"B1.positive","to":"S1.terminal_1"},{"from":"S1.terminal_2","to":"R_BASE.terminal_1"},{"from":"R_BASE.terminal_2","to":"Q1.base"}],"expected_behavior":{"control_open":"Transistor apagado en el modelo didáctico; LED apagado.","control_closed":"El transistor puede conducir si la corriente de base es suficiente y el pinout es correcto.","warning":"El circuito es conceptual: verificar pinout, corriente de base, capacidad del transistor y límites antes de montarlo físicamente."},"animation_sequence":[{"t":0,"event":"mostrar ruta de carga interrumpida por transistor apagado"},{"t":1,"event":"cerrar interruptor de control y animar señal hacia la base"},{"t":2,"event":"resaltar por separado la corriente de base y la corriente de carga"},{"t":3,"event":"encender LED si se cumplen las condiciones del modelo"}]}],"gameplay":{"loop":["Elegir dificultad","Recibir un objetivo de circuito","Identificar componentes por su forma, símbolo o código","Arrastrar componentes al circuito y conectar terminales","Ejecutar el análisis","Ver la animación de flujo y los estados de los componentes","Comparar predicción con resultado","Desbloquear variaciones y componentes nuevos"],"difficulty_levels":[{"id":"easy","label":"Explorador","rules":"Componentes identificados, circuitos guiados, una variable por vez y animación paso a paso."},{"id":"medium","label":"Técnico","rules":"Códigos parcialmente ocultos, selección de valores y diagnóstico de fallos simples."},{"id":"hard","label":"Diseñador","rules":"Menos pistas, varias restricciones, comparación de hipótesis y parámetros con tolerancia."}],"analysis_output":{"required_fields":["circuit_status","component_states","current_estimate","voltage_drops","warnings","assumptions","animation_sequence"],"principle":"Cada resultado debe indicar qué regla lo produjo y qué supuestos usa."},"animation_format":{"source_of_truth":"animation_sequence más el estado calculado del circuito","recommended_pipeline":["Validar conexiones y parámetros","Calcular estados del circuito","Crear fotogramas con símbolos vectoriales","Animar corriente convencional, luz, carga o cambios de estado","Exportar a GIF o reproducir como animación en el juego"],"gif_note":"JSON no genera un GIF por sí solo; el juego debe interpretar estas instrucciones y dibujar los fotogramas. Para simulación eléctrica realista se requiere un motor de circuitos o un modelo numérico adicional."}}};
+/* ===== NÚCLEO ===== */
+const $=(s,r=document)=>r.querySelector(s);
+const el=(h)=>{const t=document.createElement('template');t.innerHTML=h.trim();return t.content.firstChild};
+const rnd=(a)=>a[Math.floor(Math.random()*a.length)];
+const shuffle=(a)=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const C={ok:'#6df29a',sig:'#52e5ff',cu:'#e0883a',ag:'#d4dde0',led:'#ff4d6a',warn:'#ffd23f',dim:'#1d3b30'};
+const DIFFS={easy:{label:'Explorador',time:0,lives:5,desc:'Componentes identificados, una variable por vez, sin cronómetro.'},
+  medium:{label:'Técnico',time:20,lives:4,desc:'Códigos parciales, valores a elegir y 20 s por pregunta.'},
+  hard:{label:'Diseñador',time:12,lives:3,desc:'Menos pistas, tolerancias y 12 s por pregunta.'}};
+const S={score:0,lives:3,combo:1,diff:'easy',room:'lab',done:{}};
+let audio=null;
+function beep(f,d=.09,type='square'){try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;g.gain.value=.04;o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+d)}catch(e){}}
+function hud(){$('#hScore').textContent=String(S.score).padStart(5,'0');$('#hLives').textContent=S.lives>0?'♥'.repeat(S.lives):'—';$('#hCombo').textContent='x'+S.combo;$('#hLevel').textContent=DIFFS[S.diff].label}
+function win(pts){S.score+=pts*S.combo;S.combo=Math.min(S.combo+1,5);beep(660);setTimeout(()=>beep(880),90);hud()}
+function lose(){S.combo=1;S.lives=Math.max(0,S.lives-1);beep(150,.25,'sawtooth');hud();if(S.lives===0){S.lives=DIFFS[S.diff].lives;S.score=Math.floor(S.score/2);hud();return true}return false}
+const fmtI=(a)=>a>=1?a.toFixed(2)+' A':(a*1000).toFixed(a<0.01?2:1)+' mA';
+const fmtR=(r)=>r>=1e6?(r/1e6)+' MΩ':r>=1e3?(r/1e3)+' kΩ':r+' Ω';
+const fmtC=(c)=>c>=1e-6?(c*1e6)+' µF':c>=1e-9?(c*1e9)+' nF':(c*1e12)+' pF';
+
+/* ===== ANIMACIÓN ===== */
+function poly(pts,u){let L=0;const s=[];for(let i=1;i<pts.length;i++){const d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);s.push(d);L+=d}let t=((u%1)+1)%1*L;for(let i=0;i<s.length;i++){if(t<=s[i]){const k=t/s[i];return[pts[i][0]+(pts[i+1][0]-pts[i][0])*k,pts[i][1]+(pts[i+1][1]-pts[i][1])*k]}t-=s[i]}return pts[0]}
+function line(g,pts,col=C.dim,w=4){g.strokeStyle=col;g.lineWidth=w;g.lineJoin='round';g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke()}
+function flow(g,pts,t,col=C.sig,n=8,spd=.25,rev=false){g.fillStyle=col;for(let i=0;i<n;i++){const u=(rev?-1:1)*t*spd+i/n;const p=poly(pts,u);g.fillRect(p[0]-4,p[1]-4,8,8)}}
+function txt(g,s,x,y,col=C.ag,sz=15,al='center'){g.fillStyle=col;g.font=sz+'px "Share Tech Mono",monospace';g.textAlign=al;g.fillText(s,x,y)}
+const W=640,H=360;
+const LOOP=[[120,80],[520,80],[520,280],[120,280],[120,80]];
+const DR={
+battery_dc(g,t,f){line(g,LOOP,f>=2?'#2d5a49':C.dim);g.fillStyle='#07110d';g.fillRect(100,150,40,60);
+  g.fillStyle=C.ag;g.fillRect(104,160,32,6);g.fillRect(112,184,16,6);txt(g,'+',160,168,C.led,22);txt(g,'−',160,198,C.sig,22);
+  if(f>=1){g.strokeStyle=C.warn;g.setLineDash([6,5]);g.strokeRect(96,142,48,76);g.setLineDash([]);txt(g,'diferencia de potencial',200,122,C.warn,14,'left')}
+  if(f>=2){flow(g,[[120,150],[120,80],[520,80],[520,280],[120,280],[120,210]],t,C.sig,12);txt(g,'camino cerrado: circula corriente',320,320,C.sig,15)}
+  else txt(g,f===0?'dos polos: + y −':'sin camino cerrado no hay corriente',320,320,C.ag,15)},
+resistor(g,t,f){line(g,[[60,180],[230,180]],C.cu);line(g,[[410,180],[580,180]],C.cu);g.fillStyle='#c7a46a';g.fillRect(230,155,180,50);
+  [['#6b3b1c',255],['#111',285],['#c22',315],['#d4af37',375]].forEach(b=>{g.fillStyle=b[0];g.fillRect(b[1],155,14,50)});
+  if(f===0){txt(g,'marrón · negro · rojo · oro',320,130,C.warn,15)}
+  if(f>=1){txt(g,'1000 Ω ±5 %  →  950 a 1050 Ω',320,130,C.warn,15)}
+  if(f>=2){const gr=g.createLinearGradient(60,0,580,0);gr.addColorStop(0,C.sig);gr.addColorStop(1,'#12313a');g.fillStyle=gr;g.fillRect(60,240,520,12);txt(g,'la tensión cae a lo largo de la resistencia',320,276,C.sig,14)}
+  flow(g,[[60,180],[580,180]],t,C.sig,10,f>=2?.12:.3);
+  if(f>=3){for(let i=0;i<4;i++){const y=140-((t*40+i*14)%50);g.fillStyle='rgba(255,120,60,'+(1-((t*40+i*14)%50)/50)+')';g.fillRect(260+i*35,y,8,8)}txt(g,'disipa potencia: P = I² · R',320,320,C.led,15)}},
+led(g,t,f){line(g,[[60,180],[250,180]],C.cu);line(g,[[390,180],[580,180]],C.cu);
+  g.fillStyle=f>=2?C.led:'#3a1d24';g.beginPath();g.moveTo(250,130);g.lineTo(250,230);g.lineTo(350,180);g.closePath();g.fill();g.strokeStyle=C.ag;g.lineWidth=3;g.stroke();g.beginPath();g.moveTo(352,130);g.lineTo(352,230);g.stroke();
+  txt(g,'ánodo',200,215,C.ag,13);txt(g,'cátodo',420,215,C.ag,13);
+  if(f>=1)flow(g,[[60,180],[580,180]],t,C.sig,9,.25);
+  if(f>=2){const k=.5+.5*Math.sin(t*6);g.strokeStyle='rgba(255,77,106,'+(.5+.4*k)+')';g.lineWidth=3;for(let a=0;a<8;a++){const an=-Math.PI/2+a*Math.PI/4+.4,r1=70,r2=95+10*k;g.beginPath();g.moveTo(320+Math.cos(an)*r1,160+Math.sin(an)*r1);g.lineTo(320+Math.cos(an)*r2,160+Math.sin(an)*r2);g.stroke()}}
+  if(f>=3)txt(g,'¡si I supera el máximo, el LED se daña!',320,320,C.warn,15)},
+switch_spst(g,t,f){line(g,[[60,200],[240,200]],C.cu);line(g,[[400,200],[580,200]],C.cu);g.fillStyle=C.ag;g.beginPath();g.arc(240,200,8,0,7);g.fill();g.beginPath();g.arc(400,200,8,0,7);g.fill();
+  const ang=f===0?-.5:f===1?-.5+.5*((t*1.2)%1):0;const open=f<2;const a=f===1?-.5+.5*Math.min(1,((t*1.2)%1)*1.4):(f===0?-.5:0);
+  g.strokeStyle=C.warn;g.lineWidth=6;g.beginPath();g.moveTo(240,200);g.lineTo(240+160*Math.cos(a),200+160*Math.sin(a));g.stroke();
+  if(f>=2)flow(g,[[60,200],[580,200]],t,C.sig,9);
+  txt(g,['contacto separado','la palanca se mueve','contacto unido','la corriente del circuito se actualiza'][f],320,300,f>=2?C.sig:C.ag,15)},
+capacitor(g,t,f){line(g,[[60,120],[290,120],[290,150]],C.cu);line(g,[[60,260],[290,260],[290,230]],C.cu);
+  g.fillStyle=C.ag;g.fillRect(250,150,80,8);g.fillRect(250,222,80,8);
+  const lv=[0,.5*Math.min(1,(t*.5)%1.2/1.2*2),.95,.95-.9*(((t*.4)%1))][f];const L=f===1?(1-Math.exp(-((t*.6)%2)*1.6)):lv;
+  g.fillStyle='#07110d';g.fillRect(380,110,80,150);g.fillStyle=C.sig;const h=150*L;g.fillRect(380,260-h,80,h);g.strokeStyle=C.ag;g.lineWidth=2;g.strokeRect(380,110,80,150);
+  txt(g,'carga',420,100,C.warn,13);txt(g,Math.round(L*100)+' %',420,285,C.ag,14);
+  if(f===1||f===3)flow(g,[[60,120],[290,120],[290,150]],t,f===3?C.warn:C.sig,6,.3,f===3);
+  txt(g,['nivel inicial','la carga sube poco a poco','se acerca al nivel final','con un camino de descarga, el nivel baja'][f],320,325,C.ag,14)},
+diode(g,t,f){line(g,[[60,180],[250,180]],C.cu);line(g,[[390,180],[580,180]],C.cu);g.fillStyle='#2a3a40';g.beginPath();g.moveTo(250,130);g.lineTo(250,230);g.lineTo(350,180);g.closePath();g.fill();g.strokeStyle=C.ag;g.lineWidth=3;g.stroke();g.beginPath();g.moveTo(354,130);g.lineTo(354,230);g.stroke();
+  txt(g,'ánodo',200,215,C.ag,13);txt(g,'cátodo',430,215,C.ag,13);
+  if(f===1){flow(g,[[60,180],[580,180]],t,C.sig,9);txt(g,'directa: pasa',320,300,C.ok,16)}
+  if(f===2){flow(g,[[580,180],[355,180]],t%.5,C.led,4,.2);g.strokeStyle=C.led;g.lineWidth=7;g.beginPath();g.moveTo(290,100);g.lineTo(330,140);g.moveTo(330,100);g.lineTo(290,140);g.stroke();txt(g,'inversa: bloquea (dentro de sus límites)',320,300,C.led,15)}
+  if(f===0)txt(g,'la banda marca el cátodo',320,300,C.ag,15)},
+transistor_npn(g,t,f){g.strokeStyle=C.ag;g.lineWidth=4;g.beginPath();g.arc(330,180,60,0,7);g.stroke();g.beginPath();g.moveTo(300,140);g.lineTo(300,220);g.stroke();
+  const base=[[60,180],[300,180]],col=[[420,40],[420,100],[330,130],[300,150]],em=[[300,210],[330,230],[420,260],[420,330]];
+  line(g,base,C.dim);line(g,[[330,130],[420,100],[420,40]],C.dim);line(g,[[330,230],[420,260],[420,330]],C.dim);
+  txt(g,'B',50,172,C.warn,14);txt(g,'C',445,60,C.warn,14);txt(g,'E',445,320,C.warn,14);
+  if(f>=1){flow(g,[[60,180],[300,180]],t,C.sig,5,.3);txt(g,'señal de control',180,160,C.sig,13)}
+  if(f>=2){flow(g,[[420,40],[420,100],[330,130],[330,230],[420,260],[420,330]],t,C.cu,10,.3);txt(g,'corriente de carga',500,190,C.cu,13)}
+  txt(g,['apagado','la señal llega a la base','la trayectoria de carga conduce','quitar la señal apaga la carga'][f],240,340,C.ag,14);
+  if(f===3){line(g,[[60,180],[300,180]],C.dim)}},
+ground_reference(g,t,f){line(g,[[120,100],[520,100]],C.dim);line(g,[[120,100],[120,230]],C.dim);line(g,[[520,100],[520,230]],C.dim);line(g,[[120,230],[520,230]],C.dim);
+  const pts=[[120,230],[320,230],[520,230]];g.fillStyle=f>=0?C.warn:C.ag;pts.forEach(p=>{g.beginPath();g.arc(p[0],p[1],7+(f===1?3*Math.sin(t*6):0),0,7);g.fill()});
+  g.strokeStyle=C.ag;g.lineWidth=4;[[290,40],[310,26],[330,12]].forEach((a,i)=>{g.beginPath();g.moveTo(320-a[0]+290-(i*0)+0,0);});
+  g.beginPath();g.moveTo(320,230);g.lineTo(320,262);g.stroke();[[290,262],[300,276],[310,290]].forEach((a,i)=>{g.beginPath();g.moveTo(320-(60-i*20)/2,262+i*10);g.lineTo(320+(60-i*20)/2,262+i*10);g.stroke()});
+  txt(g,'0 V por definición',320,325,C.warn,15);txt(g,f===1?'los nodos con el mismo nombre están conectados':'nodo de referencia',320,60,C.sig,14)},
+multimeter(g,t,f){g.fillStyle='#1a2a22';g.fillRect(40,60,200,250);g.strokeStyle=C.cu;g.lineWidth=3;g.strokeRect(40,60,200,250);g.fillStyle='#9fd8a8';g.fillRect(60,80,160,54);
+  const val=f>=2?'3.00 V':f===1?'-.--':'----';txt(g,val,140,118,'#0b1b15',30);
+  g.fillStyle=C.warn;g.beginPath();g.arc(140,210,38,0,7);g.fill();g.strokeStyle='#0b1b15';g.lineWidth=4;g.beginPath();g.moveTo(140,210);g.lineTo(140+34*Math.cos([-2.2,-1.6,-1,-1][f]+0),210+34*Math.sin([-2.2,-1.6,-1,-1][f]));g.stroke();txt(g,'V   A   Ω',140,280,C.ag,13);
+  line(g,[[330,120],[480,120],[480,250],[330,250]],C.dim);g.fillStyle='#c7a46a';g.fillRect(330,170,150,36);g.fillStyle=C.ag;g.fillRect(330,115,150,0);
+  if(f>=1){line(g,[[230,170],[300,150],[420,115]],C.led,5);line(g,[[230,215],[300,260],[420,253]],C.ag,5)}
+  if(f>=2)flow(g,[[330,120],[480,120],[480,250],[330,250]],t,C.sig,8,.2);
+  txt(g,['seleccionar el modo','tensión: puntas en paralelo','mostrar lectura','conexión incorrecta = aviso'][f],440,320,C.ag,14);
+  if(f===3){g.strokeStyle=C.led;g.lineWidth=6;g.beginPath();g.moveTo(400,140);g.lineTo(430,170);g.moveTo(430,140);g.lineTo(400,170);g.stroke()}}
+};
+let anim={id:null,fn:null,t0:0,frame:0,auto:true,raf:0,cv:null,cap:null,frames:[]};
+function runAnim(cv,id,frames,capEl,onFrame){cancelAnimationFrame(anim.raf);const g=cv.getContext('2d');cv.width=W;cv.height=H;
+  Object.assign(anim,{id,t0:performance.now(),frame:0,auto:true,cv,cap:capEl,frames});
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tick=(now)=>{const t=(now-anim.t0)/1000;if(anim.auto&&!reduce){const nf=Math.floor(t/2.6)%frames.length;if(nf!==anim.frame){anim.frame=nf;onFrame&&onFrame(nf)}}
+    g.clearRect(0,0,W,H);(DR[id]||DR.battery_dc)(g,t,anim.frame);
+    txt(g,'cuadro '+(anim.frame+1)+'/'+frames.length,W-12,18,C.dim,12,'right');
+    anim.raf=requestAnimationFrame(tick)};anim.raf=requestAnimationFrame(tick);}
+
+/* ===== PRINCIPIOS PROPIOS (extraídos de cada componente) ===== */
+const PRINC={
+battery_dc:['Un sistema solo mueve algo si existe un camino cerrado.','¿Hay algo que impulsa y un lazo que vuelve al origen?'],
+resistor:['Lo que limita el flujo decide cuánto pasa.','¿Qué mantiene el flujo dentro de un rango seguro?'],
+led:['Una salida visible exige dirección correcta y flujo limitado.','¿Qué señal observable aparece y qué pasa si me excedo?'],
+switch_spst:['Quien controla el camino decide si hay flujo, sin ser la fuente.','¿Quién abre o cierra el paso?'],
+capacitor:['Lo que almacena amortigua: tarda en llenarse y en vaciarse según el camino (τ = R·C).','¿Qué se acumula y cuánto tarda en cambiar?'],
+diode:['Una frontera de un solo sentido deja avanzar y bloquea el retroceso.','¿En qué sentido se permite pasar?'],
+transistor_npn:['Una señal pequeña puede gobernar una acción grande por un camino separado.','¿Qué señal controla y qué acción grande gobierna?'],
+ground_reference:['Para comparar valores hace falta una referencia compartida.','¿Con respecto a qué punto estamos midiendo?'],
+multimeter:['Para medir sin alterar, observa desde fuera: en paralelo la tensión, en serie la corriente.','¿Estoy midiendo sin cambiar lo que mido?']};
+const byId=(id)=>DB.components.find(c=>c.id===id);
+const nm=(id)=>byId(id).name.replace(/ \(.*\)/,'');
+
+/* ===== SALA 1: LABORATORIO ===== */
+function roomLab(){
+  const r=$('#room');r.innerHTML=`<div class="grid"><div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+    <h2>ESCÁNER DE COMPONENTES</h2><canvas id="cv" aria-label="Animación del componente"></canvas>
+    <div class="cap" id="cap" aria-live="polite"></div>
+    <div class="row" id="frames"></div>
+    <div class="row"><button class="btn ghost" id="pp">PAUSAR</button></div></div>
+    <div style="display:flex;flex-direction:column;gap:10px;min-width:0"><div class="chips" id="list"></div><div id="card" style="display:flex;flex-direction:column;gap:10px"></div></div></div>`;
+  const list=$('#list');
+  DB.components.forEach(c=>{const b=el(`<button class="chip" aria-pressed="false">${nm(c.id)}</button>`);if(S.done['lab_'+c.id])b.classList.add('done');b.onclick=()=>pick(c.id);list.append(b)});
+  $('#pp').onclick=()=>{anim.auto=!anim.auto;$('#pp').textContent=anim.auto?'PAUSAR':'REANUDAR'};
+  pick(S.cur||'resistor');
+}
+function pick(id){
+  S.cur=id;const c=byId(id);
+  [...$('#list').children].forEach((b,i)=>b.setAttribute('aria-pressed',DB.components[i].id===id));
+  const fr=c.simulation.animation.frames;const fb=$('#frames');fb.innerHTML='';
+  const setF=(i)=>{anim.frame=i;anim.t0=performance.now()-i*2600;[...fb.children].forEach((b,k)=>b.setAttribute('aria-pressed',k===i));$('#cap').textContent=fr[i][0].toUpperCase()+fr[i].slice(1)};
+  fr.forEach((f,i)=>{const b=el(`<button class="chip" aria-pressed="false">${i+1}</button>`);b.onclick=()=>{anim.auto=false;$('#pp').textContent='REANUDAR';setF(i)};fb.append(b)});
+  runAnim($('#cv'),id,fr,$('#cap'),(i)=>{[...fb.children].forEach((b,k)=>b.setAttribute('aria-pressed',k===i));$('#cap').textContent=fr[i][0].toUpperCase()+fr[i].slice(1)});
+  $('#cap').textContent=fr[0][0].toUpperCase()+fr[0].slice(1);fb.children[0].setAttribute('aria-pressed','true');
+  const rules=c.simulation.rules.map(x=>x.formula?`<li><b>${x.formula}</b></li>`:'').join('');
+  $('#card').innerHTML=`<h2>${c.name}</h2>
+   <dl class="kv"><dt>Rol</dt><dd>${c.role}</dd><dt>Código</dt><dd>${c.code_meaning.details}</dd><dt>Posición</dt><dd>${c.classification_in_circuit.typical_positions.map(p=>DB.classification_system.by_circuit_position.find(x=>x.id===p).label).join(' · ')}</dd></dl>
+   <h3>Límites</h3><ul class="clean">${c.limits.map(l=>`<li>${l}</li>`).join('')}</ul>
+   ${rules?`<h3>Reglas</h3><ul class="clean">${rules}</ul>`:''}
+   <div class="note ok"><b>PRINCIPIO EXTRAÍDO</b><br>${PRINC[id][0]}<br><span class="small">Pregunta para reutilizarlo: ${PRINC[id][1]}</span></div>
+   <button class="btn" id="round">RONDA DE ANÁLISIS (5)</button>`;
+  $('#round').onclick=()=>startRound(id);
+}
+
+/* ===== RONDA: preguntas generadas desde la base ===== */
+function makeQs(focus){
+  const comps=DB.components,qs=[];
+  const others=(id)=>shuffle(comps.filter(c=>c.id!==id));
+  const names=(id,n)=>shuffle([id,...others(id).slice(0,n-1).map(c=>c.id)]);
+  const mk=[
+   (c)=>{const ok=rnd(c.limits);const d=others(c.id).slice(0,2).map(o=>rnd(o.limits));return{q:`¿Cuál de estos límites pertenece a «${nm(c.id)}»?`,o:shuffle([ok,...d]),a:ok,why:'Cada componente tiene límites propios: '+c.limits.join(' ')}},
+   (c)=>({q:'¿Qué componente cumple este rol?\n'+c.role,o:names(c.id,S.diff==='hard'?4:3).map(nm),a:nm(c.id),why:'Principio: '+PRINC[c.id][0]}),
+   (c)=>{const k=rnd(c.connections);return{q:`«${nm(c.id)}» se relaciona con otro componente así:\n${k.relationship}\n¿Con cuál?`,o:names(k.component_id,3).map(nm),a:nm(k.component_id),why:'Las conexiones muestran cómo se transfiere un principio de un componente a otro.'}},
+   (c)=>({q:'¿A qué componente pertenece este principio?\n'+PRINC[c.id][0],o:names(c.id,4).map(nm),a:nm(c.id),why:PRINC[c.id][1]})];
+  const base=[focus,...others(focus).slice(0,4).map(c=>c.id)];
+  base.forEach((id,i)=>qs.push(mk[i%4](byId(id))));
+  return shuffle(qs);
+}
+function startRound(focus){
+  const qs=makeQs(focus);let i=0,ok=0,timer=null;const card=$('#card');
+  const next=()=>{clearInterval(timer);if(i>=qs.length){S.done['lab_'+focus]=ok>=3;if(ok>=3)win(100);card.innerHTML=`<h2>RONDA TERMINADA</h2><p>Aciertos: ${ok} de ${qs.length}.</p><div class="note ${ok>=3?'ok':'err'}">${ok>=3?'Componente analizado. Su principio queda desbloqueado para el Puente.':'Repasa los cuadros de la animación y vuelve a intentarlo.'}</div><button class="btn" id="back">VOLVER</button>`;$('#back').onclick=()=>pick(focus);return}
+    const q=qs[i];const lim=DIFFS[S.diff].time;let left=lim;
+    card.innerHTML=`<h3>Pregunta ${i+1} de ${qs.length}</h3><div class="bar" ${lim?'':'hidden'}><i id="tb" style="width:100%"></i></div><p style="white-space:pre-line">${q.q}</p><div class="opts" id="opts"></div><div id="fb"></div>`;
+    const lock=(pick)=>{clearInterval(timer);[...$('#opts').children].forEach(b=>{b.disabled=true;if(b.textContent===q.a)b.classList.add('good')});
+      if(pick===q.a){ok++;win(20);$('#fb').innerHTML=`<div class="note ok">${q.why}</div>`}else{if(pick!=null)[...$('#opts').children].forEach(b=>{if(b.textContent===pick)b.classList.add('bad')});lose();$('#fb').innerHTML=`<div class="note err">${pick==null?'Se acabó el tiempo. ':''}${q.why}</div>`}
+      $('#fb').append(el('<button class="btn alt" style="margin-top:8px">SIGUIENTE</button>'));$('#fb').lastChild.onclick=()=>{i++;next()}};
+    q.o.forEach(t=>{const b=el('<button class="opt"></button>');b.textContent=t;b.onclick=()=>lock(t);$('#opts').append(b)});
+    if(lim)timer=setInterval(()=>{left-=.1;const tb=$('#tb');if(tb)tb.style.width=Math.max(0,left/lim*100)+'%';if(left<=0)lock(null)},100);
+  };next();
+}
+
+/* ===== SALA 3: CÓDIGOS ===== */
+const BAND={negro:'#111',marron:'#6b3b1c',rojo:'#cc2222',naranja:'#e8731a',amarillo:'#e8d21a',verde:'#2a9a3f',azul:'#2a56c6',violeta:'#8a3fc6',gris:'#8a8f94',blanco:'#f0f0f0',oro:'#d4af37',plata:'#c0c4c8'};
+function roomCodes(){
+  const r=$('#room');r.innerHTML=`<div class="grid"><div style="display:flex;flex-direction:column;gap:10px;min-width:0"><h2>DECODIFICADOR</h2><canvas id="cv" aria-label="Componente a decodificar"></canvas><div class="row"><button class="btn" id="mR">RESISTENCIA</button><button class="btn alt" id="mC">CONDENSADOR</button></div></div>
+  <div style="display:flex;flex-direction:column;gap:10px;min-width:0" id="qa"></div></div>`;
+  $('#mR').onclick=codeR;$('#mC').onclick=codeC;codeR();
+}
+function fmtOpts(vals,fmt,ok){const s=[...new Set(vals.map(fmt))];return shuffle(s)}
+function codeR(){
+  cancelAnimationFrame(anim.raf);const cd=DB.code_systems.resistor_color_code;const dc=Object.keys(cd.digit_colors);
+  const d1=1+Math.floor(Math.random()*9),d2=Math.floor(Math.random()*10),m=Math.floor(Math.random()*5);const tol=rnd(['oro','plata','marron','rojo']);
+  const mult=Object.keys(cd.multiplier)[m],val=(d1*10+d2)*cd.multiplier[mult],tp=cd.tolerance_percent[tol];
+  const g=$('#cv').getContext('2d');$('#cv').width=W;$('#cv').height=H;g.clearRect(0,0,W,H);line(g,[[40,180],[600,180]],C.cu,8);g.fillStyle='#c7a46a';g.fillRect(170,130,300,100);
+  [dc[d1],dc[d2],mult,tol].forEach((n,i)=>{g.fillStyle=BAND[n];g.fillRect(200+i*60+(i===3?30:0),130,26,100)});
+  if(S.diff==='easy')txt(g,[dc[d1],dc[d2],mult,tol].join(' · '),320,280,C.warn,15);
+  const opts=shuffle([val,val*10,val/10,(d2*10+d1)*cd.multiplier[mult]]).filter((v,i,a)=>a.indexOf(v)===i);
+  const hard=S.diff==='hard';
+  $('#qa').innerHTML=`<h2>LEE LAS BANDAS</h2><p>Cuatro bandas: dígito, dígito, multiplicador, tolerancia.${hard?' Elige el rango real de la resistencia.':''}</p><div class="opts" id="o"></div><div id="fb"></div>`;
+  const label=(v)=>hard?`${fmtR(v*(1-tp/100))} a ${fmtR(v*(1+tp/100))}`.replace(/\.?0+ /g,' '):fmtR(v);
+  const rng=(v)=>`${+(v*(1-tp/100)).toFixed(2)} a ${+(v*(1+tp/100)).toFixed(2)} Ω`;
+  opts.forEach(v=>{const b=el('<button class="opt"></button>');b.textContent=hard?rng(v)+' (±'+tp+' %)':fmtR(v)+(S.diff==='medium'?'':' ±'+tp+' %');b.onclick=()=>{[...$('#o').children].forEach(x=>x.disabled=true);const ok=v===val;b.classList.add(ok?'good':'bad');if(ok)win(30);else lose();
+    $('#fb').innerHTML=`<div class="note ${ok?'ok':'err'}">${dc[d1]} = ${d1}, ${dc[d2]} = ${d2}, ${mult} = ×${cd.multiplier[mult]}. Valor: ${fmtR(val)}, tolerancia ±${tp} %, rango ${rng(val)}.</div><button class="btn alt" style="margin-top:8px" id="nx">OTRA</button>`;$('#nx').onclick=codeR};$('#o').append(b)});
+}
+function codeC(){
+  cancelAnimationFrame(anim.raf);const a=1+Math.floor(Math.random()*9),b=Math.floor(Math.random()*10),m=Math.floor(Math.random()*5);const mk=''+a+b+m;const pF=(a*10+b)*Math.pow(10,m);
+  const g=$('#cv').getContext('2d');$('#cv').width=W;$('#cv').height=H;g.clearRect(0,0,W,H);line(g,[[260,230],[260,330]],C.cu,6);line(g,[[380,230],[380,330]],C.cu,6);
+  g.fillStyle='#d9a441';g.beginPath();g.arc(320,150,100,0,7);g.fill();txt(g,mk,320,170,'#3a2608',58);
+  const F=pF*1e-12;const opts=[...new Set([F,F*10,F/10,F*1000])];
+  $('#qa').innerHTML=`<h2>LEE EL CÓDIGO</h2><p>Dos primeros dígitos y multiplicador, en picofaradios (pF).</p><div class="opts" id="o"></div><div id="fb"></div>`;
+  shuffle(opts).forEach(v=>{const bt=el('<button class="opt"></button>');bt.textContent=fmtC(+v.toPrecision(3));bt.onclick=()=>{[...$('#o').children].forEach(x=>x.disabled=true);const ok=v===F;bt.classList.add(ok?'good':'bad');if(ok)win(30);else lose();
+    $('#fb').innerHTML=`<div class="note ${ok?'ok':'err'}">${a}${b} × 10^${m} pF = ${pF} pF = ${fmtC(F)}. Recuerda: 1 µF = 1000 nF; 1 nF = 1000 pF.</div><button class="btn alt" style="margin-top:8px" id="nx">OTRO</button>`;$('#nx').onclick=codeC};$('#o').append(bt)});
+}
+
+/* ===== SALA 2: CIRCUITOS ===== */
+const CS={led:{V:5,R:330,Vf:2,closed:true,pol:true},rc:{V:5,R:10000,C:1e-4,path:true,phase:'charge',t0:0},npn:{closed:false,pin:false,Rb:1000},pred:null,tab:'led',res:null};
+function anLed(p){const o={assume:['Caída del LED constante (modelo didáctico).','Resistencia ideal con su valor nominal.'],warn:[],states:{},drops:{}};
+  if(!p.closed){return{...o,status:'Camino abierto',I:0,rule:'Camino abierto: corriente estable cero.',states:{S1:'abierto',D1:'apagado'}}}
+  if(!p.pol){return{...o,status:'LED en polarización inversa',I:0,rule:'Polaridad inversa: el LED bloquea.',warn:['Comprueba la tensión inversa máxima del modelo.'],states:{S1:'cerrado',D1:'inversa'}}}
+  if(p.V<=p.Vf){return{...o,status:'La fuente no supera la tensión directa',I:0,rule:'Si V ≤ Vf no hay conducción apreciable.',states:{S1:'cerrado',D1:'apagado'}}}
+  const I=(p.V-p.Vf)/p.R,PR=I*I*p.R,w=[];if(I>.02)w.push('Corriente sobre el máximo del LED (20 mA): riesgo de daño.');if(PR>.25)w.push('La resistencia excede 0,25 W.');if(I<.001)w.push('Corriente muy baja: brillo débil.');
+  return{...o,status:I>.02?'LED en riesgo':'LED encendido',I,rule:'I ≈ (V − Vf) / R',drops:{R1:I*p.R,D1:p.Vf},PR,warn:w,states:{S1:'cerrado',R1:'conduce',D1:I>.02?'sobrecorriente':'emite'}}}
+function anNpn(p){const o={assume:['Vbe ≈ 0,7 V y Vce(sat) ≈ 0,2 V.','Ganancia mínima supuesta hFE = 100 (varía según el modelo).'],warn:[],drops:{}};
+  if(!p.pin)return{...o,status:'No se puede predecir con los datos actuales',Ib:0,Ic:0,rule:'Pinout sin verificar: no se simula como está cableado.',states:{Q1:'desconocido',D1:'—'},warn:['Verifica base, colector y emisor en la hoja de datos.'],led:'unknown'};
+  if(!p.closed)return{...o,status:'Control abierto',Ib:0,Ic:0,rule:'Sin corriente de base: transistor apagado (modelo interruptor).',states:{Q1:'apagado',D1:'apagado'},led:'off'};
+  const Ib=(5-.7)/p.Rb,Ineed=(5-2-.2)/330,max=Ib*100;const sat=max>=Ineed;const Ic=sat?Ineed:max;
+  return{...o,status:sat?'Transistor saturado, LED encendido':'Base insuficiente: LED débil',Ib,Ic,rule:'Ib = (5 − 0,7) / R_BASE; saturado si Ib·hFE ≥ I de carga',states:{Q1:sat?'saturado':'conducción parcial',D1:sat?'emite':'débil'},led:sat?'on':'dim',warn:sat?[]:['Reduce R_BASE para aumentar la corriente de base.']}}
+function roomCirc(){
+  const r=$('#room');r.innerHTML=`<div class="chips" id="tabs"></div><div class="grid"><div style="display:flex;flex-direction:column;gap:10px;min-width:0"><canvas id="cv" aria-label="Circuito animado"></canvas><div class="cap" id="cap"></div></div><div style="display:flex;flex-direction:column;gap:10px;min-width:0" id="ctl"></div></div>`;
+  DB.starter_circuits.forEach((c,i)=>{const k=['led','rc','npn'][i];const b=el(`<button class="chip" aria-pressed="${CS.tab===k}">Nivel ${c.difficulty}: ${c.name}</button>`);b.onclick=()=>{CS.tab=k;CS.pred=null;CS.res=null;roomCirc()};$('#tabs').append(b)});
+  ({led:ctlLed,rc:ctlRc,npn:ctlNpn})[CS.tab]();
+  cancelAnimationFrame(anim.raf);const cv=$('#cv'),g=cv.getContext('2d');cv.width=W;cv.height=H;const t0=performance.now();
+  const tick=(n)=>{g.clearRect(0,0,W,H);DC[CS.tab](g,(n-t0)/1000,n);anim.raf=requestAnimationFrame(tick)};anim.raf=requestAnimationFrame(tick);
+}
+function sel(id,lab,opts,cur,fmt,on){return `<label><span>${lab}</span><select id="${id}">${opts.map(o=>`<option value="${o}" ${o==cur?'selected':''}>${fmt(o)}</option>`).join('')}</select></label>`}
+function predBox(opts,truth,key,go){
+  const box=$('#pb');box.innerHTML=`<h3>1 · Predice antes de ejecutar</h3><div class="opts" id="po"></div>`;
+  opts.forEach(o=>{const b=el('<button class="opt"></button>');b.textContent=o.t;b.setAttribute('aria-pressed',CS.pred===o.k);if(CS.pred===o.k)b.classList.add('good');b.onclick=()=>{CS.pred=o.k;predBox(opts,truth,key,go)};$('#po').append(b)});
+}
+function report(r,truthKey,predKey){
+  const ok=predKey===truthKey;if(ok)win(60);else lose();
+  const dr=Object.entries(r.drops||{}).map(([k,v])=>`${k}: ${v.toFixed(2)} V`).join(' · ')||'—';
+  $('#out').innerHTML=`<h3>2 · Resultado</h3><div class="note ${ok?'ok':'err'}">${ok?'Tu predicción coincide con el modelo.':'La predicción no coincidió. Compara tu hipótesis con la regla que se aplicó.'}</div>
+   <dl class="kv"><dt>Estado</dt><dd>${r.status}</dd><dt>Corriente</dt><dd>${r.I!=null?fmtI(r.I):r.Ib!=null?'base '+fmtI(r.Ib)+' · carga '+fmtI(r.Ic):'—'}</dd><dt>Caídas</dt><dd>${dr}</dd><dt>Componentes</dt><dd>${Object.entries(r.states||{}).map(([k,v])=>k+' '+v).join(' · ')}</dd><dt>Regla</dt><dd>${r.rule}</dd></dl>
+   ${(r.warn||[]).map(w=>`<div class="note err">${w}</div>`).join('')}<h3>Supuestos</h3><ul class="clean">${r.assume.map(a=>`<li>${a}</li>`).join('')}</ul>`;
+}
+function ctlLed(){
+  const p=CS.led;$('#ctl').innerHTML=`<h2>LED + RESISTENCIA</h2><div id="pb" class="panel" style="padding:10px"></div>
+  <div class="row"><label style="flex:1"><span>Fuente: <b id="vV">${p.V} V</b></span><input id="iV" type="range" min="3" max="12" step="1" value="${p.V}"></label>
+  <label style="flex:1"><span>V directa LED: <b id="vF">${p.Vf} V</b></span><input id="iF" type="range" min="1.6" max="3.2" step=".2" value="${p.Vf}"></label></div>
+  ${sel('iR','Resistencia en serie',[100,220,330,470,1000,4700],p.R,fmtR)}
+  <div class="row"><button class="chip" id="tS" aria-pressed="${p.closed}">Interruptor ${p.closed?'cerrado':'abierto'}</button><button class="chip" id="tP" aria-pressed="${p.pol}">Polaridad ${p.pol?'correcta':'invertida'}</button></div>
+  <button class="btn" id="go">ANALIZAR</button><div id="out"></div>`;
+  const refresh=()=>{const Ip=anLed(p).I;const set=shuffle([Ip,Ip*2,Ip/2,Ip*5,0,0.005,0.02]).filter((v,i,a)=>a.indexOf(v)===i).slice(0,4);if(!set.includes(Ip))set[0]=Ip;const opts=set.map(v=>({k:fmtI(v),t:v===0?'0 mA (no circula)':'≈ '+fmtI(v)}));predBox(opts,fmtI(Ip),'I');};
+  const re=()=>{CS.pred=null;$('#out').innerHTML='';refresh()};
+  $('#iV').oninput=e=>{p.V=+e.target.value;$('#vV').textContent=p.V+' V';re()};$('#iF').oninput=e=>{p.Vf=+e.target.value;$('#vF').textContent=p.Vf+' V';re()};
+  $('#iR').onchange=e=>{p.R=+e.target.value;re()};$('#tS').onclick=()=>{p.closed=!p.closed;roomCirc()};$('#tP').onclick=()=>{p.pol=!p.pol;roomCirc()};
+  $('#go').onclick=()=>{if(CS.pred==null){$('#out').innerHTML='<div class="note">Elige una predicción primero.</div>';return}const r=anLed(p);CS.res=r;report(r,fmtI(r.I),CS.pred)};refresh();
+}
+function ctlRc(){
+  const p=CS.rc;p.t0=performance.now();$('#ctl').innerHTML=`<h2>CARGA Y DESCARGA RC</h2><div id="pb" class="panel" style="padding:10px"></div>
+  <div class="row"><div style="flex:1">${sel('iR','Resistencia',[1000,4700,10000,47000,100000],p.R,fmtR)}</div><div style="flex:1">${sel('iC','Condensador',[1e-5,4.7e-5,1e-4,4.7e-4],p.C,fmtC)}</div></div>
+  <div class="row"><button class="btn" id="bc">CARGAR</button><button class="btn alt" id="bd">DESCARGAR</button><button class="chip" id="tp" aria-pressed="${p.path}">Ruta de descarga: ${p.path?'sí':'no'}</button></div>
+  <div class="note" id="info"></div><div id="out"></div>`;
+  const tau=()=>p.R*p.C;const refresh=()=>{const t=tau();const opts=shuffle([t,t*10,t/10,t*100]).map(v=>({k:+v.toPrecision(3),t:'τ ≈ '+(+v.toPrecision(3))+' s'}));predBox(opts,+t.toPrecision(3),'tau')};
+  $('#info').textContent='Con la regla τ = R · C el modelo calcula el tiempo característico.';
+  const re=()=>{CS.pred=null;p.t0=performance.now();$('#out').innerHTML='';refresh()};
+  $('#iR').onchange=e=>{p.R=+e.target.value;re()};$('#iC').onchange=e=>{p.C=+e.target.value;re()};
+  $('#bc').onclick=()=>{p.phase='charge';p.t0=performance.now();$('#info').textContent='Cargando: V(t) = V · (1 − e^(−t/τ)).'};
+  $('#bd').onclick=()=>{p.phase='discharge';p.t0=performance.now();$('#info').textContent=p.path?'Descargando por R: V(t) = V0 · e^(−t/τ).':'Sin ruta de descarga el condensador conserva su carga.'};
+  $('#tp').onclick=()=>{p.path=!p.path;$('#tp').textContent='Ruta de descarga: '+(p.path?'sí':'no');$('#tp').setAttribute('aria-pressed',p.path)};
+  const chk=el('<button class="btn" style="margin-top:2px">COMPROBAR PREDICCIÓN</button>');$('#ctl').append(chk);
+  chk.onclick=()=>{if(CS.pred==null){$('#out').innerHTML='<div class="note">Elige una predicción primero.</div>';return}const t=+tau().toPrecision(3);
+    report({status:'τ = '+t+' s',I:null,Ib:null,drops:{},states:{C1:'63 % en τ; ≈ 99 % en 5τ ('+(5*t)+' s)'},rule:'τ = R · C = '+fmtR(p.R)+' × '+fmtC(p.C),warn:[],assume:['RC ideal con fuente constante.','Condensador inicialmente descargado.','Sin fugas.']},t,CS.pred)};
+  refresh();
+}
+function ctlNpn(){
+  const p=CS.npn;$('#ctl').innerHTML=`<h2>NPN COMO INTERRUPTOR</h2><div id="pb" class="panel" style="padding:10px"></div>
+  ${sel('iB','R de base',[330,1000,10000,100000],p.Rb,fmtR)}
+  <div class="row"><button class="chip" id="tS" aria-pressed="${p.closed}">Control ${p.closed?'cerrado':'abierto'}</button><button class="chip" id="tN" aria-pressed="${p.pin}">Pinout ${p.pin?'verificado':'sin verificar'}</button></div>
+  <button class="btn" id="go">ANALIZAR</button><div id="out"></div>`;
+  const lab={on:'LED encendido',dim:'LED débil',off:'LED apagado',unknown:'No se puede predecir con los datos actuales'};
+  const refresh=()=>{predBox(Object.keys(lab).map(k=>({k,t:lab[k]})),anNpn(p).led,'led')};
+  $('#iB').onchange=e=>{p.Rb=+e.target.value;CS.pred=null;$('#out').innerHTML='';refresh()};$('#tS').onclick=()=>{p.closed=!p.closed;CS.pred=null;roomCirc()};$('#tN').onclick=()=>{p.pin=!p.pin;CS.pred=null;roomCirc()};
+  $('#go').onclick=()=>{if(CS.pred==null){$('#out').innerHTML='<div class="note">Elige una predicción primero.</div>';return}const r=anNpn(p);report(r,r.led,CS.pred)};refresh();
+}
+function box(g,x,y,w,h,label,col=C.ag){g.fillStyle='#0b1b15';g.fillRect(x,y,w,h);g.strokeStyle=col;g.lineWidth=2;g.strokeRect(x,y,w,h);txt(g,label,x+w/2,y+h/2+5,col,14)}
+const DC={
+led(g,t){const p=CS.led,r=anLed(p),L=[[90,90],[550,90],[550,270],[90,270],[90,90]];line(g,L);
+  box(g,70,150,40,60,'B1',C.warn);box(g,200,70,60,40,p.closed?'S1 ■':'S1 □',p.closed?C.ok:C.led);box(g,340,70,90,40,'R1 '+fmtR(p.R),C.cu);box(g,505,150,90,60,'D1',C.ag);
+  if(r.I>0)flow(g,[[90,150],[90,90],[550,90],[550,150]],t,C.sig,7,Math.min(.5,.1+r.I*20)),flow(g,[[550,210],[550,270],[90,270],[90,210]],t,C.sig,7,Math.min(.5,.1+r.I*20));
+  if(r.I>0){const k=Math.min(1.3,r.I/.02);g.fillStyle='rgba(255,77,106,'+Math.min(.9,.25+k*.5)+')';g.beginPath();g.arc(550,180,18+k*14,0,7);g.fill()}
+  txt(g,r.status,320,330,r.warn.length?C.warn:C.ag,15);if(r.I!=null)txt(g,'I = '+fmtI(r.I),320,200,C.sig,18)},
+rc(g,t,n){const p=CS.rc,tau=p.R*p.C;const el=(n-p.t0)/1000;const tt=Math.min(el,6)/6*5*tau;
+  const V=p.phase==='charge'?p.V*(1-Math.exp(-tt/tau)):(p.path?p.V*Math.exp(-tt/tau):p.V);
+  line(g,[[70,80],[260,80],[260,150]],C.dim);line(g,[[70,280],[260,280],[260,230]],C.dim);box(g,40,150,60,60,'B1',C.warn);box(g,150,60,80,40,'R '+fmtR(p.R),C.cu);
+  g.fillStyle=C.ag;g.fillRect(225,150,70,7);g.fillRect(225,223,70,7);g.fillStyle='#07110d';g.fillRect(310,110,40,150);g.fillStyle=C.sig;g.fillRect(310,260-150*V/p.V,40,150*V/p.V);
+  if(p.phase==='charge'&&V<p.V*.99)flow(g,[[70,150],[70,80],[260,80],[260,150]],t,C.sig,5,.3);
+  if(p.phase==='discharge'&&p.path&&V>.05)flow(g,[[260,150],[260,80],[70,80],[70,150]],t,C.warn,5,.3);
+  const X0=390,Y0=300,Wd=230,Hd=190;g.strokeStyle=C.dim;g.lineWidth=2;g.strokeRect(X0,Y0-Hd,Wd,Hd);
+  for(let i=0;i<=5;i++){g.strokeStyle='#143026';g.beginPath();g.moveTo(X0+Wd*i/5,Y0-Hd);g.lineTo(X0+Wd*i/5,Y0);g.stroke();txt(g,i+'τ',X0+Wd*i/5,Y0+16,C.ag,11)}
+  g.strokeStyle=C.sig;g.lineWidth=3;g.beginPath();for(let i=0;i<=100;i++){const x=i/100*5*tau*(tt/(5*tau||1));const v=p.phase==='charge'?1-Math.exp(-x/tau):(p.path?Math.exp(-x/tau):1);const px=X0+Wd*(x/(5*tau)),py=Y0-Hd*v*.95;i?g.lineTo(px,py):g.moveTo(px,py)}g.stroke();
+  g.fillStyle=C.warn;g.fillRect(X0+Wd/5-1,Y0-Hd,2,Hd);txt(g,'τ',X0+Wd/5+8,Y0-Hd+14,C.warn,12,'left');
+  txt(g,'V(C) = '+V.toFixed(2)+' V  ·  τ = '+(+tau.toPrecision(3))+' s',320,342,C.ag,14)},
+npn(g,t){const p=CS.npn,r=anNpn(p);line(g,[[90,60],[470,60],[470,120]],C.dim);line(g,[[470,240],[470,310],[90,310],[90,200]],C.dim);line(g,[[90,60],[90,160]],C.dim);line(g,[[90,200],[90,310]],C.dim);
+  box(g,70,160,40,40,'B1',C.warn);box(g,160,40,80,40,'R 330',C.cu);box(g,320,40,60,40,'D1',r.led==='on'||r.led==='dim'?C.led:C.ag);
+  box(g,440,120,60,120,'Q1',C.ag);line(g,[[90,120],[220,120],[220,180],[440,180]],C.dim);box(g,150,100,60,38,'S1 '+(p.closed?'■':'□'),p.closed?C.ok:C.led);box(g,260,162,80,38,fmtR(p.Rb),C.cu);
+  if(p.closed&&p.pin)flow(g,[[90,120],[220,120],[220,180],[440,180]],t,C.sig,6,.3);
+  if(r.Ic>0)flow(g,[[90,160],[90,60],[470,60],[470,120],[470,240],[470,310],[90,310],[90,200]],t,C.cu,10,Math.min(.5,.12+r.Ic*30));
+  if(r.led==='on'||r.led==='dim'){g.fillStyle='rgba(255,77,106,'+(r.led==='on'?.7:.28)+')';g.beginPath();g.arc(350,60,26,0,7);g.fill()}
+  txt(g,r.status,320,345,r.led==='unknown'?C.warn:C.ag,15);txt(g,'señal (cian) y carga (cobre) van por caminos separados',320,24,C.ag,12)}
+};
+
+/* ===== SALA 4: PUENTE ANALÓGICO ===== */
+const SC=[
+{c:'resistor',s:'Alguien te cuenta algo largo y rápido. Pides que lo cuente por partes para poder seguirlo.',f:'Las palabras y la información.',l:'Pedir pausas o resumir limita el ritmo.',y:'La conversación sigue y se entiende.'},
+{c:'switch_spst',s:'En una reunión, nadie habla hasta que quien modera da la palabra.',f:'El turno de hablar.',l:'Quien modera abre o cierra el paso, sin ser quien habla.',y:'El turno vuelve a quien modera.'},
+{c:'capacitor',s:'Recibes una noticia fuerte. La reacción no es inmediata: crece durante horas y baja despacio al conversar.',f:'La carga emocional.',l:'El tiempo y el camino de descarga (conversar, caminar) fijan la rapidez.',y:'Si no hay camino de descarga, la carga se mantiene.'},
+{c:'diode',s:'En un museo hay una puerta giratoria solo de salida: se puede salir, no entrar por ahí.',f:'Las personas.',l:'La puerta permite un solo sentido.',y:'Para entrar existe otra puerta, otro camino.'},
+{c:'transistor_npn',s:'Quien dirige un coro levanta una mano apenas y cuarenta personas cantan fuerte.',f:'Gesto pequeño (control) y voces (carga).',l:'La señal pequeña gobierna una acción grande por un camino separado.',y:'Al bajar la mano, la acción grande se apaga.'},
+{c:'ground_reference',s:'Dos amigos discuten si hace mucho calor. Solo comparan cuando acuerdan medir en grados.',f:'Las opiniones y las medidas.',l:'Sin referencia común, los valores no se comparan.',y:'El acuerdo de qué se toma como cero.'},
+{c:'multimeter',s:'Antes de opinar sobre cómo se siente alguien, le preguntas sin interrumpir ni cambiar el tema.',f:'La información sobre su estado.',l:'Medir sin alterar: observar desde fuera.',y:'La lectura te dice si la situación coincide con tu hipótesis.'},
+{c:'battery_dc',s:'Envías mensajes con muchas ganas, pero nadie responde. Falta el camino de vuelta.',f:'La energía y la atención.',l:'La motivación impulsa, pero sin lazo de respuesta no hay circuito.',y:'El lazo cerrado entre pedir y responder.'},
+{c:'led',s:'La luz de giro de una bicicleta avisa a los demás. Con demasiada energía se quema; en sentido contrario no funciona.',f:'Energía eléctrica convertida en luz.',l:'Dirección correcta y límite de corriente.',y:'La señal visible informa a otros.'}];
+function roomBridge(){
+  const r=$('#room');r.innerHTML=`<h2>PUENTE ANALÓGICO</h2><p>Un principio aprendido en un sistema conocido sirve para leer otro desconocido. Sigue el mismo procedimiento cada vez:</p>
+  <ul class="clean"><li><b>1. Qué fluye</b> en la situación.</li><li><b>2. Qué limita o controla</b> ese flujo.</li><li><b>3. Qué cierra el ciclo</b> o sirve de referencia.</li><li><b>4. Predice y contrasta</b> con lo que ocurre.</li></ul><div id="br" class="panel" style="padding:12px"></div>`;
+  bridgeQ(0,[...Array(SC.length).keys()].sort(()=>Math.random()-.5).slice(0,5));
+}
+function bridgeQ(i,order){
+  const br=$('#br');if(i>=order.length){br.innerHTML=`<h2>TU TURNO</h2><p>Escribe una situación nueva que no esté en este juego y analízala con el procedimiento.</p><textarea id="mine" aria-label="Tu situación" placeholder="Describe una situación nueva"></textarea>
+   <div class="opts">${['Identifiqué qué fluye','Identifiqué qué limita o controla','Identifiqué qué cierra el ciclo o sirve de referencia','Dije qué esperaría que ocurra'].map((t,k)=>`<label style="flex-direction:row;gap:8px;align-items:center"><input type="checkbox" class="ck"> ${t}</label>`).join('')}</div>
+   <button class="btn" id="fin">CERRAR PARTIDA</button><div id="fb"></div>`;
+   $('#fin').onclick=()=>{const n=[...document.querySelectorAll('.ck')].filter(x=>x.checked).length;if($('#mine').value.trim().split(/\s+/).length<5){$('#fb').innerHTML='<div class="note">Describe la situación con al menos cinco palabras.</div>';return}win(n*25);$('#fb').innerHTML=`<div class="note ok">Autoevaluación: ${n} de 4 pasos del procedimiento. Lo valioso es el procedimiento, no la respuesta memorizada.</div>`;$('#fin').disabled=true};return}
+  const sc=SC[order[i]];const ids=shuffle([sc.c,...shuffle(SC.filter(x=>x.c!==sc.c)).slice(0,3).map(x=>x.c)]);
+  br.innerHTML=`<h3>Situación ${i+1} de ${order.length}</h3><p>${sc.s}</p><p class="small">¿Qué componente explica mejor su lógica?</p><div class="opts" id="o"></div><div id="fb"></div>`;
+  ids.forEach(id=>{const b=el('<button class="opt"></button>');b.textContent=nm(id);b.onclick=()=>{[...$('#o').children].forEach(x=>{x.disabled=true;if(x.textContent===nm(sc.c))x.classList.add('good')});const ok=id===sc.c;if(!ok)b.classList.add('bad');ok?win(40):lose();
+    $('#fb').innerHTML=`<div class="note ${ok?'ok':'err'}">Principio: ${PRINC[sc.c][0]}</div><h3 style="margin-top:8px">Escribe tu interpretación</h3>
+     ${['¿Qué fluye?','¿Qué limita o controla?','¿Qué cierra el ciclo o sirve de referencia?'].map((q,k)=>`<label><span>${q}</span><input type="text" class="ans"></label>`).join('')}
+     <button class="btn alt" id="cmp" style="margin-top:8px">COMPARAR</button><div id="cm"></div>`;
+    $('#cmp').onclick=()=>{const filled=[...document.querySelectorAll('.ans')].filter(x=>x.value.trim().split(/\s+/).length>=2).length;
+      $('#cm').innerHTML=`<dl class="kv" style="margin-top:8px"><dt>Fluye</dt><dd>${sc.f}</dd><dt>Limita</dt><dd>${sc.l}</dd><dt>Ciclo</dt><dd>${sc.y}</dd></dl><p class="small">Tu respuesta puede ser distinta y válida si sigue el procedimiento.</p><button class="btn" id="nx">${i+1<order.length?'SIGUIENTE':'TU TURNO'}</button>`;win(filled*10);$('#cmp').disabled=true;$('#nx').onclick=()=>bridgeQ(i+1,order)}};$('#o').append(b)});
+}
+
+/* ===== ARRANQUE ===== */
+const ROOMS={lab:roomLab,circ:roomCirc,cod:roomCodes,bridge:roomBridge};
+function go(room){S.room=room;cancelAnimationFrame(anim.raf);document.querySelectorAll('nav [role=tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.room===room));ROOMS[room]();hud()}
+(function boot(){
+  const row=$('#diffRow');
+  const paint=()=>{[...row.children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.d===S.diff));$('#diffDesc').textContent=DIFFS[S.diff].desc};
+  Object.keys(DIFFS).forEach(k=>{const b=el(`<button class="chip" data-d="${k}" aria-pressed="false">${DIFFS[k].label}</button>`);b.onclick=()=>{S.diff=k;paint()};row.append(b)});paint();
+  $('#startBtn').onclick=()=>{S.lives=DIFFS[S.diff].lives;beep(523);$('#title').querySelector('.blink').remove();$('#startBtn').textContent='REINICIAR PARTIDA';$('#game').hidden=false;S.score=0;S.combo=1;S.done={};go('lab')};
+  document.querySelectorAll('nav [role=tab]').forEach(b=>b.onclick=()=>go(b.dataset.room));
+})();
+
+</script>
+
+</body></html>
