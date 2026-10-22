@@ -1,0 +1,581 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Red Eléctrica Nacional</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  /* Disposición: tablero de control. Plantas en paralelo arriba, barra colectora, zonas en serie abajo.
+     A la derecha el balance y el registro. Una sola columna en el teléfono. */
+  --bg:#ECEFF2; --surface:#F7F9FA; --card:#FFFFFF;
+  --ink:#121C25; --muted:#53636F; --line:#C9D2D9;
+  --accent:#2456B8; --on-accent:#FFFFFF;
+  --ok:#1B7A51; --warn:#9A6208; --bad:#BC3326;
+  --cap1:#2F4454; --cap2:#4F6677; --cap3:#6E8493;
+  --dem1:#1F4FA8; --dem2:#3866C0; --dem3:#5784D6;
+  --seg-fg:#FFFFFF; --track:#DDE3E8;
+  --off-bg:#DADFE3; --off-fg:#56656F;
+  --bus:#2A3A47; --bus-fg:#F2F6F9;
+  --hatch:rgba(255,255,255,.5);
+  --flow:var(--accent);
+  --font-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1319; --surface:#131D26; --card:#1A2631;
+    --ink:#E4ECF1; --muted:#8FA1AE; --line:#2B3A47;
+    --accent:#6E9DF2; --on-accent:#0B1218;
+    --ok:#4CC38A; --warn:#E3A63F; --bad:#F06A5C;
+    --cap1:#7F99AB; --cap2:#9BB1C0; --cap3:#B7C8D3;
+    --dem1:#6E9DF2; --dem2:#8FB3F5; --dem3:#B0CBF8;
+    --seg-fg:#0B1218; --track:#1E2B36;
+    --off-bg:#1D2832; --off-fg:#7D8E9A;
+    --bus:#33485A; --bus-fg:#E4ECF1;
+    --hatch:rgba(8,12,16,.4);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1319; --surface:#131D26; --card:#1A2631;
+  --ink:#E4ECF1; --muted:#8FA1AE; --line:#2B3A47;
+  --accent:#6E9DF2; --on-accent:#0B1218;
+  --ok:#4CC38A; --warn:#E3A63F; --bad:#F06A5C;
+  --cap1:#7F99AB; --cap2:#9BB1C0; --cap3:#B7C8D3;
+  --dem1:#6E9DF2; --dem2:#8FB3F5; --dem3:#B0CBF8;
+  --seg-fg:#0B1218; --track:#1E2B36;
+  --off-bg:#1D2832; --off-fg:#7D8E9A;
+  --bus:#33485A; --bus-fg:#E4ECF1;
+  --hatch:rgba(8,12,16,.4);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:14px/1.5 var(--font-body);
+  padding-block:24px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1120px;margin:0 auto;--state:var(--ok)}
+.wrap[data-state="critical"]{--state:var(--warn);--flow:var(--warn)}
+.wrap[data-state="blackout"]{--state:var(--bad)}
+
+/* Cabecera */
+.eyebrow{margin:0 0 6px;font:500 12px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+h1{margin:0 0 10px;font:600 clamp(36px,7vw,58px)/1 var(--font-display);letter-spacing:.005em;text-wrap:balance}
+.lede{margin:0 0 16px;max-width:64ch;font-size:16px}
+.controls{display:flex;flex-wrap:wrap;gap:8px}
+.btn{
+  min-height:44px;padding:8px 16px;border-radius:8px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font:600 14px var(--font-body);cursor:pointer;
+}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.boom{border-color:var(--warn);color:var(--warn)}
+.btn.ghost{background:transparent}
+.btn:disabled,.mini:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,.mini:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{margin:10px 0 0;font-size:13px;color:var(--muted);max-width:76ch}
+
+/* Distribución */
+.layout{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);margin-top:20px}
+.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (min-width:920px){
+  .layout{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);align-items:start}
+}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+h2{margin:0 0 12px;font:600 12px/1.2 var(--font-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.rowcap{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
+.rowcap.end{margin:10px 0 0}
+
+/* Red */
+.row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.col{display:flex;flex-direction:column;min-width:0}
+.card{
+  flex:1;display:flex;flex-direction:column;gap:6px;min-width:0;
+  background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;
+}
+.card.dead{background:var(--off-bg);color:var(--off-fg);border-style:dashed}
+.card.down{border-color:var(--bad)}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px}
+.sw{
+  display:grid;place-items:center;width:26px;height:26px;border-radius:5px;
+  font:600 13px var(--font-mono);color:var(--seg-fg);
+}
+.sw.s0.g{background:var(--cap1)} .sw.s1.g{background:var(--cap2)} .sw.s2.g{background:var(--cap3)}
+.sw.s0.z{background:var(--dem1)} .sw.s1.z{background:var(--dem2)} .sw.s2.z{background:var(--dem3)}
+.card.dead .sw{background:var(--off-fg);color:var(--off-bg)}
+.mw{margin:0;font:500 13px var(--font-mono);font-variant-numeric:tabular-nums}
+.card h3{margin:0;font:600 15px/1.1 var(--font-display);letter-spacing:.01em;overflow-wrap:anywhere;hyphens:auto}
+.sub,.capt,.extra{margin:0;font-size:11.5px;line-height:1.35;color:var(--muted)}
+.card.dead .sub,.card.dead .capt,.card.dead .extra{color:var(--off-fg)}
+.capt{display:none}
+@media (min-width:520px){.capt{display:block}}
+.extra{color:var(--warn);font-weight:500}
+.card.dead .extra{color:var(--off-fg)}
+.stat{display:flex;align-items:center;gap:6px;margin:0;font-size:12px;font-weight:600;line-height:1.25}
+.stat i{flex:none;width:8px;height:8px;border-radius:50%;background:currentColor}
+.stat.ok{color:var(--ok)} .stat.warn{color:var(--warn)} .stat.bad{color:var(--bad)} .stat.off{color:var(--off-fg)}
+.badge{margin:0;padding:3px 6px;border-radius:4px;border:1px solid var(--warn);color:var(--warn);font-size:11px;font-weight:600;line-height:1.3}
+.mini{
+  margin-top:auto;min-height:38px;padding:6px 8px;border-radius:6px;border:1px solid var(--line);
+  background:transparent;color:var(--ink);font:500 12px/1.25 var(--font-body);cursor:pointer;
+}
+.card.dead .mini{color:var(--ink);background:var(--card)}
+.mini:hover:not(:disabled){border-color:var(--accent)}
+.nofault{margin:auto 0 0;min-height:38px;display:flex;align-items:center;font-size:11.5px;color:var(--muted)}
+.card.dead .nofault{color:var(--off-fg)}
+
+/* Cables */
+.wire{display:block;flex:none;width:4px;height:22px;margin:0 auto;border-radius:2px;background:var(--off-fg);opacity:.45}
+.wire.live{
+  opacity:1;background-color:var(--track);
+  background-image:linear-gradient(to bottom,var(--flow) 0 50%,transparent 50% 100%);
+  background-size:100% 12px;animation:fy .7s linear infinite;
+}
+.wire.cut{opacity:1;background:repeating-linear-gradient(to bottom,var(--bad) 0 4px,transparent 4px 8px)}
+.bus{
+  position:relative;overflow:hidden;min-height:28px;margin-inline:calc((100% - 16px) / 6);
+  display:grid;place-items:center;padding:5px 8px 8px;border-radius:6px;
+  background:var(--bus);color:var(--bus-fg);font:500 11px/1.3 var(--font-mono);text-align:center;
+}
+.bus::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
+  background-image:linear-gradient(to right,var(--flow) 0 50%,transparent 50% 100%);
+  background-size:12px 100%;animation:fx .7s linear infinite;
+}
+.bus.off{background:var(--off-bg);color:var(--off-fg)}
+.bus.off::after{display:none}
+@keyframes fy{to{background-position-y:12px}}
+@keyframes fx{to{background-position-x:12px}}
+@media (prefers-reduced-motion:reduce){
+  .wire.live,.bus::after{animation:none}
+  .seg{transition:none!important}
+}
+
+/* Balance */
+.statusline{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:10px}
+.pill{
+  display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;
+  border:1px solid var(--state);color:var(--state);font:600 16px var(--font-body);
+  background:color-mix(in srgb,var(--state) 12%,transparent);
+}
+.pill i{width:9px;height:9px;border-radius:50%;background:currentColor}
+.use{font:500 13px var(--font-mono);color:var(--muted)}
+.explain{margin:0 0 14px;max-width:62ch}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 18px}
+.stats div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.stats dt{margin:0;font:500 11px/1.3 var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stats dd{margin:2px 0 0;font:500 19px/1.2 var(--font-mono);font-variant-numeric:tabular-nums}
+.stats dd.bad{color:var(--bad)}
+
+.chart{position:relative;padding-top:20px}
+.markers{position:absolute;inset:0;pointer-events:none}
+.mk{position:absolute;top:0;bottom:22px;width:0;transition:left .5s ease}
+.mk span{position:absolute;top:0;font:500 11px/1 var(--font-mono);white-space:nowrap;color:var(--ink)}
+.mk.m100{border-left:2px solid var(--ink)} .mk.m100 span{left:5px}
+.mk.m90{border-left:2px dashed var(--warn)} .mk.m90 span{right:5px;color:var(--warn)}
+.blabel{margin:10px 0 4px;font-size:12px;font-weight:600}
+.blabel:first-of-type{margin-top:0}
+.bar{position:relative;display:flex;height:36px;background:var(--track);border-radius:6px;overflow:hidden}
+.seg{position:relative;display:flex;height:100%;min-width:0;overflow:hidden;color:var(--seg-fg);transition:width .5s ease}
+.seg+.seg{border-left:1px solid var(--surface)}
+.seg .L{position:absolute;left:7px;top:50%;transform:translateY(-50%);font:600 13px var(--font-mono)}
+.bar.cap .s0{background:var(--cap1)} .bar.cap .s1{background:var(--cap2)} .bar.cap .s2{background:var(--cap3)}
+.bar.dem .s0{background:var(--dem1)} .bar.dem .s1{background:var(--dem2)} .bar.dem .s2{background:var(--dem3)}
+.bar.cap .seg.lost{background:transparent;color:var(--off-fg);box-shadow:inset 0 0 0 1px var(--off-fg)}
+.seg .base{display:block;height:100%}
+.seg .ext{display:block;height:100%;background-image:repeating-linear-gradient(135deg,var(--hatch) 0 2px,transparent 2px 6px)}
+.deficit{
+  position:absolute;top:0;bottom:0;pointer-events:none;border-left:2px solid var(--bad);
+  background:repeating-linear-gradient(135deg,var(--bad) 0 3px,transparent 3px 7px);opacity:.7;
+  transition:left .5s ease,width .5s ease;
+}
+.axis{position:relative;height:22px;margin-top:6px;font:11px var(--font-mono);color:var(--muted)}
+.axis span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.axis span:first-child{transform:none} .axis span:last-child{transform:translateX(-100%)}
+.note{margin:8px 0 0;font-size:12px;color:var(--muted)}
+
+/* Registro */
+.loghead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.loghead h2{margin:0}
+.loghead .mono{font:500 12px var(--font-mono);color:var(--muted)}
+#log{list-style:none;margin:0;padding:0;max-height:340px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+#log li{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+#log li i{flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;background:var(--muted)}
+#log li.ok i{background:var(--ok)} #log li.warn i{background:var(--warn)} #log li.bad i{background:var(--bad)}
+#log li.incident i{background:var(--bad);border-radius:2px} #log li.alert i{background:var(--warn);border-radius:2px}
+#log li.incident span{color:var(--bad)}
+
+/* Mapa código-pantalla */
+.map{margin-top:16px}
+.map dl{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,1fr);gap:8px 20px;margin:0}
+.map dt{font:500 12.5px var(--font-mono);overflow-wrap:anywhere}
+.map dd{margin:0}
+@media (max-width:620px){
+  .map dl{grid-template-columns:minmax(0,1fr);gap:2px}
+  .map dd{margin-bottom:10px}
+}
+.foot{margin:16px 0 0;font-size:12.5px;color:var(--muted)}
+</style>
+
+<div class="wrap" id="app" data-state="stable" lang="es">
+  <header>
+    <p class="eyebrow">Servicio Eléctrico Nacional</p>
+    <h1>Red Eléctrica Nacional</h1>
+    <p class="lede">Las plantas suman su potencia en paralelo y cada zona depende de su línea troncal, en serie. Provoca fallas comunes y un pico de demanda por inteligencia artificial y criptominería para ver cuándo la red deja de alcanzar.</p>
+    <div class="controls" role="group" aria-label="Controles de la simulación">
+      <button class="btn primary" id="btn-play" type="button">Reproducir el guion</button>
+      <button class="btn" id="btn-fallas" type="button">Sortear fallas del día</button>
+      <button class="btn boom" id="btn-boom" type="button">Pico tecnológico (+5.000 MW)</button>
+      <button class="btn ghost" id="btn-reset" type="button">Reiniciar</button>
+    </div>
+    <p class="hint">El sorteo falla el Norte con 30 %, el Centro con 20 % y la termoeléctrica con 15 % de probabilidad. También puedes fallar o reparar cada planta y zona con el botón de su tarjeta.</p>
+  </header>
+
+  <main class="layout">
+    <section class="panel" aria-labelledby="h-red">
+      <h2 id="h-red">La red</h2>
+      <p class="rowcap">En paralelo: las potencias se suman. Si una planta cae, las otras siguen.</p>
+      <div class="row" id="gens"></div>
+      <div class="bus live" id="bus"></div>
+      <div class="row" id="zones"></div>
+      <p class="rowcap end">En serie con su troncal: si la troncal cae, la zona se apaga aunque sobre potencia en las plantas.</p>
+    </section>
+
+    <div class="side">
+      <section class="panel" aria-labelledby="h-bal">
+        <h2 id="h-bal">Balance</h2>
+        <div class="statusline">
+          <span class="pill"><i></i><span id="st-word">Estable</span></span>
+          <span class="use" id="st-use"></span>
+        </div>
+        <p class="explain" id="st-text"></p>
+        <dl class="stats">
+          <div><dt>Capacidad (MW)</dt><dd id="v-cap"></dd></div>
+          <div><dt>Demanda (MW)</dt><dd id="v-dem"></dd></div>
+          <div><dt id="l-gap">Margen (MW)</dt><dd id="v-gap"></dd></div>
+        </dl>
+        <div class="chart" id="chart" role="img" aria-label="">
+          <div class="markers">
+            <div class="mk m90" id="mk90"><span>90 %</span></div>
+            <div class="mk m100" id="mk100"><span>Capacidad</span></div>
+          </div>
+          <p class="blabel">Lo que generan las plantas</p>
+          <div class="bar cap" id="bar-cap"></div>
+          <p class="blabel">Lo que piden las zonas</p>
+          <div class="bar dem" id="bar-dem"></div>
+          <div class="axis" aria-hidden="true">
+            <span style="left:0%">0</span>
+            <span style="left:33.333%">5.000</span>
+            <span style="left:66.667%">10.000</span>
+            <span style="left:100%">15.000 MW</span>
+          </div>
+        </div>
+        <p class="note">El tramado es demanda nueva de centros de datos y minería. La zona rayada en rojo es lo que falta cuando la demanda supera la capacidad.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="h-log">
+        <div class="loghead"><h2 id="h-log">Registro</h2><span class="mono" id="inc"></span></div>
+        <ol id="log" role="log" aria-live="polite"></ol>
+      </section>
+    </div>
+  </main>
+
+  <section class="panel map" aria-labelledby="h-map">
+    <h2 id="h-map">Del código a la pantalla</h2>
+    <dl>
+      <dt>generadores_paralelo</dt><dd>Fila superior. La barra de capacidad suma solo las plantas operativas.</dd>
+      <dt>zonas_serie</dt><dd>Fila inferior. La troncal del Norte, si cae, deja esa zona a oscuras.</dd>
+      <dt>simular_fallas_comunes()</dt><dd>Botón «Sortear fallas del día», con las mismas probabilidades.</dd>
+      <dt>disparar_boom_tecnologico_de_golpe()</dt><dd>Botón «Pico tecnológico»: +3.500 MW en el Centro y +1.500 MW en el Sur, en tramado.</dd>
+      <dt>verificar_estado_red()</dt><dd>Panel de balance. Más del 90 % de la capacidad es estado crítico y más del 100 % es apagón general.</dd>
+    </dl>
+    <p class="foot">Igual que en el script, la demanda de una zona a oscuras se sigue contando en el total. Es un modelo didáctico con las cifras del código y no representa la red de ningún país.</p>
+  </section>
+</div>
+
+<script>
+(function(){
+  var SCALE = 15000;
+  var nf = new Intl.NumberFormat('es-PY');
+  function fmt(n){ return nf.format(n); }
+  function $(id){ return document.getElementById(id); }
+  function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+  var root = $('app');
+  var S = null;
+  var busy = false;
+
+  function fresh(){
+    return {
+      gens: [
+        { k:'A', name:'Hidroeléctrica A', mw:5000, ok:true, capt:'Base del sistema' },
+        { k:'B', name:'Hidroeléctrica B', mw:3500, ok:true, capt:'Segunda fuente grande' },
+        { k:'T', name:'Termoeléctrica de reserva', mw:1500, ok:true, capt:'Reserva; puede salir por mantenimiento' }
+      ],
+      zones: [
+        { k:'N', name:'Zona Norte', infra:'antigua', base:1500, extra:0, trunk:true, capt:'Líneas largas expuestas a tormentas' },
+        { k:'C', name:'Zona Centro', infra:'moderna', base:4500, extra:0, trunk:true, trafo:false, capt:'Alta densidad; transformadores exigidos por el calor' },
+        { k:'S', name:'Zona Sur', infra:'media', base:2000, extra:0, trunk:true, capt:'' }
+      ],
+      boomed:false, incidents:[], log:[]
+    };
+  }
+
+  function calc(){
+    var cap = 0, dem = 0;
+    S.gens.forEach(function(g){ if(g.ok) cap += g.mw; });
+    S.zones.forEach(function(z){ dem += z.base + z.extra; });
+    var st = dem > cap ? 'blackout' : (dem > cap * 0.9 ? 'critical' : 'stable');
+    return { cap:cap, dem:dem, st:st };
+  }
+
+  function addLog(type, msg){
+    S.log.unshift({ type:type, msg:msg });
+    if(S.log.length > 60) S.log.pop();
+  }
+  function fail(msg){ S.incidents.push(msg); addLog('incident', msg); }
+
+  function checkStatus(){
+    var c = calc();
+    if(!S.zones[0].trunk){
+      addLog('bad', 'Crisis en serie: la troncal del Norte colapsó. Toda la Zona Norte está a oscuras.');
+    }
+    if(c.st === 'blackout'){
+      addLog('bad', 'Apagón general. Demanda de ' + fmt(c.dem) + ' MW contra ' + fmt(c.cap) + ' MW disponibles: déficit de ' + fmt(c.dem - c.cap) + ' MW. Las protecciones apagaron el país.');
+    } else if(c.st === 'critical'){
+      addLog('warn', 'Red en estado crítico: ' + fmt(c.dem) + ' MW sobre ' + fmt(c.cap) + ' MW (' + Math.round(c.dem / c.cap * 100) + ' %). Riesgo de baja tensión masiva.');
+    } else {
+      addLog('ok', 'Sistema estable: ' + fmt(c.cap) + ' MW cubren los ' + fmt(c.dem) + ' MW de demanda.');
+    }
+    render();
+  }
+
+  function sortear(){
+    addLog('info', 'Evaluando riesgos atmosféricos y técnicos.');
+    var n = 0;
+    if(Math.random() < 0.30){ S.zones[0].trunk = false; n++; fail('Zona Norte: corte por caída de árboles o tormenta en la troncal principal.'); }
+    if(Math.random() < 0.20){ S.zones[1].trafo = true; n++; fail('Zona Centro: explosión de un transformador local por sobrecalentamiento comercial.'); }
+    if(Math.random() < 0.15){ S.gens[2].ok = false; n++; fail('Generación: la termoeléctrica de reserva sale de servicio por mantenimiento de emergencia.'); }
+    if(!n) addLog('info', 'Sin incidentes en este sorteo.');
+    checkStatus();
+  }
+
+  function boom(){
+    if(S.boomed) return;
+    S.boomed = true;
+    S.zones[1].extra += 3500;
+    S.zones[2].extra += 1500;
+    addLog('alert', 'Alerta: activación simultánea de centros de datos (IA) y granjas de criptomonedas. La demanda sube de golpe +3.500 MW en la Zona Centro y +1.500 MW en la Zona Sur.');
+    checkStatus();
+  }
+
+  function reporte(){
+    if(S.incidents.length){
+      addLog('info', 'Reporte de daños: ' + S.incidents.length + ' incidente(s). ' + S.incidents.join(' · '));
+    } else {
+      addLog('info', 'Reporte de daños: no se registraron incidentes en este ciclo.');
+    }
+    render();
+  }
+
+  function reset(){
+    S = fresh();
+    addLog('info', 'Iniciando simulación del Servicio Eléctrico Nacional.');
+    checkStatus();
+  }
+
+  async function play(){
+    if(busy) return;
+    busy = true; render();
+    reset();
+    await sleep(1100);
+    sortear();
+    await sleep(1500);
+    boom();
+    await sleep(1300);
+    reporte();
+    busy = false; render();
+  }
+
+  function toggleGen(i){
+    var g = S.gens[i];
+    g.ok = !g.ok;
+    if(!g.ok) fail(g.name + ': fuera de servicio.');
+    else addLog('info', g.name + ': vuelve a operar.');
+    checkStatus();
+  }
+  function toggleTrunk(){
+    var z = S.zones[0];
+    z.trunk = !z.trunk;
+    if(!z.trunk) fail('Zona Norte: corte en la troncal principal.');
+    else addLog('info', 'Zona Norte: troncal reparada.');
+    checkStatus();
+  }
+  function toggleTrafo(){
+    var z = S.zones[1];
+    z.trafo = !z.trafo;
+    if(z.trafo) fail('Zona Centro: explosión de un transformador local por sobrecalentamiento comercial.');
+    else addLog('info', 'Zona Centro: transformador local reparado.');
+    render();
+  }
+
+  /* ---------- Dibujo ---------- */
+  function genCard(g, i, st){
+    var dead = st === 'blackout';
+    var stat = !g.ok ? ['bad','Fuera de servicio'] : (dead ? ['off','Desconectada'] : ['ok','Operativa']);
+    var wire = !g.ok ? 'cut' : (dead ? 'off' : 'live');
+    var share = Math.round(g.mw / 10000 * 100);
+    return '<div class="col"><div class="card' + ((dead || !g.ok) ? ' dead' : '') + (!g.ok ? ' down' : '') + '">' +
+      '<div class="top"><span class="sw g s' + i + '">' + g.k + '</span><p class="mw">' + fmt(g.mw) + ' MW</p></div>' +
+      '<h3>' + g.name + '</h3>' +
+      '<p class="sub">' + share + ' % del total</p>' +
+      '<p class="capt">' + g.capt + '</p>' +
+      '<p class="stat ' + stat[0] + '"><i></i>' + stat[1] + '</p>' +
+      '<button class="mini" type="button" data-act="gen" data-i="' + i + '" data-k="g' + i + '"' + (busy ? ' disabled' : '') + '>' + (g.ok ? 'Sacar de servicio' : 'Reponer') + '</button>' +
+      '</div><i class="wire ' + wire + '"></i></div>';
+  }
+
+  function zoneCard(z, i, st){
+    var blackout = st === 'blackout';
+    var live = z.trunk && !blackout;
+    var stat;
+    if(!z.trunk) stat = ['bad','A oscuras'];
+    else if(blackout) stat = ['off','Sin servicio'];
+    else if(st === 'critical') stat = ['warn','Riesgo de baja tensión'];
+    else stat = ['ok','Con servicio'];
+    var wire = !z.trunk ? 'cut' : (blackout ? 'off' : 'live');
+    var action;
+    if(i === 0){
+      action = '<button class="mini" type="button" data-act="trunk" data-k="z0"' + (busy ? ' disabled' : '') + '>' + (z.trunk ? 'Cortar troncal' : 'Reparar troncal') + '</button>';
+    } else if(i === 1){
+      action = '<button class="mini" type="button" data-act="trafo" data-k="z1"' + (busy ? ' disabled' : '') + '>' + (z.trafo ? 'Reparar transformador' : 'Dañar transformador') + '</button>';
+    } else {
+      action = '<p class="nofault">Sin falla propia en el script</p>';
+    }
+    return '<div class="col"><i class="wire ' + wire + '"></i>' +
+      '<div class="card' + (!live ? ' dead' : '') + (!z.trunk ? ' down' : '') + '">' +
+      '<div class="top"><span class="sw z s' + i + '">' + z.k + '</span><p class="mw">' + fmt(z.base + z.extra) + ' MW</p></div>' +
+      '<h3>' + z.name + '</h3>' +
+      '<p class="sub">Infraestructura ' + z.infra + '</p>' +
+      (z.capt ? '<p class="capt">' + z.capt + '</p>' : '') +
+      (z.extra ? '<p class="extra">Incluye +' + fmt(z.extra) + ' MW de IA y minería</p>' : '') +
+      (z.trafo ? '<p class="badge">Transformador local dañado</p>' : '') +
+      '<p class="stat ' + stat[0] + '"><i></i>' + stat[1] + '</p>' +
+      action +
+      '</div></div>';
+  }
+
+  function initBars(){
+    var cap = '', dem = '';
+    for(var i = 0; i < 3; i++){
+      cap += '<div class="seg s' + i + '" id="cs' + i + '"><b class="L">' + S.gens[i].k + '</b></div>';
+      dem += '<div class="seg s' + i + '" id="ds' + i + '"><span class="base" id="db' + i + '"></span><span class="ext" id="de' + i + '"></span><b class="L">' + S.zones[i].k + '</b></div>';
+    }
+    $('bar-cap').innerHTML = cap;
+    $('bar-dem').innerHTML = dem + '<div class="deficit" id="deficit" hidden></div>';
+  }
+
+  function render(){
+    var c = calc();
+    var activeEl = document.activeElement;
+    var activeKey = activeEl && activeEl.dataset ? activeEl.dataset.k : null;
+
+    root.dataset.state = c.st;
+
+    $('gens').innerHTML = S.gens.map(function(g, i){ return genCard(g, i, c.st); }).join('');
+    $('zones').innerHTML = S.zones.map(function(z, i){ return zoneCard(z, i, c.st); }).join('');
+
+    var bus = $('bus');
+    var busOff = c.cap === 0 || c.st === 'blackout';
+    bus.className = 'bus ' + (busOff ? 'off' : 'live');
+    bus.textContent = c.st === 'blackout' ? 'Barra colectora · desconectada' : 'Barra colectora · ' + fmt(c.cap) + ' MW';
+
+    $('st-word').textContent = c.st === 'blackout' ? 'Apagón general' : (c.st === 'critical' ? 'Crítico' : 'Estable');
+    $('st-use').textContent = c.cap ? 'Uso de la capacidad: ' + Math.round(c.dem / c.cap * 100) + ' %' : 'Sin capacidad disponible';
+
+    var t;
+    if(c.st === 'blackout'){
+      t = 'La demanda (' + fmt(c.dem) + ' MW) superó lo que generan las plantas en paralelo (' + fmt(c.cap) + ' MW). Las protecciones automáticas desconectan todo el país. Faltan ' + fmt(c.dem - c.cap) + ' MW.';
+    } else if(c.st === 'critical'){
+      t = 'La red aguanta, pero queda un margen de solo ' + fmt(c.cap - c.dem) + ' MW. Con una falla más o un poco más de demanda, se apaga todo.';
+      if(!S.zones[0].trunk) t += ' La troncal del Norte cayó: esa zona está a oscuras aunque haya potencia en las plantas.';
+    } else {
+      t = 'Las plantas en paralelo suman ' + fmt(c.cap) + ' MW y cubren los ' + fmt(c.dem) + ' MW de demanda. El margen es de ' + fmt(c.cap - c.dem) + ' MW.';
+      if(!S.zones[0].trunk) t += ' La troncal del Norte cayó: esa zona está a oscuras aunque haya potencia en las plantas.';
+    }
+    $('st-text').textContent = t;
+
+    $('v-cap').textContent = fmt(c.cap);
+    $('v-dem').textContent = fmt(c.dem);
+    var gap = c.cap - c.dem;
+    $('l-gap').textContent = gap < 0 ? 'Déficit (MW)' : 'Margen (MW)';
+    var vg = $('v-gap');
+    vg.textContent = (gap < 0 ? '−' : '+') + fmt(Math.abs(gap));
+    vg.className = gap < 0 ? 'bad' : '';
+
+    $('chart').setAttribute('aria-label', 'Capacidad de ' + fmt(c.cap) + ' MW frente a una demanda de ' + fmt(c.dem) + ' MW');
+    $('mk100').style.left = (c.cap / SCALE * 100) + '%';
+    $('mk90').style.left = (c.cap * 0.9 / SCALE * 100) + '%';
+
+    for(var i = 0; i < 3; i++){
+      var g = S.gens[i];
+      var cs = $('cs' + i);
+      cs.style.width = (g.mw / SCALE * 100) + '%';
+      cs.classList.toggle('lost', !g.ok);
+      var z = S.zones[i];
+      var tot = z.base + z.extra;
+      $('ds' + i).style.width = (tot / SCALE * 100) + '%';
+      $('db' + i).style.width = (z.base / tot * 100) + '%';
+      $('de' + i).style.width = (z.extra / tot * 100) + '%';
+    }
+    var d = $('deficit');
+    if(c.dem > c.cap){
+      d.hidden = false;
+      d.style.left = (c.cap / SCALE * 100) + '%';
+      d.style.width = ((c.dem - c.cap) / SCALE * 100) + '%';
+    } else {
+      d.hidden = true;
+    }
+
+    $('inc').textContent = 'Incidentes: ' + S.incidents.length;
+    $('log').innerHTML = S.log.map(function(e){ return '<li class="' + e.type + '"><i></i><span>' + e.msg + '</span></li>'; }).join('');
+
+    $('btn-play').disabled = busy;
+    $('btn-fallas').disabled = busy;
+    $('btn-reset').disabled = busy;
+    var bb = $('btn-boom');
+    bb.disabled = busy || S.boomed;
+    bb.textContent = S.boomed ? 'Pico aplicado' : 'Pico tecnológico (+5.000 MW)';
+
+    if(activeKey){
+      var el = document.querySelector('[data-k="' + activeKey + '"]');
+      if(el && !el.disabled) el.focus();
+    }
+  }
+
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-act]');
+    if(!b || busy) return;
+    var a = b.getAttribute('data-act');
+    if(a === 'gen') toggleGen(Number(b.getAttribute('data-i')));
+    else if(a === 'trunk') toggleTrunk();
+    else if(a === 'trafo') toggleTrafo();
+  });
+  $('btn-play').addEventListener('click', play);
+  $('btn-fallas').addEventListener('click', function(){ if(!busy) sortear(); });
+  $('btn-boom').addEventListener('click', function(){ if(!busy) boom(); });
+  $('btn-reset').addEventListener('click', function(){ if(!busy) reset(); });
+
+  S = fresh();
+  initBars();
+  reset();
+})();
+</script>
+
+</body></html>
