@@ -1,0 +1,480 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Foro de Fiscalización</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: un hilo de foro en una columna. Arriba la queja, debajo las 4 etapas del motor
+   (leer, cruzar, cubrir, estado) que se iluminan en orden. Al final, las pruebas. */
+:root {
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --ink: #14202b;
+  --muted: #566573;
+  --line: #d3dae1;
+  --accent: #d9400f;
+  --accent-ink: #ffffff;
+  --a: #1c64a8;
+  --b: #7a43b5;
+  --c: #0b7c5f;
+  --ok: #0b7c5f;
+  --warn: #9a5b00;
+  --bad: #b3261e;
+  --soft: #e8edf2;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e161d; --surface: #16212b; --ink: #e5ecf2; --muted: #93a3b2; --line: #2a3745;
+    --accent: #ff6a3d; --accent-ink: #1a0a04;
+    --a: #62adea; --b: #b994ec; --c: #45cba3;
+    --ok: #45cba3; --warn: #e8b04a; --bad: #ff8a80; --soft: #1e2b37;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e161d; --surface: #16212b; --ink: #e5ecf2; --muted: #93a3b2; --line: #2a3745;
+  --accent: #ff6a3d; --accent-ink: #1a0a04;
+  --a: #62adea; --b: #b994ec; --c: #45cba3;
+  --ok: #45cba3; --warn: #e8b04a; --bad: #ff8a80; --soft: #1e2b37;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 940px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.12; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button, textarea, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Cabecera */
+.masthead { display: flex; flex-direction: column; gap: 10px; }
+.crumb { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.crumb b { color: var(--accent); font-weight: 500; }
+h1 { font-size: clamp(30px, 6vw, 46px); font-weight: 700; letter-spacing: -.01em; }
+.lede { color: var(--muted); max-width: 64ch; }
+
+/* Post de la queja */
+.post {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 18px; display: flex; flex-direction: column; gap: 14px;
+}
+.post-meta { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13px; color: var(--muted); }
+.flair {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: .03em;
+  padding: 3px 9px; border-radius: 4px; border: 1.5px solid currentColor; white-space: nowrap;
+}
+.flair.ok { color: var(--ok); } .flair.warn { color: var(--warn); } .flair.bad { color: var(--bad); }
+.post label { font-weight: 600; font-size: 14px; }
+textarea#queja {
+  width: 100%; min-height: 84px; resize: vertical; padding: 12px 13px;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; line-height: 1.5;
+}
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.preset {
+  background: var(--soft); border: 1px solid var(--line); border-radius: 999px;
+  padding: 6px 13px; font-size: 13px; cursor: pointer;
+}
+.preset:hover { border-color: var(--accent); }
+.preset[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.btn {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 8px;
+  padding: 9px 16px; font-weight: 600; cursor: pointer;
+}
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:hover { filter: brightness(1.06); }
+.toggle { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer; }
+.toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+
+/* Barra de etapas */
+.rail { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.rail-item {
+  border-top: 3px solid var(--line); padding-top: 7px; font-size: 12px; color: var(--muted);
+  font-family: var(--font-mono); letter-spacing: .02em;
+}
+.rail-item.on { border-top-color: var(--accent); color: var(--ink); }
+
+/* Etapas */
+.stage { display: flex; flex-direction: column; gap: 12px; transition: opacity .25s; }
+.stage.pending { opacity: .3; }
+.stage-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.stage-head h2 { font-size: 21px; }
+.stage-head span { color: var(--muted); font-size: 13.5px; }
+
+/* Tokens */
+.tokens { display: flex; flex-wrap: wrap; gap: 7px; }
+.tok {
+  font-family: var(--font-mono); font-size: 13px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.tok.hit { border-color: var(--ink); font-weight: 500; }
+.dot {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500; line-height: 1;
+  width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center;
+  color: var(--bg);
+}
+.dot.A { background: var(--a); } .dot.B { background: var(--b); } .dot.C { background: var(--c); }
+
+/* Medios como comentarios */
+.comments { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.comment {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0;
+  border-left-width: 5px;
+}
+.comment.A { border-left-color: var(--a); } .comment.B { border-left-color: var(--b); } .comment.C { border-left-color: var(--c); }
+.comment.miss { background: transparent; border-style: dashed; border-left-style: dashed; border-left-width: 1px; }
+.comment-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.comment-top .dot { width: 22px; height: 22px; font-size: 12px; }
+.comment-top b { font-size: 14px; }
+.enf { font-size: 12px; color: var(--muted); }
+.headline { font-weight: 500; min-height: 4.6em; }
+.miss .headline { color: var(--muted); }
+.kws { display: flex; flex-wrap: wrap; gap: 5px; }
+.kw { font-family: var(--font-mono); font-size: 11.5px; padding: 2px 7px; border-radius: 4px; background: var(--soft); color: var(--muted); }
+.comment.A .kw.hit { background: var(--a); color: var(--bg); }
+.comment.B .kw.hit { background: var(--b); color: var(--bg); }
+.comment.C .kw.hit { background: var(--c); color: var(--bg); }
+.verdict { font-size: 12.5px; font-weight: 600; }
+.verdict.no { color: var(--muted); font-weight: 400; }
+.src { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+
+/* Aspectos */
+.aspects { display: flex; flex-direction: column; gap: 8px; }
+.aspect {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 14px; align-items: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 11px 14px;
+}
+.aspect.open { border-style: dashed; }
+.aspect .what { min-width: 0; }
+.aspect .what small { display: block; color: var(--muted); font-size: 12.5px; }
+.aspect .state { font-size: 12.5px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.aspect .state.cub { color: var(--ok); }
+.aspect .state.abierta { color: var(--warn); }
+
+/* Resultado */
+.result {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 18px; display: flex; flex-direction: column; gap: 12px;
+}
+.result .big { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.result .flair { font-size: 18px; padding: 6px 14px; }
+.meter { display: flex; gap: 5px; }
+.meter i { width: 34px; height: 8px; border-radius: 3px; background: var(--soft); display: block; }
+.meter i.full { background: var(--ink); }
+.result .count { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.callout { border-left: 4px solid var(--accent); padding: 4px 0 4px 14px; color: var(--muted); max-width: 66ch; }
+.callout b { color: var(--ink); }
+.openq { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+
+/* Pruebas */
+.tests { display: flex; flex-direction: column; gap: 10px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 13.5px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: .03em; }
+tr:last-child td { border-bottom: 0; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--soft); }
+.pass { font-family: var(--font-mono); font-weight: 500; color: var(--ok); }
+.fail { font-family: var(--font-mono); font-weight: 500; color: var(--bad); }
+.foot { font-size: 12.5px; color: var(--muted); }
+
+@media (max-width: 520px) {
+  .rail-item { font-size: 11px; }
+  .meter i { width: 26px; }
+  .aspect { grid-template-columns: 1fr; }
+  .aspect .state { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) { .stage { transition: none; } }
+</style>
+
+<main>
+  <header class="masthead">
+    <div class="crumb"><b>r/Fiscalizacion</b> · hilo ciudadano con tres medios como comentaristas</div>
+    <h1>Foro de Fiscalización</h1>
+    <p class="lede">Escribí una queja de tu barrio. El motor busca qué medios publicaron algo relacionado, aunque ninguno haya respondido tu pregunta, y te muestra qué ángulos tenés para investigar y cuáles siguen vacíos.</p>
+  </header>
+
+  <section class="post" aria-label="La queja">
+    <div class="post-meta">
+      <span>publicado por <b>vecino_anonimo</b></span>
+      <span id="flairTop" class="flair"></span>
+    </div>
+    <label for="queja">Queja ciudadana</label>
+    <textarea id="queja" rows="3" spellcheck="false"></textarea>
+    <div class="presets" id="presets" role="group" aria-label="Ejemplos"></div>
+    <div class="controls">
+      <button class="btn primary" id="btnAll" type="button">Analizar todo</button>
+      <button class="btn" id="btnStep" type="button">Paso a paso</button>
+      <label class="toggle" for="flex">
+        <input type="checkbox" id="flex">
+        Coincidencia flexible (ignora plurales: grieta = grietas)
+      </label>
+    </div>
+  </section>
+
+  <div class="rail" id="rail" aria-hidden="true"></div>
+
+  <section class="stage" id="s1" aria-label="Etapa 1">
+    <div class="stage-head"><h2>1. Leer la queja</h2><span>El texto se parte en palabras. Las que coinciden con alguna palabra clave de un medio quedan marcadas con su letra.</span></div>
+    <div class="tokens" id="tokens"></div>
+  </section>
+
+  <section class="stage" id="s2" aria-label="Etapa 2">
+    <div class="stage-head"><h2>2. Cruzar con los medios</h2><span>Un medio aporta si comparte al menos una palabra clave con la queja. No hace falta que mencione tu caso.</span></div>
+    <div class="comments" id="comments"></div>
+  </section>
+
+  <section class="stage" id="s3" aria-label="Etapa 3">
+    <div class="stage-head"><h2>3. Revisar la cobertura</h2><span>Cada medio cubre un enfoque. Los enfoques sin medio quedan como preguntas abiertas.</span></div>
+    <div class="aspects" id="aspects"></div>
+  </section>
+
+  <section class="stage" id="s4" aria-label="Etapa 4">
+    <div class="stage-head"><h2>4. Estado del hilo</h2><span>Se calcula contando enfoques con información publicada.</span></div>
+    <div class="result" id="result"></div>
+  </section>
+
+  <section class="tests" aria-label="Pruebas">
+    <div class="stage-head"><h2>Pruebas automáticas</h2><span>Cada fila corre el motor con una queja y compara con el estado esperado. Tocá una fila para verla arriba.</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Queja</th><th>Esperado</th><th>Obtenido</th><th>Resultado</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="foot">Los medios y titulares son ficticios. La base tiene tres artículos, por eso la mayoría de los temas quedan con preguntas abiertas.</p>
+  </section>
+</main>
+
+<script>
+(function () {
+  var MEDIOS = [
+    { id: "A", nombre: "Medio A", enfoque: "Infraestructura", aspecto: "infraestructura",
+      titular: "Fallas estructurales y grietas profundas detectadas en el puente central",
+      url: "medioa.com", kws: ["puente", "infraestructura", "grietas", "fallas", "baches"] },
+    { id: "B", nombre: "Medio B", enfoque: "Reclamos y respuestas", aspecto: "reclamos_oficiales",
+      titular: "Vecinos protestan por falta de luz; la intendencia promete soluciones el próximo mes",
+      url: "mediob.com", kws: ["luz", "protesta", "vecinos", "intendencia", "respuesta", "reclamos", "puente"] },
+    { id: "C", nombre: "Medio C", enfoque: "Inversiones y mantenimiento", aspecto: "inversiones_mantenimiento",
+      titular: "Presupuesto destinado al mantenimiento vial cayó un 40% este año",
+      url: "medioc.com", kws: ["presupuesto", "mantenimiento", "inversión", "fondos", "vial", "puente"] }
+  ];
+  var ASPECTOS = [
+    { id: "infraestructura", texto: "Problemas físicos o técnicos de infraestructura", medio: "A" },
+    { id: "reclamos_oficiales", texto: "Reclamos ciudadanos y respuestas de las autoridades", medio: "B" },
+    { id: "inversiones_mantenimiento", texto: "Fondos, presupuestos y tareas de mantenimiento", medio: "C" }
+  ];
+  var CASOS = [
+    { corto: "El puente", queja: "El puente central tiene grietas peligrosas y la intendencia no da respuestas sobre el presupuesto de mantenimiento.", esperado: "[SOLVED]" },
+    { corto: "Falta de luz", queja: "Los vecinos del barrio sur exigen soluciones ante los constantes cortes de luz.", esperado: "[PARTIALLY SOLVED]" },
+    { corto: "Mosquitos", queja: "Invasión de mosquitos en las plazas públicas del centro.", esperado: "[UNSOLVED]" },
+    { corto: "Baches", queja: "Hay baches enormes en la avenida y nadie explica a dónde va el presupuesto.", esperado: "[PARTIALLY SOLVED]" }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  function h(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  function norm(w) { return w.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+  function key(w, flexible) {
+    var n = norm(w);
+    if (flexible && n.length > 4) {
+      if (n.slice(-2) === "es") n = n.slice(0, -2);
+      else if (n.slice(-1) === "s") n = n.slice(0, -1);
+    }
+    return n;
+  }
+
+  function analizar(texto, flexible) {
+    var palabras = texto.match(/[\p{L}\p{N}]+/gu) || [];
+    var tokens = palabras.map(function (p) { return { raw: p, k: key(p, flexible), hits: [] }; });
+    var porMedio = {};
+    MEDIOS.forEach(function (m) {
+      var kk = m.kws.map(function (kw) { return { kw: kw, k: key(kw, flexible) }; });
+      var coinc = [];
+      kk.forEach(function (x) {
+        var found = false;
+        tokens.forEach(function (t) {
+          if (t.k === x.k) { found = true; if (t.hits.indexOf(m.id) < 0) t.hits.push(m.id); }
+        });
+        if (found) coinc.push(x.kw);
+      });
+      porMedio[m.id] = coinc;
+    });
+    var cubiertos = ASPECTOS.filter(function (a) { return porMedio[a.medio].length > 0; }).length;
+    var estado = cubiertos === ASPECTOS.length ? "[SOLVED]" : cubiertos > 0 ? "[PARTIALLY SOLVED]" : "[UNSOLVED]";
+    return { tokens: tokens, porMedio: porMedio, cubiertos: cubiertos, estado: estado };
+  }
+  function clase(estado) { return estado === "[SOLVED]" ? "ok" : estado === "[PARTIALLY SOLVED]" ? "warn" : "bad"; }
+
+  var step = 4;
+  var presetBtns = [];
+
+  function render() {
+    var texto = $("queja").value;
+    var r = analizar(texto, $("flex").checked);
+
+    // Etapas y barra
+    ["s1", "s2", "s3", "s4"].forEach(function (id, i) { $(id).classList.toggle("pending", step < i + 1); });
+    var rail = $("rail"); rail.textContent = "";
+    ["Leer", "Cruzar", "Cubrir", "Estado"].forEach(function (n, i) {
+      rail.appendChild(h("div", "rail-item" + (step >= i + 1 ? " on" : ""), (i + 1) + " " + n));
+    });
+
+    // Flair arriba
+    var fl = $("flairTop");
+    if (step >= 4) { fl.className = "flair " + clase(r.estado); fl.textContent = r.estado; }
+    else { fl.className = "flair"; fl.textContent = "[EN ANÁLISIS]"; fl.style.color = "var(--muted)"; }
+    if (step >= 4) fl.style.color = "";
+
+    // Etapa 1
+    var tk = $("tokens"); tk.textContent = "";
+    if (!r.tokens.length) tk.appendChild(h("span", "foot", "Escribí una queja para empezar."));
+    r.tokens.forEach(function (t) {
+      var showHits = step >= 2 ? t.hits : [];
+      var el = h("span", "tok" + (showHits.length ? " hit" : ""));
+      el.appendChild(document.createTextNode(t.raw));
+      showHits.forEach(function (id) {
+        var d = h("span", "dot " + id, id);
+        d.title = "Coincide con " + id;
+        el.appendChild(d);
+      });
+      tk.appendChild(el);
+    });
+
+    // Etapa 2
+    var cm = $("comments"); cm.textContent = "";
+    MEDIOS.forEach(function (m) {
+      var coinc = r.porMedio[m.id];
+      var aporta = coinc.length > 0 && step >= 2;
+      var card = h("article", "comment " + m.id + (aporta ? "" : " miss"));
+      var top = h("div", "comment-top");
+      top.appendChild(h("span", "dot " + m.id, m.id));
+      top.appendChild(h("b", null, m.nombre));
+      top.appendChild(h("span", "enf", m.enfoque));
+      card.appendChild(top);
+      card.appendChild(h("p", "headline", m.titular));
+      var kws = h("div", "kws");
+      m.kws.forEach(function (kw) {
+        var hit = step >= 2 && coinc.indexOf(kw) >= 0;
+        kws.appendChild(h("span", "kw" + (hit ? " hit" : ""), kw));
+      });
+      card.appendChild(kws);
+      if (step < 2) card.appendChild(h("p", "verdict no", "Pendiente de cruzar"));
+      else if (aporta) card.appendChild(h("p", "verdict", "Aporta al hilo. Coincidió: " + coinc.join(", ")));
+      else card.appendChild(h("p", "verdict no", "Sin relación con esta queja"));
+      card.appendChild(h("p", "src", "Fuente: " + m.url));
+      cm.appendChild(card);
+    });
+
+    // Etapa 3
+    var ap = $("aspects"); ap.textContent = "";
+    ASPECTOS.forEach(function (a) {
+      var cub = r.porMedio[a.medio].length > 0;
+      var row = h("div", "aspect" + (cub ? "" : " open"));
+      var what = h("div", "what");
+      what.appendChild(document.createTextNode(a.texto));
+      what.appendChild(h("small", null, "Enfoque del Medio " + a.medio));
+      row.appendChild(what);
+      var st = h("span", "state " + (step >= 3 ? (cub ? "cub" : "abierta") : ""));
+      if (step >= 3) {
+        st.appendChild(h("span", "dot " + a.medio, a.medio));
+        st.appendChild(document.createTextNode(cub ? "Cubierto" : "Pregunta abierta"));
+      } else st.textContent = "Pendiente";
+      row.appendChild(st);
+      ap.appendChild(row);
+    });
+
+    // Etapa 4
+    var rs = $("result"); rs.textContent = "";
+    if (step >= 4) {
+      var big = h("div", "big");
+      big.appendChild(h("span", "flair " + clase(r.estado), r.estado));
+      var meter = h("span", "meter");
+      for (var i = 0; i < ASPECTOS.length; i++) meter.appendChild(h("i", i < r.cubiertos ? "full" : ""));
+      big.appendChild(meter);
+      big.appendChild(h("span", "count", r.cubiertos + " de " + ASPECTOS.length + " enfoques con información"));
+      rs.appendChild(big);
+      var co = h("p", "callout");
+      var b = h("b", null, "SOLVED no significa que el problema se resolvió. ");
+      co.appendChild(b);
+      co.appendChild(document.createTextNode("Significa que hay información publicada para investigarlo desde los enfoques que el foro exige. Es la ironía del sistema: el hilo se cierra por disponibilidad de fuentes, no por soluciones."));
+      rs.appendChild(co);
+      var abiertas = ASPECTOS.filter(function (a) { return r.porMedio[a.medio].length === 0; });
+      if (abiertas.length) {
+        rs.appendChild(h("p", null, "Preguntas que siguen abiertas:"));
+        var ul = h("ul", "openq");
+        abiertas.forEach(function (a) { ul.appendChild(h("li", null, "Falta información sobre: " + a.texto.toLowerCase() + ".")); });
+        rs.appendChild(ul);
+      } else {
+        rs.appendChild(h("p", null, "Todos los ángulos tienen literatura disponible en la prensa."));
+      }
+    } else {
+      rs.appendChild(h("p", "foot", "Avanzá con el botón de paso a paso para ver el estado."));
+    }
+
+    // Botón paso a paso
+    $("btnStep").textContent = step >= 4 ? "Paso a paso" : "Siguiente paso (" + step + " de 4)";
+
+    // Presets
+    presetBtns.forEach(function (b, i) { b.setAttribute("aria-pressed", String(CASOS[i].queja === texto)); });
+  }
+
+  function renderTests() {
+    var tb = $("tbody"); tb.textContent = "";
+    CASOS.forEach(function (c) {
+      var r = analizar(c.queja, false);
+      var ok = r.estado === c.esperado;
+      var tr = document.createElement("tr");
+      tr.appendChild(h("td", null, c.queja));
+      tr.appendChild(h("td", null, c.esperado));
+      tr.appendChild(h("td", null, r.estado));
+      tr.appendChild(h("td", ok ? "pass" : "fail", ok ? "PASS" : "FAIL"));
+      tr.tabIndex = 0;
+      var load = function () { $("queja").value = c.queja; step = 4; render(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+      tr.addEventListener("click", load);
+      tr.addEventListener("keydown", function (e) { if (e.key === "Enter") load(); });
+      tb.appendChild(tr);
+    });
+  }
+
+  // Presets
+  var pr = $("presets");
+  CASOS.forEach(function (c) {
+    var b = h("button", "preset", c.corto);
+    b.type = "button";
+    b.addEventListener("click", function () { $("queja").value = c.queja; step = 4; render(); });
+    pr.appendChild(b);
+    presetBtns.push(b);
+  });
+
+  $("queja").value = CASOS[0].queja;
+  $("queja").addEventListener("input", function () { step = 4; render(); });
+  $("flex").addEventListener("change", render);
+  $("btnAll").addEventListener("click", function () { step = 4; render(); });
+  $("btnStep").addEventListener("click", function () { step = step >= 4 ? 1 : step + 1; render(); });
+
+  render();
+  renderTests();
+})();
+</script>
+
+</body></html>
