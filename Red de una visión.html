@@ -1,0 +1,336 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Red de una visión</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: título arriba, etapas en fila, lienzo del grafo a la izquierda y panel explicativo a la derecha; en teléfono todo en una columna. */
+:root{
+  --bg:#EDF0F3; --surface:#F8FAFB; --fg:#16212C; --muted:#56646F; --line:#CBD3DA;
+  --seed:#B7791F; --circle:#1F7A74; --comm:#3A6EA5; --text:#6B4FA0; --leader:#B24A4A; --bridge:#6E8A22;
+  --accent:#22577A; --accent-fg:#FFFFFF;
+  --f-display:"Bricolage Grotesque",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1720; --surface:#17222D; --fg:#E6ECF1; --muted:#9AA9B5; --line:#2C3B48;
+  --seed:#F0B84E; --circle:#4FC1B8; --comm:#6FA3DD; --text:#A68BDB; --leader:#E58A8A; --bridge:#B5C65A;
+  --accent:#7FB6E0; --accent-fg:#0F1720; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1720; --surface:#17222D; --fg:#E6ECF1; --muted:#9AA9B5; --line:#2C3B48;
+  --seed:#F0B84E; --circle:#4FC1B8; --comm:#6FA3DD; --text:#A68BDB; --leader:#E58A8A; --bridge:#B5C65A;
+  --accent:#7FB6E0; --accent-fg:#0F1720; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--f-body);
+  padding-block:28px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.kicker{font:500 12px var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+h1{font:700 clamp(1.8rem,4.2vw,2.7rem)/1.08 var(--f-display);margin:0 0 10px;text-wrap:balance}
+.lede{margin:0;max-width:68ch;color:var(--muted)}
+.stages{display:flex;flex-wrap:wrap;gap:8px}
+button,select{font:500 14px var(--f-body);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stages button span{font:500 12px var(--f-mono);opacity:.7;margin-right:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;align-items:start}
+.board{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+#cvwrap{position:relative;height:580px}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:10px 14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.legend .dash{display:inline-block;width:22px;border-top:2px dashed var(--seed);vertical-align:middle;margin-right:6px}
+.side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.panel h2{font:700 1.25rem/1.2 var(--f-display);margin:0 0 8px;text-wrap:balance}
+.panel p{margin:0 0 10px}
+.concept{font-size:13.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;margin:0}
+.concept b{font:500 11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:2px}
+.nav{display:flex;gap:8px;margin-top:12px}
+.ctrl{display:flex;flex-direction:column;gap:12px}
+.ctrl label{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.ctrl .row{display:flex;align-items:center;gap:8px}
+.ctrl input[type=range]{width:100%;accent-color:var(--accent)}
+.ctrl small{color:var(--muted);font-size:12.5px}
+.val{font-family:var(--f-mono);font-size:13px}
+dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:6px 12px;font-size:14px}
+dt{color:var(--muted)} dd{margin:0;font:500 14px var(--f-mono);text-align:right}
+.detail h3{font:700 1.05rem var(--f-display);margin:0 0 2px}
+.tag{font:500 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);max-width:90ch}
+select{width:100%}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}#cvwrap{height:470px}}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="kicker">Simulación didáctica · teoría de grafos</p>
+    <h1>La red que nace de una visión</h1>
+    <p class="lede">Un solo nodo con una idea del conjunto, y lo que ocurre alrededor cuando otros la adoptan. Se usa el caso de Jesús y los relatos que lo rodean como ejemplo de una dinámica humana, sin suponer que todas las personas de la red comparten una misma fe.</p>
+  </header>
+
+  <nav class="stages" id="stages" aria-label="Etapas de la simulación"></nav>
+
+  <main class="grid">
+    <section class="board" aria-label="Grafo">
+      <div id="cvwrap"><canvas id="cv" role="img" aria-label="Grafo de nodos y vínculos que crece por etapas desde un nodo semilla"></canvas></div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <aside class="side">
+      <div class="panel" aria-live="polite">
+        <h2 id="sTitle"></h2>
+        <p id="sText"></p>
+        <p class="concept"><b>En lenguaje de grafos</b><span id="sGraph"></span></p>
+        <div class="nav">
+          <button id="prev">← Anterior</button>
+          <button id="next" class="primary">Siguiente etapa →</button>
+        </div>
+      </div>
+
+      <div class="panel ctrl">
+        <label for="thr"><span>Exigencia de coherencia con el núcleo: <span class="val" id="thrV"></span></span>
+          <input id="thr" type="range" min="0.3" max="0.95" step="0.05" value="0.6">
+          <small>Los nodos por debajo del umbral se atenúan y dejan de transmitir hacia el resto. Los valores de coherencia son ilustrativos del modelo.</small>
+        </label>
+        <div class="row"><input id="layers" type="checkbox"><label for="layers">Ordenar en capas por distancia a la semilla</label></div>
+        <div class="row"><input id="generic" type="checkbox"><label for="generic">Modo arquetipo general (sin nombres propios)</label></div>
+      </div>
+
+      <div class="panel">
+        <dl id="metrics"></dl>
+      </div>
+
+      <div class="panel detail">
+        <label class="tag" for="pick">Nodo seleccionado</label>
+        <select id="pick"></select>
+        <div id="detail" style="margin-top:10px"></div>
+      </div>
+    </aside>
+  </main>
+
+  <p class="note">Modelo simplificado con fines didácticos. No reconstruye la historia con precisión ni afirma nada doctrinal: fechas, autorías y relaciones entre textos siguen siendo tema de debate entre historiadores. El mismo patrón aparece en escuelas científicas, movimientos sociales y organizaciones: una visión, lazos fuertes, puentes, registro escrito y una estructura que filtra por coherencia.</p>
+</div>
+
+<script>
+(function(){
+var TYPES={seed:'Nodo semilla',circle:'Primer círculo',bridge:'Nodo puente',comm:'Comunidad',text:'Registro escrito',leader:'Referente'};
+var LEG=[['seed','Semilla'],['circle','Primer círculo'],['bridge','Puente'],['comm','Comunidad'],['text','Registro'],['leader','Referente']];
+// id, tipo, etapa, nombre, coherencia (ilustrativa), descripción
+var N=[
+['J','seed',1,'Jesús',1,'Nodo semilla. Según los relatos propone una visión sistémica: cada persona vale por sus vínculos con las demás, incluidas las excluidas.'],
+['pe','circle',2,'Pedro',.92,'Del círculo cercano. En los relatos lidera la primera comunidad de Jerusalén; termina con grado alto.'],
+['an','circle',2,'Andrés',.9,'Hermano de Pedro, del círculo cercano. Arista fuerte por parentesco y confianza.'],
+['sa','circle',2,'Santiago (Zebedeo)',.88,'Del círculo cercano y hermano de Juan. Parte del núcleo denso inicial.'],
+['jn','circle',2,'Juan',.93,'Del círculo cercano. La tradición lo vincula con Éfeso y con textos que llevan su nombre.'],
+['ma','circle',2,'Mateo',.85,'Del círculo cercano. La tradición asocia su nombre a un evangelio; la autoría es debatida.'],
+['to','circle',2,'Tomás',.8,'Del círculo cercano. Tiene pocas aristas: no todo lazo fuerte llega a ser central.'],
+['mg','circle',2,'María Magdalena',.95,'Seguidora cercana. En los relatos es testigo clave y su memoria alimenta la tradición oral.'],
+['pa','bridge',3,'Pablo',.85,'Nodo puente. Según sus cartas adopta la visión sin haber sido del círculo cercano y conecta comunidades de ciudades distintas.'],
+['cJ','comm',3,'Com. de Jerusalén',.82,'Primera comunidad según los relatos. Nodo denso de lazos fuertes.'],
+['cA','comm',3,'Com. de Antioquía',.78,'Ciudad diversa que conecta el círculo original con la red del Mediterráneo.'],
+['cC','comm',3,'Com. de Corinto',.7,'Fundada por el trabajo de Pablo; sus cartas muestran tensiones internas.'],
+['cR','comm',3,'Com. de Roma',.76,'Comunidad en la capital del imperio, con muchas rutas de comunicación.'],
+['cE','comm',3,'Com. de Éfeso',.75,'Gran puerto; la tradición la vincula con Juan y con textos de su círculo.'],
+['or','text',4,'Tradición oral',.72,'Memoria compartida. Sostiene la transmisión antes de que exista cualquier texto.'],
+['ct','text',4,'Cartas de Pablo',.84,'Textos dirigidos a comunidades concretas, entre los escritos más tempranos del conjunto.'],
+['mc','text',4,'Evangelio de Marcos',.86,'Muchos investigadores lo consideran el más temprano. Sirve de fuente a otros dos.'],
+['mt','text',4,'Evangelio de Mateo',.84,'Reutiliza buena parte de Marcos y suma otro material: aristas de cita.'],
+['lc','text',4,'Evangelio de Lucas',.83,'También se apoya en Marcos. La tradición presenta a su autor como compañero de Pablo.'],
+['jv','text',4,'Evangelio de Juan',.8,'Texto con perfil propio, ligado a la tradición de Éfeso.'],
+['cl','leader',5,'Clemente de Roma',.82,'Referente de Roma hacia fines del siglo I. Cita cartas de Pablo.'],
+['ig','leader',5,'Ignacio de Antioquía',.88,'Referente en Antioquía. Sus cartas piden unidad en torno a un núcleo común.'],
+['po','leader',5,'Policarpo de Esmirna',.9,'Referente que la tradición vincula con Juan. Une dos generaciones.'],
+['ir','leader',5,'Ireneo de Lyon',.86,'Discípulo de Policarpo. Defiende un conjunto de escritos como transmisores fieles del núcleo.'],
+['at','leader',5,'Atanasio de Alejandría',.84,'Su carta del año 367 es la primera lista conocida con los 27 textos del Nuevo Testamento.'],
+['ca','text',5,'Canon (lista de textos)',.87,'Vértice de consolidación: fija qué textos forman el conjunto. Aparece mucho después, por consenso entre nodos.'],
+['mr','leader',5,'Marción',.35,'Propuso un conjunto de textos más reducido y un núcleo distinto. La red mayoritaria no lo integró: queda en la periferia.']
+];
+// a, b, tipo: d directo, t transmisión, c cita (a se apoya en b), v visión adoptada, x tensión
+var E=[
+['J','pe','d'],['J','an','d'],['J','sa','d'],['J','jn','d'],['J','ma','d'],['J','to','d'],['J','mg','d'],
+['pe','an','d'],['sa','jn','d'],['pe','jn','d'],['pe','sa','d'],
+['pe','cJ','t'],['jn','cJ','t'],['sa','cJ','t'],['pe','cA','t'],['cJ','cA','t'],['pa','cA','t'],['pa','cC','t'],['pa','cR','t'],['pa','cE','t'],['jn','cE','t'],['pa','pe','t'],['pa','J','v'],
+['or','J','t'],['or','pe','t'],['or','jn','t'],['or','mg','t'],
+['ct','pa','t'],['ct','cC','t'],['ct','cR','t'],['ct','cE','t'],
+['mc','or','c'],['mc','pe','t'],['mc','cR','t'],
+['mt','mc','c'],['mt','cA','t'],['mt','ma','t'],
+['lc','mc','c'],['lc','pa','t'],['lc','or','c'],
+['jv','jn','t'],['jv','cE','t'],['jv','or','c'],
+['cl','cR','t'],['cl','pa','t'],['cl','ct','c'],
+['ig','cA','t'],['ig','pa','t'],['ig','ct','c'],
+['po','jn','t'],['po','ig','t'],
+['ir','po','t'],['ir','ct','c'],['ir','jv','c'],['ir','mt','c'],['ir','cR','t'],
+['at','ir','t'],['at','ca','t'],
+['ca','ct','c'],['ca','mc','c'],['ca','mt','c'],['ca','lc','c'],['ca','jv','c'],
+['mr','ct','c'],['mr','lc','c'],['mr','cR','x']
+];
+var S=[
+{n:'Semilla',t:'Un nodo con una visión de conjunto',p:'Según los relatos de los evangelios, Jesús enseña a ver a la humanidad como un sistema de relaciones: el valor de cada persona está en cómo se conecta con las demás, el prójimo, el extranjero, el excluido. En el grafo es un único vértice, todavía sin aristas. Todo lo que sigue depende de qué tan transmisible sea esa visión.',g:'Vértice raíz. Un grafo empieza con un nodo; su núcleo es la regla que otros nodos podrán adoptar o no.'},
+{n:'Primeros vínculos',t:'Pocos lazos, muy fuertes',p:'Aparece un círculo cercano: convivencia diaria, confianza alta, pocos nodos. Los relatos hablan de los Doce, de María Magdalena y de otras personas. Cada una aprende la visión por contacto directo, y entre sí se conectan también como hermanos y compañeros.',g:'Aristas de alta confianza y grado de un nodo. Los lazos fuertes forman un grupo denso donde la visión se copia con poca pérdida.'},
+{n:'Lazos débiles',t:'La red sale del círculo íntimo',p:'Pedro y Juan sostienen la comunidad de Jerusalén y surgen comunidades en otras ciudades. Pablo, que según su propio relato no integró el círculo cercano, se conecta como puente entre comunidades distintas. Su arista punteada hacia la semilla marca una visión adoptada sin contacto previo.',g:'Lazos débiles (Granovetter) y nodos puente. Un puente acorta la distancia entre grupos que de otro modo quedarían separados.'},
+{n:'Escritura',t:'El texto brota de la red',p:'Nadie planifica un libro. Primero circula la memoria oral; luego las comunidades necesitan cartas y relatos para sostener la identidad a distancia. Cada texto nace conectado a testigos y comunidades, y unos se apoyan en otros. La escritura es un efecto de la red, no su origen.',g:'Nuevos vértices con aristas dirigidas de cita: A → B significa que A se apoya en B. Se forma un grafo de dependencia.'},
+{n:'Ascenso',t:'Suben los nodos coherentes y bien conectados',p:'Con el tiempo aparecen referentes que enlazan comunidades, textos y generaciones. Ascienden quienes combinan muchas conexiones con alta coherencia con el núcleo. Mueve el control de exigencia: lo que no lo comparte queda fuera del subgrafo central, aunque siga conectado.',g:'Centralidad y subgrafo inducido: se conservan solo los nodos cuya coherencia supera un umbral.'},
+{n:'Lectura',t:'El sistema visto desde la semilla',p:'Ordenado por distancia, el sistema forma capas. Quienes están más cerca y son más coherentes sostienen la estructura; los lejanos dependen de intermediarios. Activa el modo arquetipo general para quitar los nombres y quedarte con la dinámica, que no es exclusiva de ninguna tradición.',g:'Búsqueda en anchura (BFS) y capas por distancia. El alcance mide a cuántos nodos llega la visión pasando solo por nodos coherentes.'}
+];
+
+var nodes=N.map(function(a){return{id:a[0],t:a[1],s:a[2],l:a[3],f:a[4],d:a[5],x:0,y:0,vx:0,vy:0,fix:false,placed:false,g:''}});
+var byId={};nodes.forEach(function(n){byId[n.id]=n});
+var cnt={};nodes.forEach(function(n){cnt[n.t]=(cnt[n.t]||0)+1;n.g=n.t==='seed'?'Nodo semilla':TYPES[n.t]+' '+cnt[n.t]});
+var edges=E.map(function(a){var x=byId[a[0]],y=byId[a[1]];return{a:x,b:y,k:a[2],s:Math.max(x.s,y.s)}});
+var seed=byId.J;
+
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d'),wrap=document.getElementById('cvwrap');
+var W=600,H=500,DPR=1,st=1,thr=.6,generic=false,layers=false,sel=null,alpha=1,dirty=true,drag=null,lv=new Map(),maxL=1;
+var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var C={};
+function readColors(){var s=getComputedStyle(document.documentElement);['bg','surface','fg','muted','line','seed','circle','comm','text','leader','bridge','accent'].forEach(function(k){C[k]=s.getPropertyValue('--'+k).trim()});dirty=true}
+function nm(n){return generic?n.g:n.l}
+function vis(){return nodes.filter(function(n){return n.s<=st})}
+function ved(){return edges.filter(function(e){return e.s<=st})}
+function inS(n){return n.f>=thr}
+function adj(only){var m=new Map();vis().forEach(function(n){m.set(n,[])});ved().forEach(function(e){if(only&&(!inS(e.a)||!inS(e.b))||e.k==='x'&&only)return;m.get(e.a).push(e.b);m.get(e.b).push(e.a)});return m}
+function bfs(only){var m=adj(only),d=new Map([[seed,0]]),p=new Map(),q=[seed];while(q.length){var u=q.shift();m.get(u).forEach(function(v){if(!d.has(v)){d.set(v,d.get(u)+1);p.set(v,u);q.push(v)}})}return{d:d,p:p}}
+function levels(){lv=bfs(false).d;maxL=1;lv.forEach(function(v){if(v>maxL)maxL=v})}
+function deg(){var m=new Map();vis().forEach(function(n){m.set(n,0)});ved().forEach(function(e){m.set(e.a,m.get(e.a)+1);m.set(e.b,m.get(e.b)+1)});return m}
+function rad(n,dg){return n===seed?17:6+Math.min(dg.get(n)||0,9)*.9}
+
+function spawn(){
+  vis().forEach(function(n){
+    if(n.placed)return;
+    var ns=[];ved().forEach(function(e){if(e.a===n&&e.b.placed)ns.push(e.b);if(e.b===n&&e.a.placed)ns.push(e.a)});
+    var cx=W/2,cy=H/2;
+    if(ns.length){cx=ns.reduce(function(s,m){return s+m.x},0)/ns.length;cy=ns.reduce(function(s,m){return s+m.y},0)/ns.length}
+    n.x=cx+(Math.random()-.5)*50;n.y=cy+(Math.random()-.5)*50;n.placed=true;
+  });
+  seed.x=W/2;seed.y=H/2;
+}
+function tick(){
+  var vs=vis(),es=ved(),cx=W/2,cy=H/2,k=alpha,ring=(Math.min(W,H)/2-46)/(maxL+.4);
+  for(var i=0;i<vs.length;i++){var a=vs[i];for(var j=i+1;j<vs.length;j++){var b=vs[j],dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy;if(d2<64)d2=64;var d=Math.sqrt(d2),f=(layers?1800:3600)/d2*k,fx=dx/d*f,fy=dy/d*f;a.vx+=fx;a.vy+=fy;b.vx-=fx;b.vy-=fy}}
+  es.forEach(function(e){var dx=e.b.x-e.a.x,dy=e.b.y-e.a.y,d=Math.sqrt(dx*dx+dy*dy)||1,rest=e.k==='d'?70:e.k==='t'?92:108,f=(d-rest)*(layers?.006:.03)*k,fx=dx/d*f,fy=dy/d*f;e.a.vx+=fx;e.a.vy+=fy;e.b.vx-=fx;e.b.vy-=fy});
+  vs.forEach(function(n){
+    if(n===seed){n.x=cx;n.y=cy;n.vx=n.vy=0;return}
+    if(layers){var l=lv.has(n)?lv.get(n):maxL,r=Math.hypot(n.x-cx,n.y-cy)||1,f=(l*ring-r)*.12*k;n.vx+=(n.x-cx)/r*f;n.vy+=(n.y-cy)/r*f}
+    else{n.vx+=(cx-n.x)*.012*k;n.vy+=(cy-n.y)*.012*k}
+    if(n.fix){n.vx=n.vy=0;return}
+    n.vx*=.78;n.vy*=.78;n.x+=n.vx;n.y+=n.vy;
+    n.x=Math.max(30,Math.min(W-30,n.x));n.y=Math.max(24,Math.min(H-30,n.y));
+  });
+  alpha*=.985;dirty=true;
+}
+function settle(){if(reduce){alpha=1;var c=0;while(alpha>.01&&c++<500)tick();dirty=true}}
+
+function pathSet(){
+  var s=new Set();if(!sel||sel===seed)return s;
+  var p=bfs(false).p,u=sel;
+  while(p.has(u)){var v=p.get(u);s.add(u.id+'|'+v.id);s.add(v.id+'|'+u.id);u=v}
+  return s;
+}
+function draw(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);ctx.fillStyle=C.surface;ctx.fillRect(0,0,W,H);
+  var cx=W/2,cy=H/2,dg=deg(),ps=pathSet(),ring=(Math.min(W,H)/2-46)/(maxL+.4);
+  if(layers){
+    ctx.save();ctx.setLineDash([3,5]);ctx.strokeStyle=C.line;ctx.fillStyle=C.muted;ctx.lineWidth=1;ctx.font='11px "IBM Plex Mono",monospace';ctx.textAlign='left';
+    for(var l=1;l<=maxL;l++){ctx.beginPath();ctx.arc(cx,cy,l*ring,0,6.2832);ctx.stroke();ctx.fillText('distancia '+l,cx+l*ring*.71+4,cy-l*ring*.71-2)}
+    ctx.restore();
+  }
+  ved().forEach(function(e){
+    var on=inS(e.a)&&inS(e.b),hi=ps.has(e.a.id+'|'+e.b.id);
+    ctx.save();ctx.globalAlpha=hi?1:on?.75:.15;
+    ctx.strokeStyle=hi?C.accent:e.k==='v'?C.seed:e.k==='x'?C.leader:C.muted;
+    ctx.lineWidth=hi?3:e.k==='d'?2:1.3;
+    ctx.setLineDash(e.k==='v'?[7,5]:e.k==='x'?[2,5]:[]);
+    ctx.beginPath();ctx.moveTo(e.a.x,e.a.y);ctx.lineTo(e.b.x,e.b.y);ctx.stroke();
+    if(e.k==='c'){
+      var dx=e.b.x-e.a.x,dy=e.b.y-e.a.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,r=rad(e.b,dg)+3,tx=e.b.x-ux*r,ty=e.b.y-uy*r;
+      ctx.setLineDash([]);ctx.fillStyle=ctx.strokeStyle;ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx-ux*8-uy*4,ty-uy*8+ux*4);ctx.lineTo(tx-ux*8+uy*4,ty-uy*8-ux*4);ctx.closePath();ctx.fill();
+    }
+    ctx.restore();
+  });
+  vis().forEach(function(n){
+    var r=rad(n,dg),on=inS(n);
+    ctx.save();ctx.globalAlpha=on?1:.35;
+    ctx.beginPath();ctx.arc(n.x,n.y,r,0,6.2832);ctx.fillStyle=C[n.t];ctx.fill();
+    if(!on){ctx.setLineDash([3,3]);ctx.strokeStyle=C[n.t];ctx.lineWidth=1.5;ctx.stroke()}
+    if(n===sel){ctx.setLineDash([]);ctx.globalAlpha=1;ctx.strokeStyle=C.fg;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(n.x,n.y,r+4,0,6.2832);ctx.stroke()}
+    ctx.restore();
+  });
+  ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  vis().forEach(function(n){
+    var r=rad(n,dg);ctx.save();ctx.globalAlpha=inS(n)?1:.55;
+    ctx.font=(n===seed?'500 13.5px':'400 11.5px')+' "IBM Plex Sans",system-ui,sans-serif';
+    ctx.lineWidth=4;ctx.strokeStyle=C.surface;ctx.lineJoin='round';ctx.strokeText(nm(n),n.x,n.y+r+13);
+    ctx.fillStyle=C.fg;ctx.fillText(nm(n),n.x,n.y+r+13);ctx.restore();
+  });
+  dirty=false;
+}
+function loop(){if(alpha>.01&&!reduce)tick();if(dirty)draw();requestAnimationFrame(loop)}
+
+function resize(){
+  var nw=wrap.clientWidth,nh=wrap.clientHeight;if(!nw||!nh)return;
+  var sx=nw/W,sy=nh/H;nodes.forEach(function(n){n.x*=sx;n.y*=sy});
+  W=nw;H=nh;DPR=Math.min(window.devicePixelRatio||1,2);cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  if(!seed.placed){seed.x=W/2;seed.y=H/2;seed.placed=true}
+  alpha=Math.max(alpha,.5);dirty=true;settle();
+}
+
+function ui(){
+  var sb=document.getElementById('stages');
+  if(!sb.children.length){S.forEach(function(s,i){var b=document.createElement('button');b.innerHTML='<span>'+(i+1)+'</span>'+s.n;b.addEventListener('click',function(){setStage(i+1)});sb.appendChild(b)})}
+  Array.prototype.forEach.call(sb.children,function(b,i){b.setAttribute('aria-pressed',String(i+1===st))});
+  var s=S[st-1];
+  document.getElementById('sTitle').textContent=s.t;document.getElementById('sText').textContent=s.p;document.getElementById('sGraph').textContent=s.g;
+  document.getElementById('prev').disabled=st===1;document.getElementById('next').disabled=st===6;
+  document.getElementById('thrV').textContent=thr.toFixed(2);
+
+  var vs=vis(),es=ved(),dg=deg(),R=bfs(true).d,sum=0,c=0;
+  R.forEach(function(v,n){if(n!==seed){sum+=v;c++}});
+  var ld=vs.filter(function(n){return n.t==='leader'}),ldIn=ld.filter(inS).length;
+  var rows=[['Nodos visibles',vs.length],['Vínculos visibles',es.length],['Grado de la semilla',dg.get(seed)],
+   ['Alcance coherente',Math.round(R.size/vs.length*100)+'%'],['Distancia media',c?(sum/c).toFixed(1)+' saltos':'—'],
+   ['Nodos fuera del núcleo',vs.filter(function(n){return!inS(n)}).length],['Referentes en estructura',ld.length?ldIn+' de '+ld.length:'—']];
+  document.getElementById('metrics').innerHTML=rows.map(function(r){return'<dt>'+r[0]+'</dt><dd>'+r[1]+'</dd>'}).join('');
+
+  var pick=document.getElementById('pick'),cur=sel?sel.id:'';
+  pick.innerHTML='<option value="">Elige un nodo…</option>'+vs.map(function(n){return'<option value="'+n.id+'">'+nm(n)+'</option>'}).join('');
+  pick.value=cur;
+  var d=document.getElementById('detail');
+  if(!sel){d.innerHTML='<p class="note" style="margin:0">Toca un nodo del grafo o elígelo en la lista para ver su camino más corto hasta la semilla.</p>';return}
+  var dist=lv.has(sel)?lv.get(sel)+' saltos':'sin camino';
+  d.innerHTML='<h3>'+nm(sel)+'</h3><p class="tag" style="margin:0 0 8px">'+TYPES[sel.t]+' · coherencia '+sel.f.toFixed(2)+' · distancia: '+dist+'</p><p style="margin:0">'+(generic&&sel!==seed?'Nodo del tipo «'+TYPES[sel.t].toLowerCase()+'» que ocupa esta posición en la red.':sel.d)+'</p>';
+}
+function setStage(n){
+  n=Math.max(1,Math.min(6,n));var up=n>st;st=n;
+  if(up&&n===6){layers=true;document.getElementById('layers').checked=true}
+  if(sel&&sel.s>st)sel=null;
+  levels();spawn();alpha=1;dirty=true;settle();ui();
+}
+
+document.getElementById('prev').addEventListener('click',function(){setStage(st-1)});
+document.getElementById('next').addEventListener('click',function(){setStage(st+1)});
+document.getElementById('thr').addEventListener('input',function(e){thr=parseFloat(e.target.value);dirty=true;ui()});
+document.getElementById('layers').addEventListener('change',function(e){layers=e.target.checked;alpha=1;settle();ui()});
+document.getElementById('generic').addEventListener('change',function(e){generic=e.target.checked;dirty=true;ui()});
+document.getElementById('pick').addEventListener('change',function(e){sel=e.target.value?byId[e.target.value]:null;dirty=true;ui()});
+
+function pt(e){var r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+function hit(p){var dg=deg(),best=null,bd=1e9;vis().forEach(function(n){var d=Math.hypot(n.x-p.x,n.y-p.y);if(d<rad(n,dg)+8&&d<bd){bd=d;best=n}});return best}
+cv.addEventListener('pointerdown',function(e){var n=hit(pt(e));if(n){sel=n;drag=n;if(n!==seed)n.fix=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}}else sel=null;dirty=true;ui()});
+cv.addEventListener('pointermove',function(e){if(!drag||drag===seed)return;var p=pt(e);drag.x=Math.max(30,Math.min(W-30,p.x));drag.y=Math.max(24,Math.min(H-30,p.y));alpha=Math.max(alpha,.3);dirty=true});
+function release(){if(drag){drag.fix=false;drag=null}}
+cv.addEventListener('pointerup',release);cv.addEventListener('pointercancel',release);
+
+document.getElementById('legend').innerHTML=LEG.map(function(l){return'<span><i style="background:var(--'+l[0]+')"></i>'+l[1]+'</span>'}).join('')+'<span><span class="dash"></span>Visión adoptada sin contacto</span><span>Flecha: «se apoya en»</span>';
+
+readColors();
+new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readColors);
+new ResizeObserver(resize).observe(wrap);
+resize();levels();spawn();ui();requestAnimationFrame(loop);
+})();
+</script>
+
+</body></html>
