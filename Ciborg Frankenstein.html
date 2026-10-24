@@ -1,0 +1,715 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Ciborg Frankenstein</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=JetBrains+Mono:wght@400;600&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Concepto: banco de pruebas de taller. Un cuerpo remendado en tres épocas (mecánica, electrónica, IA)
+   con las costuras visibles; el color identifica la capa y la costura marca dónde se unen. */
+:root{
+  --bg:#E9ECE8; --surface:#F6F7F4; --ink:#171C1A; --muted:#55615C; --line:#C5CDC8;
+  --mech:#B4571B; --mech-soft:#F2DCCB; --mech-ink:#7C3A0C;
+  --elec:#0E7F6B; --elec-soft:#CDE9E2; --elec-ink:#065345;
+  --ai:#B0276B; --ai-soft:#F4D3E3; --ai-ink:#82174A;
+  --seam:#3B4743; --seam-soft:#DBE0DD;
+  --good:#2B7A33; --warn:#8F5A06; --bad:#BF2A2A; --amber:#D9922B;
+  --obj:#E0AE3F; --liq:#8B5E3C; --skin:#E8B898;
+  --display:'Bricolage Grotesque','Arial Narrow',Arial,sans-serif;
+  --body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1412; --surface:#171E1B; --ink:#E5EBE7; --muted:#9AA7A1; --line:#2B3632;
+    --mech:#E58F55; --mech-soft:#3A2416; --mech-ink:#F4B88C;
+    --elec:#3DC7A9; --elec-soft:#0F3029; --elec-ink:#8FE6D1;
+    --ai:#EE75AC; --ai-soft:#3A1827; --ai-ink:#F7AACB;
+    --seam:#B3C1BA; --seam-soft:#26312D;
+    --good:#6CC474; --warn:#E6B24F; --bad:#F27A74; --amber:#F0B54A;
+    --obj:#D9A441; --liq:#9C6C48; --skin:#C99275;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1412; --surface:#171E1B; --ink:#E5EBE7; --muted:#9AA7A1; --line:#2B3632;
+  --mech:#E58F55; --mech-soft:#3A2416; --mech-ink:#F4B88C;
+  --elec:#3DC7A9; --elec-soft:#0F3029; --elec-ink:#8FE6D1;
+  --ai:#EE75AC; --ai-soft:#3A1827; --ai-ink:#F7AACB;
+  --seam:#B3C1BA; --seam-soft:#26312D;
+  --good:#6CC474; --warn:#E6B24F; --bad:#F27A74; --amber:#F0B54A;
+  --obj:#D9A441; --liq:#9C6C48; --skin:#C99275;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--body);
+  padding-block:28px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+button,select{font:inherit;color:inherit}
+h1,h2,h3,p{margin:0}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:32px}
+
+/* capas */
+.L-mech{--c:var(--mech);--cs:var(--mech-soft);--ci:var(--mech-ink)}
+.L-elec{--c:var(--elec);--cs:var(--elec-soft);--ci:var(--elec-ink)}
+.L-ai{--c:var(--ai);--cs:var(--ai-soft);--ci:var(--ai-ink)}
+.L-seam{--c:var(--seam);--cs:var(--seam-soft);--ci:var(--ink)}
+
+/* encabezado */
+.eyebrow{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+h1{font:800 clamp(2.4rem,7vw,4.2rem)/.95 var(--display);letter-spacing:-.025em;margin-top:10px;text-wrap:balance}
+.lede{max-width:62ch;margin-top:14px;font-size:16.5px;color:var(--ink)}
+.patch{display:flex;height:10px;margin-top:20px;max-width:420px;border-radius:2px;overflow:hidden}
+.patch span{flex:1}
+.patch span+span{border-left:2px dashed var(--bg)}
+.patch .a{background:var(--mech)}.patch .b{background:var(--elec)}.patch .c{background:var(--ai)}
+
+/* tarjetas */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.sec-label{font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+
+.stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (max-width:880px){.stage{grid-template-columns:minmax(0,1fr)}}
+
+/* niveles */
+.levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1.5px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--surface)}
+.lvl{background:transparent;border:0;padding:10px 12px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0}
+.lvl+.lvl{border-left:1.5px dashed var(--ink)}
+.lvl small{font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lvl b{font:600 14px/1.2 var(--display)}
+.lvl[aria-pressed="true"]{background:var(--cs);box-shadow:inset 0 -4px 0 var(--c)}
+.lvl[aria-pressed="true"] small,.lvl[aria-pressed="true"] b{color:var(--ci)}
+.lvl-row{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap}
+.lvl-row .levels{flex:1 1 360px}
+.btn{background:transparent;border:1.5px solid var(--ink);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:600}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn[disabled]{opacity:.5;cursor:default}
+.btn[disabled]:hover{background:transparent;color:inherit}
+.lvl-desc{margin-top:10px;max-width:68ch;color:var(--ink)}
+
+/* figura */
+.figcard{padding:10px 10px 8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:2px 6px 8px;font:500 11.5px var(--mono);color:var(--muted)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend i{width:9px;height:9px;border-radius:2px;background:var(--c)}
+.bench{
+  border-radius:6px;
+  background-image:linear-gradient(color-mix(in srgb,var(--line) 55%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--line) 55%,transparent) 1px,transparent 1px);
+  background-size:20px 20px;
+}
+.bench svg{width:100%;height:auto;display:block}
+.ground{stroke:var(--ink);stroke-width:2;stroke-dasharray:1 0}
+.cap{fill:var(--muted);font:600 9px var(--mono);letter-spacing:.08em}
+.s{fill:none;stroke:var(--c);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.f{fill:var(--c)}
+.fs{fill:var(--surface);stroke:var(--c);stroke-width:2.5;stroke-linejoin:round}
+.w10{stroke-width:10}.w6{stroke-width:6}.w3{stroke-width:3}.w15{stroke-width:1.5}
+.teeth{fill:none;stroke:var(--c);stroke-width:4;stroke-dasharray:3.6 3.2}
+.t{fill:var(--ci);font:600 8.5px var(--mono);text-anchor:middle}
+.stitch{fill:none;stroke:var(--seam);stroke-width:2;stroke-linecap:round}
+.hit{fill:transparent;stroke:none}
+.part{cursor:pointer;transition:opacity .4s,filter .25s}
+.part:hover,.part.sel{filter:drop-shadow(0 0 1.5px var(--c)) drop-shadow(0 0 5px var(--c))}
+.part.off{opacity:.14;filter:grayscale(1)}
+.part.off:hover,.part.off.sel{filter:grayscale(1)}
+.part.dead{opacity:.35;filter:grayscale(.9)}
+.part.broken{--c:var(--bad);--ci:var(--bad)}
+.part:focus-visible{outline:none}
+.part:focus-visible .hit{stroke:var(--ink);stroke-dasharray:4 3;stroke-width:1.5}
+.finger{transition:transform .45s cubic-bezier(.3,1.4,.5,1)}
+.finger.up{transform-origin:487px 172px;transform:rotate(var(--a,-28deg))}
+.finger.dn{transform-origin:487px 198px;transform:rotate(calc(var(--a,-28deg) * -1))}
+.obj{opacity:0;transform:translate(612px,185px);transition:transform .95s cubic-bezier(.2,.7,.3,1),opacity .2s}
+.objin{transform-origin:0 0;transition:transform .3s}
+#led{transition:fill .3s}
+.o-line{fill:none;stroke:var(--ink);stroke-width:1.4;stroke-linecap:round}
+.o-fill{stroke:var(--ink);stroke-width:1.4}
+
+/* controles de prueba */
+.controls{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-end}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+legend{padding:0;font:600 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{position:relative}
+.opt input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.opt span{display:block;padding:7px 12px;border:1.5px solid var(--line);border-radius:7px;background:var(--surface);font-weight:500;font-size:14px}
+.opt input:checked+span{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.opt input:focus-visible+span{outline:2px solid var(--ink);outline-offset:2px}
+select{padding:8px 10px;border:1.5px solid var(--line);border-radius:7px;background:var(--surface);min-width:0;max-width:100%}
+.go{background:var(--ink);color:var(--bg);margin-left:auto}
+.go:hover{background:var(--c,var(--ink))}
+.go[disabled]:hover{background:var(--ink);color:var(--bg)}
+
+/* resultado */
+h2{font:800 22px/1.15 var(--display);letter-spacing:-.01em}
+.chain{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
+.chain li{display:flex;gap:10px;align-items:flex-start;padding:7px 0 7px 0;color:var(--muted);position:relative;transition:color .25s}
+.chain li::before{content:"";flex:none;width:12px;height:12px;margin-top:5px;border-radius:3px;border:2px solid var(--c);background:transparent;transition:background .25s}
+.chain li+li{border-top:1px dashed var(--line)}
+.chain li.on{color:var(--ink)}
+.chain li.on::before{background:var(--c)}
+.chain li.fail{color:var(--bad);font-weight:600}
+.chain li.fail::before{border-color:var(--bad);background:var(--bad)}
+.outcome{--tone:var(--line);margin-top:14px;border-left:4px solid var(--tone);padding:10px 12px;background:var(--bg);border-radius:0 6px 6px 0}
+.outcome[data-tone="good"]{--tone:var(--good)}
+.outcome[data-tone="warn"]{--tone:var(--amber)}
+.outcome[data-tone="bad"]{--tone:var(--bad)}
+.outcome .tag{font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.outcome[data-tone="good"] .tag{color:var(--good)}
+.outcome[data-tone="warn"] .tag{color:var(--warn)}
+.outcome[data-tone="bad"] .tag{color:var(--bad)}
+.outcome h3{font:600 16px/1.25 var(--display);margin-top:2px}
+.outcome p{margin-top:4px;font-size:14px}
+.note{margin-top:10px;font-size:13.5px;color:var(--warn);font-weight:500}
+.note:empty{display:none}
+.meters{margin-top:16px;display:flex;flex-direction:column;gap:9px}
+.meter{display:grid;grid-template-columns:minmax(0,8.5em) minmax(0,1fr) minmax(0,7.5em);gap:10px;align-items:center;font-size:13px}
+.meter .ml{color:var(--muted)}
+.meter .bar{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.meter .bar i{display:block;height:100%;background:var(--c);transition:width .4s}
+.meter .mv{font:600 12px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.fine{margin-top:10px;font-size:12px;color:var(--muted)}
+
+/* inspector */
+.insp-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{font:600 10.5px var(--mono);letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:var(--cs);color:var(--ci)}
+.pill.ghost{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+.insp h3{font:800 19px/1.2 var(--display);margin-top:10px;text-wrap:balance}
+.insp dl{margin:12px 0 0;display:flex;flex-direction:column;gap:10px}
+.insp dt{font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.insp dd{margin:2px 0 0;font-size:14.5px}
+
+/* piezas */
+.parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;gap:7px;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:13px;font-weight:500;text-align:left}
+.chip::before{content:"";flex:none;width:8px;height:8px;border-radius:2px;background:var(--c)}
+.chip[aria-pressed="true"]{border-color:var(--c);background:var(--cs);color:var(--ci)}
+.chip.off{color:var(--muted);border-style:dashed}
+
+/* lecciones */
+.lessons{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px}
+.lessons>div{border-top:2px solid var(--ink);padding-top:10px}
+.lessons .k{font:600 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lessons h3{font:800 18px/1.2 var(--display);margin-top:4px;text-wrap:balance}
+.lessons p{margin-top:6px;font-size:14.5px}
+footer{font-size:12.5px;color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Caso de estudio · mecánica, electrónica e IA</div>
+    <h1>Ciborg Frankenstein</h1>
+    <p class="lede">Un cuerpo armado con tres épocas de tecnología: palancas y resortes, circuitos con reglas fijas y módulos de inteligencia artificial. Agrega las capas de a una y observa qué cambia cuando un objeto se acerca a su mano.</p>
+    <div class="patch" aria-hidden="true"><span class="a"></span><span class="b"></span><span class="c"></span></div>
+  </header>
+
+  <section>
+    <div class="sec-label">Capas instaladas</div>
+    <div class="lvl-row">
+      <div class="levels" role="group" aria-label="Nivel de armado">
+        <button class="lvl L-mech" data-lvl="1" aria-pressed="false"><small>Nivel 1</small><b>Mecánica</b></button>
+        <button class="lvl L-elec" data-lvl="2" aria-pressed="false"><small>Nivel 2</small><b>+ Electrónica</b></button>
+        <button class="lvl L-ai" data-lvl="3" aria-pressed="true"><small>Nivel 3</small><b>+ IA</b></button>
+      </div>
+      <button class="btn" id="build" type="button">Armar paso a paso</button>
+    </div>
+    <p class="lvl-desc" id="lvlDesc" aria-live="polite"></p>
+  </section>
+
+  <div class="stage">
+    <div class="col">
+      <div class="card figcard">
+        <div class="legend" aria-hidden="true">
+          <span class="L-mech"><i></i>Mecánica</span>
+          <span class="L-elec"><i></i>Electrónica</span>
+          <span class="L-ai"><i></i>IA</span>
+          <span class="L-seam"><i></i>Costura entre capas</span>
+        </div>
+        <div class="bench">
+<svg id="fig" viewBox="0 0 640 380" role="group" aria-label="Ciborg con partes mecánicas, electrónicas y de IA. Un objeto se acerca a su mano derecha.">
+  <defs>
+    <g id="gear"><circle r="13" class="teeth"/><circle r="9" class="fs"/><circle r="2.5" class="f"/></g>
+  </defs>
+  <line class="ground" x1="40" y1="356" x2="620" y2="356"/>
+  <text class="cap" x="40" y="373">BANCO DE PRUEBAS · ESCALA 1:8</text>
+
+  <!-- MECÁNICA -->
+  <g class="part L-mech" data-part="m-legs" tabindex="0" role="button" aria-label="Patas de tubo con bisagras">
+    <rect class="hit" x="190" y="262" width="125" height="96"/>
+    <rect class="fs" x="205" y="264" width="20" height="84" rx="3"/>
+    <rect class="fs" x="275" y="264" width="20" height="84" rx="3"/>
+    <rect class="fs" x="192" y="346" width="46" height="10" rx="3"/>
+    <rect class="fs" x="262" y="346" width="46" height="10" rx="3"/>
+    <circle class="fs" cx="215" cy="305" r="7"/>
+    <circle class="fs" cx="285" cy="305" r="7"/>
+  </g>
+
+  <g class="part L-mech" data-part="m-frame" tabindex="0" role="button" aria-label="Armazón de chapa y tubos">
+    <rect class="hit" x="140" y="18" width="180" height="250"/>
+    <rect class="fs" x="185" y="118" width="130" height="146" rx="6"/>
+    <rect class="fs" x="208" y="28" width="84" height="74" rx="8"/>
+    <rect class="fs" x="203" y="20" width="94" height="10" rx="2"/>
+    <rect class="fs" x="242" y="100" width="16" height="18"/>
+    <path class="s w6" d="M197 70H208M292 70H303"/>
+    <circle class="fs" cx="191" cy="70" r="6"/>
+    <circle class="fs" cx="309" cy="70" r="6"/>
+    <circle class="f" cx="232" cy="62" r="5"/>
+    <path class="stitch" d="M228 38l6 8M234 38l-6 8M242 38l6 8M248 38l-6 8"/>
+    <circle class="f" cx="192" cy="126" r="2"/><circle class="f" cx="308" cy="126" r="2"/>
+    <circle class="f" cx="192" cy="256" r="2"/><circle class="f" cx="308" cy="256" r="2"/>
+    <path class="s w10" d="M185 160L150 215L146 288"/>
+    <path class="s w6" d="M146 288V304Q146 314 156 310"/>
+    <path class="s w10" d="M315 160L368 185"/>
+    <rect class="fs" x="372" y="173" width="98" height="24" rx="4"/>
+  </g>
+
+  <g class="part L-mech" data-part="m-gears" tabindex="0" role="button" aria-label="Engranajes de hombro y codo">
+    <rect class="hit" x="170" y="145" width="30" height="30"/>
+    <rect class="hit" x="300" y="145" width="30" height="30"/>
+    <rect class="hit" x="353" y="170" width="30" height="30"/>
+    <use href="#gear" x="185" y="160"/>
+    <use href="#gear" x="315" y="160"/>
+    <use href="#gear" x="368" y="185"/>
+  </g>
+
+  <g class="part L-mech" data-part="m-spring" tabindex="0" role="button" aria-label="Resorte de retorno">
+    <rect class="hit" x="464" y="168" width="22" height="34"/>
+    <path class="s" d="M470 185L473 176L477 194L481 176L484 185"/>
+  </g>
+
+  <g class="part L-mech" data-part="m-lever" tabindex="0" role="button" aria-label="Palanca de contacto">
+    <rect class="hit" x="486" y="172" width="20" height="26"/>
+    <path class="s" d="M492 185H487" stroke-dasharray="2 2"/>
+    <rect class="fs" x="493" y="177" width="8" height="16" rx="2"/>
+  </g>
+
+  <!-- ELECTRÓNICA -->
+  <g class="part L-elec" data-part="e-battery" tabindex="0" role="button" aria-label="Batería de 12 voltios">
+    <rect class="hit" x="240" y="164" width="72" height="68"/>
+    <path class="s" d="M281 188V164"/>
+    <rect class="fs" x="246" y="188" width="58" height="38" rx="4"/>
+    <rect class="f" x="304" y="199" width="5" height="12" rx="1"/>
+    <text class="t" x="275" y="211">12 V</text>
+  </g>
+
+  <g class="part L-elec" data-part="e-led" tabindex="0" role="button" aria-label="LED de estado">
+    <rect class="hit" x="208" y="178" width="36" height="40"/>
+    <circle id="led" class="fs" cx="226" cy="192" r="7" style="fill:var(--good)"/>
+    <text class="t" x="226" y="214" style="font-size:7px">ESTADO</text>
+  </g>
+
+  <g class="part L-elec" data-part="e-mcu" tabindex="0" role="button" aria-label="Microcontrolador">
+    <rect class="hit" x="248" y="126" width="68" height="40"/>
+    <path class="s w15" d="M256 138h-5M256 146h-5M256 154h-5M306 138h5M306 146h5M306 154h5"/>
+    <rect class="fs" x="256" y="130" width="50" height="34" rx="3"/>
+    <rect class="f" x="268" y="136" width="14" height="12" rx="2"/>
+    <text class="t" x="281" y="159">MCU</text>
+  </g>
+
+  <g class="part L-elec" data-part="e-sensor" tabindex="0" role="button" aria-label="Sensor ultrasónico de distancia">
+    <rect class="hit" x="426" y="140" width="40" height="36"/>
+    <path class="s" d="M446 160V146H311"/>
+    <rect class="fs" x="432" y="160" width="28" height="13" rx="2"/>
+    <circle class="s w15" cx="439" cy="166.5" r="3.8"/>
+    <circle class="s w15" cx="453" cy="166.5" r="3.8"/>
+  </g>
+
+  <g class="part L-elec" data-part="e-motor" tabindex="0" role="button" aria-label="Motor y driver">
+    <rect class="hit" x="376" y="174" width="96" height="24"/>
+    <path class="s" d="M311 154H326L346 206H398V193"/>
+    <rect class="fs" x="380" y="177" width="36" height="16" rx="3"/>
+    <circle class="f" cx="398" cy="185" r="4"/>
+    <path class="s w3" d="M416 185H470"/>
+  </g>
+
+  <!-- IA -->
+  <g class="part L-ai" data-part="a-camera" tabindex="0" role="button" aria-label="Cámara">
+    <rect class="hit" x="254" y="46" width="32" height="32"/>
+    <path class="s" d="M266 73L260 80"/>
+    <circle class="fs" cx="270" cy="62" r="12"/>
+    <circle class="f" cx="270" cy="62" r="5"/>
+    <circle cx="272.5" cy="59.5" r="1.6" style="fill:var(--surface)"/>
+  </g>
+
+  <g class="part L-ai" data-part="a-vision" tabindex="0" role="button" aria-label="Módulo de visión">
+    <rect class="hit" x="214" y="76" width="56" height="48"/>
+    <path class="s" d="M232 96V108H221V130"/>
+    <rect class="fs" x="222" y="80" width="40" height="16" rx="2"/>
+    <text class="t" x="242" y="91.5">VISIÓN</text>
+  </g>
+
+  <g class="part L-ai" data-part="a-policy" tabindex="0" role="button" aria-label="Módulo de decisión">
+    <rect class="hit" x="192" y="126" width="56" height="42"/>
+    <path class="s" d="M246 146H251"/>
+    <rect class="fs" x="196" y="130" width="50" height="34" rx="3"/>
+    <text class="t" x="221" y="144">DECISIÓN</text>
+    <text class="t" x="221" y="157" style="font-size:7px;opacity:.8">IA</text>
+  </g>
+
+  <!-- COSTURAS -->
+  <g class="part L-seam" data-part="s-1" tabindex="0" role="button" aria-label="Costura entre el eje del motor y la garra">
+    <rect class="hit" x="416" y="172" width="18" height="28"/>
+    <path class="stitch" d="M420 178l8 4M420 185l8 4M420 192l8 4"/>
+  </g>
+  <g class="part L-seam" data-part="s-2" tabindex="0" role="button" aria-label="Costura entre el sensor y el microcontrolador">
+    <rect class="hit" x="326" y="134" width="30" height="24"/>
+    <path class="stitch" d="M332 139l5 12M340 139l5 12M348 139l5 12"/>
+  </g>
+  <g class="part L-seam" data-part="s-3" tabindex="0" role="button" aria-label="Costura entre la IA y el microcontrolador">
+    <rect class="hit" x="243" y="134" width="14" height="26"/>
+    <path class="stitch" d="M247 136l4 6M247 144l4 6M247 152l4 6"/>
+  </g>
+
+  <!-- OBJETO DE PRUEBA -->
+  <g id="obj" class="obj">
+    <g id="objin" class="objin">
+      <g id="o-pelota">
+        <circle class="o-fill" r="13" style="fill:var(--obj)"/>
+        <path class="o-line" d="M-12 -3Q0 5 12 -3"/>
+      </g>
+      <g id="o-taza" hidden>
+        <path class="o-line" d="M-4 -17q-3 -4 0 -8M3 -17q-3 -4 0 -8" style="stroke:var(--muted)"/>
+        <rect class="o-fill" x="-11" y="-12" width="22" height="24" rx="3" style="fill:var(--surface)"/>
+        <rect x="-9" y="-8" width="18" height="18" rx="2" style="fill:var(--liq)"/>
+        <path class="o-line" d="M11 -6h5a5 5 0 0 1 0 10h-5"/>
+      </g>
+      <g id="o-mano" hidden>
+        <rect class="o-fill" x="-18" y="1" width="9" height="5" rx="2.5" style="fill:var(--skin)"/>
+        <rect class="o-fill" x="-11" y="-17" width="5" height="16" rx="2.5" style="fill:var(--skin)"/>
+        <rect class="o-fill" x="-5" y="-19" width="5" height="18" rx="2.5" style="fill:var(--skin)"/>
+        <rect class="o-fill" x="1" y="-18" width="5" height="17" rx="2.5" style="fill:var(--skin)"/>
+        <rect class="o-fill" x="7" y="-15" width="5" height="14" rx="2.5" style="fill:var(--skin)"/>
+        <rect class="o-fill" x="-11" y="-4" width="23" height="18" rx="5" style="fill:var(--skin)"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- GARRA (sobre el objeto) -->
+  <g class="part L-mech claw" data-part="m-claw" tabindex="0" role="button" aria-label="Garra de dos dedos">
+    <rect class="hit" x="482" y="146" width="56" height="78"/>
+    <rect class="fs" x="484" y="167" width="8" height="36" rx="2"/>
+    <g class="finger up"><rect class="fs" x="487" y="169" width="46" height="6" rx="3"/></g>
+    <g class="finger dn"><rect class="fs" x="487" y="195" width="46" height="6" rx="3"/></g>
+  </g>
+</svg>
+        </div>
+      </div>
+
+      <div class="controls">
+        <fieldset>
+          <legend>Objeto que se acerca</legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="obj" value="pelota" checked><span>Pelota</span></label>
+            <label class="opt"><input type="radio" name="obj" value="taza"><span>Taza caliente</span></label>
+            <label class="opt"><input type="radio" name="obj" value="mano"><span>Mano de una persona</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend><label for="fault">Falla</label></legend>
+          <select id="fault">
+            <option value="none">Ninguna</option>
+            <option value="power">Cortar la energía</option>
+            <option value="ai">Colgar la IA</option>
+            <option value="claw">Romper la garra</option>
+          </select>
+        </fieldset>
+        <button class="btn go" id="go" type="button">Acercar objeto</button>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card" id="result">
+        <div class="sec-label">Prueba de agarre</div>
+        <h2 id="resTitle">Qué hace cada capa</h2>
+        <ol class="chain" id="chain"></ol>
+        <div class="outcome" id="outcome" data-tone="" aria-live="polite">
+          <div class="tag">Sin ejecutar</div>
+          <h3>Elige un objeto y pulsa «Acercar objeto»</h3>
+          <p>Verás la cadena de señales de arriba encenderse paso a paso.</p>
+        </div>
+        <div class="note" id="note"></div>
+        <div class="meters" id="meters"></div>
+        <p class="fine">Tiempo y energía son valores de ejemplo para comparar capas, no mediciones.</p>
+      </div>
+
+      <div class="card insp" id="insp" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-label">Todas las piezas</div>
+    <div class="parts" id="parts"></div>
+  </section>
+
+  <section>
+    <div class="sec-label">Qué enseña este caso</div>
+    <div class="lessons">
+      <div><div class="k">Dependencia</div><h3>Las capas se apoyan hacia abajo</h3><p>La IA necesita electrónica y la electrónica necesita energía. Corta la energía en el banco de pruebas y mira cómo el ciborg vuelve a comportarse como el de nivel 1.</p></div>
+      <div><div class="k">Costo</div><h3>Más criterio también cuesta más</h3><p>La IA distingue una taza de una mano, pero tarda unas quince veces más que el reflejo mecánico y consume mucha más energía.</p></div>
+      <div><div class="k">Eslabón débil</div><h3>Todas las órdenes terminan en la garra</h3><p>Si la pieza mecánica final se rompe, ni el microcontrolador ni la red neuronal pueden compensarlo.</p></div>
+      <div><div class="k">Costuras</div><h3>Los problemas aparecen donde se unen</h3><p>Toca las marcas de costura del cuerpo. Cada una une dos épocas de la tecnología y exige calibrar, traducir y probar.</p></div>
+    </div>
+  </section>
+
+  <footer>Un cuerpo remendado sirve para estudiar un sistema real: cada pieza tiene sentido sola, y lo interesante pasa entre ellas.</footer>
+</div>
+
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s)};
+  var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+  var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var sleep=function(ms){return new Promise(function(r){setTimeout(r,reduce?Math.min(ms,60):ms)})};
+  var wait=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
+
+  var LAYERS={mech:'Mecánica',elec:'Electrónica',ai:'IA',seam:'Costuras'};
+
+  var PARTS=[
+    {id:'m-frame',layer:'mech',lv:1,short:'Armazón',name:'Armazón de chapa y tubos',analog:'Esqueleto',does:'Da forma y sostiene todo lo demás. Está soldado a mano, con remaches, y el brazo izquierdo es solo un gancho colgante.',needs:'Nada. No consume energía ni información.',gives:'Un lugar donde atornillar sensores, motores y placas.'},
+    {id:'m-legs',layer:'mech',lv:1,short:'Patas',name:'Patas de tubo con bisagras',analog:'Huesos largos y rodillas',does:'Sostienen el cuerpo con bisagras simples. No caminan solas: solo se mueven si alguien las empuja.',needs:'Fuerza externa.',gives:'Un cuerpo que se mantiene de pie.'},
+    {id:'m-gears',layer:'mech',lv:1,short:'Engranajes',name:'Engranajes de hombro y codo',analog:'Articulaciones',does:'Transmiten y multiplican el giro. Se desgastan y tienen juego, así que el movimiento nunca es del todo exacto.',needs:'Un giro de entrada, ya sea de una manivela o de un motor.',gives:'Movimiento del brazo.'},
+    {id:'m-spring',layer:'mech',lv:1,short:'Resorte',name:'Resorte de retorno',analog:'Tono muscular',does:'Mantiene la garra abierta y la reabre apenas se suelta el objeto.',needs:'Nada.',gives:'La posición de reposo de la garra.'},
+    {id:'m-lever',layer:'mech',lv:1,short:'Palanca de contacto',name:'Palanca de contacto',analog:'Reflejo espinal',does:'Una placa en la palma. Si algo la empuja, tira de un cable y cierra los dedos. No sabe qué tocó.',needs:'Que algo la toque.',gives:'El cierre de la garra.'},
+    {id:'m-claw',layer:'mech',lv:1,short:'Garra',name:'Garra de dos dedos',analog:'Mano',does:'Dos barras con bisagra que se cierran sobre el objeto. Es el último eslabón: todas las capas dan sus órdenes a esta pieza.',needs:'Un tirón del cable o el giro del motor.',gives:'El agarre del objeto.'},
+
+    {id:'e-battery',layer:'elec',lv:2,short:'Batería',name:'Batería de 12 V',analog:'Metabolismo',does:'Da energía a la placa, al sensor, al motor y a los módulos de IA. Sin ella se apagan la electrónica y la IA, pero la mecánica sigue funcionando.',needs:'Carga.',gives:'Energía para las capas 2 y 3.'},
+    {id:'e-mcu',layer:'elec',lv:2,short:'Microcontrolador',name:'Microcontrolador',analog:'Cerebelo y médula',does:'Lee el sensor, compara con un umbral fijo y activa el motor. Son reglas simples escritas por una persona, por ejemplo: si algo está a menos de 15 cm, cerrar.',needs:'Energía y una señal del sensor.',gives:'Órdenes al motor y al LED.'},
+    {id:'e-sensor',layer:'elec',lv:2,short:'Sensor de distancia',name:'Sensor ultrasónico de distancia',analog:'Tacto a distancia',does:'Emite un sonido agudo y mide cuánto tarda el eco. Entrega una distancia, pero no sabe qué es el objeto.',needs:'Energía.',gives:'Distancia en centímetros.'},
+    {id:'e-motor',layer:'elec',lv:2,short:'Motor',name:'Motor y driver',analog:'Músculo',does:'Convierte órdenes eléctricas en giro. Mueve la garra con fuerza fija, salvo que alguien le indique otra.',needs:'Energía y una orden del microcontrolador.',gives:'Giro hacia la garra.'},
+    {id:'e-led',layer:'elec',lv:2,short:'LED de estado',name:'LED de estado',analog:'Señal en el rostro',does:'Verde: en espera. Ámbar: objeto detectado. Rojo: resultado malo. Sirve para que una persona entienda qué está haciendo el sistema.',needs:'Energía y una orden del microcontrolador.',gives:'Información visible para las personas.'},
+
+    {id:'a-camera',layer:'ai',lv:3,short:'Cámara',name:'Cámara',analog:'Ojo',does:'Capta imágenes. Entrega millones de datos por segundo, muchísimos más que el sensor de distancia.',needs:'Energía.',gives:'Imágenes para el módulo de visión.'},
+    {id:'a-vision',layer:'ai',lv:3,short:'Visión',name:'Módulo de visión',analog:'Corteza visual',does:'Una red neuronal entrenada con miles de fotos. Dice qué cree que ve y con cuánta confianza. Puede equivocarse con objetos raros.',needs:'Energía e imágenes.',gives:'Una etiqueta del objeto y un porcentaje de confianza.'},
+    {id:'a-policy',layer:'ai',lv:3,short:'Decisión',name:'Módulo de decisión',analog:'Juicio',does:'Traduce la etiqueta en una estrategia: atrapar rápido, sostener con suavidad o saludar sin apretar.',needs:'La etiqueta del módulo de visión.',gives:'Estrategia y fuerza para el microcontrolador.'},
+
+    {id:'s-1',layer:'seam',lv:2,short:'Eje y garra',name:'Costura: eje del motor y garra',analog:'Tendón',does:'Un eje que gira se une a una barra que empuja. Aquí aparecen el juego entre piezas, el deslizamiento y el torque insuficiente.',needs:'Piezas que encajen en medida y en fuerza.',gives:'Fuerza transmitida, con pérdidas.'},
+    {id:'s-2',layer:'seam',lv:2,short:'Sensor y placa',name:'Costura: sensor y microcontrolador',analog:'Nervio sensitivo',does:'El sensor entrega un pulso o un voltaje y la placa lo lee con ruido. Hay que filtrar y calibrar.',needs:'El mismo voltaje y el mismo protocolo en ambos lados.',gives:'Un número confiable, si se calibró.'},
+    {id:'s-3',layer:'seam',lv:3,short:'IA y placa',name:'Costura: IA y microcontrolador',analog:'Sinapsis entre áreas',does:'La IA habla en etiquetas y probabilidades; la placa, en pulsos y voltajes. Alguien debe escribir el traductor, y cada traducción suma tiempo.',needs:'Un formato acordado, por ejemplo un puerto serie.',gives:'Una orden que el motor pueda ejecutar.'}
+  ];
+  var BYID={};PARTS.forEach(function(p){BYID[p.id]=p});
+
+  var LVL_TEXT={
+    1:'Nivel 1. Solo mecánica: palancas, resortes y engranajes. Reacciona al contacto, no usa energía y no tiene criterio.',
+    2:'Nivel 2. Se suma electrónica: mide la distancia, aplica reglas fijas y mueve un motor. Reacciona antes del contacto, pero trata todo igual.',
+    3:'Nivel 3. Se suma IA: ve, reconoce el objeto y elige cómo agarrarlo. Entiende más, tarda más y depende de todo lo que tiene debajo.'
+  };
+
+  var CHAIN={
+    1:[['mech','Un objeto toca la palanca'],['mech','El cable tira de los dedos'],['mech','La garra se cierra']],
+    2:[['elec','El sensor mide la distancia'],['elec','El microcontrolador compara con 15 cm'],['elec','El driver enciende el motor'],['mech','La garra se cierra con fuerza fija']],
+    3:[['ai','La cámara captura la imagen'],['ai','La red neuronal reconoce el objeto'],['ai','La decisión elige cómo agarrar'],['elec','El motor aplica esa fuerza'],['mech','La garra ejecuta el agarre']]
+  };
+
+  var METERS={
+    1:{layer:'mech',t:['0,03 s',7],e:['0 W',2],c:['Ninguno',3]},
+    2:{layer:'elec',t:['0,12 s',27],e:['6 W',21],c:['Solo distancia',40]},
+    3:{layer:'ai',t:['0,45 s',100],e:['28 W',100],c:['Reconoce el objeto',100]}
+  };
+
+  var OUT={
+    1:{
+      pelota:{tone:'warn',t:'Atrapa por suerte',d:'La pelota golpea la palanca y la garra se cierra. Funciona solo si llega justo a la palma.',claw:3,sq:[1,1]},
+      taza:{tone:'bad',t:'Aplasta la taza',d:'La palanca no distingue una taza de una piedra. La garra se cierra con toda la fuerza del resorte.',claw:14,sq:[.72,.9]},
+      mano:{tone:'bad',t:'Aprieta la mano',d:'El contacto cierra la garra sin preguntar nada. Para una persona, este es el peor resultado.',claw:14,sq:[.78,.92]}
+    },
+    2:{
+      pelota:{tone:'good',t:'Atrapa a tiempo',d:'El sensor mide menos de 15 cm, el microcontrolador activa el motor y la garra se cierra antes del golpe.',claw:3,sq:[1,1]},
+      taza:{tone:'warn',t:'Sujeta con demasiada fuerza',d:'La regla es la misma para todo: cerrar con fuerza fija. La taza aguanta, pero se marca y se derrama algo.',claw:7,sq:[.9,.95]},
+      mano:{tone:'bad',t:'Detecta, pero no distingue',d:'El sensor solo informa que algo está cerca. La regla cierra la garra sobre la mano.',claw:14,sq:[.78,.92]}
+    },
+    3:{
+      pelota:{tone:'good',t:'Atrapa rápido y firme',d:'La cámara reconoce una pelota (96 %), la decisión elige un cierre rápido y el motor aplica fuerza media.',claw:3,sq:[1,1]},
+      taza:{tone:'good',t:'Sujeta con suavidad',d:'Reconoce una taza (91 %), elige un agarre lento y delicado, y usa poca fuerza.',claw:1,sq:[1,1]},
+      mano:{tone:'good',t:'Abre la garra y saluda',d:'Reconoce una mano (94 %), decide no apretar y mantiene la garra abierta.',claw:-20,sq:[1,1]}
+    }
+  };
+  var CLAWFAIL={tone:'bad',t:'La garra no cierra',d:'Las órdenes llegan, pero el eslabón mecánico final está roto. Ninguna capa puede compensarlo.',claw:-28,sq:[1,1]};
+  var TONE_TXT={good:'Resultado bueno',warn:'Resultado con riesgo',bad:'Resultado malo'};
+
+  var level=3, selected='e-mcu', runId=0, buildId=0;
+  var fig=$('#fig'), claw=fig.querySelector('.claw'), obj=$('#obj'), objin=$('#objin'), led=$('#led');
+
+  function setHidden(el,h){ if(h) el.setAttribute('hidden',''); else el.removeAttribute('hidden'); }
+  function fault(){ return $('#fault').value; }
+  function objKind(){ return $('input[name=obj]:checked').value; }
+  function effLevel(){
+    var f=fault();
+    if(f==='power') return 1;
+    if(f==='ai') return Math.min(level,2);
+    return level;
+  }
+  function ledSet(state){
+    var c={good:'var(--good)',warn:'var(--amber)',bad:'var(--bad)',off:'var(--line)'}[state]||'var(--good)';
+    led.style.fill=c;
+  }
+
+  /* ---------- pintar el estado ---------- */
+  function paint(){
+    var f=fault();
+    PARTS.forEach(function(p){
+      var g=fig.querySelector('[data-part="'+p.id+'"]');
+      g.classList.toggle('off',p.lv>level);
+      var dead=p.lv<=level&&((f==='power'&&p.lv>=2)||(f==='ai'&&p.lv===3));
+      g.classList.toggle('dead',dead);
+      g.classList.toggle('broken',f==='claw'&&p.id==='m-claw');
+      g.classList.toggle('sel',p.id===selected);
+    });
+    $$('.lvl').forEach(function(b){b.setAttribute('aria-pressed',String(+b.dataset.lvl===level))});
+    $('#lvlDesc').textContent=LVL_TEXT[level];
+    renderChips();
+    renderChain();
+    renderMeters();
+    renderNote();
+    renderInspector();
+  }
+
+  function renderChips(){
+    var html='';
+    ['mech','elec','ai','seam'].forEach(function(L){
+      html+='<div class="L-'+L+'"><div class="sec-label" style="color:var(--ci)">'+LAYERS[L]+'</div><div class="chips">';
+      PARTS.filter(function(p){return p.layer===L}).forEach(function(p){
+        html+='<button type="button" class="chip L-'+L+(p.lv>level?' off':'')+'" data-part="'+p.id+'" aria-pressed="'+(p.id===selected)+'">'+p.short+'</button>';
+      });
+      html+='</div></div>';
+    });
+    $('#parts').innerHTML=html;
+  }
+
+  function renderChain(){
+    var eff=effLevel();
+    $('#chain').innerHTML=CHAIN[eff].map(function(s){return '<li class="L-'+s[0]+'">'+s[1]+'</li>'}).join('');
+  }
+
+  function renderMeters(){
+    var m=METERS[effLevel()];
+    var rows=[['Tiempo de reacción',m.t],['Energía',m.e],['Criterio',m.c]];
+    $('#meters').innerHTML=rows.map(function(r){
+      return '<div class="meter L-'+m.layer+'"><span class="ml">'+r[0]+'</span><span class="bar"><i style="width:'+r[1][1]+'%"></i></span><span class="mv">'+r[1][0]+'</span></div>';
+    }).join('');
+  }
+
+  function renderNote(){
+    var f=fault(), t='';
+    if(f==='power') t=level>=2?'Sin energía, la electrónica y la IA se apagan. El cuerpo vuelve a comportarse como el del nivel 1.':'No hay electrónica instalada, así que cortar la energía no cambia nada.';
+    if(f==='ai') t=level===3?'La IA se colgó. El microcontrolador sigue con sus reglas fijas, como en el nivel 2.':'No hay IA instalada en este nivel, así que colgarla no cambia nada.';
+    if(f==='claw') t='La garra está rota. Mira qué capa lo nota y qué capa puede arreglarlo.';
+    $('#note').textContent=t;
+  }
+
+  function renderInspector(){
+    var p=BYID[selected];
+    var off=p.lv>level;
+    var html='<div class="insp-head L-'+p.layer+'"><span class="pill">'+LAYERS[p.layer]+'</span>'+(off?'<span class="pill ghost">No instalado en este nivel</span>':'')+'</div>'+
+      '<h3>'+p.name+'</h3><dl>'+
+      '<div><dt>Equivale a</dt><dd>'+p.analog+'</dd></div>'+
+      '<div><dt>Qué hace</dt><dd>'+p.does+'</dd></div>'+
+      '<div><dt>Qué necesita</dt><dd>'+p.needs+'</dd></div>'+
+      '<div><dt>Qué entrega</dt><dd>'+p.gives+'</dd></div>'+
+      (off?'<div><dt>Se instala</dt><dd>En el nivel '+p.lv+'.</dd></div>':'')+
+      '</dl>';
+    $('#insp').innerHTML=html;
+  }
+
+  function resetStage(){
+    runId++;
+    $('#go').disabled=false;
+    obj.style.transition='none';
+    obj.style.opacity=0;
+    obj.style.transform='translate(612px,185px)';
+    void obj.getBoundingClientRect();
+    obj.style.transition='';
+    objin.style.transform='';
+    claw.style.setProperty('--a','-28deg');
+    ledSet(fault()==='power'?'off':'good');
+    var o=$('#outcome');
+    o.setAttribute('data-tone','');
+    o.innerHTML='<div class="tag">Sin ejecutar</div><h3>Elige un objeto y pulsa «Acercar objeto»</h3><p>Verás la cadena de señales de arriba encenderse paso a paso.</p>';
+  }
+
+  function select(id){
+    selected=id;
+    $$('.part').forEach(function(g){g.classList.toggle('sel',g.dataset.part===id)});
+    $$('.chip').forEach(function(c){c.setAttribute('aria-pressed',String(c.dataset.part===id))});
+    renderInspector();
+  }
+
+  function refresh(){ resetStage(); paint(); }
+
+  function setLevel(n,fromBuild){
+    if(!fromBuild) buildId++;
+    level=n;
+    refresh();
+  }
+
+  /* ---------- prueba de agarre ---------- */
+  async function run(){
+    resetStage();
+    var id=runId;
+    $('#go').disabled=true;
+    var f=fault(), kind=objKind(), eff=effLevel();
+    var res=f==='claw'?CLAWFAIL:OUT[eff][kind];
+    ['pelota','taza','mano'].forEach(function(k){setHidden($('#o-'+k),k!==kind)});
+    obj.style.opacity=1;
+    await sleep(60); if(id!==runId) return;
+    obj.style.transform='translate(512px,185px)';
+    if(f!=='power'&&eff>=2) ledSet('warn');
+    await sleep(1000); if(id!==runId) return;
+    var items=$$('#chain li');
+    for(var i=0;i<items.length;i++){
+      if(f==='claw'&&i===items.length-1){ items[i].classList.add('fail'); items[i].textContent='La garra no responde'; break; }
+      items[i].classList.add('on');
+      await sleep(480); if(id!==runId) return;
+    }
+    claw.style.setProperty('--a',res.claw+'deg');
+    objin.style.transform='scale('+res.sq[0]+','+res.sq[1]+')';
+    await sleep(500); if(id!==runId) return;
+    var o=$('#outcome');
+    o.setAttribute('data-tone',res.tone);
+    o.innerHTML='<div class="tag">'+TONE_TXT[res.tone]+'</div><h3>'+res.t+'</h3><p>'+res.d+'</p>';
+    if(f!=='power'&&eff>=2) ledSet(res.tone);
+    $('#go').disabled=false;
+  }
+
+  /* ---------- eventos ---------- */
+  $$('.lvl').forEach(function(b){b.addEventListener('click',function(){setLevel(+b.dataset.lvl,false)})});
+  $('#go').addEventListener('click',run);
+  $('#fault').addEventListener('change',refresh);
+  $$('input[name=obj]').forEach(function(r){r.addEventListener('change',resetStage)});
+
+  $('#parts').addEventListener('click',function(e){
+    var b=e.target.closest('.chip'); if(b) select(b.dataset.part);
+  });
+  $$('.part').forEach(function(g){
+    g.addEventListener('click',function(){select(g.dataset.part)});
+    g.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();select(g.dataset.part);}
+    });
+  });
+
+  $('#build').addEventListener('click',async function(){
+    var id=++buildId;
+    var btn=$('#build'); btn.disabled=true;
+    setLevel(1,true);
+    await wait(1500); if(id!==buildId){btn.disabled=false;return;}
+    setLevel(2,true);
+    await wait(1500); if(id!==buildId){btn.disabled=false;return;}
+    setLevel(3,true);
+    btn.disabled=false;
+  });
+  // si el usuario toca un nivel durante el armado, el botón se libera
+  $$('.lvl').forEach(function(b){b.addEventListener('click',function(){$('#build').disabled=false})});
+
+  refresh();
+})();
+</script>
+
+</body></html>
