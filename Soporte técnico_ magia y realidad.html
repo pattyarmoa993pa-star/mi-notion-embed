@@ -1,0 +1,128 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Soporte técnico: magia y realidad</title>
+<style>
+:root{--bg:#DDE6EA;--panel:#F4F8F9;--ink:#1E2A32;--mute:#52636d;--manila:#E0B75A;--bad:#B73B27;--ok:#2F7D56;--line:#9fb1ba;--magic:#5B4B9A;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141d22;--panel:#1d2a31;--ink:#e6eef1;--mute:#9db0b9;--manila:#c9a04a;--bad:#e8785f;--ok:#5cc08d;--line:#3b4d57;--magic:#b3a5f0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141d22;--panel:#1d2a31;--ink:#e6eef1;--mute:#9db0b9;--manila:#c9a04a;--bad:#e8785f;--ok:#5cc08d;--line:#3b4d57;--magic:#b3a5f0;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Verdana,Geneva,sans-serif}
+main{max-width:860px;margin:0 auto;padding:28px 18px 56px}
+h1{font:700 clamp(26px,5vw,38px)/1.15 Georgia,"Times New Roman",serif;margin:0 0 8px}
+h2{font:700 20px/1.25 Georgia,serif;margin:0 0 10px}
+p{margin:0 0 12px;max-width:68ch}
+.sub{color:var(--mute)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;margin:18px 0}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.opts button,.go{font:inherit;font-size:14px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+.opts button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.go{font-weight:700;background:var(--manila);color:#1E2A32;border:2px solid var(--ink);padding:10px 16px;font-size:16px}
+.go:disabled{opacity:.5;cursor:default}
+button:focus-visible{outline:3px solid var(--manila);outline-offset:2px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.view{border:1px solid var(--line);border-radius:6px;padding:14px;min-height:150px}
+.view.m{border:2px solid var(--magic)}
+.view.r{border-left:6px solid var(--bad)}
+.view h3{margin:0 0 6px;font:700 15px Verdana,sans-serif}
+.m h3{color:var(--magic)}.r h3{color:var(--bad)}
+.big{font:700 24px/1.2 Georgia,serif;margin:6px 0}
+.hop{border:1px solid var(--line);border-radius:6px;padding:10px;margin:8px 0;font-size:14px;animation:in .25s ease-out}
+@keyframes in{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.hop{animation:none}}
+.bar{height:10px;background:var(--line);border-radius:5px;overflow:hidden;margin:6px 0 2px}
+.bar i{display:block;height:100%;background:var(--ok);transition:width .4s}
+.hop small{color:var(--mute)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:12px 0}
+.stat{border:1px solid var(--line);border-radius:6px;padding:10px}
+.stat strong{display:block;font:700 26px Georgia,serif}
+.lesson{border-left:6px solid var(--ok);padding-left:14px}
+@media (max-width:560px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>Soporte técnico: la magia y lo que hay detrás</h1>
+<p class="sub">Complemento de la inducción empresarial. Para quien usa la computadora, el soporte es un truco: se avisa, y alguien lo arregla. Esta demo muestra, en términos simples, el camino de un pedido de ayuda cuando el soporte lo da otra empresa.</p>
+
+<section class="card">
+<h2>1. Elegí el problema</h2>
+<div class="opts" id="probs" role="group" aria-label="Problema"></div>
+<h2>2. Elegí la madurez digital de la empresa</h2>
+<div class="opts" id="levels" role="group" aria-label="Nivel de madurez digital"></div>
+<p class="sub" id="lvlDesc"></p>
+</section>
+
+<section class="card">
+<h2>3. Pedí ayuda y seguí el ticket</h2>
+<button class="go" id="go">Pedir ayuda</button>
+<button class="opts go" id="reset" style="background:var(--panel);color:var(--ink);font-weight:400;border:1px solid var(--line)">Reiniciar</button>
+<div class="two" style="margin-top:14px">
+ <div class="view m"><h3>Lo que percibe quien pide ayuda</h3><div id="magic"><div class="big">Se avisa y alguien lo arregla.</div></div></div>
+ <div class="view r"><h3>Lo que pasa detrás</h3><div id="log" aria-live="polite"><p class="sub">Todavía no se pidió ayuda.</p></div></div>
+</div>
+<div id="result"></div>
+</section>
+</main>
+<script>
+var P=["la impresora no imprime","no puedo entrar al sistema","el correo no me llega"];
+var L=[
+{n:"0. Papel y memoria",d:"No hay contrato: se llama a alguien que “sabe”.",pe:2,
+m:"Vino alguien y lo arregló. Nadie sabe cómo.",
+s:[["Usuario","Le cuenta a un compañero que {p}.",0.2,100],["Quien recibe","El compañero le avisa al jefe, que se acuerda a medias.",3,60],["Primera línea","Le piden a un conocido técnico que pase cuando pueda.",24,50],["Especialista","El conocido prueba cosas hasta que anda. No anota qué hizo.",4,40],["Cierre","Funciona. Nadie sabe por qué. Vuelve a pasar en tres meses.",0,20]],
+t:"Acá la magia es una persona. Si esa persona no está, el truco no existe."},
+{n:"1. Archivos sueltos",d:"Hay un técnico externo, pero todo es por chat y llamadas.",pe:3,
+m:"Mandé un mensaje y se arregló. Qué bueno que existe el técnico.",
+s:[["Usuario","Manda un audio por chat: “{p}”.",0.1,100],["Quien recibe","Quien administra reenvía el audio al técnico externo.",2,70],["Primera línea","El técnico pregunta si probó reiniciar. Se pierde la tarde.",6,60],["Especialista","Entra a la computadora de forma remota. Se arregla hasta el lunes.",8,50],["Cierre","Se cierra con un “ok”. No queda registro.",0,30]],
+t:"Funciona mientras el chat esté ordenado. El conocimiento queda dentro de la conversación."},
+{n:"2. Herramientas aisladas",d:"Contrato por horas y portal propio del proveedor.",pe:4,
+m:"Cargué el formulario y a las horas me llamaron. Parece automático.",
+s:[["Usuario","Completa el formulario en el portal del proveedor.",0.3,100],["Quien recibe","El pedido entra a una cola con los de otros clientes.",4,80],["Primera línea","Lee un guion y pide otra vez los mismos datos.",6,65],["Especialista","Toma el caso, pero no ve el historial de esta empresa.",12,55],["Cierre","Se cierra el ticket. La empresa no recibe un resumen.",1,40]],
+t:"Cada traspaso hace que parte del problema se pierda. Es como el teléfono descompuesto."},
+{n:"3. Sistemas integrados",d:"Hay acuerdos de tiempo y un sistema de tickets conectado.",pe:4,
+m:"Reporté y, antes de darme cuenta, ya estaba resuelto.",
+s:[["Usuario","Reporta desde la intranet. El ticket ya trae el equipo y el usuario.",0.2,100],["Quien recibe","Se clasifica por prioridad y se asigna.",0.5,95],["Primera línea","Resuelve lo común con guías conocidas.",2,90],["Especialista","Si es complejo, escala con todo el historial.",4,85],["Cierre","Queda registro y se detecta si es el tercer caso igual.",0.5,80]],
+t:"La magia se vuelve costumbre porque hay proceso, registro y responsables."},
+{n:"4. Datos que guían",d:"El soporte se anticipa y se mide.",pe:3,
+m:"Ni me enteré: ya estaba arreglado.",
+s:[["Usuario","Todavía no llamó: el sistema detecta el problema solo.",0,100],["Quien recibe","Se agrupan casos parecidos: es un problema de varios, no de uno.",0.2,98],["Primera línea","Se aplica una solución automática o una guía precisa.",0.5,95],["Especialista","Si hace falta una persona, recibe la causa probable.",1,92],["Cierre","Se mide qué costó y se corrige la causa de fondo.",0.2,90]],
+t:"La magia más grande es la que no se ve. Detrás hay datos, personas y costos que alguien decidió pagar."}];
+var cur=0,pr=0,step=0;
+var $=function(i){return document.getElementById(i)};
+function build(){
+ [["probs",P,function(i){pr=i;reset()},function(){return pr}],["levels",L.map(function(l){return l.n}),function(i){cur=i;reset()},function(){return cur}]].forEach(function(g){
+  var b=$(g[0]);b.innerHTML="";
+  g[1].forEach(function(t,i){var x=document.createElement("button");x.textContent=t;x.setAttribute("aria-pressed",i===g[3]());x.onclick=function(){g[2](i);build()};b.appendChild(x)});
+ });
+ $("lvlDesc").textContent=L[cur].d;
+}
+function reset(){step=0;$("log").innerHTML='<p class="sub">Todavía no se pidió ayuda.</p>';$("magic").innerHTML='<div class="big">Se avisa y alguien lo arregla.</div>';$("result").innerHTML="";$("go").disabled=false;$("go").textContent="Pedir ayuda"}
+$("go").onclick=function(){
+ var s=L[cur].s;
+ if(step===0)$("log").innerHTML="";
+ if(step<5){
+  var x=s[step],d=document.createElement("div");d.className="hop";
+  d.innerHTML="<b>"+x[0]+"</b><br>"+x[1].replace("{p}",P[pr])+'<div class="bar" role="img" aria-label="Problema original conservado: '+x[3]+' por ciento"><i style="width:'+x[3]+'%"></i></div><small>Del problema original sigue vivo: '+x[3]+' % · Tiempo del paso: '+x[2]+' h</small>';
+  $("log").appendChild(d);
+  step++;
+  $("magic").innerHTML='<div class="big">✨ …esperando</div><p class="sub">Desde afuera no se ve nada. Es normal.</p>';
+  $("go").textContent=step<5?"Seguir el ticket":"Pedir ayuda";
+  if(step===5){$("go").disabled=true;finish()}
+ }
+};
+$("reset").onclick=reset;
+function finish(){
+ var h=0,s=L[cur].s;s.forEach(function(x){h+=x[2]});h=Math.round(h*10)/10;
+ $("magic").innerHTML='<div class="big">✨ ¡Listo!</div><p>'+L[cur].m+'</p>';
+ $("result").innerHTML='<div class="stats"><div class="stat"><strong>'+L[cur].pe+'</strong>personas o equipos que intervinieron sin que se note</div><div class="stat"><strong>'+h+' h</strong>de tiempo real entre el pedido y el cierre</div><div class="stat"><strong>'+s[4][3]+' %</strong>del problema original que llegó hasta el cierre</div></div><div class="lesson"><b>Para dimensionar:</b> '+L[cur].t+'</div>';
+}
+build();
+</script>
+</body>
+</html>
+
+</body></html>
