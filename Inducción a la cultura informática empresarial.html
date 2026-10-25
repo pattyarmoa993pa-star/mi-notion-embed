@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inducción a la cultura informática empresarial</title>
+<style>
+:root{--bg:#DDE6EA;--panel:#F4F8F9;--ink:#1E2A32;--mute:#52636d;--manila:#E0B75A;--bad:#B73B27;--ok:#2F7D56;--line:#9fb1ba;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141d22;--panel:#1d2a31;--ink:#e6eef1;--mute:#9db0b9;--manila:#c9a04a;--bad:#e8785f;--ok:#5cc08d;--line:#3b4d57;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141d22;--panel:#1d2a31;--ink:#e6eef1;--mute:#9db0b9;--manila:#c9a04a;--bad:#e8785f;--ok:#5cc08d;--line:#3b4d57;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Verdana,Geneva,sans-serif}
+main{max-width:860px;margin:0 auto;padding:28px 18px 56px}
+h1{font:700 clamp(26px,5vw,38px)/1.15 Georgia,"Times New Roman",serif;margin:0 0 8px}
+h2{font:700 20px/1.25 Georgia,serif;margin:0 0 10px}
+p{margin:0 0 12px;max-width:68ch}
+.sub{color:var(--mute)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;margin:18px 0}
+.levels{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.levels button{font:inherit;font-size:14px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+.levels button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:focus-visible{outline:3px solid var(--manila);outline-offset:2px}
+.track{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.dep{border:2px dashed var(--line);border-radius:6px;padding:10px 6px;text-align:center;font-size:14px;min-height:72px;position:relative}
+.dep.on{border:2px solid var(--ink);background:var(--manila);color:#1E2A32;font-weight:700}
+.dep.done{border-style:solid;border-color:var(--ok)}
+.go{font:inherit;font-weight:700;background:var(--manila);color:#1E2A32;border:2px solid var(--ink);border-radius:6px;padding:10px 16px;cursor:pointer}
+.go:disabled{opacity:.5;cursor:default}
+.step{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;animation:in .25s ease-out}
+@keyframes in{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.step{animation:none}}
+.step div{border-radius:6px;padding:10px;font-size:14px;border:1px solid var(--line)}
+.exp{background:var(--panel);color:var(--mute)}
+.exp b{color:var(--ok)}
+.real{background:var(--panel);border-left:5px solid var(--bad)}
+.real b{color:var(--bad)}
+.meta{grid-column:1/-1;font-size:13px;color:var(--mute);border:0!important;padding:0!important}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:12px 0}
+.stat{border:1px solid var(--line);border-radius:6px;padding:10px}
+.stat strong{display:block;font:700 26px Georgia,serif}
+.lesson{border-left:6px solid var(--ok);padding-left:14px}
+details summary{cursor:pointer;font-weight:700}
+li{margin:4px 0}
+@media (max-width:560px){.step{grid-template-columns:1fr}.track{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<main>
+<h1>Inducción a la cultura informática empresarial</h1>
+<p class="sub">Demo del prototipo. Lo que promete el manual de bienvenida frente a lo que pasa el lunes a las 8:00. Lo que cambia no es el tamaño de la empresa: es su madurez digital.</p>
+
+<section class="card">
+<h2>1. Elegí la madurez digital de la empresa</h2>
+<div class="levels" id="levels" role="group" aria-label="Nivel de madurez digital"></div>
+<p id="lvlDesc" class="sub"></p>
+</section>
+
+<section class="card">
+<h2>2. Seguí un archivo por la empresa</h2>
+<p>Un pedido nuevo entra por Ventas y tiene que llegar a Gerencia. Avanzá paso a paso y compará.</p>
+<div class="track" id="track"></div>
+<button class="go" id="go">Enviar el archivo</button>
+<button class="go" id="reset" style="background:var(--panel);color:var(--ink)">Reiniciar</button>
+<div id="log" aria-live="polite"></div>
+<div id="result"></div>
+</section>
+
+<section class="card">
+<details>
+<summary>Qué debería poder hacer quien termina esta inducción</summary>
+<ul>
+<li>Comprender qué es un sistema informático y cómo interviene en el trabajo cotidiano.</li>
+<li>Reconocer la relación entre personas, procesos, datos, software e infraestructura.</li>
+<li>Identificar qué problemas se resuelven con mejor organización y cuáles con tecnología.</li>
+<li>Entender las limitaciones de las herramientas actuales y qué pasa al elegirlas sin información.</li>
+<li>Participar mejor en las decisiones tecnológicas de la empresa.</li>
+<li>Relacionar la inversión con beneficios, costos, riesgos y resultados.</li>
+</ul>
+</details>
+</section>
+</main>
+<script>
+var DEPS=["Ventas","Administración","Soporte técnico","Gerencia"];
+var MANUAL=[
+"El pedido se registra en el sistema y queda disponible para todos.",
+"Administración lo consolida automáticamente.",
+"Soporte técnico resuelve cualquier problema en minutos.",
+"Gerencia ve un tablero en tiempo real y decide con datos."];
+var L=[
+{n:"0. Papel y memoria",d:"Los procesos viven en cuadernos y en la cabeza de personas clave.",
+s:[["Se anota en un cuaderno. Si Ramón falta, el pedido no existe.",4,10],["Se copia a mano a una planilla. La letra de Ramón es una fuente de error.",24,15],["No hay soporte: el sobrino del dueño “sabe de computadoras”.",48,10],["Gerencia decide por intuición y por lo que escuchó en el pasillo.",8,5]],
+t:"Acá el sistema son las personas. Dimensioná quién sabe qué y qué pasa cuando esa persona no está."},
+{n:"1. Archivos sueltos",d:"Hay computadoras, pero los datos viajan en planillas y chats.",
+s:[["Se envía Planilla_ventas_FINAL_v3(2).xlsx por WhatsApp.",2,10],["Administración abre otra copia “más actualizada”. Ya hay tres verdades.",12,20],["Soporte recibe: “no me abre el Excel”. Era una macro de 2014.",24,10],["Gerencia recibe una captura de pantalla como informe.",6,10]],
+t:"Los datos existen, pero viven en archivos. Preguntá: ¿cuál es la versión oficial, dónde se guarda y quién la respalda?"},
+{n:"2. Herramientas aisladas",d:"Hay software, pero cada herramienta es una isla.",
+s:[["Se carga en el sistema de facturación. Funciona, pero no habla con stock.",1,8],["Alguien exporta a Excel e importa en el otro sistema. Todos los viernes.",8,12],["Los tickets de soporte están en otro sistema, con contrato aparte.",12,8],["Gerencia pide un informe y tres personas lo arman a mano.",10,8]],
+t:"Cada isla tiene dueño. Dimensioná las integraciones manuales: son el costo oculto de la empresa."},
+{n:"3. Sistemas integrados",d:"El proceso vive en el sistema, no en la memoria de las personas.",
+s:[["Se registra una vez y el dato viaja a las demás áreas.",0.5,3],["El sistema frena lo que no cierra. Nadie lo quiere, pero evita errores.",2,3],["Mesa de ayuda con prioridades. Tarda, pero queda registro.",4,2],["Tablero con datos de ayer. Alguien discute qué es una “venta”.",2,3]],
+t:"Dimensioná qué pasa cuando el sistema cambia: capacitación, permisos, dependencia de un proveedor."},
+{n:"4. Datos que guían",d:"Los datos se usan para anticipar, medir y decidir.",
+s:[["Se registra y el sistema sugiere acciones según el histórico.",0.3,2],["Auditoría automática: solo las excepciones llegan a una persona.",1,2],["Los incidentes se anticipan y se mide su impacto en el negocio.",1,1],["Gerencia decide con datos y cuestiona su calidad. Costo: equipo y gobierno de datos.",1,2]],
+t:"Madurez no es más tecnología: es mejor criterio. Compará inversión con beneficio, costo, riesgo y resultado."}];
+var cur=0,step=0;
+var $=function(i){return document.getElementById(i)};
+function build(){
+ var b=$("levels");b.innerHTML="";
+ L.forEach(function(l,i){var x=document.createElement("button");x.textContent=l.n;x.setAttribute("aria-pressed",i===cur);x.onclick=function(){cur=i;reset();build()};b.appendChild(x)});
+ $("lvlDesc").textContent=L[cur].d;
+}
+function track(){
+ var t=$("track");t.innerHTML="";
+ DEPS.forEach(function(d,i){var e=document.createElement("div");e.className="dep"+(i===step&&step<4?" on":"")+(i<step?" done":"");e.textContent=(i<step?"✔ ":"")+d;t.appendChild(e)});
+}
+function reset(){step=0;$("log").innerHTML="";$("result").innerHTML="";$("go").disabled=false;track()}
+function esc(s){return s}
+$("go").onclick=function(){
+ if(step>=4)return;
+ var s=L[cur].s[step],d=document.createElement("div");d.className="step";
+ d.innerHTML='<div class="exp"><b>El manual dice · '+DEPS[step]+'</b><br>'+MANUAL[step]+'</div><div class="real"><b>La realidad</b><br>'+s[0]+'</div><div class="meta">Tiempo en este paso: '+s[1]+' h · Riesgo de error: '+s[2]+' %</div>';
+ $("log").appendChild(d);step++;track();
+ if(step===4){$("go").disabled=true;finish()}
+};
+$("reset").onclick=reset;
+function finish(){
+ var h=0,ok=1;L[cur].s.forEach(function(s){h+=s[1];ok*=1-s[2]/100});
+ var risk=Math.round((1-ok)*100),hs=Math.round(h*10)/10;
+ $("result").innerHTML='<div class="stats"><div class="stat"><strong>5 min</strong>lo que prometía el manual</div><div class="stat"><strong>'+hs+' h</strong>lo que tardó en la realidad</div><div class="stat"><strong>'+risk+' %</strong>probabilidad de que el dato llegue distorsionado</div></div><div class="lesson"><b>Para dimensionar:</b> '+L[cur].t+'</div>';
+}
+build();track();
+</script>
+</body>
+</html>
