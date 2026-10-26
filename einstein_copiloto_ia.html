@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>De la calculadora al copiloto: Einstein y la IA</title>
+<style>
+:root{--bg:#0d1520;--panel:#142030;--panel2:#1a2a3d;--line:#27405a;--tx:#e6eef7;--mut:#8ea3b8;--hum:#f2b84b;--ai:#5ad1e6;--ok:#7fd99a;--bad:#ff8a7a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
+background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:48px 48px;background-attachment:fixed}
+body::before{content:"";position:fixed;inset:0;background:rgba(13,21,32,.9);z-index:-1}
+main{max-width:1000px;margin:0 auto;padding:24px 16px 60px}
+h1,h2,h3{font-family:Georgia,"Iowan Old Style",serif;font-weight:600;margin:0 0 .4em}
+h1{font-size:clamp(1.6rem,4vw,2.3rem)}h2{font-size:1.35rem}h3{font-size:1.05rem}
+.eq{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--panel);border:1px solid var(--line);padding:10px 14px;border-radius:6px;display:inline-block;color:var(--ai);margin:6px 0}
+p{margin:.4em 0;max-width:72ch}.mut{color:var(--mut)}
+nav{display:flex;gap:6px;margin:22px 0 0;flex-wrap:wrap}
+nav button{flex:1;min-width:150px;padding:12px;background:var(--panel);color:var(--mut);border:1px solid var(--line);border-bottom:none;border-radius:8px 8px 0 0;font:inherit;cursor:pointer;text-align:left}
+nav button[aria-selected=true]{background:var(--panel2);color:var(--tx);box-shadow:inset 0 3px 0 var(--c)}
+nav button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ai);outline-offset:2px}
+.stage{display:none;background:var(--panel2);border:1px solid var(--line);border-radius:0 8px 8px 8px;padding:22px}
+.stage.on{display:block}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:720px){.row{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+button.b{background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:10px;font:inherit;cursor:pointer}
+button.b:hover{border-color:var(--mut)}
+button.go{background:var(--ai);color:#05222b;border:none;border-radius:6px;padding:10px 16px;font:600 1rem system-ui;cursor:pointer}
+button.go.h{background:var(--hum);color:#2b1c00}
+button:disabled{opacity:.4;cursor:not-allowed}
+input,select{background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:9px;font:inherit;font-family:ui-monospace,Menlo,monospace;width:100%}
+input[type=range]{padding:0;accent-color:var(--ai)}
+label{display:block;font-size:.9rem;color:var(--mut);margin:10px 0 4px}
+.disp{background:#050b12;border:1px solid var(--line);border-radius:6px;padding:12px;font:1.3rem ui-monospace,Menlo,monospace;text-align:right;word-break:break-all;min-height:56px;margin-bottom:8px}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.keys button{font-size:1.1rem}.keys .op{color:var(--hum)}
+.task{padding:10px 12px;border-left:3px solid var(--line);margin:8px 0;background:var(--bg);border-radius:0 6px 6px 0}
+.task.cur{border-color:var(--hum)}.task.done{border-color:var(--ok);opacity:.75}
+.msg{min-height:1.5em;font-size:.92rem;margin-top:6px}.ok{color:var(--ok)}.no{color:var(--bad)}
+.stat{display:flex;gap:18px;flex-wrap:wrap;font-size:.9rem;color:var(--mut);margin:8px 0}.stat b{color:var(--hum);font-family:ui-monospace,monospace}
+canvas{width:100%;height:auto;background:#050b12;border:1px solid var(--line);border-radius:6px;display:block}
+.card{background:var(--bg);border-left:3px solid var(--ai);padding:10px 12px;margin:8px 0;border-radius:0 6px 6px 0}
+.card .why{color:var(--mut);font-size:.92rem;margin-top:4px}.card .why b{color:var(--ai)}
+.note{border:1px dashed var(--hum);border-radius:8px;padding:10px 14px;color:#f7dca0;font-size:.92rem;margin-top:14px}
+.tag{font-size:.8rem;border-radius:99px;padding:2px 9px;background:var(--panel);border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{border:1px solid var(--line);padding:9px;text-align:left;vertical-align:top}
+th{background:var(--panel);font-weight:600}td.h{color:var(--hum)}td.a{color:var(--ai)}
+.bars div{display:grid;grid-template-columns:130px 1fr;align-items:center;gap:10px;margin:6px 0;font-size:.9rem}
+.bar{display:flex;height:22px;border-radius:4px;overflow:hidden;font-size:.75rem;color:#0d1520}
+.bar span{display:flex;align-items:center;justify-content:center}
+section.concl{margin-top:34px}
+@media(prefers-reduced-motion:no-preference){.card{animation:in .35s}@keyframes in{from{opacity:0;transform:translateX(-8px)}}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>De la calculadora al copiloto</h1>
+<p>Un mismo problema de Einstein, tres herramientas. Vas a calcular la curvatura del espacio-tiempo alrededor de un agujero negro y ver cuánto cambia tu rol en cada etapa.</p>
+<div class="eq">G<sub>μν</sub> = 8πG/c⁴ · T<sub>μν</sub> &nbsp;→&nbsp; (vacío) solución de Schwarzschild: r<sub>s</sub> = 2GM/c² · K = 12 r<sub>s</sub>² / r⁶</div>
+<p class="mut">Versión simplificada: <b>r<sub>s</sub></b> es el radio del horizonte y <b>K</b> (invariante de Kretschmann) mide cuánta curvatura hay a distancia <b>r</b>. Datos: G = 6,674×10⁻¹¹ · M = 1,989×10³⁰ kg (1 masa solar) · c = 2,998×10⁸ m/s.</p>
+</header>
+
+<nav role="tablist">
+<button role="tab" aria-selected="true" data-t="s1" style="--c:var(--hum)">Etapa 1 · Calculadora básica</button>
+<button role="tab" aria-selected="false" data-t="s2" style="--c:var(--hum)">Etapa 2 · Calculadora científica</button>
+<button role="tab" aria-selected="false" data-t="s3" style="--c:var(--ai)">Etapa 3 · Copiloto de IA</button>
+</nav>
+
+<!-- ETAPA 1 -->
+<div class="stage on" id="s1">
+<h2>Todo a mano, tecla por tecla</h2>
+<p>Esta calculadora solo suma, resta, multiplica y divide. Calcula el radio del horizonte en tres pasos. Tendrás que escribir cada número completo, sin notación científica.</p>
+<div class="row" style="margin-top:14px">
+<div class="box">
+<div class="disp" id="d1">0</div>
+<div class="keys" id="k1"></div>
+</div>
+<div>
+<div id="t1"></div>
+<label for="a1">Tu resultado del paso actual (puedes usar 1.5e20)</label>
+<div style="display:flex;gap:8px"><input id="a1" inputmode="decimal"><button class="go h" id="v1">Verificar</button></div>
+<div class="msg" id="m1"></div>
+<div class="stat">Pulsaciones: <b id="kc">0</b> Tiempo: <b id="kt">0 s</b></div>
+</div>
+</div>
+<div class="note" id="n1" hidden>Ya tienes r<sub>s</sub>. Para obtener la curvatura K a una distancia dada aún te faltan potencias, cuadrados y una división enorme. Y si quieres otra masa, empiezas de cero.</div>
+</div>
+
+<!-- ETAPA 2 -->
+<div class="stage" id="s2">
+<h2>Más rápido, pero el planteamiento es tuyo</h2>
+<p>Ahora escribes fórmulas completas con constantes y funciones. La máquina calcula; tú decides qué fórmula usar y cómo despejar. Usa <code>^</code> para potencias. Variables: <code>G, M, c, pi, r</code> (r = 10 000 m) y <code>rs</code> cuando lo hayas calculado.</p>
+<div class="row" style="margin-top:14px">
+<div id="t2"></div>
+<div class="box">
+<label for="e2">Tu expresión</label>
+<input id="e2" placeholder="ej. 2*G*M/c^2" autocomplete="off">
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">
+<button class="b" data-i="G">G</button><button class="b" data-i="M">M</button><button class="b" data-i="c">c</button><button class="b" data-i="pi">π</button><button class="b" data-i="r">r</button><button class="b" data-i="rs">rs</button>
+<button class="b" data-i="sqrt(">√</button><button class="b" data-i="^">^</button><button class="b" data-i="ln(">ln</button><button class="b" data-i="log10(">log</button>
+</div>
+<button class="go h" id="v2">Evaluar</button>
+<div class="msg" id="m2"></div>
+<div class="stat">Expresiones escritas: <b id="ec">0</b> Errores: <b id="er">0</b></div>
+</div>
+</div>
+<div class="note">Observa la tarea 4: nadie te dice cómo invertir K(r). Ahí el cuello de botella ya no son las cuentas, es el razonamiento algebraico.</div>
+</div>
+
+<!-- ETAPA 3 -->
+<div class="stage" id="s3">
+<h2>Copiloto de IA: explora contigo, explica cada paso</h2>
+<div class="box"><b>Objetivo físico:</b> encontrar a qué distancia r del agujero negro la curvatura cae a 10<sup>−p</sup> veces la que hay en el horizonte.</div>
+<div class="row" style="margin-top:14px">
+<div>
+<label for="M3">Masa del agujero negro: <b id="M3v">10</b> masas solares</label>
+<input type="range" id="M3" min="1" max="50" value="10">
+<label for="p3">Umbral: p = <b id="p3v">6</b></label>
+<input type="range" id="p3" min="1" max="11" step="0.5" value="6">
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+<button class="go" id="next">Siguiente paso</button>
+<button class="b" id="auto">Ejecutar todo</button>
+<button class="b" id="rst">Reiniciar</button>
+</div>
+<div id="log" style="margin-top:10px" aria-live="polite"></div>
+</div>
+<div>
+<canvas id="cv" width="520" height="340" aria-label="Gráfico log-log de la curvatura frente a la distancia"></canvas>
+<p class="mut" style="font-size:.85rem">Eje x: log₁₀(r / r<sub>s</sub>). Eje y: log₁₀(K / K<sub>horizonte</sub>). Puntos azules: pruebas de la IA. Línea ámbar: patrón ajustado. Verde: respuesta propuesta.</p>
+</div>
+</div>
+<div class="note"><b>Tu rol:</b> definir el objetivo, juzgar si el razonamiento tiene sentido y validar el resultado. La IA propone y explica; no decide por ti. Recuerda además que este modelo es una simplificación (sin rotación ni materia).</div>
+</div>
+
+<!-- CONCLUSION -->
+<section class="concl">
+<h2>Conclusión: humanos e IA usan las mismas estrategias</h2>
+<div style="overflow-x:auto"><table>
+<tr><th>Estrategia</th><th>Cómo lo hace una persona</th><th>Cómo lo hace la IA</th><th>Dónde se complementan</th></tr>
+<tr><td>Prueba y error</td><td class="h">Ensaya valores de r, mira si K sube o baja y ajusta con intuición.</td><td class="a">Muestrea cientos de puntos en segundos sin cansarse.</td><td>La IA explora más amplio; la persona decide qué rango tiene sentido físico.</td></tr>
+<tr><td>Reconocimiento de patrones</td><td class="h">Nota que la curva cae muy rápido y sospecha una ley de potencias.</td><td class="a">Ajusta la pendiente (−6) a partir de los datos.</td><td>La persona reconoce por qué es −6; la IA lo mide con precisión.</td></tr>
+<tr><td>Optimización</td><td class="h">Despeja r con álgebra cuando conoce la fórmula.</td><td class="a">Resuelve numéricamente aunque no haya fórmula limpia.</td><td>Con fórmula, ambos coinciden; sin ella, la IA abre camino y la persona verifica.</td></tr>
+</table></div>
+<div class="box bars" style="margin-top:16px">
+<h3>Quién hace qué en cada etapa</h3>
+<div><span>Calculadora</span><div class="bar"><span style="width:34%;background:var(--hum)">plantea</span><span style="width:33%;background:var(--hum)">calcula</span><span style="width:33%;background:var(--hum)">valida</span></div></div>
+<div><span>Científica</span><div class="bar"><span style="width:45%;background:var(--hum)">plantea</span><span style="width:20%;background:var(--mut)">máquina</span><span style="width:35%;background:var(--hum)">valida</span></div></div>
+<div><span>Copiloto de IA</span><div class="bar"><span style="width:30%;background:var(--hum)">objetivo</span><span style="width:40%;background:var(--ai)">explora + explica</span><span style="width:30%;background:var(--hum)">valida</span></div></div>
+<p class="mut" style="font-size:.88rem">Barras ilustrativas: el trabajo mecánico se traslada a la máquina, pero el criterio y la validación siguen siendo humanos.</p>
+<p id="sum" class="mut"></p>
+</div>
+</section>
+</main>
+
+<script>
+const G=6.674e-11,MS=1.989e30,C=2.998e8;
+const $=s=>document.querySelector(s);
+const fmt=n=>(!isFinite(n)?'Error':(Math.abs(n)>=1e9||(n!==0&&Math.abs(n)<1e-4))?n.toExponential(4):String(+n.toPrecision(9)));
+const near=(a,b)=>isFinite(a)&&Math.abs(a-b)/Math.abs(b)<0.01;
+const stats={k:0,e:0,s:0};
+
+/* Pestañas */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
+ document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('on',s.id===b.dataset.t));
+});
+function summary(){$('#sum').textContent=`Tu sesión: ${stats.k} pulsaciones en la etapa 1, ${stats.e} expresiones en la etapa 2 y ${stats.s} pasos guiados en la etapa 3.`}
+
+/* ETAPA 1 */
+const T1=[
+ {t:'Paso 1. Calcula 2 × G × M, con G = 0.00000000006674 y M = 1989000000000000000000000000000.',v:2*G*MS},
+ {t:'Paso 2. Calcula c², con c = 299800000.',v:C*C},
+ {t:'Paso 3. Divide el resultado del paso 1 entre el del paso 2. Eso es rs en metros.',v:2*G*MS/(C*C)}];
+let c1,i1=0,t0=null;
+function r1(){c1={cur:'0',acc:null,op:null,fresh:true};$('#d1').textContent='0'}
+r1();
+const kl=['7','8','9','/','4','5','6','*','1','2','3','-','0','.','C','+','='];
+const kn={'/':'÷','*':'×','-':'−'};
+kl.forEach(k=>{const b=document.createElement('button');b.className='b'+('/*-+='.includes(k)?' op':'');b.textContent=kn[k]||k;b.onclick=()=>press(k);if(k==='=')b.style.gridColumn='span 4';$('#k1').appendChild(b)});
+function press(k){
+ stats.k++;$('#kc').textContent=stats.k;if(!t0){t0=Date.now();setInterval(()=>$('#kt').textContent=Math.round((Date.now()-t0)/1000)+' s',1000)}
+ if(/[\d.]/.test(k)){
+  if(c1.fresh){c1.cur=k==='.'?'0.':k;c1.fresh=false}
+  else if(!(k==='.'&&c1.cur.includes('.'))&&c1.cur.length<40)c1.cur=(c1.cur==='0'&&k!=='.')?k:c1.cur+k;
+  $('#d1').textContent=c1.cur;
+ }else if(k==='C'){r1()}
+ else{
+  const v=parseFloat(c1.cur);
+  if(c1.op&&!c1.fresh){c1.acc={'+':c1.acc+v,'-':c1.acc-v,'*':c1.acc*v,'/':c1.acc/v}[c1.op]}
+  else if(!c1.op)c1.acc=v;
+  c1.op=k==='='?null:k;c1.cur=String(c1.acc);c1.fresh=true;$('#d1').textContent=fmt(c1.acc);
+ }
+ summary();
+}
+function show1(){
+ $('#t1').innerHTML=T1.map((x,i)=>`<div class="task ${i<i1?'done':i===i1?'cur':''}">${x.t}</div>`).join('');
+ $('#n1').hidden=i1<3;
+}
+$('#v1').onclick=()=>{
+ if(i1>=3)return;const x=parseFloat($('#a1').value.replace(',','.'));
+ if(near(x,T1[i1].v)){i1++;$('#m1').className='msg ok';$('#m1').textContent='Correcto. '+(i1<3?'Sigue con el siguiente paso.':'rs ≈ '+fmt(T1[2].v)+' m.');$('#a1').value='';show1()}
+ else{$('#m1').className='msg no';$('#m1').textContent='No coincide. Revisa los ceros de tu número o la operación.'}
+};
+show1();
+
+/* ETAPA 2 */
+const R=10000,RS=2*G*MS/(C*C);
+const T2=[
+ {t:'Tarea 1. Calcula rs = 2GM/c² en metros.',v:RS},
+ {t:'Tarea 2. Calcula el factor de dilatación temporal √(1 − rs/r) a r = 10 000 m.',v:Math.sqrt(1-RS/R)},
+ {t:'Tarea 3. Calcula K = 12·rs²/r⁶ a r = 10 000 m (en m⁻⁴).',v:12*RS*RS/Math.pow(R,6)},
+ {t:'Tarea 4. ¿A qué distancia r (m) vale K = 1e-20 m⁻⁴? Tienes que despejar r tú mismo.',v:Math.pow(12*RS*RS/1e-20,1/6)}];
+let i2=0,sc={G,M:MS,c:C,pi:Math.PI,r:R};
+const fn={sqrt:Math.sqrt,ln:Math.log,log10:Math.log10,exp:Math.exp,abs:Math.abs};
+function show2(){$('#t2').innerHTML=T2.map((x,i)=>`<div class="task ${i<i2?'done':i===i2?'cur':''}">${x.t}</div>`).join('')+(i2>=4?'<div class="note">Completaste la etapa 2. Pasa al copiloto.</div>':'')}
+function ev(s){
+ s=s.replace(/\^/g,'**').replace(/,/g,'.');
+ const ids=s.replace(/\d+\.?\d*(e[+-]?\d+)?/gi,'').match(/[A-Za-z_]+/g)||[];
+ const ok=Object.keys(sc).concat(Object.keys(fn));
+ if(!/^[\d\s+\-*/().eE\w]*$/.test(s)||ids.some(i=>!ok.includes(i)))throw new Error('Símbolo no permitido o variable no definida');
+ const names=Object.keys(sc).concat(Object.keys(fn));
+ return new Function(...names,'return '+s)(...Object.keys(sc).map(k=>sc[k]),...Object.keys(fn).map(k=>fn[k]));
+}
+document.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const e=$('#e2');e.value+=b.dataset.i;e.focus()});
+$('#e2').addEventListener('keydown',e=>{if(e.key==='Enter')$('#v2').click()});
+$('#v2').onclick=()=>{
+ if(i2>=4)return;const m=$('#m2');stats.e++;$('#ec').textContent=stats.e;
+ try{const x=ev($('#e2').value);
+  if(near(x,T2[i2].v)){m.className='msg ok';m.textContent='= '+fmt(x)+' Correcto.';if(i2===0)sc.rs=T2[0].v;i2++;$('#e2').value='';show2()}
+  else{m.className='msg no';m.textContent='= '+fmt(x)+' No coincide con lo esperado. Revisa la fórmula.';$('#er').textContent=++window.er2||(window.er2=1)}
+ }catch(err){m.className='msg no';m.textContent=err.message;$('#er').textContent=++window.er2||(window.er2=1)}
+ summary();
+};
+show2();
+
+/* ETAPA 3 */
+const cv=$('#cv'),cx=cv.getContext('2d');
+let st,pts,fit,cand,fin;
+function reset3(){st=0;pts=[];fit=null;cand=null;fin=null;$('#log').innerHTML='';$('#next').disabled=false;$('#auto').disabled=false;draw()}
+const P=()=>+$('#p3').value,Mx=()=>+$('#M3').value;
+$('#M3').oninput=()=>{$('#M3v').textContent=Mx();reset3()};
+$('#p3').oninput=()=>{$('#p3v').textContent=P();reset3()};
+const logK=x=>Math.log10(12)-6*Math.log10(x)-Math.log10(12); // log10(K/Kh)=-6 log10 x
+function draw(){
+ const W=cv.width,H=cv.height,L=50,B=30,T=14,Rr=14,pw=W-L-Rr,ph=H-B-T;
+ const X=v=>L+v/2*pw,Y=v=>T+(-v/13)*ph;
+ cx.clearRect(0,0,W,H);cx.font='11px system-ui';cx.fillStyle='#8ea3b8';cx.strokeStyle='#1b2e44';cx.lineWidth=1;
+ for(let i=0;i<=2;i+=.5){cx.beginPath();cx.moveTo(X(i),T);cx.lineTo(X(i),T+ph);cx.stroke();cx.fillText(i,X(i)-4,H-12)}
+ for(let j=0;j>=-12;j-=2){cx.beginPath();cx.moveTo(L,Y(j));cx.lineTo(L+pw,Y(j));cx.stroke();cx.fillText(j,10,Y(j)+4)}
+ cx.strokeStyle='#4a6580';cx.lineWidth=2;cx.beginPath();cx.moveTo(X(0),Y(0));cx.lineTo(X(2),Y(-12));cx.stroke();
+ cx.setLineDash([5,4]);cx.strokeStyle='#ff8a7a';cx.lineWidth=1;cx.beginPath();cx.moveTo(L,Y(-P()));cx.lineTo(L+pw,Y(-P()));cx.stroke();cx.setLineDash([]);
+ cx.fillStyle='#ff8a7a';cx.fillText('umbral',L+pw-40,Y(-P())-5);
+ if(fit){cx.strokeStyle='#f2b84b';cx.setLineDash([6,4]);cx.lineWidth=2;cx.beginPath();cx.moveTo(X(0),Y(fit.a));cx.lineTo(X(2),Y(fit.a+fit.b*2));cx.stroke();cx.setLineDash([])}
+ pts.forEach(p=>{cx.fillStyle='#5ad1e6';cx.beginPath();cx.arc(X(p.lx),Y(p.ly),5,0,7);cx.fill()});
+ if(cand!=null){cx.fillStyle='#7fd99a';cx.beginPath();cx.arc(X(cand),Y(-P()),7,0,7);cx.fill()}
+}
+const add=(t,why)=>{const d=document.createElement('div');d.className='card';d.innerHTML=`<b>${t}</b><div class="why"><b>Por qué:</b> ${why}</div>`;$('#log').prepend(d)};
+function step(){
+ const rs=2*G*Mx()*MS/(C*C),Kh=12/Math.pow(rs,4),p=P();
+ if(st===0){
+  add(`Identifico la métrica: Schwarzschild con rs = ${fmt(rs)} m`,`En el vacío y con simetría esférica, las ecuaciones de Einstein tienen esta solución (teorema de Birkhoff). Así sé qué modelo usar y que K en el horizonte vale ${fmt(Kh)} m⁻⁴.`);
+ }else if(st===1){
+  [1.3,2.5,6,20,60].forEach((x,i)=>{const n=1+0.004*Math.sin(i*7.3+1);const k=12*rs*rs/Math.pow(x*rs,6)*n;pts.push({lx:Math.log10(x),ly:Math.log10(k/Kh)})});
+  add('Prueba y error: mido K en 5 distancias distintas','Todavía no asumo la forma de la curva; la muestreo en zonas cercanas y lejanas. Cada punto lleva un pequeño ruido numérico, como en una simulación real.');
+ }else if(st===2){
+  const n=pts.length,sx=pts.reduce((s,p)=>s+p.lx,0),sy=pts.reduce((s,p)=>s+p.ly,0),sxx=pts.reduce((s,p)=>s+p.lx*p.lx,0),sxy=pts.reduce((s,p)=>s+p.lx*p.ly,0);
+  const b=(n*sxy-sx*sy)/(n*sxx-sx*sx),a=(sy-b*sx)/n;fit={a,b};
+  add(`Reconocimiento de patrones: los puntos siguen una recta con pendiente ${b.toFixed(2)}`,`En escala log-log una recta indica una ley de potencias K ∝ r^${b.toFixed(1)}. Tú puedes comprobar que coincide con el r⁻⁶ de la fórmula 12·rs²/r⁶.`);
+ }else if(st===3){
+  cand=(-p-fit.a)/fit.b;
+  add(`Optimización: con ese patrón despejo r = ${Math.pow(10,cand).toFixed(2)} · rs`,`Si log K = a + b·log x y quiero log K = −${p}, basta resolver para x. Es un paso directo, no una búsqueda a ciegas.`);
+ }else if(st===4){
+  const x=Math.pow(10,cand),K=12*rs*rs/Math.pow(x*rs,6),err=Math.abs(K/Kh-Math.pow(10,-p))/Math.pow(10,-p)*100;
+  const exact=Math.pow(10,p/6);
+  fin=x;add(`Verificación: r ≈ ${(x*rs/1000).toFixed(2)} km (${x.toFixed(2)} rs), error en K de ${err.toFixed(2)} %`,`Una IA puede equivocarse, así que contrasto con la fórmula exacta: r = (12·rs²/K)^(1/6) = ${(exact*rs/1000).toFixed(2)} km. Te toca a ti decidir si ese margen es aceptable.`);
+  $('#next').disabled=true;$('#auto').disabled=true;
+ }
+ st++;stats.s=Math.max(stats.s,st);draw();summary();
+}
+$('#next').onclick=step;
+$('#auto').onclick=()=>{$('#auto').disabled=true;const t=setInterval(()=>{if(st>=5){clearInterval(t);return}step()},700)};
+$('#rst').onclick=reset3;
+reset3();summary();
+</script>
+</body>
+</html>
