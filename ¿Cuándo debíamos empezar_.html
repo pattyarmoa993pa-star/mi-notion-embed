@@ -1,0 +1,399 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>¿Cuándo debíamos empezar?</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: hoja de trabajo en tres pasos (notas en bruto, clasificación, tablero de procesos) y un cierre corto. */
+:root {
+  --bg: #EDF0EE;
+  --surface: #F8FAF9;
+  --ink: #17211E;
+  --muted: #5B6A65;
+  --line: #CBD5D0;
+  --accent: #0E6B62;
+  --accent-ink: #FFFFFF;
+  --accent-bg: #D5EBE7;
+  --warn: #9A4A06;
+  --warn-bg: #FBEBD3;
+  --warn-bar: #D98324;
+  --stop: #A8281F;
+  --stop-bg: #F8DAD6;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101715; --surface: #18211E; --ink: #E6EEEB; --muted: #93A59F; --line: #2D3B36;
+    --accent: #4FC3B6; --accent-ink: #06211D; --accent-bg: #12332F;
+    --warn: #F0A85A; --warn-bg: #3A2A12; --warn-bar: #D98324;
+    --stop: #F28B82; --stop-bg: #3B1B18;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101715; --surface: #18211E; --ink: #E6EEEB; --muted: #93A59F; --line: #2D3B36;
+  --accent: #4FC3B6; --accent-ink: #06211D; --accent-bg: #12332F;
+  --warn: #F0A85A; --warn-bg: #3A2A12; --warn-bar: #D98324;
+  --stop: #F28B82; --stop-bg: #3B1B18;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.55 var(--font-body);
+  padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
+.wrap > * { min-width: 0; }
+
+.eyebrow { font: 500 11.5px/1 var(--font-mono); letter-spacing: .09em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 700 clamp(2rem, 5.5vw, 3.2rem)/1.04 var(--font-display); letter-spacing: -.02em; margin: 10px 0 14px; text-wrap: balance; }
+h2 { font: 600 clamp(1.3rem, 3vw, 1.65rem)/1.15 var(--font-display); letter-spacing: -.01em; margin: 0; text-wrap: balance; }
+h3 { font: 600 1.05rem/1.2 var(--font-display); margin: 0; }
+p { margin: 0; }
+.lede { max-width: 62ch; font-size: 1.05rem; color: var(--ink); }
+.note { color: var(--muted); font-size: 13px; }
+
+.step-h { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.step-h .lbl { font: 500 11.5px/1 var(--font-mono); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); }
+.step-h p { color: var(--muted); max-width: 62ch; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; }
+.field-l { display: block; font-weight: 600; margin-bottom: 8px; }
+textarea {
+  display: block; width: 100%; min-height: 15.5rem; resize: vertical;
+  font: 400 13px/1.7 var(--font-mono); color: var(--ink);
+  background-color: var(--surface);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.7em - 1px), var(--line) calc(1.7em - 1px), var(--line) 1.7em);
+  background-attachment: local; background-position: 0 8px;
+  border: 1px solid var(--line); border-radius: 4px; padding: 8px 12px 8px;
+}
+input[type="text"] {
+  font: 400 14px/1.2 var(--font-body); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 4px; padding: 9px 10px; min-width: 0; width: 12rem; max-width: 100%;
+}
+textarea:focus-visible, input:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ctrl { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; justify-content: space-between; margin-top: 14px; }
+.ctrl .grp { display: flex; flex-wrap: wrap; gap: 8px; }
+.ctrl label.small { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.btn { font: 600 14px/1 var(--font-body); min-height: 40px; padding: 0 16px; border-radius: 4px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn:hover { filter: brightness(1.06); }
+
+details { margin-top: 14px; font-size: 13.5px; color: var(--muted); }
+summary { cursor: pointer; font-weight: 500; color: var(--ink); width: fit-content; }
+details ul { margin: 8px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+
+.rows { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.row { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 8px 12px; padding: 12px 14px; border-top: 1px solid var(--line); animation: slide .35s ease both; }
+.row:first-child { border-top: 0; }
+.row .n { font: 500 12px/1.9 var(--font-mono); color: var(--muted); }
+.row .t { min-width: 0; overflow-wrap: anywhere; }
+.row .chips { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; }
+@media (min-width: 780px) {
+  .row { grid-template-columns: 2rem minmax(0, 1fr) minmax(250px, auto); }
+  .row .chips { grid-column: 3; justify-content: flex-end; align-items: flex-start; }
+}
+.chip { font: 500 11.5px/1 var(--font-mono); padding: 5px 8px; border-radius: 3px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); white-space: nowrap; }
+.chip.area { background: var(--accent-bg); border-color: transparent; color: var(--accent); }
+.chip.warn { background: var(--warn-bg); border-color: transparent; color: var(--warn); }
+.chip.none { border-style: dashed; color: var(--muted); background: transparent; }
+
+.board-bar { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; }
+.switch input { appearance: none; -webkit-appearance: none; width: 44px; height: 24px; border-radius: 12px; background: var(--line); position: relative; margin: 0; cursor: pointer; flex: none; transition: background .2s; }
+.switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--surface); transition: transform .2s; }
+.switch input:checked { background: var(--stop); }
+.switch input:checked::after { transform: translateX(20px); }
+.switch input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.meter-box { flex: 1 1 280px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.meter { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; }
+.meter > i { display: block; height: 100%; width: 0; background: var(--warn-bar); transition: width .4s ease, background .3s; }
+.meter.away > i { background: var(--stop); }
+.meter-txt { font-weight: 500; }
+.meter-txt.away { color: var(--stop); }
+
+.areas { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); gap: 16px; align-items: start; }
+.area { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; min-width: 0; overflow: hidden; }
+.area-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.area.orphan { border: 1.5px dashed var(--muted); background: transparent; }
+ol.steps { list-style: none; margin: 0; padding: 0; }
+li.step { padding: 10px 14px 10px 14px; border-top: 1px solid var(--line); border-left: 3px solid transparent; display: flex; flex-direction: column; gap: 5px; }
+li.step:first-child { border-top: 0; }
+li.step .kind { font: 500 10.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+li.step .txt { overflow-wrap: anywhere; }
+li.step.dep { border-left-color: var(--warn-bar); }
+li.step.stopped { background: var(--stop-bg); border-left-color: var(--stop); }
+.tag { font: 500 10.5px/1 var(--font-mono); letter-spacing: .02em; text-transform: none; padding: 3px 6px; border-radius: 3px; }
+.tag.warn { background: var(--warn-bg); color: var(--warn); }
+.tag.stop { background: var(--stop); color: var(--surface); }
+.badge { font: 500 11.5px/1 var(--font-mono); color: var(--muted); }
+.badge.warn { color: var(--warn); }
+.badge.stop { color: var(--stop); font-weight: 600; }
+.orphan-note { padding: 10px 14px 14px; color: var(--muted); font-size: 13.5px; }
+.empty { padding: 20px; color: var(--muted); border: 1px dashed var(--line); border-radius: 6px; }
+
+.close { border-top: 1px solid var(--line); padding-top: 28px; display: flex; flex-direction: column; gap: 18px; }
+.close ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 16px; }
+.close li { display: flex; flex-direction: column; gap: 6px; }
+.close li b { font: 500 12px/1 var(--font-mono); color: var(--accent); }
+.close .final { font: 600 1.15rem/1.3 var(--font-display); max-width: 48ch; text-wrap: balance; }
+
+@keyframes slide { from { transform: translateY(6px); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .row { animation: none; } .meter > i, .switch input, .switch input::after { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Simulación didáctica · empresa de ejemplo</div>
+    <h1>¿Cuándo debíamos empezar?</h1>
+    <p class="lede">La ferretería de Don Aníbal pasó de 3 a 14 personas. Todo anda mientras él está en el local. Esta demo toma lo que la gente cuenta, lo ordena y muestra qué se detiene cuando él no está.</p>
+  </header>
+
+  <section aria-labelledby="h1s">
+    <div class="step-h">
+      <span class="lbl">Paso 1</span>
+      <h2 id="h1s">Lo que cuenta la gente, tal cual</h2>
+      <p>Una línea por cosa que pasa en el local. Sin orden y sin corregir. Podés editar el texto o cambiar el nombre del dueño.</p>
+    </div>
+    <div class="panel">
+      <label class="field-l" for="raw">Información en bruto</label>
+      <textarea id="raw" spellcheck="false">Cuando llega un pedido grande, Rosa le llama a Don Aníbal para ver si se da descuento.
+El camión sale a las 7, pero a veces espera si Don Aníbal no firmó la orden.
+Pedro cobra en caja y anota en un cuaderno lo que fía.
+Los fiados los autoriza solo Don Aníbal.
+Si falta mercadería, Rosa pregunta a Don Aníbal a quién comprar.
+A fin de mes Marta junta los recibos y los lleva al contador.
+Los reclamos de clientes los atiende Don Aníbal porque «sabe cómo arreglarlo».
+Pedro cierra la caja a las 18:00 y cuenta el efectivo.
+Todos saben cómo se hace lo de los cheques.</textarea>
+      <div class="ctrl">
+        <label class="small" for="owner">Nombre del dueño
+          <input type="text" id="owner" value="Don Aníbal" autocomplete="off">
+        </label>
+        <div class="grp">
+          <button type="button" class="btn ghost" id="reset">Volver al ejemplo</button>
+          <button type="button" class="btn" id="go">Ordenar</button>
+        </div>
+      </div>
+      <details>
+        <summary>Cómo decide el script</summary>
+        <ul>
+          <li>Busca palabras que delatan el área: caja, camión, proveedor, contador.</li>
+          <li>Distingue lo que se hace, lo que se anota y lo que se decide.</li>
+          <li>Marca como dependiente todo paso donde el dueño decide, firma, autoriza o resuelve.</li>
+          <li>Lo que no encaja en ningún área queda aparte. El script no inventa nada.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="h2s">
+    <div class="step-h">
+      <span class="lbl">Paso 2</span>
+      <h2 id="h2s">El script clasifica cada línea</h2>
+      <p>Cada línea recibe un área, un tipo de paso y quién interviene.</p>
+    </div>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <section aria-labelledby="h3s">
+    <div class="step-h">
+      <span class="lbl">Paso 3</span>
+      <h2 id="h3s">El proceso queda a la vista</h2>
+      <p>Los pasos con borde naranja esperan una decisión del dueño. Activá el interruptor para ver qué pasa si no está.</p>
+    </div>
+    <div class="board-bar">
+      <label class="switch"><input type="checkbox" id="away"><span id="awayLbl">¿Y si Don Aníbal no está hoy?</span></label>
+      <div class="meter-box" role="status" aria-live="polite">
+        <div class="meter" id="meter"><i id="meterFill"></i></div>
+        <div class="meter-txt" id="meterTxt"></div>
+      </div>
+    </div>
+    <div class="areas" id="areas"></div>
+  </section>
+
+  <section class="close" aria-labelledby="h4s">
+    <h2 id="h4s">Antes de automatizar</h2>
+    <ol>
+      <li><b>1</b><span>Contar cómo se hace hoy, sin corregir nada.</span></li>
+      <li><b>2</b><span>Ordenar quién hace y quién decide en cada paso.</span></li>
+      <li><b>3</b><span>Recién entonces elegir qué automatizar. Lo que nadie describió no se puede automatizar.</span></li>
+    </ol>
+    <p class="final">Automatizar un proceso que nadie entiende solo hace que falle más rápido.</p>
+    <p class="note">Empresa y personas inventadas para la demostración. El script usa reglas simples y sirve para mostrar el principio.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  var AREAS = [
+    { id: "ventas", name: "Ventas", re: /pedido|cliente|descuento|vend|presupuesto|precio|reclamo/ },
+    { id: "despacho", name: "Despacho", re: /camion|entrega|despach|reparto/ },
+    { id: "cobros", name: "Cobros", re: /cobra|caja|\bfia|fiad|pago|efectivo/ },
+    { id: "compras", name: "Compras", re: /falta|compra|proveedor|mercaderia|stock/ },
+    { id: "admin", name: "Administración", re: /contador|recibo|fin de mes|factura|impuesto/ }
+  ];
+  var DEC = /autoriza|decide|aprueba|aprobar|firm|para ver si|pregunta|se da\b|da descuento|permiso/;
+  var REG = /anota|cuaderno|registra|planilla|libreta/;
+  var OWN_ACT = /atiende|resuelve|se encarga|solo\b|siempre/;
+  var STOP_WORDS = ["Cuando", "Si", "El", "La", "Los", "Las", "Todos", "Un", "Una", "Al", "En", "Hay", "Por", "Para", "Cada", "Don", "Doña", "Dona"];
+  var KIND = { hace: "Hace", anota: "Anota", decide: "Decide" };
+
+  var $ = function (s) { return document.querySelector(s); };
+  var norm = function (s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); };
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  var ta = $("#raw"), ownerIn = $("#owner"), away = $("#away");
+  var SAMPLE_TEXT = ta.value, SAMPLE_OWNER = ownerIn.value;
+  var state = { items: [], owner: "el dueño" };
+
+  function ownerInfo(name) {
+    var full = norm(name.trim());
+    var toks = full.split(/\s+/).filter(function (t) { return t.length > 2 && t !== "don" && t !== "dona"; });
+    return { full: full, toks: toks };
+  }
+  function mentionsOwner(n, o) {
+    if (/\b(dueno|jefe|patron)\b/.test(n)) return true;
+    if (o.full && n.indexOf(o.full) !== -1) return true;
+    return o.toks.some(function (t) { return n.indexOf(t) !== -1; });
+  }
+  function otherName(line, o) {
+    var m = line.match(/[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+/g) || [];
+    for (var i = 0; i < m.length; i++) {
+      var w = m[i];
+      if (STOP_WORDS.indexOf(w) !== -1) continue;
+      if (o.toks.indexOf(norm(w)) !== -1) continue;
+      return w;
+    }
+    return "";
+  }
+  function parseLines(txt) {
+    return txt.split(/\n/).map(function (s) { return s.replace(/^\s*(?:[-•*]|\d+[.)])\s*/, "").trim(); }).filter(Boolean);
+  }
+  function analyze(lines, ownerName) {
+    var o = ownerInfo(ownerName);
+    return lines.map(function (line) {
+      var n = norm(line);
+      var area = AREAS.filter(function (a) { return a.re.test(n); })[0] || null;
+      var kind = DEC.test(n) ? "decide" : (REG.test(n) ? "anota" : "hace");
+      var own = mentionsOwner(n, o);
+      var dep = own && (kind === "decide" || OWN_ACT.test(n));
+      return { text: line, area: area, kind: kind, dep: dep, other: otherName(line, o) };
+    });
+  }
+  function who(it, owner) {
+    if (it.dep) return it.other ? it.other + " → " + owner : owner;
+    return it.other || "Sin nombre";
+  }
+
+  function renderRows() {
+    var box = $("#rows");
+    box.textContent = "";
+    if (!state.items.length) { box.appendChild(el("div", "empty", "Escribí al menos una línea en el paso 1 y tocá Ordenar.")); return; }
+    state.items.forEach(function (it, i) {
+      var row = el("div", "row");
+      row.style.animationDelay = (i * 45) + "ms";
+      row.appendChild(el("span", "n", String(i + 1).padStart(2, "0")));
+      row.appendChild(el("div", "t", it.text));
+      var chips = el("div", "chips");
+      chips.appendChild(el("span", it.area ? "chip area" : "chip none", it.area ? it.area.name : "Sin clasificar"));
+      chips.appendChild(el("span", "chip", KIND[it.kind]));
+      chips.appendChild(el("span", it.dep ? "chip warn" : "chip", who(it, state.owner)));
+      row.appendChild(chips);
+      box.appendChild(row);
+    });
+  }
+
+  function stepEl(it, isAway) {
+    var stopped = isAway && it.dep;
+    var li = el("li", "step" + (it.dep ? " dep" : "") + (stopped ? " stopped" : ""));
+    var k = el("div", "kind");
+    k.appendChild(el("span", "", KIND[it.kind] + " · " + (it.dep && it.other ? it.other : (it.dep ? state.owner : (it.other || "Sin nombre")))));
+    if (stopped) k.appendChild(el("span", "tag stop", "Detenido: espera a " + state.owner));
+    else if (it.dep) k.appendChild(el("span", "tag warn", "Depende de " + state.owner));
+    li.appendChild(k);
+    li.appendChild(el("div", "txt", it.text));
+    return li;
+  }
+
+  function renderBoard() {
+    var isAway = away.checked;
+    var total = state.items.length;
+    var dep = state.items.filter(function (i) { return i.dep; }).length;
+    var pct = total ? Math.round(dep / total * 100) : 0;
+    $("#meterFill").style.width = pct + "%";
+    $("#meter").classList.toggle("away", isAway);
+    var txt = $("#meterTxt");
+    txt.classList.toggle("away", isAway);
+    txt.textContent = !total ? "Sin pasos para mostrar." :
+      (isAway ? "Si " + state.owner + " no está hoy, " + dep + " de " + total + " pasos quedan detenidos."
+              : dep + " de " + total + " pasos dependen de " + state.owner + ".");
+    $("#awayLbl").textContent = "¿Y si " + state.owner + " no está hoy?";
+
+    var box = $("#areas");
+    box.textContent = "";
+    if (!total) { box.appendChild(el("div", "empty", "Todavía no hay proceso para mostrar.")); return; }
+    AREAS.forEach(function (a) {
+      var steps = state.items.filter(function (i) { return i.area === a; });
+      if (!steps.length) return;
+      var d = steps.filter(function (i) { return i.dep; }).length;
+      var card = el("div", "area");
+      var h = el("div", "area-h");
+      h.appendChild(el("h3", "", a.name));
+      var b = d === 0 ? el("span", "badge", "Sin dependencia")
+        : isAway ? el("span", "badge stop", d + " de " + steps.length + " detenidos")
+        : el("span", "badge warn", d + " de " + steps.length + " dependen");
+      h.appendChild(b);
+      card.appendChild(h);
+      var ol = el("ol", "steps");
+      steps.forEach(function (it) { ol.appendChild(stepEl(it, isAway)); });
+      card.appendChild(ol);
+      box.appendChild(card);
+    });
+    var orphans = state.items.filter(function (i) { return !i.area; });
+    if (orphans.length) {
+      var oc = el("div", "area orphan");
+      var oh = el("div", "area-h");
+      oh.appendChild(el("h3", "", "Sin clasificar"));
+      oh.appendChild(el("span", "badge", orphans.length === 1 ? "1 línea" : orphans.length + " líneas"));
+      oc.appendChild(oh);
+      var ool = el("ol", "steps");
+      orphans.forEach(function (it) { ool.appendChild(stepEl(it, isAway)); });
+      oc.appendChild(ool);
+      oc.appendChild(el("p", "orphan-note", "Nadie describió cómo se hace. Esto no se puede automatizar todavía: primero hay que preguntar."));
+      box.appendChild(oc);
+    }
+  }
+
+  function run() {
+    state.owner = ownerIn.value.trim() || "el dueño";
+    state.items = analyze(parseLines(ta.value), ownerIn.value);
+    renderRows();
+    renderBoard();
+  }
+
+  $("#go").addEventListener("click", run);
+  $("#reset").addEventListener("click", function () {
+    ta.value = SAMPLE_TEXT; ownerIn.value = SAMPLE_OWNER; away.checked = false; run();
+  });
+  ownerIn.addEventListener("input", run);
+  away.addEventListener("change", renderBoard);
+  run();
+})();
+</script>
+
+</body></html>
