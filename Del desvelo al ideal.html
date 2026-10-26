@@ -1,0 +1,578 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Del desvelo al ideal</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Layout: una columna de lectura (880px). Orden: origen de la preocupación, simulación de órbitas con controles, etapas, tres capas, y cierre sobre el camino feliz. */
+:root{
+  --bg:#F1F5F5; --surface:#FFFFFF; --fg:#12262B; --muted:#52666A; --line:#D2DCDD; --soft:#E4EEEE;
+  --accent:#0A6C78; --accent-ink:#FFFFFF; --signal:#E3A008; --warn:#C23B2B;
+  --display:'Newsreader',Georgia,'Times New Roman',serif;
+  --body:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1A1E; --surface:#12262B; --fg:#E7EFEF; --muted:#9BB0B3; --line:#27434A; --soft:#183339;
+    --accent:#4DC2CE; --accent-ink:#06242A; --signal:#F2B632; --warn:#FF7B66; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1A1E; --surface:#12262B; --fg:#E7EFEF; --muted:#9BB0B3; --line:#27434A; --soft:#183339;
+  --accent:#4DC2CE; --accent-ink:#06242A; --signal:#F2B632; --warn:#FF7B66; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--body); font-size:17px; line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:32px 64px;
+}
+.wrap{max-width:880px; margin:0 auto; display:flex; flex-direction:column; gap:40px}
+h1,h2,h3{font-family:var(--display); font-weight:600; margin:0; text-wrap:balance}
+h1{font-size:clamp(2.3rem,6.5vw,3.6rem); line-height:1.04; letter-spacing:-.01em}
+h2{font-size:clamp(1.5rem,3.6vw,1.9rem); line-height:1.15}
+h3{font-size:1.25rem; line-height:1.2}
+p{margin:0}
+.kicker{font-size:.78rem; text-transform:uppercase; letter-spacing:.09em; color:var(--accent); font-weight:700; margin-bottom:12px}
+.lead{font-size:1.15rem; color:var(--muted); max-width:62ch; margin-top:16px}
+section{display:flex; flex-direction:column; gap:16px; min-width:0}
+.sub{color:var(--muted); max-width:64ch}
+.panel{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:18px; min-width:0}
+
+/* Elegir preocupación */
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{font:inherit; font-weight:700; font-size:.95rem; min-height:44px; padding:8px 16px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--fg); cursor:pointer}
+.chip[aria-checked="true"]{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.origin{font-family:var(--display); font-size:clamp(1.4rem,3.4vw,1.9rem); line-height:1.25; font-weight:500; margin:0; padding:4px 0; max-width:34ch; text-wrap:balance}
+.origin-note{font-size:.85rem; color:var(--muted)}
+
+/* Simulación */
+.modebar{display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; justify-content:space-between}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--surface)}
+.seg button{font:inherit; font-weight:700; min-height:44px; padding:8px 18px; border:0; background:transparent; color:var(--fg); cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink)}
+.chk{display:inline-flex; align-items:center; gap:10px; min-height:44px; font-weight:700; cursor:pointer}
+.chk input{width:20px; height:20px; accent-color:var(--accent)}
+.chk input:disabled{cursor:not-allowed}
+.chk:has(input:disabled){opacity:.5; cursor:not-allowed}
+.stage{position:relative; width:100%; aspect-ratio:1.25/1; max-height:540px; background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.stage canvas{display:block; width:100%; height:100%}
+.legend{display:flex; flex-wrap:wrap; gap:6px 18px; font-size:.88rem; color:var(--muted)}
+.legend span{display:inline-flex; align-items:center; gap:7px}
+.dot{width:11px; height:11px; border-radius:50%; display:inline-block}
+.dot.ok{background:var(--accent)} .dot.doubt{background:var(--signal)} .dot.lost{background:transparent; border:2px solid var(--warn)} .dot.core{background:var(--signal); box-shadow:0 0 0 3px color-mix(in srgb,var(--signal) 30%,transparent)}
+.cap{font-size:.92rem; color:var(--muted); max-width:70ch}
+.timebar{display:grid; grid-template-columns:auto auto 1fr auto; gap:10px 12px; align-items:end}
+.btn{font:inherit; font-weight:700; min-height:44px; padding:8px 16px; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--fg); cursor:pointer}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.btn:disabled{opacity:.4; cursor:not-allowed}
+.track{position:relative; padding-top:14px; min-width:0}
+.ticks{position:absolute; left:0; right:0; top:0; height:14px; pointer-events:none}
+.tick{position:absolute; top:1px; width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-top:9px solid var(--warn); margin-left:-5px}
+.track input[type=range]{width:100%; margin:0; accent-color:var(--accent); height:28px}
+.yr{font-variant-numeric:tabular-nums; font-weight:700; min-width:5.5ch; text-align:right}
+.metrics{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
+.metric{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:12px 14px; min-width:0}
+.metric b{display:block; font-family:var(--display); font-size:2rem; line-height:1.1; font-weight:600; font-variant-numeric:tabular-nums}
+.metric span{font-size:.84rem; color:var(--muted)}
+.friction{display:flex; flex-direction:column; gap:10px}
+.fbtns{display:flex; flex-wrap:wrap; gap:8px}
+.hint{font-size:.92rem; color:var(--muted); max-width:70ch}
+.gap{background:var(--soft); border-radius:10px; padding:14px 16px; font-weight:700}
+.evlist{font-size:.88rem; color:var(--muted)}
+
+/* Etapas */
+.steps{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px}
+.steps li{display:grid; grid-template-columns:34px 1fr; gap:12px; padding:12px 14px; border-radius:10px; border:1px solid transparent; color:var(--muted)}
+.steps .n{width:30px; height:30px; border-radius:50%; border:2px solid var(--line); display:grid; place-items:center; font-weight:700; font-size:.9rem; font-variant-numeric:tabular-nums}
+.steps strong{display:block; color:var(--fg); font-family:var(--display); font-size:1.15rem; font-weight:600}
+.steps .when{font-size:.8rem; text-transform:uppercase; letter-spacing:.07em}
+.steps li.done .n{background:var(--soft); border-color:var(--soft); color:var(--fg)}
+.steps li.on{background:var(--surface); border-color:var(--accent); color:var(--fg)}
+.steps li.on .n{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+
+/* Capas */
+.layers{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+.layer{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:8px; min-width:0}
+.layer .q{font-size:.88rem; color:var(--accent); font-weight:700}
+.layer.off{border-style:dashed; background:transparent; color:var(--muted)}
+.layer.off .q{color:var(--muted)}
+.layer ul{margin:0; padding-left:1.1em; display:flex; flex-direction:column; gap:4px}
+
+/* Camino feliz */
+.cols{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+.cols h3{margin-bottom:10px}
+.cols ul{margin:0; padding-left:1.1em; display:flex; flex-direction:column; gap:10px}
+.cols li b{color:var(--fg)}
+.callout{background:var(--soft); border-radius:10px; padding:20px 22px; display:flex; flex-direction:column; gap:14px}
+.callout p:first-child{font-family:var(--display); font-size:clamp(1.25rem,3vw,1.5rem); line-height:1.3; font-weight:500; text-wrap:balance}
+
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+@media (max-width:720px){
+  .layers,.cols{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  body{font-size:16px}
+  .stage{aspect-ratio:1/1}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .timebar{grid-template-columns:1fr 1fr}
+  .timebar .track{grid-column:1/-1; order:3}
+  .timebar .yr{grid-column:1/-1; order:4; text-align:left}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="kicker">Simulación didáctica · Visión, misión y valores</p>
+    <h1>Del desvelo al ideal</h1>
+    <p class="lead">Los grandes pensadores no inventan el problema. Lo hacen compartible. Una preocupación que empezó en una sola persona termina orientando el esfuerzo de muchas, durante décadas. Mueve el tiempo y mira cómo ocurre.</p>
+  </header>
+
+  <section aria-labelledby="h-origen">
+    <h2 id="h-origen">Empieza con una preocupación</h2>
+    <div class="chips" role="radiogroup" aria-label="Elegir ejemplo de preocupación" id="chips"></div>
+    <blockquote class="origin" id="origin" style="margin:0"></blockquote>
+    <p class="origin-note">Ejemplo inventado para la simulación. Tres frases distintas siguen el mismo recorrido.</p>
+  </section>
+
+  <section aria-labelledby="h-sim" id="sim">
+    <h2 id="h-sim">Cómo se vuelve compartida</h2>
+    <p class="sub">Compara dos recorridos. El camino feliz es el ideal, sin obstáculos. El camino real incluye desacuerdos, escasez y tentaciones.</p>
+
+    <div class="modebar">
+      <div class="seg" role="group" aria-label="Tipo de recorrido">
+        <button type="button" id="mFeliz" aria-pressed="true">Camino feliz</button>
+        <button type="button" id="mReal" aria-pressed="false">Camino real</button>
+      </div>
+      <label class="chk" for="valores"><input type="checkbox" id="valores" disabled> Valores declarados</label>
+    </div>
+
+    <div class="stage"><canvas id="cv" role="img" aria-label="Simulación de personas que se acercan o se alejan de un ideal"></canvas></div>
+    <div class="legend" aria-hidden="false">
+      <span><i class="dot core"></i>Preocupación original</span>
+      <span><i class="dot ok"></i>Orientada</span>
+      <span><i class="dot doubt"></i>En duda</span>
+      <span><i class="dot lost"></i>Alejada</span>
+    </div>
+    <p class="cap">Cada punto es una persona. Cuanto más cerca del centro, más coherente es lo que hace con el ideal original. Los tres anillos marcan las capas que se forman con el tiempo.</p>
+
+    <div class="timebar">
+      <button type="button" class="btn primary" id="play">Reproducir</button>
+      <button type="button" class="btn" id="reset">Reiniciar</button>
+      <div class="track">
+        <div class="ticks" id="ticks" hidden></div>
+        <input type="range" id="slider" min="0" max="100" step="0.5" value="72" aria-label="Tiempo en años">
+      </div>
+      <div class="yr" id="yr">Año 72</div>
+    </div>
+
+    <div class="metrics" aria-live="off">
+      <div class="metric"><b id="mJ">0</b><span>Se sumaron</span></div>
+      <div class="metric"><b id="mO">0</b><span>Orientadas</span></div>
+      <div class="metric"><b id="mC">–</b><span>Coherencia media</span></div>
+      <div class="metric"><b id="mG">0</b><span>Brecha con el camino feliz</span></div>
+    </div>
+
+    <div class="friction">
+      <div class="fbtns" id="fbtns">
+        <button type="button" class="btn" data-ev="desacuerdo" disabled>Desacuerdo interno</button>
+        <button type="button" class="btn" data-ev="escasez" disabled>Escasez de recursos</button>
+        <button type="button" class="btn" data-ev="atajo" disabled>Atajo tentador</button>
+        <button type="button" class="btn" data-ev="malinterp" disabled>Mala interpretación</button>
+        <button type="button" class="btn" id="clearEv" disabled>Quitar fricciones</button>
+      </div>
+      <p class="hint" id="hint"></p>
+      <p class="evlist" id="evlist" hidden></p>
+    </div>
+    <p class="gap" id="gap"></p>
+  </section>
+
+  <section aria-labelledby="h-etapas">
+    <h2 id="h-etapas">Las etapas de un ideal</h2>
+    <p class="sub">La etapa actual sigue a la línea de tiempo de la simulación.</p>
+    <ol class="steps" id="steps"></ol>
+  </section>
+
+  <section aria-labelledby="h-capas">
+    <h2 id="h-capas">Tres capas, tres preguntas</h2>
+    <p class="sub">Aparecen en este orden porque se formulan en este orden. Primero se dice hacia dónde, después qué se hace, y los límites llegan con el primer conflicto serio.</p>
+    <div class="layers" id="layers"></div>
+  </section>
+
+  <section aria-labelledby="h-feliz">
+    <h2 id="h-feliz">Por qué se crean simulaciones de camino feliz</h2>
+    <p class="sub">Un camino feliz es el recorrido en el que todo sale bien: todos entienden, nadie se baja y los recursos alcanzan. Es lo que viste al abrir la simulación. Se hace a propósito, por cuatro razones.</p>
+    <div class="cols">
+      <div class="panel">
+        <h3>Para qué sirve</h3>
+        <ul>
+          <li><b>Enseña el esqueleto.</b> Antes de hablar de excepciones hay que ver qué piezas tiene el sistema y en qué orden se conectan.</li>
+          <li><b>Alinea el destino.</b> Acordar cómo se ve el éxito es el trabajo de la visión. El camino feliz lo dibuja.</li>
+          <li><b>Baja la carga mental.</b> Quien no es técnico entiende un flujo limpio en minutos. Diez excepciones juntas lo abruman.</li>
+          <li><b>Da una línea base.</b> Sin el recorrido ideal no hay contra qué medir cuánto se desvió el real.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Qué esconde</h3>
+        <ul>
+          <li><b>La fricción.</b> Los desacuerdos, la escasez y los atajos no aparecen, así que parecen no existir.</li>
+          <li><b>A quien se perdió.</b> Solo se ve a quienes llegaron. Es el sesgo de supervivencia.</li>
+          <li><b>El valor de los valores.</b> Si nada se rompe, nunca se ponen a prueba y parecen adorno.</li>
+          <li><b>La falsa inevitabilidad.</b> Un recorrido sin tropiezos hace creer que el éxito era automático.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout">
+      <p>La visión es un camino feliz declarado: el futuro deseado, sin obstáculos. Los valores son lo que se ejecuta cuando ese camino se rompe.</p>
+      <p>Por eso conviene simular los dos. El camino feliz sirve para acordar el destino. El camino real sirve para decidir cómo se va a caminar.</p>
+      <div><button type="button" class="btn primary" id="compare">Ver la diferencia en la simulación</button></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var $ = function(s){ return document.querySelector(s); };
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var CONCERNS = [
+    {tag:'Salud', origin:'Mis pacientes se enferman por algo que podríamos evitar.',
+     vision:'Un país donde enfermarse por falta de información sea impensable.',
+     mission:'Enseñar prácticas simples de cuidado en cada comunidad, todos los días.',
+     values:['Evidencia antes que costumbre','Reconocer los errores propios','Cuidar primero a quien menos puede pagar']},
+    {tag:'Educación', origin:'Mis alumnos más capaces se rinden antes de empezar.',
+     vision:'Que aprender no dependa del lugar donde uno nació.',
+     mission:'Llevar maestros, materiales y tutoría a cada barrio.',
+     values:['Paciencia con quien llega tarde','Curiosidad antes que nota','Compartir lo que se sabe']},
+    {tag:'Datos públicos', origin:'Veo decisiones importantes tomadas con información que nadie conecta.',
+     vision:'Un Estado que decide con datos conectados y fáciles de entender.',
+     mission:'Conectar las fuentes, traducirlas a lenguaje simple y formar a quienes las usan.',
+     values:['Transparencia','Rigor antes que velocidad','No castigar el error de buena fe']}
+  ];
+  var STAGES = [
+    {at:0,  title:'Una persona nota algo', text:'Ve un problema concreto, cerca suyo, y no logra dejar de pensar en él. Todavía es solo suyo.'},
+    {at:18, title:'Lo pone en palabras', text:'Al nombrarlo, la preocupación deja de ser una sensación y se vuelve algo que se puede explicar a otros.'},
+    {at:38, title:'Otros se reconocen', text:'Alguien dice «a mí también me pasa». Aparece la visión: cómo se vería el mundo si el problema estuviera resuelto.'},
+    {at:55, title:'Se reparte el trabajo', text:'La misión baja la visión a tareas diarias. Cada persona sabe qué le toca hacer hoy.'},
+    {at:70, title:'Llegan los límites', text:'Llegan los primeros conflictos. Los valores deciden qué se hace cuando dos caminos parecen igual de buenos.'},
+    {at:88, title:'Sobrevive a su autor', text:'Quienes llegan después ya no conocieron a quien empezó. El ideal funciona sin esa persona porque está escrito en lo que todos hacen.'}
+  ];
+  var LAYERS = [
+    {key:'vision',  name:'Visión',  q:'¿Hacia dónde vamos?', at:38},
+    {key:'mission', name:'Misión',  q:'¿Qué hacemos cada día?', at:55},
+    {key:'values',  name:'Valores', q:'¿Cómo decidimos cuando es difícil?', at:70}
+  ];
+  var EV = {
+    desacuerdo:{label:'Desacuerdo interno', frac:.30, hit:.35},
+    escasez:   {label:'Escasez de recursos', frac:.45, hit:.25},
+    atajo:     {label:'Atajo tentador', frac:.25, hit:.55},
+    malinterp: {label:'Mala interpretación', frac:.40, hit:.30}
+  };
+
+  /* ---------- modelo ---------- */
+  function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; var x=Math.imul(a^a>>>15,1|a); x=x+Math.imul(x^x>>>7,61|x)^x; return ((x^x>>>14)>>>0)/4294967296; }; }
+  var rnd = mulberry(20261025);
+  var N = 48, agents = [], i;
+  for(i=0;i<N;i++){
+    agents.push({
+      jt: 6 + 90*Math.pow(i/(N-1),1.35),
+      ang: rnd()*Math.PI*2,
+      base: .5 + .5*rnd(),
+      u: rnd(),
+      spd: (.3+.7*rnd())*(rnd()<.5?-1:1),
+      wob: rnd()*6.28,
+      disp: 1, alpha: 0
+    });
+  }
+  var t = 72, playing = false, mode = 'feliz', valores = false, seeded = false;
+  var events = [], pulses = [];
+
+  function stateOf(a, tt, m, v){
+    if(tt < a.jt) return {inn:false, al:0, gone:false};
+    if(m === 'feliz') return {inn:true, al:1, gone:false};
+    var base = a.base; if(v) base = base + (1-base)*.5;
+    var pen = 0, k, ev, p;
+    for(k=0;k<events.length;k++){
+      ev = events[k];
+      if(ev.t <= tt && a.jt <= ev.t && ((a.u + ev.off) % 1) < ev.frac){
+        p = ev.hit;
+        if(v) p = p * .45 * Math.exp(-(tt-ev.t)/18);
+        pen += p;
+      }
+    }
+    var al = Math.max(0, Math.min(1, base - pen));
+    return {inn:true, al:al, gone: al < (v ? .1 : .2)};
+  }
+  function metrics(tt, m, v){
+    var joined=0, oriented=0, present=0, sum=0, k, s;
+    for(k=0;k<agents.length;k++){
+      s = stateOf(agents[k], tt, m, v);
+      if(!s.inn) continue;
+      joined++;
+      if(!s.gone){ present++; sum += s.al; if(s.al >= .6) oriented++; }
+    }
+    return {joined:joined, oriented:oriented, coh: present ? sum/present : 0};
+  }
+
+  /* ---------- interfaz ---------- */
+  var ci = 0;
+  var chipsEl = $('#chips'), originEl = $('#origin'), layersEl = $('#layers'), stepsEl = $('#steps');
+  var mJ=$('#mJ'), mO=$('#mO'), mC=$('#mC'), mG=$('#mG'), yr=$('#yr'), gapEl=$('#gap'), hint=$('#hint'), evlist=$('#evlist');
+  var slider=$('#slider'), playBtn=$('#play'), tk=$('#ticks'), chk=$('#valores'), cv=$('#cv');
+
+  function setText(el, s){ s = String(s); if(el.textContent !== s) el.textContent = s; }
+  function esc(s){ return s.replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function buildChips(){
+    chipsEl.innerHTML = '';
+    CONCERNS.forEach(function(c, idx){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.setAttribute('role','radio');
+      b.setAttribute('aria-checked', idx === ci ? 'true' : 'false');
+      b.textContent = c.tag;
+      b.addEventListener('click', function(){ ci = idx; buildChips(); buildContent(); ui(true); });
+      chipsEl.appendChild(b);
+    });
+  }
+  function buildContent(){
+    var c = CONCERNS[ci];
+    originEl.textContent = '«' + c.origin + '»';
+    layersEl.innerHTML = '';
+    LAYERS.forEach(function(L){
+      var d = document.createElement('div');
+      d.className = 'layer off'; d.id = 'layer-' + L.key;
+      var body;
+      if(L.key === 'values'){ body = '<ul>' + c.values.map(function(v){ return '<li>' + esc(v) + '</li>'; }).join('') + '</ul>'; }
+      else { body = '<p>' + esc(c[L.key]) + '</p>'; }
+      d.innerHTML = '<h3>' + L.name + '</h3><p class="q">' + L.q + '</p>' +
+        '<div class="body">' + body + '</div>' +
+        '<p class="wait">Aún sin formular. Aparece hacia el año ' + L.at + '.</p>';
+      layersEl.appendChild(d);
+    });
+    stepsEl.innerHTML = '';
+    STAGES.forEach(function(s, idx){
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="n">' + (idx+1) + '</span><div><span class="when">Desde el año ' + s.at + '</span><strong>' + s.title + '</strong><span>' + s.text + '</span></div>';
+      stepsEl.appendChild(li);
+    });
+  }
+  function renderTicks(){
+    tk.innerHTML = '';
+    events.forEach(function(e){
+      var s = document.createElement('span');
+      s.className = 'tick';
+      s.style.left = 'calc(' + e.t + '% + ' + ((.5 - e.t/100)*18).toFixed(1) + 'px)';
+      s.title = 'Año ' + e.t + ': ' + EV[e.type].label;
+      tk.appendChild(s);
+    });
+    if(events.length){
+      evlist.textContent = 'Fricciones en la línea de tiempo: ' + events.map(function(e){ return 'año ' + e.t + ', ' + EV[e.type].label.toLowerCase(); }).join(' · ') + '.';
+    } else {
+      evlist.textContent = 'Todavía no hay fricciones.';
+    }
+  }
+  function applyMode(){
+    var real = mode === 'real';
+    $('#mFeliz').setAttribute('aria-pressed', real ? 'false' : 'true');
+    $('#mReal').setAttribute('aria-pressed', real ? 'true' : 'false');
+    chk.disabled = !real;
+    Array.prototype.forEach.call(document.querySelectorAll('#fbtns button'), function(b){ b.disabled = !real; });
+    tk.hidden = !real; evlist.hidden = !real;
+    hint.textContent = real
+      ? 'Cada botón suma una fricción en el año actual. Las marcas rojas sobre la línea de tiempo muestran cuándo ocurrieron. Prueba con y sin valores declarados y compara cuántas personas siguen orientadas.'
+      : 'En el camino feliz nada se rompe, así que los valores nunca se ponen a prueba y parecen un adorno. Cambia a «Camino real» para inyectar fricciones.';
+  }
+  function setMode(m){
+    mode = m;
+    if(m === 'real' && !seeded){
+      seeded = true;
+      events = [
+        {t:30, type:'desacuerdo', frac:EV.desacuerdo.frac, hit:EV.desacuerdo.hit, off:.17},
+        {t:55, type:'escasez',    frac:EV.escasez.frac,    hit:EV.escasez.hit,    off:.52},
+        {t:78, type:'atajo',      frac:EV.atajo.frac,      hit:EV.atajo.hit,      off:.81}
+      ];
+    }
+    applyMode(); renderTicks(); ui(true);
+  }
+  function updatePlay(){ playBtn.textContent = playing ? 'Pausar' : 'Reproducir'; }
+
+  function ui(force){
+    var m = metrics(t, mode, valores);
+    setText(mJ, m.joined); setText(mO, m.oriented);
+    setText(mC, m.joined && m.coh ? Math.round(m.coh*100) + '%' : '–');
+    setText(mG, m.joined - m.oriented);
+    setText(yr, 'Año ' + Math.round(t));
+    if(Math.abs(+slider.value - t) > .01) slider.value = t;
+    var si = 0, k;
+    for(k=0;k<STAGES.length;k++){ if(t >= STAGES[k].at) si = k; }
+    var lis = stepsEl.children;
+    for(k=0;k<lis.length;k++){
+      var cls = k < si ? 'done' : (k === si ? 'on' : '');
+      if(lis[k].className !== cls) lis[k].className = cls;
+      if(k === si) lis[k].setAttribute('aria-current','step'); else lis[k].removeAttribute('aria-current');
+    }
+    LAYERS.forEach(function(L){
+      var el = $('#layer-' + L.key); if(!el) return;
+      var on = t >= L.at;
+      el.className = 'layer' + (on ? '' : ' off');
+      el.querySelector('.body').hidden = !on;
+      el.querySelector('.wait').hidden = on;
+    });
+    var gap;
+    if(m.joined === 0){
+      gap = 'Todavía nadie se suma. La preocupación sigue siendo de una sola persona.';
+    } else if(mode === 'feliz'){
+      gap = 'Año ' + Math.round(t) + ': ' + m.joined + (m.joined === 1 ? ' persona se sumó y quedó orientada' : ' personas se sumaron y todas quedan orientadas') + '. La brecha es cero porque este recorrido no deja lugar a la fricción.';
+    } else {
+      var mv = metrics(t,'real',true), mn = metrics(t,'real',false);
+      gap = 'Año ' + Math.round(t) + ': se sumaron ' + m.joined + '. Con valores declarados quedan orientadas ' + mv.oriented + '; sin valores, ' + mn.oriented + '. El camino feliz mostraría ' + m.joined + '.';
+    }
+    setText(gapEl, gap);
+    cv.setAttribute('aria-label', 'Simulación en el año ' + Math.round(t) + ': ' + m.joined + ' personas se sumaron y ' + m.oriented + ' siguen orientadas.');
+  }
+
+  /* ---------- eventos de control ---------- */
+  slider.addEventListener('input', function(){ t = +slider.value; playing = false; updatePlay(); ui(); });
+  playBtn.addEventListener('click', function(){
+    if(playing){ playing = false; }
+    else { if(t >= 100) t = 0; playing = true; }
+    updatePlay();
+  });
+  $('#reset').addEventListener('click', function(){ t = 0; playing = true; updatePlay(); ui(); });
+  $('#mFeliz').addEventListener('click', function(){ setMode('feliz'); });
+  $('#mReal').addEventListener('click', function(){ setMode('real'); });
+  chk.addEventListener('change', function(){ valores = chk.checked; ui(); });
+  Array.prototype.forEach.call(document.querySelectorAll('#fbtns [data-ev]'), function(b){
+    b.addEventListener('click', function(){
+      if(mode !== 'real') return;
+      var d = EV[b.getAttribute('data-ev')];
+      events.push({t:Math.round(t), type:b.getAttribute('data-ev'), frac:d.frac, hit:d.hit, off:rnd()});
+      pulses.push(performance.now());
+      renderTicks(); ui();
+    });
+  });
+  $('#clearEv').addEventListener('click', function(){ events = []; renderTicks(); ui(); });
+  $('#compare').addEventListener('click', function(){
+    valores = false; chk.checked = false;
+    setMode('real');
+    t = 100; playing = false; updatePlay(); ui();
+    $('#sim').scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block:'start'});
+  });
+
+  /* ---------- dibujo ---------- */
+  var ctx = cv.getContext('2d'), dpr = 1;
+  function size(){
+    var r = cv.getBoundingClientRect();
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.max(1, Math.round(r.width*dpr));
+    cv.height = Math.max(1, Math.round(r.height*dpr));
+  }
+  if(window.ResizeObserver){ new ResizeObserver(size).observe(cv); }
+  window.addEventListener('resize', size);
+  size();
+
+  function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function rgb(h){
+    h = h.replace('#','');
+    if(h.length === 3) h = h.split('').map(function(c){ return c+c; }).join('');
+    var n = parseInt(h,16);
+    return [n>>16&255, n>>8&255, n&255];
+  }
+  function col(c, a){ return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+  function ease(x){ return x*x*(3-2*x); }
+
+  function draw(now){
+    var W = cv.width/dpr, H = cv.height/dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+    var P = {accent:rgb(cssVar('--accent')), signal:rgb(cssVar('--signal')), warn:rgb(cssVar('--warn')),
+             line:rgb(cssVar('--line')), muted:rgb(cssVar('--muted')), fg:rgb(cssVar('--fg')), surface:rgb(cssVar('--surface'))};
+    var cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 10;
+
+    var k = ease(Math.max(0, Math.min(1, (t-10)/60)));
+    var g = ctx.createRadialGradient(cx,cy,0,cx,cy,R*.85);
+    g.addColorStop(0, col(P.signal, .10 + .32*k));
+    g.addColorStop(1, col(P.signal, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx,cy,R*.85,0,6.2832); ctx.fill();
+
+    var rings = [{r:.2, label:'Valores', dash:false, on:t>=70}, {r:.5, label:'Misión', dash:true, on:t>=55}, {r:.82, label:'Visión', dash:true, on:t>=38}];
+    ctx.font = '700 11px "Atkinson Hyperlegible", system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    rings.forEach(function(rg){
+      ctx.beginPath(); ctx.arc(cx,cy,R*rg.r,0,6.2832);
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash(rg.dash ? [5,5] : []);
+      ctx.strokeStyle = col(rg.on ? P.accent : P.line, rg.on ? .7 : .8);
+      ctx.stroke(); ctx.setLineDash([]);
+      var ly = cy - R*rg.r - 4;
+      ctx.lineWidth = 4; ctx.strokeStyle = col(P.surface, .95); ctx.strokeText(rg.label, cx, ly);
+      ctx.fillStyle = col(rg.on ? P.accent : P.muted, 1); ctx.fillText(rg.label, cx, ly);
+    });
+
+    var ar = W < 460 ? 3.8 : 4.8;
+    var j, a, s, target, targetAlpha, rr, ang, px, py, jt, c;
+    var drawn = [];
+    for(j=0;j<agents.length;j++){
+      a = agents[j];
+      s = stateOf(a, t, mode, valores);
+      targetAlpha = s.inn ? (s.gone ? .55 : 1) : 0;
+      target = s.inn ? (s.gone ? 0 : s.al) : 1;
+      a.disp += (target - a.disp) * .14;
+      a.alpha += (targetAlpha - a.alpha) * .18;
+      if(a.alpha < .02) continue;
+      ang = a.ang + (reduced ? 0 : now*.00005*a.spd);
+      rr = .28 + (1 - a.disp)*.68;
+      rr += reduced ? 0 : Math.sin(now*.0007 + a.wob)*.012;
+      px = cx + Math.cos(ang)*R*rr; py = cy + Math.sin(ang)*R*rr;
+      drawn.push({a:a, s:s, px:px, py:py});
+    }
+    drawn.forEach(function(d){
+      if(d.s.gone) return;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(d.px,d.py);
+      ctx.lineWidth = 1; ctx.strokeStyle = col(P.accent, (.05 + .16*d.a.disp)*d.a.alpha);
+      ctx.stroke();
+    });
+    drawn.forEach(function(d){
+      var al = d.a.disp;
+      ctx.beginPath(); ctx.arc(d.px, d.py, ar, 0, 6.2832);
+      if(d.s.gone){
+        ctx.lineWidth = 2; ctx.strokeStyle = col(P.warn, d.a.alpha); ctx.stroke();
+      } else {
+        c = al >= .6 ? P.accent : (al >= .35 ? P.signal : P.warn);
+        ctx.fillStyle = col(c, d.a.alpha); ctx.fill();
+      }
+    });
+
+    for(j=pulses.length-1;j>=0;j--){
+      var p = (now - pulses[j])/900;
+      if(p >= 1 || reduced){ pulses.splice(j,1); continue; }
+      ctx.beginPath(); ctx.arc(cx,cy,R*(.1 + .9*p),0,6.2832);
+      ctx.lineWidth = 3; ctx.strokeStyle = col(P.warn, .55*(1-p)); ctx.stroke();
+    }
+
+    var cr = 7 + 9*(t/100);
+    var cg = ctx.createRadialGradient(cx,cy,0,cx,cy,cr*2.6);
+    cg.addColorStop(0, col(P.signal, .55)); cg.addColorStop(1, col(P.signal, 0));
+    ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(cx,cy,cr*2.6,0,6.2832); ctx.fill();
+    ctx.fillStyle = col(P.signal, 1); ctx.beginPath(); ctx.arc(cx,cy,cr,0,6.2832); ctx.fill();
+  }
+
+  var last = performance.now();
+  function frame(now){
+    var dt = Math.min(.05, (now-last)/1000); last = now;
+    if(playing){
+      t = Math.min(100, t + dt*5);
+      if(t >= 100){ playing = false; updatePlay(); }
+      ui();
+    }
+    draw(now);
+    requestAnimationFrame(frame);
+  }
+
+  buildChips(); buildContent(); applyMode(); renderTicks(); updatePlay(); ui(true);
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
