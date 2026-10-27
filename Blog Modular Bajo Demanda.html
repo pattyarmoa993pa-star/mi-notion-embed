@@ -1,0 +1,586 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Blog Modular Bajo Demanda</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: una columna de lectura, ilustración primero, luego simulador a ancho completo, tabla de traducción y cierre para empresa. */
+  :root {
+    --bg: #edf1f0;
+    --surface: #f8faf9;
+    --ink: #16262b;
+    --muted: #51646a;
+    --line: #c6d2d0;
+    --fog: #d9e2e0;
+    --fog-line: #aab9b7;
+    --on: #2b8a4b;
+    --on-soft: #d3ecd9;
+    --heavy: #c4562a;
+    --heavy-soft: #f6dccd;
+    --sky: #2d6d9e;
+    --sky-soft: #d4e5f2;
+    --on-fill: #ffffff;
+    --font-display: "Silkscreen", "Courier New", monospace;
+    --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1a1d;
+      --surface: #152428;
+      --ink: #e6efec;
+      --muted: #93a8a8;
+      --line: #2a3f43;
+      --fog: #1b2e32;
+      --fog-line: #3b5459;
+      --on: #5cc47c;
+      --on-soft: #17382a;
+      --heavy: #e4895b;
+      --heavy-soft: #43261a;
+      --sky: #6fb1de;
+      --sky-soft: #17324a;
+      --on-fill: #0e1a1d;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1a1d;
+    --surface: #152428;
+    --ink: #e6efec;
+    --muted: #93a8a8;
+    --line: #2a3f43;
+    --fog: #1b2e32;
+    --fog-line: #3b5459;
+    --on: #5cc47c;
+    --on-soft: #17382a;
+    --heavy: #e4895b;
+    --heavy-soft: #43261a;
+    --sky: #6fb1de;
+    --sky-soft: #17324a;
+    --on-fill: #0e1a1d;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    padding-block: 28px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+  section { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  h1, h2, h3, p { margin: 0; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 6vw, 52px); line-height: 1.05; letter-spacing: 0.01em; text-wrap: balance; }
+  h2 { font-size: clamp(22px, 3.2vw, 28px); line-height: 1.2; font-weight: 700; text-wrap: balance; }
+  .eyebrow { font-family: var(--font-display); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sky); }
+  .lead { font-size: clamp(17px, 2.2vw, 20px); max-width: 62ch; color: var(--ink); }
+  .sub { color: var(--muted); max-width: 66ch; }
+  .intro { display: flex; flex-direction: column; gap: 14px; }
+
+  /* Ilustración */
+  .figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .fig { background: var(--surface); border: 1px solid var(--line); padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .fig svg { width: 100%; height: auto; display: block; }
+  .fig figcaption { font-size: 14px; color: var(--muted); }
+  .fig figcaption strong { color: var(--ink); }
+  .fig-wide { grid-column: 1 / -1; }
+  .svg-t { font-family: var(--font-body); font-size: 13px; fill: var(--ink); }
+  .svg-tm { font-family: var(--font-mono); font-size: 11px; fill: var(--muted); }
+  .svg-tb { font-family: var(--font-display); font-size: 13px; fill: var(--ink); letter-spacing: 0.04em; }
+  .svg-onfill { font-family: var(--font-display); font-size: 12px; fill: var(--on-fill); letter-spacing: 0.04em; }
+
+  /* Simulador */
+  .sim { background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+  .sim-top { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .seg { display: inline-flex; border: 1px solid var(--ink); }
+  .seg button { font: inherit; font-weight: 600; font-size: 14px; padding: 9px 14px; background: transparent; color: var(--ink); border: 0; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--ink); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  .ctl { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+  .ctl label { font-size: 14px; color: var(--muted); display: inline-flex; gap: 10px; align-items: center; }
+  .ctl output { font-family: var(--font-mono); color: var(--ink); min-width: 1ch; }
+  input[type="range"] { accent-color: var(--on); width: 110px; }
+  .btn { font: inherit; font-weight: 600; font-size: 14px; padding: 9px 14px; background: var(--surface); color: var(--ink); border: 1px solid var(--ink); cursor: pointer; }
+  .btn:hover:not(:disabled) { background: var(--ink); color: var(--bg); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+
+  .addr { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--bg); font-family: var(--font-mono); font-size: 13px; min-width: 0; }
+  .addr .dot { width: 10px; height: 10px; background: var(--on); flex: none; }
+  .addr .url { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .addr .url b { font-weight: 500; color: var(--on); }
+  .addr .note { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+  .world { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .spawn { border: 2px solid var(--sky); background: var(--sky-soft); padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; justify-content: space-between; }
+  .spawn .n { font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: 0.04em; }
+  .spawn .d { font-size: 14px; color: var(--ink); }
+  .spawn .k { font-family: var(--font-mono); font-size: 13px; color: var(--sky); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .tile { position: relative; overflow: hidden; text-align: left; font: inherit; color: var(--ink); cursor: pointer; padding: 12px 12px 14px; min-height: 104px; display: flex; flex-direction: column; gap: 4px; border: 2px dashed var(--fog-line); background-color: var(--fog); background-image: repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in srgb, var(--fog-line) 40%, transparent) 7px 8px); transition: background-color 0.25s, border-color 0.25s; min-width: 0; }
+  .tile .t-name { font-weight: 700; font-size: 15px; line-height: 1.2; overflow-wrap: anywhere; }
+  .tile .t-route { font-family: var(--font-mono); font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+  .tile .t-meta { margin-top: auto; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; font-size: 12px; }
+  .tile .t-kb { font-family: var(--font-mono); color: var(--muted); }
+  .tile .t-state { font-weight: 600; color: var(--muted); }
+  .tile .t-bar { position: absolute; left: 0; bottom: 0; height: 5px; width: 0; background: var(--on); }
+  .tile.is-loading { border-style: solid; border-color: var(--on); background-image: none; background-color: var(--surface); }
+  .tile.is-loading .t-bar { animation: fill var(--d, 600ms) linear forwards; }
+  .tile.is-loading .t-state { color: var(--on); }
+  .tile.is-active { border-style: solid; border-color: var(--on); background-image: none; background-color: var(--on-soft); }
+  .tile.is-active .t-state { color: var(--on); }
+  .tile.is-active .t-kb { color: var(--ink); }
+  .sim[data-mode="mono"] .tile.is-active { border-color: var(--heavy); background-color: var(--heavy-soft); }
+  .sim[data-mode="mono"] .tile.is-active .t-state, .sim[data-mode="mono"] .tile.is-loading .t-state { color: var(--heavy); }
+  .sim[data-mode="mono"] .tile.is-loading { border-color: var(--heavy); }
+  .sim[data-mode="mono"] .tile .t-bar { background: var(--heavy); }
+  .tile.is-current::after { content: ""; position: absolute; top: 8px; right: 8px; width: 12px; height: 12px; background: var(--ink); }
+  @keyframes fill { from { width: 0; } to { width: 100%; } }
+
+  .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  .m { padding: 14px 16px; display: flex; flex-direction: column; gap: 3px; border-right: 1px solid var(--line); min-width: 0; }
+  .m:last-child { border-right: 0; }
+  .m .l { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .m .v { font-family: var(--font-mono); font-weight: 500; font-size: clamp(20px, 2.6vw, 26px); font-variant-numeric: tabular-nums; line-height: 1.2; overflow-wrap: anywhere; }
+  .m .s { font-size: 13px; color: var(--muted); }
+  .sim[data-mode="mono"] .m .v.hot { color: var(--heavy); }
+  .sim[data-mode="demand"] .m .v.hot { color: var(--on); }
+
+  .meter { padding: 12px 16px 16px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .meter .row { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .meter .row b { color: var(--ink); font-family: var(--font-mono); font-weight: 500; }
+  .track { height: 14px; background: var(--fog); border: 1px solid var(--fog-line); position: relative; }
+  .fillbar { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--on); transition: width 0.4s ease, background-color 0.3s; }
+  .sim[data-mode="mono"] .fillbar { background: var(--heavy); }
+
+  .log { list-style: none; margin: 0; padding: 12px 16px 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); min-height: 8.5em; }
+  .log li:first-child { color: var(--ink); }
+  .log li { overflow-wrap: anywhere; }
+  .sim-note { font-size: 13px; color: var(--muted); }
+
+  /* Tabla de traducción */
+  .scroll { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 15px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--font-display); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; background: var(--bg); }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 600; }
+
+  /* Código y valor para la empresa */
+  pre { margin: 0; padding: 16px; overflow-x: auto; background: var(--ink); color: var(--bg); font-family: var(--font-mono); font-size: 13px; line-height: 1.6; }
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+  dl { margin: 0; display: grid; grid-template-columns: 1fr; }
+  dl div { padding: 12px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 4px 16px; }
+  dl div:last-child { border-bottom: 1px solid var(--line); }
+  dt { font-weight: 700; }
+  dd { margin: 0; color: var(--muted); }
+  .foot { font-size: 13px; color: var(--muted); max-width: 70ch; }
+
+  @media (max-width: 760px) {
+    .figs, .cols { grid-template-columns: minmax(0, 1fr); }
+    .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .m:nth-child(2) { border-right: 0; }
+    .m:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+    .addr .note { display: none; }
+    dl div { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tile, .fillbar { transition: none; }
+    .tile.is-loading .t-bar { animation: none; width: 100%; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="intro">
+    <p class="eyebrow">Demo didáctica · Arquitectura modular</p>
+    <h1>Blog modular bajo demanda</h1>
+    <p class="lead">Un esqueleto liviano que se queda quieto hasta que alguien pide una sección. Entonces se enciende solo esa parte, y nada más.</p>
+    <p class="sub">El sitio puede sumar funciones sin volverse una estructura pesada ni difícil de mantener. Esta página lo muestra con una ilustración, una analogía de Minecraft y un simulador que compara las dos formas de construir el mismo blog.</p>
+  </header>
+
+  <section aria-labelledby="h-idea">
+    <h2 id="h-idea">La idea en una imagen</h2>
+    <p class="sub">Piensa en un edificio. En el modelo tradicional todas las luces están prendidas desde que abre la puerta. En el modelo modular solo hay un hall de entrada encendido, y cada sala se ilumina cuando alguien entra.</p>
+    <div class="figs">
+
+      <figure class="fig" style="margin:0">
+        <svg viewBox="0 0 440 320" role="img" aria-label="Un edificio grande con todas las ventanas encendidas, que representa un sitio monolítico que carga todo al abrir.">
+          <text class="svg-tb" x="220" y="22" text-anchor="middle">SITIO MONOLÍTICO</text>
+          <rect x="70" y="40" width="300" height="236" fill="var(--heavy-soft)" stroke="var(--heavy)" stroke-width="3"/>
+          <g fill="var(--heavy)">
+            <rect x="92" y="62" width="44" height="30"/><rect x="152" y="62" width="44" height="30"/><rect x="212" y="62" width="44" height="30"/><rect x="272" y="62" width="44" height="30"/>
+            <rect x="92" y="106" width="44" height="30"/><rect x="152" y="106" width="44" height="30"/><rect x="212" y="106" width="44" height="30"/><rect x="272" y="106" width="44" height="30"/>
+            <rect x="92" y="150" width="44" height="30"/><rect x="152" y="150" width="44" height="30"/><rect x="212" y="150" width="44" height="30"/><rect x="272" y="150" width="44" height="30"/>
+            <rect x="92" y="194" width="44" height="30"/><rect x="152" y="194" width="44" height="30"/><rect x="212" y="194" width="44" height="30"/><rect x="272" y="194" width="44" height="30"/>
+          </g>
+          <rect x="190" y="236" width="60" height="40" fill="var(--heavy)"/>
+          <rect x="330" y="62" width="28" height="162" fill="var(--heavy)" opacity="0.35"/>
+          <line x1="40" y1="276" x2="400" y2="276" stroke="var(--ink)" stroke-width="3"/>
+          <text class="svg-t" x="220" y="302" text-anchor="middle">1.890 KB al abrir, usen o no cada sala</text>
+        </svg>
+        <figcaption><strong>Todo encendido, siempre.</strong> Cada función nueva engorda el edificio y obliga a revisarlo entero.</figcaption>
+      </figure>
+
+      <figure class="fig" style="margin:0">
+        <svg viewBox="0 0 440 320" role="img" aria-label="Un hall pequeño encendido conectado por pasillos a cinco salas. Solo una sala está encendida y tiene un visitante.">
+          <text class="svg-tb" x="220" y="22" text-anchor="middle">SITIO MODULAR</text>
+          <g stroke="var(--fog-line)" stroke-width="3" stroke-dasharray="6 6" fill="none">
+            <path d="M220 236 V206 H52 V170"/>
+            <path d="M220 236 V206 H136 V170"/>
+            <path d="M220 236 V206 H304 V170"/>
+            <path d="M220 236 V206 H388 V170"/>
+          </g>
+          <path d="M220 236 V170" stroke="var(--on)" stroke-width="5" fill="none"/>
+          <g fill="var(--fog)" stroke="var(--fog-line)" stroke-width="2" stroke-dasharray="5 4">
+            <rect x="14" y="52" width="76" height="118"/><rect x="98" y="52" width="76" height="118"/><rect x="266" y="52" width="76" height="118"/><rect x="350" y="52" width="76" height="118"/>
+          </g>
+          <g class="svg-tm" text-anchor="middle">
+            <text x="52" y="116">zzz</text><text x="136" y="116">zzz</text><text x="304" y="116">zzz</text><text x="388" y="116">zzz</text>
+            <text x="52" y="188">Artículos</text><text x="136" y="188">Buscador</text><text x="304" y="188">Galería</text><text x="388" y="188">Tienda</text>
+          </g>
+          <rect x="182" y="52" width="76" height="118" fill="var(--on-soft)" stroke="var(--on)" stroke-width="3"/>
+          <rect x="209" y="98" width="22" height="22" fill="var(--sky)"/>
+          <rect x="205" y="120" width="30" height="32" fill="var(--on)"/>
+          <rect x="213" y="104" width="4" height="4" fill="var(--on-fill)"/><rect x="223" y="104" width="4" height="4" fill="var(--on-fill)"/>
+          <text class="svg-t" x="220" y="70" text-anchor="middle" font-weight="700">Minijuegos</text>
+          <rect x="160" y="236" width="120" height="40" fill="var(--sky)"/>
+          <text class="svg-onfill" x="220" y="261" text-anchor="middle">ESQUELETO</text>
+          <line x1="40" y1="276" x2="400" y2="276" stroke="var(--ink)" stroke-width="3"/>
+          <text class="svg-t" x="220" y="302" text-anchor="middle">40 KB al abrir + solo la sala que visitas</text>
+        </svg>
+        <figcaption><strong>Hall encendido, salas dormidas.</strong> Cuando el visitante pide una ruta, se enciende esa sala y las demás siguen apagadas.</figcaption>
+      </figure>
+
+      <figure class="fig fig-wide" style="margin:0">
+        <svg viewBox="0 0 440 150" role="img" aria-label="Una fila de once chunks de Minecraft. Solo los cinco cercanos al jugador, que está en el centro, están cargados.">
+          <text class="svg-tb" x="220" y="20" text-anchor="middle">EN MINECRAFT PASA LO MISMO: SOLO SE CARGAN LOS CHUNKS CERCANOS</text>
+          <g stroke-width="2">
+            <rect x="3" y="44" width="34" height="34" fill="var(--fog)" stroke="var(--fog-line)" stroke-dasharray="4 3"/>
+            <rect x="43" y="44" width="34" height="34" fill="var(--fog)" stroke="var(--fog-line)" stroke-dasharray="4 3"/>
+            <rect x="83" y="44" width="34" height="34" fill="var(--fog)" stroke="var(--fog-line)" stroke-dasharray="4 3"/>
+            <rect x="123" y="44" width="34" height="34" fill="var(--on-soft)" stroke="var(--on)"/>
+            <rect x="163" y="44" width="34" height="34" fill="var(--on-soft)" stroke="var(--on)"/>
+            <rect x="203" y="44" width="34" height="34" fill="var(--on-soft)" stroke="var(--on)"/>
+            <rect x="243" y="44" width="34" height="34" fill="var(--on-soft)" stroke="var(--on)"/>
+            <rect x="283" y="44" width="34" height="34" fill="var(--on-soft)" stroke="var(--on)"/>
+            <rect x="323" y="44" width="34" height="34" fill="var(--fog)" stroke="var(--fog-line)" stroke-dasharray="4 3"/>
+            <rect x="363" y="44" width="34" height="34" fill="var(--fog)" stroke="var(--fog-line)" stroke-dasharray="4 3"/>
+            <rect x="403" y="44" width="34" height="34" fill="var(--fog)" stroke="var(--fog-line)" stroke-dasharray="4 3"/>
+          </g>
+          <g fill="var(--on)">
+            <rect x="123" y="44" width="34" height="8"/><rect x="163" y="44" width="34" height="8"/><rect x="203" y="44" width="34" height="8"/><rect x="243" y="44" width="34" height="8"/><rect x="283" y="44" width="34" height="8"/>
+          </g>
+          <rect x="212" y="26" width="16" height="16" fill="var(--sky)"/>
+          <path d="M123 94 V102 H317 V94" fill="none" stroke="var(--on)" stroke-width="2"/>
+          <text class="svg-t" x="220" y="122" text-anchor="middle">Distancia de carga: el jugador y los chunks que lo rodean</text>
+          <text class="svg-tm" x="220" y="140" text-anchor="middle">El resto del mundo existe, pero duerme</text>
+        </svg>
+        <figcaption><strong>Para quien enseña con Minecraft:</strong> el jugador es la visita, cada chunk es un módulo y la distancia de carga es el límite de módulos activos a la vez.</figcaption>
+      </figure>
+
+    </div>
+  </section>
+
+  <section aria-labelledby="h-sim">
+    <h2 id="h-sim">Pruébalo: dos blogs con las mismas funciones</h2>
+    <p class="sub">Cambia entre los dos modelos y toca las salas del blog. Luego agrega un módulo nuevo y mira qué le pasa a cada uno. Los pesos y tiempos son valores de ejemplo para la demostración.</p>
+
+    <div class="sim" id="sim" data-mode="demand">
+      <div class="sim-top">
+        <div class="seg" role="group" aria-label="Modelo de blog">
+          <button type="button" id="b-demand" aria-pressed="true">Bajo demanda</button>
+          <button type="button" id="b-mono" aria-pressed="false">Monolito</button>
+        </div>
+        <div class="ctl">
+          <label for="radius">Distancia de carga <input type="range" id="radius" min="1" max="4" step="1" value="2"><output id="radius-out" for="radius">2</output></label>
+          <button type="button" class="btn" id="b-add">Agregar módulo nuevo</button>
+          <button type="button" class="btn" id="b-reset">Reiniciar</button>
+        </div>
+      </div>
+
+      <div class="addr" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="url" id="url">tublog.com<b>/</b></span>
+        <span class="note" id="addr-note">visita en curso</span>
+      </div>
+
+      <div class="world">
+        <div class="spawn">
+          <span class="n">ESQUELETO</span>
+          <span class="d">Menú, lista de rutas permitidas y seguridad. Siempre activo.</span>
+          <span class="k" id="sk-kb">40 KB</span>
+        </div>
+        <div class="tiles" id="tiles"></div>
+      </div>
+
+      <div class="metrics" aria-live="polite">
+        <div class="m"><span class="l">Descarga al abrir</span><span class="v hot" id="m-open">40 KB</span><span class="s" id="m-open-s">solo el esqueleto</span></div>
+        <div class="m"><span class="l">Primera carga</span><span class="v hot" id="m-time">0,1 s</span><span class="s">conexión móvil de ejemplo</span></div>
+        <div class="m"><span class="l">Módulos activos</span><span class="v" id="m-mods">1 de 8</span><span class="s" id="m-mods-s">el resto duerme</span></div>
+        <div class="m"><span class="l">Tras un cambio, se prueba</span><span class="v hot" id="m-test">1 módulo</span><span class="s" id="m-test-s">el esqueleto no se toca</span></div>
+      </div>
+
+      <div class="meter">
+        <div class="row"><span>Peso en memoria ahora</span><span><b id="w-now">100 KB</b> de <b id="w-total">1.890 KB</b></span></div>
+        <div class="track" role="img" aria-label="Proporción del sitio cargada en memoria"><div class="fillbar" id="w-bar"></div></div>
+      </div>
+
+      <ul class="log" id="log" aria-live="polite"></ul>
+    </div>
+    <p class="sim-note">Toca una sala para pedir su ruta. En el modelo bajo demanda, cuando se supera la distancia de carga, la sala más antigua vuelve a dormir.</p>
+  </section>
+
+  <section aria-labelledby="h-trad">
+    <h2 id="h-trad">Tabla de traducción: Minecraft, blog y empresa</h2>
+    <p class="sub">Sirve para explicar la misma idea a tres públicos con las mismas palabras.</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>En Minecraft</th><th>En el blog</th><th>Para la empresa</th></tr></thead>
+        <tbody>
+          <tr><td>Punto de aparición</td><td>Esqueleto con menú, rutas y seguridad</td><td>Una base estable que casi nunca cambia</td></tr>
+          <tr><td>Chunk</td><td>Módulo: artículos, minijuegos, comentarios</td><td>Un equipo mantiene uno sin tocar los demás</td></tr>
+          <tr><td>El jugador se acerca</td><td>El visitante pide una ruta</td><td>Se gasta recurso solo donde hay uso real</td></tr>
+          <tr><td>Chunk cargado o dormido</td><td>Módulo activo o inactivo</td><td>Menos descarga y menos memoria</td></tr>
+          <tr><td>Distancia de carga</td><td>Máximo de módulos activos a la vez</td><td>Costo de servidor bajo control</td></tr>
+          <tr><td>Redstone entre chunks</td><td>Eventos y contrato entre módulos</td><td>Un módulo nuevo se conecta sin reescribir el resto</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-code" class="cols">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <h2 id="h-code">Cómo se ve por dentro</h2>
+      <p class="sub">El esqueleto solo conoce una lista cerrada de rutas. Un módulo se descarga en el momento en que su ruta se pide. Una ruta que no está en la lista no carga nada.</p>
+<pre><code>// esqueleto.js: siempre cargado, pesa poco
+const rutas = {
+  '/articulos':  () =&gt; import('./modulos/articulos.js'),
+  '/minijuegos': () =&gt; import('./modulos/minijuegos.js'),
+  '/bitacora':   () =&gt; import('./modulos/espejo.js'),
+};
+
+async function abrir(ruta) {
+  const cargar = rutas[ruta];
+  if (!cargar) return mostrar404();  // lista cerrada
+  const modulo = await cargar();     // se descarga ahora
+  modulo.montar(document.querySelector('#escena'));
+}</code></pre>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <h2>Qué gana una empresa</h2>
+      <dl>
+        <div><dt>Rapidez</dt><dd>La primera visita descarga el esqueleto, no el sitio completo.</dd></div>
+        <div><dt>Costo</dt><dd>Los módulos que nadie visita no consumen memoria ni ancho de banda.</dd></div>
+        <div><dt>Mantenimiento</dt><dd>Un cambio se prueba en un módulo, no en todo el sitio.</dd></div>
+        <div><dt>Seguridad</dt><dd>Una superficie inicial pequeña y rutas en lista cerrada reducen lo que un atacante puede tocar.</dd></div>
+        <div><dt>Crecimiento</dt><dd>Agregar el módulo número veinte cuesta lo mismo que agregar el tercero.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <p class="foot">Simulación didáctica con cifras de ejemplo. Los pesos, tiempos y módulos son ilustrativos y no representan mediciones de un sitio real.</p>
+</div>
+
+<script>
+(function () {
+  var SK = 40;
+  var MBPS = 800; // KB por segundo, valor de ejemplo
+  var BASE = [
+    { id: 'inicio',      name: 'Inicio',                route: '/',            kb: 60 },
+    { id: 'articulos',   name: 'Artículos',             route: '/articulos',   kb: 120 },
+    { id: 'minijuegos',  name: 'Minijuegos',            route: '/minijuegos',  kb: 380 },
+    { id: 'espejo',      name: 'Espejo de la bitácora', route: '/bitacora',    kb: 90 },
+    { id: 'comentarios', name: 'Comentarios',           route: '/comentarios', kb: 150 },
+    { id: 'buscador',    name: 'Buscador',              route: '/buscar',      kb: 110 },
+    { id: 'galeria',     name: 'Galería',               route: '/galeria',     kb: 420 },
+    { id: 'tienda',      name: 'Tienda',                route: '/tienda',      kb: 520 }
+  ];
+  var MAX_EXTRA = 4;
+  var reduce = false;
+  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  var $ = function (s) { return document.querySelector(s); };
+  var fmt = function (n) { return n.toLocaleString('es'); };
+  var secs = function (kb) { return (kb / MBPS).toFixed(1).replace('.', ',') + ' s'; };
+
+  var sim = $('#sim'), tilesEl = $('#tiles'), logEl = $('#log');
+  var modules, extra, mode, radius, route, loaded, order, loading, timers, logs, tileEls;
+
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  function byId(id) { return modules.filter(function (m) { return m.id === id; })[0]; }
+  function totalKB() { return SK + modules.reduce(function (a, m) { return a + m.kb; }, 0); }
+  function nowKB() { return SK + modules.reduce(function (a, m) { return a + (loaded.has(m.id) ? m.kb : 0); }, 0); }
+  function log(msg) { logs.unshift(msg); logs = logs.slice(0, 6); renderLog(); }
+  function renderLog() { logEl.innerHTML = logs.map(function (l) { return '<li>' + l + '</li>'; }).join(''); }
+
+  function buildTiles() {
+    tilesEl.innerHTML = '';
+    tileEls = {};
+    modules.forEach(function (m) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tile';
+      b.innerHTML = '<span class="t-name"></span><span class="t-route"></span><span class="t-meta"><span class="t-kb"></span><span class="t-state"></span></span><span class="t-bar"></span>';
+      b.querySelector('.t-name').textContent = m.name;
+      b.querySelector('.t-route').textContent = m.route;
+      b.querySelector('.t-kb').textContent = m.kb + ' KB';
+      b.addEventListener('click', function () { navigate(m.id); });
+      tilesEl.appendChild(b);
+      tileEls[m.id] = b;
+    });
+  }
+
+  function update() {
+    sim.setAttribute('data-mode', mode);
+    $('#b-demand').setAttribute('aria-pressed', String(mode === 'demand'));
+    $('#b-mono').setAttribute('aria-pressed', String(mode === 'mono'));
+    $('#radius').disabled = mode === 'mono';
+    $('#b-add').disabled = extra >= MAX_EXTRA;
+
+    modules.forEach(function (m) {
+      var el = tileEls[m.id];
+      var st = loading.has(m.id) ? 'loading' : (loaded.has(m.id) ? 'active' : 'dormant');
+      var cls = 'tile' + (st === 'loading' ? ' is-loading' : '') + (st === 'active' ? ' is-active' : '') + (m.id === route ? ' is-current' : '');
+      if (el.className !== cls) el.className = cls;
+      if (st === 'loading') el.style.setProperty('--d', loading.get(m.id).dur + 'ms');
+      el.querySelector('.t-state').textContent = st === 'loading' ? 'Cargando' : (st === 'active' ? 'Activo' : 'Dormido');
+      el.setAttribute('aria-label', m.name + ', ruta ' + m.route + ', ' + m.kb + ' kilobytes, ' + (st === 'dormant' ? 'dormido' : st === 'loading' ? 'cargando' : 'activo'));
+    });
+
+    var cur = byId(route);
+    $('#url').innerHTML = 'tublog.com<b></b>';
+    $('#url b').textContent = cur ? cur.route : '/';
+    $('#addr-note').textContent = mode === 'mono' && loading.size ? 'descargando todo el sitio' : 'visita en curso';
+
+    var total = totalKB(), now = nowKB(), n = modules.length;
+    var open = mode === 'mono' ? total : SK;
+    $('#m-open').textContent = fmt(open) + ' KB';
+    $('#m-open-s').textContent = mode === 'mono' ? 'el sitio completo, de una vez' : 'solo el esqueleto';
+    $('#m-time').textContent = secs(open);
+    var act = modules.filter(function (m) { return loaded.has(m.id); }).length;
+    $('#m-mods').textContent = act + ' de ' + n;
+    $('#m-mods-s').textContent = mode === 'mono' ? 'todos entrelazados' : 'el resto duerme';
+    $('#m-test').textContent = mode === 'mono' ? 'Todo el sitio' : '1 módulo';
+    $('#m-test-s').textContent = mode === 'mono' ? n + ' partes dependen entre sí' : 'el esqueleto no se toca';
+    $('#sk-kb').textContent = SK + ' KB';
+    $('#w-now').textContent = fmt(now) + ' KB';
+    $('#w-total').textContent = fmt(total) + ' KB';
+    $('#w-bar').style.width = Math.min(100, now / total * 100) + '%';
+  }
+
+  function enforce() {
+    while (order.length > radius) {
+      var old = order[0];
+      if (old === route && order.length > 1) { order.push(order.shift()); continue; }
+      order.shift();
+      loaded.delete(old);
+      log(byId(old).name + ' vuelve a dormir: quedó fuera de la distancia de carga.');
+    }
+  }
+
+  function navigate(id) {
+    var m = byId(id);
+    if (!m) return;
+    route = id;
+    if (mode === 'mono') {
+      log('Ruta ' + m.route + ' pedida: ya estaba todo cargado, pero el sitio entero sigue pesando ' + fmt(totalKB()) + ' KB.');
+      update();
+      return;
+    }
+    if (loaded.has(id)) {
+      order = order.filter(function (x) { return x !== id; });
+      order.push(id);
+      log('Ruta ' + m.route + ' pedida: ' + m.name + ' ya estaba activo, no se descarga nada.');
+      update();
+      return;
+    }
+    if (loading.has(id)) { update(); return; }
+    var dur = reduce ? 0 : Math.max(300, Math.round(m.kb * 1.5));
+    log('Ruta ' + m.route + ' pedida: se descargan solo ' + m.kb + ' KB de ' + m.name + '.');
+    loading.set(id, { dur: dur });
+    var t = setTimeout(function () {
+      loading.delete(id);
+      loaded.add(id);
+      order.push(id);
+      enforce();
+      update();
+    }, dur);
+    timers.push(t);
+    update();
+  }
+
+  function setup(newMode) {
+    clearTimers();
+    mode = newMode;
+    route = 'inicio';
+    loaded = new Set();
+    order = [];
+    loading = new Map();
+    if (mode === 'demand') {
+      loaded.add('inicio');
+      order.push('inicio');
+      log('Modelo bajo demanda: el sitio abre con ' + SK + ' KB y solo Inicio activo.');
+    } else {
+      var dur = reduce ? 0 : Math.round(totalKB() * 0.9);
+      log('Modelo monolito: el navegador descarga ' + fmt(totalKB()) + ' KB antes de mostrar algo.');
+      modules.forEach(function (m) { loading.set(m.id, { dur: dur }); });
+      var t = setTimeout(function () {
+        loading.clear();
+        modules.forEach(function (m) { loaded.add(m.id); });
+        log('Descarga completa: ' + modules.length + ' módulos en memoria, se usen o no.');
+        update();
+      }, dur);
+      timers.push(t);
+    }
+    update();
+  }
+
+  function reset() {
+    modules = BASE.map(function (m) { return { id: m.id, name: m.name, route: m.route, kb: m.kb }; });
+    extra = 0;
+    logs = [];
+    buildTiles();
+    setup(mode || 'demand');
+  }
+
+  function addModule() {
+    if (extra >= MAX_EXTRA) return;
+    extra += 1;
+    var m = { id: 'nuevo' + extra, name: 'Módulo nuevo ' + extra, route: '/nuevo-' + extra, kb: 260 };
+    modules.push(m);
+    buildTiles();
+    if (mode === 'mono') {
+      loaded.add(m.id);
+      log('Se agregó "' + m.name + '" (260 KB). El paquete único ahora pesa ' + fmt(totalKB()) + ' KB y hay que probar todo el sitio otra vez.');
+    } else {
+      log('Se agregó "' + m.name + '" (260 KB). El sitio sigue abriendo con ' + SK + ' KB y solo se prueba ese módulo.');
+    }
+    update();
+  }
+
+  $('#b-demand').addEventListener('click', function () { if (mode !== 'demand') setup('demand'); });
+  $('#b-mono').addEventListener('click', function () { if (mode !== 'mono') setup('mono'); });
+  $('#b-add').addEventListener('click', addModule);
+  $('#b-reset').addEventListener('click', function () { reset(); });
+  $('#radius').addEventListener('input', function (e) {
+    radius = parseInt(e.target.value, 10);
+    $('#radius-out').textContent = radius;
+    if (mode === 'demand') { enforce(); update(); }
+  });
+
+  timers = [];
+  mode = 'demand';
+  radius = 2;
+  reset();
+  log('Prueba: toca Minijuegos o Galería y mira cuánto se descarga.');
+})();
+</script>
+
+</body></html>
