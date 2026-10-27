@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Puente de Inteligencia Comunitaria · Demo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background: #0f1a14; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .pixel { font-family: "Courier New", ui-monospace, monospace; letter-spacing: .02em; }
+  .block-bg {
+    background-color:#5a7d3a;
+    background-image:
+      linear-gradient(45deg,#4d6e31 25%,transparent 25%,transparent 75%,#4d6e31 75%),
+      linear-gradient(45deg,#4d6e31 25%,transparent 25%,transparent 75%,#4d6e31 75%);
+    background-size:24px 24px; background-position:0 0,12px 12px;
+  }
+  .parchment { background:#f3e3b5; border:4px solid #6b4a23; box-shadow: inset 0 0 0 3px #d9c08a, 6px 6px 0 rgba(0,0,0,.35); color:#3b2a14; }
+  .mc-btn { background:#8b8b8b; border:3px solid #1e1e1e; box-shadow: inset -3px -3px 0 #555, inset 3px 3px 0 #c6c6c6; color:#fff; text-shadow:2px 2px 0 #3f3f3f; }
+  .mc-btn:hover { background:#7a8fd1; }
+  .mc-btn.active { background:#5b8a3a; box-shadow: inset -3px -3px 0 #3c5e25, inset 3px 3px 0 #8fc060; }
+  .fade-in { animation: fadeIn .5s ease both; }
+  @keyframes fadeIn { from {opacity:0; transform:translateY(8px);} to {opacity:1; transform:none;} }
+  .pulse-dot { animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%{r:7; opacity:1;} 70%{r:20; opacity:0;} 100%{r:20; opacity:0;} }
+  .tab-on { border-color:#facc15; color:#facc15; background:rgba(250,204,21,.08); }
+  .stepper-on { background:#facc15; color:#1a1a1a; }
+  .typing::after { content:"▌"; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity:0; } }
+</style>
+</head>
+<body class="text-slate-100 min-h-screen">
+
+<!-- ENCABEZADO -->
+<header class="border-b border-emerald-900 bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950">
+  <div class="max-w-6xl mx-auto px-4 py-5 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <p class="text-xs uppercase tracking-widest text-yellow-400 pixel">Demo conceptual · Minecraft Education · Paraguay</p>
+      <h1 class="text-2xl md:text-3xl font-extrabold">Puente de Inteligencia Comunitaria</h1>
+      <p class="text-slate-400 text-sm max-w-2xl">Una actividad extracurricular permanente: los chicos construyen libremente, la tecnología traduce, el Estado escucha y devuelve. Un ciclo que nunca se cierra.</p>
+    </div>
+    <div class="text-right">
+      <p class="text-xs text-slate-400 pixel">Ciclos completados</p>
+      <p id="cycleCount" class="text-4xl font-extrabold text-yellow-400 pixel">0</p>
+    </div>
+  </div>
+  <!-- Indicador de ciclo -->
+  <div class="max-w-6xl mx-auto px-4 pb-4 grid grid-cols-4 gap-2 text-xs text-center pixel" id="stepper">
+    <div class="rounded px-2 py-1 bg-slate-800" data-step="0">1 · Construyen</div>
+    <div class="rounded px-2 py-1 bg-slate-800" data-step="1">2 · Traducción</div>
+    <div class="rounded px-2 py-1 bg-slate-800" data-step="2">3 · Instituciones</div>
+    <div class="rounded px-2 py-1 bg-slate-800" data-step="3">4 · Retorno</div>
+  </div>
+</header>
+
+<!-- PESTAÑAS -->
+<nav class="max-w-6xl mx-auto px-4 mt-5 flex flex-wrap gap-2">
+  <button class="tab px-4 py-2 border-2 border-slate-700 rounded-lg font-semibold tab-on" data-tab="0">⛏️ 1. Entorno Minecraft</button>
+  <button class="tab px-4 py-2 border-2 border-slate-700 rounded-lg font-semibold" data-tab="1">🌉 2. Puente de Traducción</button>
+  <button class="tab px-4 py-2 border-2 border-slate-700 rounded-lg font-semibold" data-tab="2">🏛️ 3. Tablero Institucional</button>
+</nav>
+
+<main class="max-w-6xl mx-auto px-4 py-5">
+
+<!-- ========== MÓDULO 1 ========== -->
+<section id="tab0" class="tabpane fade-in">
+  <div class="rounded-xl overflow-hidden border border-emerald-900">
+    <div class="block-bg p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div>
+          <h2 class="text-xl font-bold text-white drop-shadow pixel">Club de Construcción Libre · Escuela Rural</h2>
+          <p class="text-emerald-100 text-sm">Sin notas, sin examen. Cada quien elige qué construir, con quién y a su ritmo (aprendizaje Montessori).</p>
+        </div>
+        <span class="bg-black/50 rounded px-3 py-1 text-xs pixel">Mundo: «Ñande Escuela» · jueves de tarde</span>
+      </div>
+
+      <p class="text-white font-semibold mb-2 drop-shadow">Elegí qué hacen los estudiantes hoy:</p>
+      <div id="caseButtons" class="grid md:grid-cols-3 gap-3"></div>
+    </div>
+
+    <div class="bg-slate-900 p-5 grid lg:grid-cols-2 gap-5">
+      <!-- Estudiantes -->
+      <div>
+        <h3 class="font-bold text-yellow-400 mb-2 pixel">Estudiantes en acción</h3>
+        <div id="students" class="grid sm:grid-cols-2 gap-3">
+          <p class="text-slate-500 text-sm col-span-2">Seleccioná un caso para ver al grupo trabajando…</p>
+        </div>
+        <div id="buildLog" class="mt-3 text-xs text-slate-400 pixel space-y-1"></div>
+      </div>
+
+      <!-- Libro y pluma -->
+      <div>
+        <h3 class="font-bold text-yellow-400 mb-2 pixel">📖 Libro y Pluma (Book and Quill)</h3>
+        <div id="book" class="parchment rounded p-5 min-h-[260px]">
+          <p class="text-sm italic opacity-60">El libro está en blanco. Los chicos todavía no escribieron nada…</p>
+        </div>
+        <button id="goTranslate" class="hidden mt-4 w-full mc-btn py-3 font-bold pixel">Entregar libro al buzón del puente →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buzón de retorno -->
+  <div id="mailbox" class="hidden mt-5 rounded-xl border-2 border-yellow-500 bg-slate-900 p-5 fade-in">
+    <h3 class="font-bold text-yellow-400 pixel">📬 Buzón de la escuela · mensaje nuevo</h3>
+    <div id="mailContent" class="mt-3 parchment rounded p-4 text-sm"></div>
+    <div id="mailActions" class="mt-4 flex flex-wrap gap-3"></div>
+    <p id="mailResult" class="mt-3 text-sm"></p>
+  </div>
+</section>
+
+<!-- ========== MÓDULO 2 ========== -->
+<section id="tab1" class="tabpane hidden fade-in">
+  <div class="rounded-xl border border-sky-900 bg-slate-900 p-5">
+    <h2 class="text-xl font-bold text-sky-300">La Interfaz de Traducción</h2>
+    <p class="text-slate-400 text-sm mb-4">No evalúa a los chicos ni los corrige: <b>traduce</b> lo que ya hicieron al lenguaje que entienden las instituciones.</p>
+
+    <div id="emptyTranslate" class="rounded border border-dashed border-slate-600 p-6 text-center text-slate-400">
+      Primero elegí un caso en el módulo 1 y entregá el libro.
+    </div>
+
+    <div id="translatePanel" class="hidden">
+      <div class="grid md:grid-cols-[1fr_auto_1fr] gap-4 items-stretch">
+        <div class="parchment rounded p-4 text-sm">
+          <p class="font-bold text-xs uppercase mb-1">Entrada · texto informal</p>
+          <p id="rawText" class="italic"></p>
+        </div>
+        <div class="flex flex-col items-center justify-center gap-3">
+          <button id="runCycle" class="mc-btn px-6 py-4 font-bold pixel text-lg">⚙️ Ejecutar Ciclo de Traducción</button>
+          <div id="loader" class="hidden w-56">
+            <div class="h-3 bg-slate-700 rounded overflow-hidden"><div id="bar" class="h-3 bg-yellow-400" style="width:0%"></div></div>
+            <p id="loaderMsg" class="text-xs text-slate-400 mt-2 pixel text-center">Iniciando…</p>
+          </div>
+        </div>
+        <div id="outputBox" class="rounded border border-slate-700 bg-slate-950 p-4 text-sm min-h-[160px]">
+          <p class="font-bold text-xs uppercase mb-1 text-slate-400">Salida · lectura estructurada</p>
+          <p class="text-slate-500">Esperando ejecución…</p>
+        </div>
+      </div>
+      <div id="toBoard" class="hidden mt-5 text-center">
+        <button class="mc-btn px-6 py-3 font-bold pixel" onclick="showTab(2)">Enviar al tablero institucional →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== MÓDULO 3 ========== -->
+<section id="tab2" class="tabpane hidden fade-in">
+  <div class="rounded-xl border border-rose-900 bg-slate-900 p-5">
+    <h2 class="text-xl font-bold text-rose-300">Tablero Institucional · Ministerio / Municipalidad</h2>
+    <p class="text-slate-400 text-sm mb-4">Vista esquemática de Paraguay (no a escala). Los puntos se encienden cuando el puente entrega una lectura nueva.</p>
+
+    <div class="grid lg:grid-cols-2 gap-5">
+      <!-- Mapa -->
+      <div class="rounded-lg bg-slate-950 border border-slate-700 p-3">
+        <svg viewBox="0 0 400 420" class="w-full">
+          <!-- Chaco -->
+          <path d="M20 90 L150 40 L215 60 L225 140 L215 230 L170 300 L110 320 L60 280 L25 190 Z" fill="#3b4a2f" stroke="#6b8a4a" stroke-width="2"/>
+          <!-- Región oriental -->
+          <path d="M215 60 L270 45 L300 90 L330 170 L350 260 L320 330 L255 360 L200 340 L170 300 L215 230 L225 140 Z" fill="#2f5b3a" stroke="#6bb07a" stroke-width="2"/>
+          <text x="95" y="180" fill="#9ab07a" font-size="12" text-anchor="middle">CHACO</text>
+          <text x="280" y="300" fill="#8fd1a0" font-size="12" text-anchor="middle">REGIÓN ORIENTAL</text>
+          <g id="mapDots"></g>
+        </svg>
+        <div class="flex flex-wrap gap-3 text-xs text-slate-400 mt-1 pixel">
+          <span><span class="inline-block w-3 h-3 rounded-full bg-slate-500 align-middle"></span> sin datos nuevos</span>
+          <span><span class="inline-block w-3 h-3 rounded-full bg-yellow-400 align-middle"></span> lectura nueva</span>
+          <span><span class="inline-block w-3 h-3 rounded-full bg-emerald-400 align-middle"></span> validada por la escuela</span>
+        </div>
+      </div>
+
+      <!-- Antes / Después -->
+      <div>
+        <div id="emptyBoard" class="rounded border border-dashed border-slate-600 p-6 text-center text-slate-400">
+          Ejecutá un ciclo de traducción para que el tablero reaccione.
+        </div>
+        <div id="boardPanel" class="hidden space-y-4">
+          <p class="text-sm text-slate-300">Zona: <b id="zoneName" class="text-yellow-300"></b></p>
+          <div class="rounded-lg border border-red-900 bg-red-950/40 p-4">
+            <p class="text-xs uppercase font-bold text-red-300 pixel">Antes · interpretación tradicional</p>
+            <p id="beforeText" class="text-lg mt-1"></p>
+            <p id="beforeSub" class="text-xs text-slate-400 mt-1"></p>
+          </div>
+          <div class="text-center text-2xl">⬇️ <span class="text-xs text-slate-400 align-middle">pasa por el puente</span></div>
+          <div class="rounded-lg border border-emerald-700 bg-emerald-950/40 p-4">
+            <p class="text-xs uppercase font-bold text-emerald-300 pixel">Después · interpretación con el puente</p>
+            <p id="afterText" class="text-lg mt-1 font-semibold"></p>
+            <p id="afterSub" class="text-xs text-slate-300 mt-1"></p>
+          </div>
+          <button id="sendReturn" class="w-full mc-btn py-3 font-bold pixel">📨 Retorno y Validación: enviar al buzón de la escuela</button>
+          <p id="returnState" class="text-sm text-slate-400"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="text-center text-xs text-slate-500 mt-8 pb-8 pixel">
+  Prototipo ilustrativo · Los textos son ficticios y buscan mostrar el concepto, no datos reales.
+</footer>
+</main>
+
+<script>
+/* ===================== DATOS DE LOS CASOS ===================== */
+const CASES = {
+  A: {
+    icon: "💧", title: "Caso A", sub: "Riego automatizado con Redstone y chatarra",
+    zone: "San Pedro · zona rural", dot: {x: 250, y: 120, label: "San Pedro"},
+    students: [
+      {n:"Dani", e:"🧑‍🌾", r:"Redstone y circuitos", a:"Arma el temporizador con comparadores"},
+      {n:"Mabel", e:"👩‍🔧", r:"Recolectora de chatarra", a:"Trae tubos y bidones del taller de su tío"},
+      {n:"Cristhian", e:"🧑‍💻", r:"Cuidador de la huerta", a:"Mide cada cuánto se seca la tierra"},
+      {n:"Ñeẽ", e:"🧒", r:"Anotador oficial", a:"Escribe todo en el libro del grupo"}
+    ],
+    log: ["Se colocó una bomba de agua con pistones y bloques de Redstone","El sistema abre y cierra canales cada 3 minutos del juego","Reutilizaron 14 piezas de «chatarra» virtual"],
+    book: `Aca con los perros armamos un motor para la huerta usando Redstone. Primero se nos inundaba todo jajaja, pero después le pusimos un temporizador con comparadores y ahora riega solito cada tanto. Usamos la chatarra que sobró del taller, nada se tira. <span class="font-bold">Iporãiterei</span> cómo quedó. Ojalá en la escuela de verdad podamos hacer uno para la mandioca, porque en verano se seca todo y mi abuela tiene que cargar baldes. Nos falta saber cómo hacerlo con cosas reales y sin que se queme el motor. — Dani, Mabel, Cristhian y Ñeẽ`,
+    tr: {
+      cats: ["Ingeniería hidráulica","Lógica de circuitos / automatización","Economía circular (reutilización)"],
+      skills: ["Diseño de sistemas por temporizador","Resolución de fallas por prueba y error","Trabajo cooperativo con roles espontáneos"],
+      needs: ["Kits de robótica y electrónica básica","Conectividad estable para compartir diseños","Un docente-mentor técnico, aunque sea a distancia"],
+      level: "Competencia emergente · alta motivación"
+    },
+    before: ["«Zona rural con bajo interés tecnológico»","Registro: 0 solicitudes de infraestructura digital en el distrito."],
+    after: ["«Foco de innovación tecnológica agrícola»","Prioridad sugerida: kit de riego inteligente + mentoría técnica + conectividad escolar."],
+    mailMsg: "Recibimos su libro sobre el riego con Redstone. Entendimos que ustedes ya diseñan sistemas de riego automático y que necesitan kits de robótica y mejor conexión para llevarlo a una huerta real. Vamos a priorizar un kit para su escuela.",
+    fix: "Los estudiantes aclaran: «Lo que más necesitamos es que alguien nos enseñe a hacerlo con piezas reales, el kit solo no alcanza».",
+    fixMsg: "Corrección recibida. Se agrega «mentoría técnica presencial» como necesidad principal."
+  },
+  B: {
+    icon: "🗺️", title: "Caso B", sub: "Mapa interactivo de talleres mecánicos locales",
+    zone: "Caaguazú · zona semiurbana", dot: {x: 285, y: 205, label: "Caaguazú"},
+    students: [
+      {n:"Luz", e:"👩‍💻", r:"Cartógrafa", a:"Ubica cada taller con carteles y coordenadas"},
+      {n:"Tomás", e:"🧑‍🔧", r:"Entrevistador", a:"Pregunta en el barrio qué repara cada taller"},
+      {n:"Rubén", e:"🧑‍🎨", r:"Diseñador de carteles", a:"Hace los íconos de cada servicio"},
+      {n:"Nati", e:"👧", r:"Guía del mapa", a:"Arma caminos entre talleres y la escuela"}
+    ],
+    log: ["Se construyeron 9 talleres con letreros por especialidad","Se unieron con caminos de colores según el tipo de servicio","Se creó un cartel «¿Dónde arreglo mi moto?» con flechas"],
+    book: `Hicimos el mapa de todos los talleres del barrio: el de don Ramón que arregla motos, el de chapa y pintura, los de aire acondicionado y la gomería. Fuimos a preguntar a cada uno qué hace y a qué hora abre. <span class="font-bold">Ko'ãga</span> cualquiera puede ver en Minecraft dónde arreglar su moto sin andar dando vueltas. Nos dimos cuenta de que hay un montón de talleres y nadie los tiene anotados en ningún lado. Nos gustaría que los dueños aprendan a salir en un mapa de verdad. — Luz, Tomás, Rubén y Nati`,
+    tr: {
+      cats: ["Cartografía comunitaria y datos geográficos","Relevamiento económico local","Diseño de información"],
+      skills: ["Entrevistas y levantamiento de datos","Georreferenciación básica","Comunicación visual para público no técnico"],
+      needs: ["Herramientas de mapeo real (GPS, mapas abiertos)","Formalización digital de talleres y oficios","Espacio para presentar el mapa al municipio"],
+      level: "Competencia consolidada · liderazgo local"
+    },
+    before: ["«Zona semiurbana con economía informal sin registro»","Registro: talleres no figuran en el catastro comercial."],
+    after: ["«Polo de oficios técnicos con capacidad de autorrelevamiento»","Prioridad sugerida: mapa abierto del distrito + vínculo escuela-talleres + formación en oficios."],
+    mailMsg: "Recibimos su libro sobre el mapa de talleres. Entendimos que ustedes ya relevaron los oficios del barrio y que quieren que aparezcan en un mapa real. Proponemos una reunión con el municipio para presentarlo.",
+    fix: "Los estudiantes aclaran: «Los dueños no quieren pagar ni registrarse, solo quieren que los clientes los encuentren».",
+    fixMsg: "Corrección recibida. Se separa «visibilidad» de «registro formal» y se propone un mapa voluntario sin costo."
+  },
+  C: {
+    icon: "🌉", title: "Caso C", sub: "Puente para llegar a la escuela cuando llueve",
+    zone: "Concepción · camino rural", dot: {x: 255, y: 80, label: "Concepción"},
+    students: [
+      {n:"Fátima", e:"👩‍🔬", r:"Ingeniera de caminos", a:"Mide el ancho del arroyo y la altura del agua"},
+      {n:"Gabi", e:"🧑‍🌾", r:"Constructor", a:"Levanta pilares de piedra y madera"},
+      {n:"Sofi", e:"👧", r:"Cronista de lluvias", a:"Anota cuántos días no pueden ir a clase"},
+      {n:"Lucas", e:"🧒", r:"Probador", a:"Cruza el puente con distintos pesos"}
+    ],
+    log: ["Se construyó un puente colgante con cadenas y tablones","Se probó con tormenta simulada: el primer diseño se cayó","Segundo diseño con pilares laterales resistió"],
+    book: `Cuando llueve fuerte el arroyo crece y muchos compañeros no pueden venir a la escuela, a veces una semana entera. Entonces armamos un puente en el juego. El primero se cayó jajaja, el segundo con pilares aguantó la tormenta. Sofi anotó que en el mes pasado faltamos <span class="font-bold">seis días</span> por el agua. Queremos mostrar esto a quien corresponda, porque no es que no queramos venir: <span class="font-bold">ndaikatúi</span> cruzar. — Fátima, Gabi, Sofi y Lucas`,
+    tr: {
+      cats: ["Ingeniería civil básica","Análisis de datos de asistencia","Gestión de riesgo climático"],
+      skills: ["Prueba de estructuras bajo carga","Registro sistemático de eventos","Argumentación con evidencia propia"],
+      needs: ["Infraestructura vial: pasarela o alcantarilla","Calendario escolar flexible en días de lluvia","Evaluación técnica del arroyo por el municipio"],
+      level: "Competencia emergente · conciencia comunitaria alta"
+    },
+    before: ["«Zona con alto ausentismo escolar»","Registro: ausencias atribuidas a falta de compromiso familiar."],
+    after: ["«Zona con barrera de infraestructura, no de interés educativo»","Prioridad sugerida: obra de paso + registro de ausencias por causa climática."],
+    mailMsg: "Recibimos su libro del puente. Entendimos que las ausencias se deben a que el arroyo no se puede cruzar y que ustedes ya tienen datos propios. Elevamos el pedido de evaluación técnica al municipio.",
+    fix: "Los estudiantes aclaran: «También hay familias que dependen de que los chicos ayuden en la chacra, pero la lluvia es el problema principal».",
+    fixMsg: "Corrección recibida. Se agrega el contexto laboral familiar sin cambiar la prioridad principal."
+  }
+};
+
+/* ===================== ESTADO ===================== */
+const state = { cur: null, translated: false, returned: false, cycles: 0, step: 0, validated: {} };
+const $ = id => document.getElementById(id);
+
+/* ===================== UTILIDADES ===================== */
+function setStep(n){
+  state.step = n;
+  document.querySelectorAll('#stepper [data-step]').forEach(el=>{
+    el.classList.toggle('stepper-on', Number(el.dataset.step) <= n && state.cur);
+    el.classList.toggle('bg-slate-800', !(Number(el.dataset.step) <= n && state.cur));
+  });
+}
+function showTab(i){
+  document.querySelectorAll('.tabpane').forEach((p,k)=>p.classList.toggle('hidden', k!==i));
+  document.querySelectorAll('.tab').forEach((t,k)=>t.classList.toggle('tab-on', k===i));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showTab(Number(t.dataset.tab))));
+
+/* ===================== MÓDULO 1 ===================== */
+function buildCaseButtons(){
+  $('caseButtons').innerHTML = Object.entries(CASES).map(([k,c])=>`
+    <button class="mc-btn p-4 text-left" data-case="${k}">
+      <div class="text-3xl">${c.icon}</div>
+      <div class="font-bold pixel">${c.title}</div>
+      <div class="text-sm font-normal" style="text-shadow:none">${c.sub}</div>
+    </button>`).join('');
+  document.querySelectorAll('[data-case]').forEach(b=>b.addEventListener('click',()=>selectCase(b.dataset.case)));
+}
+
+function selectCase(k){
+  const c = CASES[k];
+  state.cur = k; state.translated = false; state.returned = false;
+  document.querySelectorAll('[data-case]').forEach(b=>b.classList.toggle('active', b.dataset.case===k));
+
+  $('students').innerHTML = c.students.map((s,i)=>`
+    <div class="rounded-lg bg-slate-800 border border-slate-700 p-3 fade-in" style="animation-delay:${i*90}ms">
+      <div class="flex items-center gap-2"><span class="text-3xl">${s.e}</span>
+        <div><p class="font-bold">${s.n}</p><p class="text-xs text-emerald-300">${s.r}</p></div></div>
+      <p class="text-xs text-slate-300 mt-2">${s.a}</p>
+    </div>`).join('');
+  $('buildLog').innerHTML = c.log.map(l=>`<p>▸ ${l}</p>`).join('');
+
+  const book = $('book');
+  book.innerHTML = `<p class="text-xs uppercase font-bold opacity-60 mb-2">Libro del grupo · escrito a mano por los chicos</p><p id="bookText" class="leading-relaxed"></p>`;
+  typeText($('bookText'), c.book);
+  $('goTranslate').classList.remove('hidden');
+  $('mailbox').classList.add('hidden');
+
+  // Resetear módulos 2 y 3
+  $('emptyTranslate').classList.add('hidden');
+  $('translatePanel').classList.remove('hidden');
+  $('rawText').innerHTML = c.book;
+  $('outputBox').innerHTML = `<p class="font-bold text-xs uppercase mb-1 text-slate-400">Salida · lectura estructurada</p><p class="text-slate-500">Esperando ejecución…</p>`;
+  $('toBoard').classList.add('hidden');
+  $('loader').classList.add('hidden');
+  $('runCycle').disabled = false; $('runCycle').classList.remove('opacity-50');
+  $('emptyBoard').classList.remove('hidden');
+  $('boardPanel').classList.add('hidden');
+  drawMap();
+  setStep(0);
+}
+
+let typingTimer;
+function typeText(el, html){
+  clearInterval(typingTimer);
+  // Se escribe el HTML por tramos para no romper etiquetas
+  const parts = html.split(/(<[^>]+>)/).filter(Boolean);
+  let out = '', pi = 0, ci = 0;
+  el.classList.add('typing');
+  typingTimer = setInterval(()=>{
+    if(pi >= parts.length){ clearInterval(typingTimer); el.classList.remove('typing'); return; }
+    const p = parts[pi];
+    if(p.startsWith('<')){ out += p; pi++; ci = 0; }
+    else { ci += 3; out += p.slice(ci-3, ci); if(ci >= p.length){ pi++; ci = 0; } }
+    el.innerHTML = out;
+  }, 12);
+}
+$('goTranslate').addEventListener('click',()=>{ showTab(1); });
+
+/* ===================== MÓDULO 2 ===================== */
+$('runCycle').addEventListener('click',()=>{
+  if(!state.cur) return;
+  const c = CASES[state.cur];
+  $('runCycle').disabled = true; $('runCycle').classList.add('opacity-50');
+  $('loader').classList.remove('hidden');
+  $('outputBox').innerHTML = `<p class="text-slate-500">Procesando…</p>`;
+  const msgs = ["Leyendo el libro…","Separando lo que hicieron de lo que piden…","Buscando competencias…","Armando lectura para las instituciones…"];
+  let p = 0, m = 0;
+  const iv = setInterval(()=>{
+    p += 4; $('bar').style.width = p + '%';
+    if(p % 25 === 0){ $('loaderMsg').textContent = msgs[Math.min(m++, msgs.length-1)]; }
+    if(p >= 100){ clearInterval(iv); finishTranslation(c); }
+  }, 60);
+});
+
+function finishTranslation(c){
+  $('loader').classList.add('hidden'); $('bar').style.width = '0%';
+  const t = c.tr;
+  const chips = (arr, cls) => arr.map(x=>`<li class="inline-block ${cls} rounded px-2 py-1 text-xs mr-1 mb-1">${x}</li>`).join('');
+  $('outputBox').innerHTML = `
+    <div class="fade-in space-y-3">
+      <p class="font-bold text-xs uppercase text-slate-400">Salida · lectura estructurada</p>
+      <div><p class="text-xs text-sky-300 font-bold">Categorías detectadas</p><ul>${chips(t.cats,'bg-sky-900/70')}</ul></div>
+      <div><p class="text-xs text-emerald-300 font-bold">Competencias</p><ul>${chips(t.skills,'bg-emerald-900/70')}</ul></div>
+      <div><p class="text-xs text-amber-300 font-bold">Necesidades reales</p><ul>${chips(t.needs,'bg-amber-900/70')}</ul></div>
+      <p class="text-xs text-slate-400">Nivel: <b class="text-slate-200">${t.level}</b></p>
+    </div>`;
+  state.translated = true;
+  $('toBoard').classList.remove('hidden');
+  fillBoard(c);
+  setStep(1);
+}
+
+/* ===================== MÓDULO 3 ===================== */
+const REGIONS = [
+  {id:'SP',x:250,y:120,l:'San Pedro'},{id:'CO',x:255,y:80,l:'Concepción'},
+  {id:'CG',x:285,y:205,l:'Caaguazú'},{id:'IT',x:260,y:315,l:'Itapúa'},
+  {id:'AP',x:315,y:230,l:'Alto Paraná'},{id:'CE',x:215,y:235,l:'Central / Asunción'},
+  {id:'BQ',x:105,y:130,l:'Boquerón'}
+];
+function drawMap(activeLabel, mode){
+  $('mapDots').innerHTML = REGIONS.map(r=>{
+    const active = r.l === activeLabel;
+    const color = active ? (mode==='ok' ? '#34d399' : '#facc15') : '#64748b';
+    return `<g>
+      ${active ? `<circle cx="${r.x}" cy="${r.y}" r="7" fill="${color}" class="pulse-dot"/>` : ''}
+      <circle cx="${r.x}" cy="${r.y}" r="7" fill="${color}" stroke="#0f172a" stroke-width="2"/>
+      <text x="${r.x+12}" y="${r.y+4}" fill="${active?'#fff':'#94a3b8'}" font-size="11" ${active?'font-weight="700"':''}>${r.l}</text>
+    </g>`;
+  }).join('');
+}
+const ZONE_LABEL = {A:'San Pedro', B:'Caaguazú', C:'Concepción'};
+
+function fillBoard(c){
+  $('emptyBoard').classList.add('hidden');
+  $('boardPanel').classList.remove('hidden');
+  $('zoneName').textContent = c.zone;
+  $('beforeText').textContent = c.before[0]; $('beforeSub').textContent = c.before[1];
+  $('afterText').textContent = c.after[0];  $('afterSub').textContent = c.after[1];
+  $('returnState').textContent = '';
+  $('sendReturn').disabled = false; $('sendReturn').classList.remove('opacity-50');
+  drawMap(ZONE_LABEL[state.cur], 'new');
+  setStep(2);
+}
+
+$('sendReturn').addEventListener('click',()=>{
+  const c = CASES[state.cur];
+  $('sendReturn').disabled = true; $('sendReturn').classList.add('opacity-50');
+  $('returnState').textContent = 'Enviando mensaje al buzón de la escuela…';
+  setTimeout(()=>{
+    $('returnState').innerHTML = '✅ Mensaje entregado. Los estudiantes deben verificar si entendimos bien su realidad.';
+    showMailbox(c);
+    setStep(3);
+  }, 900);
+});
+
+/* ===================== RETORNO Y VALIDACIÓN ===================== */
+function showMailbox(c){
+  $('mailbox').classList.remove('hidden');
+  $('mailContent').innerHTML = `
+    <p class="text-xs uppercase font-bold opacity-60 mb-2">De: Tablero institucional · Para: Club de Construcción Libre</p>
+    <p>${c.mailMsg}</p>
+    <p class="mt-3 font-bold">¿Les parece que entendimos bien su realidad?</p>`;
+  $('mailActions').innerHTML = `
+    <button class="mc-btn px-4 py-2 pixel" id="vOk">✔ Sí, nos entendieron</button>
+    <button class="mc-btn px-4 py-2 pixel" id="vFix">✎ No del todo, queremos aclarar</button>`;
+  $('mailResult').textContent = '';
+  $('vOk').onclick = ()=>closeCycle(c, false);
+  $('vFix').onclick = ()=>closeCycle(c, true);
+  setTimeout(()=>$('mailbox').scrollIntoView({behavior:'smooth', block:'center'}), 100);
+  showTab(0);
+}
+
+function closeCycle(c, withFix){
+  state.cycles++;
+  $('cycleCount').textContent = state.cycles;
+  $('mailActions').innerHTML = '';
+  $('mailResult').innerHTML = withFix
+    ? `<span class="text-amber-300">💬 ${c.fix}</span><br><span class="text-emerald-300">🔁 ${c.fixMsg}</span><br><span class="text-slate-400">El ciclo vuelve a empezar con un libro nuevo. Así la lectura se vuelve más justa con cada vuelta.</span>`
+    : `<span class="text-emerald-300">🎉 Validado por la escuela. El punto se marca en verde y los chicos siguen construyendo; el ciclo es permanente.</span>`;
+  drawMap(ZONE_LABEL[state.cur], 'ok');
+  state.validated[state.cur] = true;
+  setStep(3);
+}
+
+/* ===================== INICIO ===================== */
+buildCaseButtons();
+drawMap();
+setStep(0);
+</script>
+</body>
+</html>
