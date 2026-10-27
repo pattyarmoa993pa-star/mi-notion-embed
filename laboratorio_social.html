@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laboratorio de simulación social</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--tx:#1d1d1b;--mut:#66665f;--bd:#e2e0d8;--obs:#1f5fa8;--obsbg:#e8f0fa;--sim:#b85c12;--simbg:#fbeee1;
+--ok:#2e7d4f;--mid:#d9a21b;--bad:#c0392b;--c0:#7a7a74;--c1:#d9822b;--c2:#1f5fa8;--c3:#2e7d4f;--zone:#efede6;--grid:#e6e4dc}
+@media (prefers-color-scheme:dark){:root{--bg:#141412;--card:#1e1e1b;--tx:#ecebe5;--mut:#a09f97;--bd:#33332f;--obs:#6ea8e8;--obsbg:#16222f;--sim:#f0a15e;--simbg:#2c2015;
+--ok:#5cc18a;--mid:#e6b93a;--bad:#ef6f60;--c0:#9a9a92;--c1:#f0a15e;--c2:#6ea8e8;--c3:#5cc18a;--zone:#252521;--grid:#2d2d29}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px}
+section{padding:40px 0 8px}
+h1{font-size:clamp(1.8rem,5vw,2.8rem);line-height:1.15;margin:0 0 12px}
+h2{font-size:1.5rem;margin:0 0 6px}
+h3{font-size:1.05rem;margin:0 0 6px}
+.lead{font-size:1.15rem;color:var(--mut);max-width:680px;margin:0 0 20px}
+.kicker{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin:0 0 6px}
+.sub{color:var(--mut);margin:0 0 18px;max-width:720px}
+.grid{display:grid;gap:12px}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px}
+.step{font-size:2rem;font-weight:800;color:var(--sim);line-height:1}
+.hero{padding:48px 0 16px}
+.btn,.chip{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:99px;padding:7px 14px}
+.btn:hover,.chip:hover{border-color:var(--mut)}
+.chip[aria-pressed=true]{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.btn.main{background:var(--sim);border-color:var(--sim);color:#fff}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tag{display:inline-block;font-size:.68rem;padding:1px 8px;border-radius:99px;font-weight:600;vertical-align:middle}
+.tag.o{background:var(--obsbg);color:var(--obs)}
+.tag.s{background:var(--simbg);color:var(--sim)}
+/* mundos */
+.mundos{display:grid;grid-template-columns:1fr 90px 1fr;gap:0;align-items:stretch}
+@media (max-width:760px){.mundos{grid-template-columns:1fr}.bridge{flex-direction:row!important;padding:10px 0}.bridge .arr{transform:rotate(90deg)}}
+.world{border-radius:14px;padding:16px;border:2px solid}
+.world.obs{background:var(--obsbg);border-color:var(--obs)}
+.world.sim{background:var(--simbg);border-color:var(--sim);border-style:dashed}
+.world h3{margin-bottom:2px}
+.world ul{margin:8px 0 0;padding-left:18px;font-size:.93rem}
+.world li{margin:3px 0}
+.bridge{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:.72rem;color:var(--mut);gap:6px;padding:0 6px}
+.bridge .arr{font-size:1.6rem;line-height:1}
+.warn{border-left:3px solid var(--bad);padding:8px 12px;background:var(--card);border-radius:0 8px 8px 0;font-size:.92rem;margin-top:12px}
+/* sliders */
+.sl{display:block;margin:12px 0}
+.sl .lb{display:flex;justify-content:space-between;gap:8px;font-size:.88rem;align-items:baseline}
+.sl output{font-weight:700;white-space:nowrap}
+.sl input{width:100%;accent-color:var(--sim)}
+.sl .h{font-size:.78rem;color:var(--mut);margin-top:-2px}
+.acard h3 span.ic{font-size:1.2rem;margin-right:6px}
+.acard .desc{font-size:.88rem;color:var(--mut);margin:0 0 4px}
+/* lab */
+canvas{width:100%;display:block;border-radius:12px}
+#map{background:var(--card);border:1px solid var(--bd)}
+#chart{background:var(--card);border:1px solid var(--bd)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.84rem;color:var(--mut);margin:8px 0}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:baseline}
+.sw{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;align-items:center}
+.bar input[type=range]{flex:1;min-width:160px;accent-color:var(--sim)}
+.stat{font-size:.95rem;margin:6px 0}
+/* tabla */
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--bd)}
+th{font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+tr.best td{background:var(--simbg)}
+.scroll{overflow-x:auto}
+.find p{margin:0 0 10px}
+.sens{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:10px}
+.sens .card{padding:12px;font-size:.9rem}
+.need{color:var(--obs);font-size:.84rem;margin-top:6px}
+footer{padding:32px 0 48px;color:var(--mut);font-size:.85rem}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <p class="kicker">Demostración visual · datos abiertos de Paraguay</p>
+  <h1>Laboratorio de simulación social</h1>
+  <p class="lead">Probar ideas en un mundo simulado, ver qué podría pasar y por qué, <b>antes</b> de aplicarlas en una comunidad real.</p>
+  <div class="row"><a class="btn main" href="#lab" style="text-decoration:none">Ir directo al laboratorio</a><a class="btn" href="#mundos" style="text-decoration:none">Entender cómo funciona</a></div>
+  <div class="warn"><b>Importante:</b> esta simulación no predice el futuro. Ayuda a explorar qué <i>podría</i> suceder, por qué, y qué información nos falta para saberlo con más certeza.</div>
+</div></header>
+
+<section><div class="wrap">
+  <p class="kicker">La idea en tres pasos</p>
+  <div class="grid g3">
+    <div class="card"><div class="step">1</div><h3>Partimos de evidencia</h3><p class="sub">Datos abiertos sobre empleo, precios y pobreza dan la base de una comunidad de demostración.</p></div>
+    <div class="card"><div class="step">2</div><h3>Ensayamos en el mundo simulado</h3><p class="sub">Probamos intervenciones (una ayuda, una obra, ambas) con hogares cuyas condiciones se pueden modificar.</p></div>
+    <div class="card"><div class="step">3</div><h3>Comparamos y vemos qué falta saber</h3><p class="sub">Los resultados vienen con rangos, no con certezas, y señalan qué dato nuevo cambiaría la conclusión.</p></div>
+  </div>
+</div></section>
+
+<section id="mundos"><div class="wrap">
+  <p class="kicker">Arquitectura</p>
+  <h2>Dos mundos conectados</h2>
+  <p class="sub">El mundo observado aporta evidencia. El mundo simulado es donde se prueban hipótesis. Lo que ocurre en el segundo no se convierte automáticamente en verdad sobre el primero.</p>
+  <div class="mundos">
+    <div class="world obs">
+      <span class="tag o">Mundo observado · evidencia</span>
+      <h3 style="margin-top:8px">Lo que sabemos hoy</h3>
+      <ul>
+        <li>60,1% de las personas ocupadas está en la informalidad (rural 72,4%, urbana 59%).</li>
+        <li>Canasta básica urbana: Gs 897.168 por persona al mes; solo alimentos: Gs 391.894 (urbana) y Gs 357.891 (rural).</li>
+        <li>Alrededor de 1 de cada 5 personas vive con ingresos por debajo de la canasta.</li>
+        <li>Inflación de alimentos acumulada en 2026: 7,1%; inflación anual general proyectada para el cierre del año: 3,3%.</li>
+      </ul>
+      <p class="need" style="margin-top:10px"><b>Todavía falta:</b> acceso a servicios por distrito y gastos reales por hogar (la Encuesta de Presupuestos Familiares 2025-2026 está en curso).</p>
+      <p class="need" style="font-size:.76rem;margin-top:4px">Fuentes: INE y BCP, vía ABC, Hoy, Última Hora e Infonegocios.</p>
+    </div>
+    <div class="bridge"><span>evidencia<br>alimenta</span><span class="arr">➜</span><span class="arr" style="color:var(--bad);opacity:.8">⇠ ✕</span><span>las conclusiones<br>no vuelven solas</span></div>
+    <div class="world sim">
+      <span class="tag s">Mundo simulado · hipótesis</span>
+      <h3 style="margin-top:8px">Lo que podemos ensayar</h3>
+      <ul>
+        <li>Una comunidad ficticia de 150 hogares en zona rural, periferia urbana y ciudad.</li>
+        <li>Cuatro escenarios: sin intervención, ayuda directa, obras locales y ambas.</li>
+        <li>40 repeticiones con azar y supuestos inciertos, para ver un <b>rango</b> de lo que podría pasar.</li>
+        <li>Cada supuesto está a la vista y se puede cuestionar.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="arquetipos"><div class="wrap">
+  <p class="kicker">Los componentes de la sociedad</p>
+  <h2>Arquetipos con perillas</h2>
+  <p class="sub">En vez de personajes con comportamientos fijos, cada arquetipo es un conjunto de condiciones que se puede modificar. Mové las perillas y mirá más abajo cómo cambian los resultados. Las etiquetas indican si el valor viene de evidencia o es un supuesto a discutir.</p>
+  <div class="grid g2">
+    <div class="card acard"><h3><span class="ic">🏠</span>Hogares</h3>
+      <p class="desc">Dos hogares con ingresos parecidos pueden reaccionar distinto ante la misma ayuda por sus gastos, responsabilidades o ubicación.</p>
+      <div class="row" id="hhChips"></div><div id="hhSliders"></div></div>
+    <div class="card acard"><h3><span class="ic">🛒</span>Unidades económicas</h3>
+      <p class="desc">Comercios y productores locales. Si llega más dinero y ellos no pueden abastecer más, suben los precios.</p><div id="ecoSliders"></div></div>
+    <div class="card acard"><h3><span class="ic">🏛️</span>Instituciones y servicios</h3>
+      <p class="desc">Quién recibe la ayuda, cuánto dura, y cuánto de lo planificado se ejecuta de verdad.</p><div id="instSliders"></div></div>
+    <div class="card acard"><h3><span class="ic">🗺️</span>Entorno territorial</h3>
+      <p class="desc">La distancia y el estado de los caminos encarecen llevar alimentos al campo y a la periferia.</p><div id="entSliders"></div></div>
+  </div>
+</div></section>
+
+<section id="lab"><div class="wrap">
+  <p class="kicker">Experimentar</p>
+  <h2>El laboratorio</h2>
+  <p class="sub">Cada punto es un hogar de la comunidad de demostración. Elegí un escenario, avanzá los meses y observá qué hogares quedan en riesgo (no les alcanza para cubrir alimentos y gastos fijos).</p>
+
+  <div class="card" style="margin-bottom:12px">
+    <b>Probá un «¿y si…?»</b>
+    <div class="row" style="margin-top:8px">
+      <button class="chip" data-pre="ayuda">…la ayuda llega mal</button>
+      <button class="chip" data-pre="obras">…las obras se atrasan</button>
+      <button class="chip" data-pre="comercio">…los comercios no pueden abastecer</button>
+      <button class="chip" data-pre="larga">…la ayuda dura 24 meses</button>
+      <button class="chip" data-pre="reset">Volver a los valores iniciales</button>
+    </div>
+    <div class="stat" id="presetNote" style="color:var(--mut)"></div>
+  </div>
+
+  <div class="row" id="scTabs" role="group" aria-label="Escenario"></div>
+  <canvas id="map" aria-label="Mapa de hogares simulados"></canvas>
+  <div class="legend">
+    <span><i class="dot" style="background:var(--ok)"></i>Holgado</span>
+    <span><i class="dot" style="background:var(--mid)"></i>Ajustado</span>
+    <span><i class="dot" style="background:var(--bad)"></i>En riesgo</span>
+    <span><i class="dot" style="background:transparent;border:2px solid var(--tx);width:12px;height:12px;box-sizing:border-box"></i>Recibe la ayuda</span>
+    <span>Fondo azul: obras que ya hacen efecto</span>
+  </div>
+  <div class="bar">
+    <button class="btn" id="play">▶ Avanzar</button>
+    <input type="range" id="month" min="0" max="24" value="6" aria-label="Mes">
+    <b id="monthLbl">Mes 6</b>
+    <button class="btn" id="other">🎲 Otra posibilidad</button>
+  </div>
+  <div class="stat" id="mapStat" aria-live="polite"></div>
+  <div class="stat" style="color:var(--mut);font-size:.85rem" id="runNote"></div>
+
+  <h3 style="margin-top:26px">Los cuatro escenarios, en el tiempo</h3>
+  <p class="sub" style="margin-bottom:8px">Porcentaje de hogares en riesgo. La línea es el resultado central y la zona sombreada, el rango probable al repetir la simulación 40 veces con azar y supuestos inciertos.</p>
+  <canvas id="chart" aria-label="Gráfico comparativo de escenarios"></canvas>
+  <div class="legend" id="chartLegend"></div>
+</div></section>
+
+<section id="resultados"><div class="wrap">
+  <p class="kicker">Comparar escenarios</p>
+  <h2>¿Qué conviene? Depende de qué valore la comunidad</h2>
+  <p class="sub">¿Alivio rápido o cambio duradero? Esa pregunta no la responde la simulación: la responde la gente. Elegí el plazo que importa y mirá cómo cambia la comparación.</p>
+  <div class="row" id="hChips" style="margin-bottom:12px"></div>
+  <div class="card scroll"><table id="tbl"></table></div>
+
+  <h3 style="margin-top:24px">Lectura en palabras simples</h3>
+  <div class="card find" id="find"></div>
+
+  <h3 style="margin-top:24px">Qué supuestos cambiarían la conclusión</h3>
+  <p class="sub" style="margin-bottom:0">Variamos cada supuesto hacia arriba y hacia abajo y miramos si cambia cuál opción gana. Es la guía de qué evidencia nueva conviene conseguir primero.</p>
+  <div class="sens" id="sens"></div>
+</div></section>
+
+<section><div class="wrap">
+  <p class="kicker">Cómo usarlo con responsabilidad</p>
+  <h2>Ingeniería social como análisis de sistemas, no como control de personas</h2>
+  <p class="sub">Aquí significa diseñar y evaluar intervenciones sobre sistemas humanos de forma deliberada y a la vista de todos.</p>
+  <div class="grid g3">
+    <div class="card"><h3>Supuestos visibles</h3><p class="sub" style="margin:0">Cada perilla muestra si es dato observado o supuesto.</p></div>
+    <div class="card"><h3>Supuestos cuestionables</h3><p class="sub" style="margin:0">Cualquiera puede cambiarlos y ver qué pasa con la conclusión.</p></div>
+    <div class="card"><h3>La comunidad en la mesa</h3><p class="sub" style="margin:0">Los plazos, prioridades y datos que faltan se definen con quienes viven la realidad que se simula.</p></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">Demostración con una comunidad ficticia. Ingresos, gastos y comportamiento de los hogares son supuestos ilustrativos; los datos observados provienen de INE y BCP. Nada de esto debe tomarse como pronóstico.</div></footer>
+
+<script>
+/*MODEL_START*/
+const N=150,T=24,M=40;
+const ZC=[52,53,45], INF=[.72,.70,.45], EF=[.6,.85,1.1], FOOD0=[357891,391894,391894];
+const ZN=['Zona rural','Periferia urbana','Ciudad'];
+const SC=[{n:'Sin intervención',sub:0,infra:0},{n:'Ayuda directa',sub:1,infra:0},{n:'Obras locales',sub:0,infra:1},{n:'Ambas',sub:1,infra:1}];
+const DEF={hh:[{inc:2100000,fixed:.22,prop:.85,mem:3},{inc:3200000,fixed:.35,prop:.92,mem:4},{inc:5800000,fixed:.40,prop:.55,mem:3}],
+ elast0:.40,precision:.75,exec:.70,delay:6,transfer:500000,dur:12,infraHH:4,surR:.12,surP:.06,infl:.071,gen:.033};
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function makePop(seed,A){
+  const r=mulberry32(seed),pop=[];
+  for(let z=0;z<3;z++)for(let k=0;k<ZC[z];k++){
+    const h=A.hh[z];
+    pop.push({z,inc:h.inc*Math.exp(.35*gauss(r)-.06),mem:clamp(Math.round(h.mem+1.1*gauss(r)),2,7),inf:r()<INF[z]?1:0,
+      fx:Math.max(.08,h.fixed*(1+.25*gauss(r))),pr:clamp(h.prop+.12*gauss(r),.05,1)});
+  }
+  const shocks=[];
+  for(let t=0;t<=T;t++){const row=new Float32Array(N);for(let i=0;i<N;i++){const p=pop[i];const sd=p.inf?(p.z==0?.18:.12):.02;row[i]=Math.max(.5,1+sd*gauss(r));}shocks.push(row);}
+  const u=new Float32Array(N),u2=new Float32Array(N);for(let i=0;i<N;i++){u[i]=r();u2[i]=r();}
+  return{pop,shocks,u,u2};
+}
+function perturb(A,seed){
+  const r=mulberry32(seed+7777),g=()=>gauss(r);
+  return{...A,elast0:clamp(A.elast0+.10*g(),.03,.95),precision:clamp(A.precision+.07*g(),.25,1),exec:clamp(A.exec+.10*g(),.15,1),
+    delay:Math.max(1,Math.round(A.delay+1.5*g())),surR:Math.max(0,A.surR*(1+.2*g())),surP:Math.max(0,A.surP*(1+.2*g()))};
+}
+function simulate(P,A,sc){
+  const{pop,shocks,u,u2}=P;
+  const baseFood=[0,0,0];pop.forEach(p=>baseFood[p.z]+=p.mem*FOOD0[p.z]);
+  const recip=new Uint8Array(N);
+  if(sc.sub)pop.forEach((p,i)=>{
+    const sur=p.z==0?A.surR:p.z==1?A.surP:0;
+    const m0=p.inc-p.fx*p.inc-p.mem*FOOD0[p.z]*(1+sur);
+    const elig=m0<.05*p.inc;
+    recip[i]=elig?(u[i]<A.precision?1:0):(u2[i]<(1-A.precision)*.25?1:0);
+  });
+  const L=[1,1,1],risk=new Float32Array(T+1),st=new Uint8Array((T+1)*N),price=new Float32Array((T+1)*3),ramp=new Float32Array(T+1);
+  let cost=0;
+  for(let t=0;t<=T;t++){
+    const subOn=sc.sub&&t>=1&&t<=A.dur;
+    const rp=sc.infra?clamp((t-A.delay)/6,0,1)*A.exec:0;ramp[t]=rp;
+    if(t>=1){
+      const dem=[0,0,0];
+      if(subOn)pop.forEach((p,i)=>{if(recip[i])dem[p.z]+=A.transfer*p.pr;});
+      for(let z=0;z<3;z++){
+        const el=clamp(A.elast0*EF[z]+(z<2?.3*rp:0),.03,.95);
+        const tg=1+.6*(dem[z]/baseFood[z])*(1-el);
+        L[z]+=.4*(tg-L[z]);
+      }
+    }
+    for(let z=0;z<3;z++)price[t*3+z]=(L[z]-1)*100;
+    const fd=Math.pow(1+A.infl,t/12),gd=Math.pow(1+A.gen,t/12);
+    let rc=0;
+    for(let i=0;i<N;i++){
+      const p=pop[i],z=p.z;
+      const sur=z==0?A.surR*(1-.7*rp):z==1?A.surP*(1-.7*rp):0;
+      const gain=z==0?.06*rp:z==1?.03*rp:0;
+      const tr=subOn&&recip[i]?A.transfer:0;
+      const inc=p.inc*gd*shocks[t][i]*(1+gain)+tr;
+      const food=p.mem*FOOD0[z]*L[z]*fd*(1+sur);
+      const m=inc-p.fx*p.inc*gd-food;
+      const s=m<0?2:(m<.12*p.inc*gd?1:0);
+      st[t*N+i]=s;if(s==2)rc++;cost+=tr;
+    }
+    risk[t]=rc/N*100;
+  }
+  if(sc.infra)cost+=A.infraHH*1e6*(ZC[0]+ZC[1]);
+  return{risk,st,recip,price,ramp,cost};
+}
+function runAll(A,m){
+  const res=SC.map(()=>[]);
+  for(let r=0;r<m;r++){const seed=1000+r*17,P=makePop(seed,A),Ap=perturb(A,seed);SC.forEach((sc,s)=>res[s].push(simulate(P,Ap,sc)));}
+  return res;
+}
+const q=(a,p)=>a[Math.floor(p*(a.length-1))];
+function summarize(res){
+  return res.map(runs=>{
+    const med=[],lo=[],hi=[];
+    for(let t=0;t<=T;t++){const a=runs.map(r=>r.risk[t]).sort((x,y)=>x-y);med.push(q(a,.5));lo.push(q(a,.1));hi.push(q(a,.9));}
+    return{med,lo,hi,cost:q(runs.map(r=>r.cost).sort((x,y)=>x-y),.5)};
+  });
+}
+/*MODEL_END*/
+
+/* ---------- Interfaz ---------- */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const nf=new Intl.NumberFormat('es-PY');
+const pc=v=>Math.round(v*100)+'%';
+const gsM=v=>'Gs '+nf.format(Math.round(v/1000))+' mil';
+const dec=(v,d=1)=>v.toFixed(d).replace('.',',');
+const SPEC={
+ eco:[{k:'elast0',l:'Capacidad de respuesta de comercios y productores locales',min:.05,max:.9,step:.05,f:pc,tag:'s',h:'Qué tanto pueden aumentar la oferta si crece la demanda.'}],
+ inst:[
+  {k:'precision',l:'Qué tan bien llega la ayuda a quien la necesita',min:.3,max:1,step:.05,f:pc,tag:'s'},
+  {k:'transfer',l:'Monto de la ayuda por hogar, por mes',min:100000,max:1000000,step:50000,f:gsM,tag:'s'},
+  {k:'dur',l:'Cuántos meses dura la ayuda',min:3,max:24,step:1,f:v=>v+' meses',tag:'s'},
+  {k:'exec',l:'Qué parte de las obras se ejecuta de verdad',min:.2,max:1,step:.05,f:pc,tag:'s'},
+  {k:'delay',l:'Meses hasta que las obras empiezan a notarse',min:1,max:18,step:1,f:v=>v+' meses',tag:'s'},
+  {k:'infraHH',l:'Presupuesto de obras por hogar beneficiado',min:1,max:10,step:.5,f:v=>'Gs '+dec(v)+' M',tag:'s'}],
+ ent:[
+  {k:'surR',l:'Sobrecosto de llevar alimentos a zona rural',min:0,max:.3,step:.01,f:pc,tag:'s',h:'Transporte, caminos, intermediarios.'},
+  {k:'surP',l:'Sobrecosto en la periferia urbana',min:0,max:.15,step:.01,f:pc,tag:'s'},
+  {k:'infl',l:'Inflación anual de alimentos',min:0,max:.15,step:.005,f:v=>dec(v*100)+'%',tag:'o',h:'Dato observado: 7,1% acumulado en 2026.'}]
+};
+const HHS=[
+  {f:'inc',l:'Ingreso mensual del hogar',min:1000000,max:8000000,step:100000,fm:v=>'Gs '+dec(v/1e6)+' M',tag:'s'},
+  {f:'fixed',l:'Gastos fijos (vivienda, transporte, deudas) sobre el ingreso',min:.1,max:.6,step:.01,fm:pc,tag:'s'},
+  {f:'prop',l:'Propensión a gastar una ayuda extra',min:.1,max:1,step:.05,fm:pc,tag:'s'}];
+const PRE={
+ ayuda:{set:{precision:.4},note:'La ayuda llega a menos de la mitad de quienes la necesitan, y algunos que no la necesitan la reciben.'},
+ obras:{set:{delay:12,exec:.4},note:'Las obras tardan un año en notarse y solo se ejecuta el 40%.'},
+ comercio:{set:{elast0:.12},note:'Los comercios locales casi no pueden aumentar su oferta: la ayuda tiende a transformarse en precios más altos.'},
+ larga:{set:{dur:24},note:'La ayuda se mantiene los 24 meses.'},
+ reset:{reset:1,note:'Valores iniciales restaurados.'}
+};
+let A=JSON.parse(JSON.stringify(DEF)),RES,SUM,SENS=[];
+const view={sc:1,month:6,run:0,H:12,hh:0,timer:null};
+const css=()=>getComputedStyle(document.documentElement),col=n=>css().getPropertyValue(n).trim();
+
+function sliderHTML(s,attr){
+  return `<label class="sl"><span class="lb"><span>${s.l} <span class="tag ${s.tag}">${s.tag=='o'?'Observado':'Supuesto'}</span></span><output></output></span>
+  <input type="range" ${attr} min="${s.min}" max="${s.max}" step="${s.step}">${s.h?`<span class="h">${s.h}</span>`:''}</label>`;
+}
+function buildInputs(){
+  for(const g of ['eco','inst','ent'])$('#'+g+'Sliders').innerHTML=SPEC[g].map(s=>sliderHTML(s,`data-k="${s.k}"`)).join('');
+  $('#hhChips').innerHTML=ZN.map((n,i)=>`<button class="chip" data-hht="${i}" aria-pressed="${i==view.hh}">${n}</button>`).join('');
+  $('#hhSliders').innerHTML=HHS.map(s=>sliderHTML(s,`data-hh="${s.f}"`)).join('');
+  $('#scTabs').innerHTML=SC.map((s,i)=>`<button class="chip" data-sc="${i}" aria-pressed="${i==view.sc}">${s.n}</button>`).join('');
+  $('#hChips').innerHTML=[[3,'Alivio rápido (3 meses)'],[12,'Al cabo de un año'],[24,'Largo plazo (24 meses)']].map(([h,l])=>`<button class="chip" data-h="${h}" aria-pressed="${h==view.H}">${l}</button>`).join('');
+  $('#chartLegend').innerHTML=SC.map((s,i)=>`<span><i class="sw" style="background:var(--c${i})"></i>${s.n}</span>`).join('');
+}
+function syncInputs(){
+  for(const g of ['eco','inst','ent'])SPEC[g].forEach(s=>{const el=$(`[data-k="${s.k}"]`);el.value=A[s.k];el.parentElement.querySelector('output').textContent=s.f(A[s.k]);});
+  HHS.forEach(s=>{const el=$(`[data-hh="${s.f}"]`);el.value=A.hh[view.hh][s.f];el.parentElement.querySelector('output').textContent=s.fm(A.hh[view.hh][s.f]);});
+  $$('[data-hht]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.hht==view.hh));
+}
+let deb;
+function schedule(){clearTimeout(deb);deb=setTimeout(recompute,140);}
+document.addEventListener('input',e=>{
+  const el=e.target;if(el.type!='range')return;
+  if(el.dataset.k){const s=[...SPEC.eco,...SPEC.inst,...SPEC.ent].find(x=>x.k==el.dataset.k);A[s.k]=+el.value;el.parentElement.querySelector('output').textContent=s.f(+el.value);schedule();}
+  else if(el.dataset.hh){const s=HHS.find(x=>x.f==el.dataset.hh);A.hh[view.hh][s.f]=+el.value;el.parentElement.querySelector('output').textContent=s.fm(+el.value);schedule();}
+  else if(el.id=='month'){view.month=+el.value;renderMap();drawChart();}
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.hht!==undefined){view.hh=+b.dataset.hht;syncInputs();}
+  else if(b.dataset.sc!==undefined){view.sc=+b.dataset.sc;$$('[data-sc]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.sc==view.sc));renderMap();drawChart();}
+  else if(b.dataset.h!==undefined){view.H=+b.dataset.h;$$('[data-h]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.h==view.H));renderResults();}
+  else if(b.dataset.pre){
+    const p=PRE[b.dataset.pre];
+    if(p.reset)A=JSON.parse(JSON.stringify(DEF));else Object.assign(A,p.set);
+    $('#presetNote').textContent=p.note;syncInputs();recompute();
+  }
+  else if(b.id=='play')togglePlay();
+  else if(b.id=='other'){view.run=(view.run+1)%M;renderMap();}
+});
+function togglePlay(){
+  if(view.timer){clearInterval(view.timer);view.timer=null;$('#play').textContent='▶ Avanzar';return;}
+  if(view.month>=T)view.month=0;
+  $('#play').textContent='❚❚ Pausar';
+  view.timer=setInterval(()=>{
+    view.month++;if(view.month>=T){togglePlay();}
+    $('#month').value=view.month;renderMap();drawChart();
+  },520);
+}
+
+function fit(c,aspect,minH){
+  const dpr=window.devicePixelRatio||1,w=c.clientWidth,h=Math.max(minH||0,Math.round(w*aspect));
+  c.style.height=h+'px';c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  const ctx=c.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);return{ctx,w,h};
+}
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+const ZR=[[.01,.14,.35,.84],[.38,.14,.33,.84],[.74,.14,.25,.84]];
+const jit=(()=>{const r=mulberry32(5),a=[];for(let i=0;i<N;i++)a.push([r()-.5,r()-.5]);return a})();
+
+function renderMap(){
+  if(!RES)return;
+  const c=$('#map'),{ctx,w,h}=fit(c,.5,300),s=view.sc,run=RES[s][view.run],t=view.month;
+  const tx=col('--tx'),mut=col('--mut'),zone=col('--zone'),obs=col('--obs');
+  const dotR=clamp(w/105,4,8);
+  let idx=0,counts=[0,0,0];
+  for(let z=0;z<3;z++){
+    const[x0,y0,zw,zh]=[ZR[z][0]*w,ZR[z][1]*h,ZR[z][2]*w,ZR[z][3]*h];
+    ctx.fillStyle=zone;rr(ctx,x0,y0,zw,zh,12);ctx.fill();
+    const ramp=z<2?run.ramp[t]:0;
+    if(ramp>0){ctx.save();ctx.globalAlpha=.07+.22*ramp;ctx.fillStyle=obs;rr(ctx,x0,y0,zw,zh,12);ctx.fill();ctx.restore();
+      ctx.save();ctx.globalAlpha=.3+.5*ramp;ctx.strokeStyle=obs;ctx.setLineDash([8,6]);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x0+10,y0+zh-10);ctx.lineTo(x0+zw-10,y0+zh-10);ctx.stroke();ctx.restore();}
+    ctx.fillStyle=tx;ctx.font='600 '+clamp(w/58,11,14)+'px system-ui';ctx.textAlign='left';ctx.fillText(ZN[z],x0+2,y0-22);
+    const pr=run.price[t*3+z];
+    ctx.fillStyle=mut;ctx.font=clamp(w/70,10,12)+'px system-ui';
+    ctx.fillText(Math.abs(pr)>=.5?'Alimentos +'+dec(pr)+'% por la ayuda':'Sin presión de precios',x0+2,y0-7);
+    const n=ZC[z],cols=Math.ceil(Math.sqrt(n*zw/zh)),rows=Math.ceil(n/cols),cw=(zw-16)/cols,ch=(zh-16)/rows;
+    for(let k=0;k<n;k++,idx++){
+      const cx=x0+8+(k%cols+.5+jit[idx][0]*.45)*cw,cy=y0+8+(Math.floor(k/cols)+.5+jit[idx][1]*.45)*ch;
+      const st=run.st[t*N+idx];counts[st]++;
+      ctx.beginPath();ctx.arc(cx,cy,dotR,0,7);ctx.fillStyle=col(st==2?'--bad':st==1?'--mid':'--ok');ctx.fill();
+      if(run.recip[idx]&&SC[s].sub&&t>=1&&t<=A.dur){ctx.beginPath();ctx.arc(cx,cy,dotR+2.5,0,7);ctx.strokeStyle=tx;ctx.lineWidth=1.6;ctx.stroke();}
+    }
+  }
+  $('#monthLbl').textContent='Mes '+t;
+  const endNote=(SC[s].sub&&t>A.dur)?' La ayuda ya terminó.':'';
+  $('#mapStat').innerHTML=`<b>${SC[s].n}</b>, mes ${t}: <b style="color:var(--bad)">${counts[2]}</b> hogares en riesgo (${dec(counts[2]/N*100,0)}%), ${counts[1]} ajustados y ${counts[0]} holgados.${endNote}`;
+  $('#runNote').textContent=`Esta es una de las 40 posibilidades simuladas (la #${view.run+1}). Con otro azar, los resultados cambian: por eso miramos rangos.`;
+}
+
+function drawChart(){
+  if(!SUM)return;
+  const c=$('#chart'),{ctx,w,h}=fit(c,.44,240);
+  const L=44,R=12,Tp=14,B=28,mut=col('--mut'),grid=col('--grid');
+  let ymax=0;SUM.forEach(s=>s.hi.forEach(v=>ymax=Math.max(ymax,v)));ymax=Math.max(20,Math.ceil(ymax/10)*10);
+  const X=t=>L+(w-L-R)*t/T,Y=v=>Tp+(h-Tp-B)*(1-v/ymax);
+  ctx.font='11px system-ui';ctx.textAlign='right';ctx.fillStyle=mut;ctx.lineWidth=1;
+  for(let v=0;v<=ymax;v+=10){ctx.strokeStyle=grid;ctx.beginPath();ctx.moveTo(L,Y(v));ctx.lineTo(w-R,Y(v));ctx.stroke();ctx.fillText(v+'%',L-6,Y(v)+4);}
+  ctx.textAlign='center';[0,3,6,12,18,24].forEach(t=>ctx.fillText(t,X(t),h-10));
+  ctx.fillText('meses',w-R-14,h-1);
+  [view.H].forEach(H=>{ctx.strokeStyle=col('--sim');ctx.globalAlpha=.5;ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(X(H),Tp);ctx.lineTo(X(H),h-B);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;});
+  SUM.forEach((s,i)=>{
+    const color=col('--c'+i);
+    ctx.globalAlpha=.12;ctx.fillStyle=color;ctx.beginPath();
+    for(let t=0;t<=T;t++)ctx.lineTo(X(t),Y(s.hi[t]));for(let t=T;t>=0;t--)ctx.lineTo(X(t),Y(s.lo[t]));ctx.fill();ctx.globalAlpha=1;
+    ctx.strokeStyle=color;ctx.lineWidth=i==view.sc?3.6:2;ctx.beginPath();s.med.forEach((v,t)=>t?ctx.lineTo(X(t),Y(v)):ctx.moveTo(X(t),Y(v)));ctx.stroke();
+  });
+  ctx.strokeStyle=col('--tx');ctx.lineWidth=1;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(X(view.month),Tp);ctx.lineTo(X(view.month),h-B);ctx.stroke();ctx.setLineDash([]);
+}
+
+function priceMed(runs,t,z){const a=runs.map(r=>r.price[t*3+z]).sort((x,y)=>x-y);return q(a,.5);}
+function renderResults(){
+  if(!SUM)return;
+  const H=view.H,m=SUM.map(s=>s.med[H]),base=m[0];
+  const ord=[0,1,2,3].sort((a,b)=>m[a]-m[b]),best=ord[0];
+  let rows=`<tr><th>Escenario</th><th>Hogares en riesgo</th><th>Rango probable</th><th>Hogares que salen de riesgo</th><th>Costo estimado</th><th>Costo por hogar que sale de riesgo</th></tr>`;
+  SC.forEach((sc,i)=>{
+    const out=Math.round((base-m[i])/100*N),cost=SUM[i].cost;
+    rows+=`<tr class="${i==best?'best':''}"><td><i class="sw" style="background:var(--c${i})"></i><b>${sc.n}</b></td><td>${dec(m[i])}%</td><td>${dec(SUM[i].lo[H],0)}–${dec(SUM[i].hi[H],0)}%</td><td>${i==0?'—':(out>0?'~'+out:'ninguno claro')}</td><td>${cost?'Gs '+nf.format(Math.round(cost/1e6))+' M':'—'}</td><td>${i&&out>0&&cost?'Gs '+dec(cost/out/1e6)+' M':'—'}</td></tr>`;
+  });
+  $('#tbl').innerHTML=rows;
+  const out=[],hn={3:'3 meses',12:'12 meses',24:'24 meses'}[H],second=ord[1];
+  const overlap=SUM[best].hi[H]>=SUM[second].lo[H]&&SUM[second].hi[H]>=SUM[best].lo[H];
+  if(best==0)out.push(`A los ${hn}, <b>ninguna intervención logra mejorar claramente</b> el panorama con estos supuestos (${dec(m[0])}% de hogares en riesgo sin intervenir).`);
+  else out.push(`A los ${hn}, la opción con menos hogares en riesgo sería <b>${SC[best].n.toLowerCase()}</b>: ${dec(m[best])}% frente a ${dec(base)}% sin intervención.`);
+  if(best!=0&&overlap)out.push(`Pero los rangos de <b>${SC[best].n.toLowerCase()}</b> y <b>${SC[second].n.toLowerCase()}</b> se superponen: con lo que sabemos, <b>no podemos afirmar con certeza que una sea mejor</b>.`);
+  const why=[];
+  if(A.dur<H&&SUM[1].med[H]-SUM[1].med[A.dur]>1.5)why.push(`la ayuda termina en el mes ${A.dur} y parte de los hogares <b>vuelve al riesgo</b> (de ${dec(SUM[1].med[A.dur])}% a ${dec(SUM[1].med[H])}%)`);
+  const pr=priceMed(RES[1],Math.min(6,A.dur),0);
+  if(pr>=1.5)why.push(`en la zona rural la ayuda empuja los precios de los alimentos cerca de <b>${dec(pr)}%</b>, porque la oferta local responde poco, y eso le quita valor a la ayuda`);
+  if(H<=A.delay+1)why.push(`las obras recién empezarían a notarse hacia el mes ${A.delay}, así que <b>a este plazo casi no se ven</b>`);
+  else why.push(`las obras alcanzan su efecto pleno unos 6 meses después de empezar, <b>solo en la parte que se ejecuta</b> (hoy suponemos ${pc(A.exec)}), y el presupuesto se gasta igual si se ejecuta menos`);
+  if(m[3]<Math.min(m[1],m[2])-1)why.push(`<b>combinar</b> ambas parece complementarse: la ayuda cubre el tiempo que tardan las obras y las obras reducen la presión de precios`);
+  else if(best!=0)why.push(`combinar ambas no aporta mucho más con estos supuestos`);
+  out.push('¿Por qué podría ser así? '+why.map(x=>x.charAt(0).toUpperCase()+x.slice(1)).join('. ')+'.');
+  out.push(`<b>Esto es una exploración, no un pronóstico.</b> Las conclusiones del mundo simulado se validan con la comunidad y con datos nuevos antes de aplicarse en el mundo observado.`);
+  $('#find').innerHTML=out.map(p=>`<p>${p}</p>`).join('');
+  renderSens();
+}
+const SENSD=[
+ {k:'elast0',a:.12,b:.7,l:'Qué tanto responden los comercios locales',f:pc,need:'Datos de abastecimiento y precios por mercado local.'},
+ {k:'precision',a:.45,b:.95,l:'Qué tan bien llega la ayuda a quien la necesita',f:pc,need:'Un registro social actualizado y validado con la comunidad.'},
+ {k:'exec',a:.4,b:1,l:'Qué parte de las obras se ejecuta',f:pc,need:'Historial de ejecución de obras similares en la zona.'},
+ {k:'delay',a:3,b:12,l:'Cuánto tardan las obras en notarse',f:v=>v+' meses',need:'Cronogramas reales de obras comparables.'},
+ {k:'surR',a:.05,b:.25,l:'Cuánto encarece el transporte de alimentos al campo',f:pc,need:'Costos de transporte y acopio por distrito.'}];
+function gapAt(A2,H){const s=summarize(runAll(A2,14));return s[1].med[H]-s[2].med[H];}
+function renderSens(){
+  const H=view.H,rows=SENSD.map(d=>{
+    const ga=gapAt({...A,[d.k]:d.a},H),gb=gapAt({...A,[d.k]:d.b},H);
+    return{d,ga,gb,swing:Math.abs(gb-ga),flip:ga*gb<0&&Math.max(Math.abs(ga),Math.abs(gb))>.7};
+  }).sort((x,y)=>(y.flip-x.flip)||(y.swing-x.swing)).slice(0,3);
+  const verdict=g=>g>.7?`ganan las obras por ${dec(g)} pts`:g<-.7?`gana la ayuda por ${dec(-g)} pts`:'queda en empate técnico';
+  $('#sens').innerHTML=rows.map(r=>`<div class="card"><b>${r.d.l}</b><br>
+   Si es bajo (${r.d.f(r.d.a)}): ${verdict(r.ga)}.<br>Si es alto (${r.d.f(r.d.b)}): ${verdict(r.gb)}.
+   ${r.flip?'<br><b style="color:var(--bad)">Cambia cuál opción conviene.</b>':''}
+   <div class="need">Dato que ayudaría: ${r.d.need}</div></div>`).join('');
+}
+
+function recompute(){RES=runAll(A,M);SUM=summarize(RES);renderMap();drawChart();renderResults();}
+buildInputs();syncInputs();recompute();
+new ResizeObserver(()=>{renderMap();drawChart();}).observe(document.body);
+</script>
+</body>
+</html>
