@@ -1,0 +1,582 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Laboratorio Happy Path</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Concepto: un banco de pruebas. El trámite ideal corre arriba; cada cuello de botella real se enciende desde un panel y deforma el flujo. */
+:root{
+  --bg:#eef2f0; --surface:#fbfcfb; --ink:#14231f; --muted:#566763; --line:#d3dbd7; --soft:#e2eae7;
+  --happy:#0e8574; --warn:#c47f00; --bad:#c4372c; --viol:#6a4cc2; --accent:#0b5c51; --dot-l:40%;
+  --f-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1513; --surface:#141f1c; --ink:#e4eeea; --muted:#93a6a1; --line:#294039; --soft:#1c2b27;
+    --happy:#2fc4ad; --warn:#e8a21c; --bad:#ef6a5e; --viol:#a58cf0; --accent:#5fd6c3; --dot-l:58%;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1513; --surface:#141f1c; --ink:#e4eeea; --muted:#93a6a1; --line:#294039; --soft:#1c2b27;
+  --happy:#2fc4ad; --warn:#e8a21c; --bad:#ef6a5e; --viol:#a58cf0; --accent:#5fd6c3; --dot-l:58%;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(30px,5.4vw,46px);line-height:1.05}
+h2{font-size:19px;line-height:1.2}
+p{margin:0}
+.kicker{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.lede{max-width:66ch;color:var(--muted);margin-top:10px;font-size:16px}
+.top{display:flex;flex-direction:column;gap:6px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.card-head{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.sub{color:var(--muted);font-size:13px}
+button{font:inherit;color:inherit}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13.5px;font-weight:500;cursor:pointer;min-height:36px}
+.btn:hover{border-color:var(--accent)}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.btn:focus-visible,.rk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.label-s{font-family:var(--f-mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:18px;align-items:start}
+.main{display:flex;flex-direction:column;gap:18px;min-width:0}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;margin-bottom:10px}
+canvas{display:block;width:100%;max-width:100%}
+#sim{border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.dot.ring{background:transparent;border:2px solid var(--bad);width:11px;height:11px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0}
+.kpi .v{font-family:var(--f-mono);font-size:24px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.2;margin-top:2px}
+.kpi .s{font-size:12px;color:var(--muted);min-height:18px}
+.kpi.bad .v{color:var(--bad)}
+.kpi.ok .v{color:var(--happy)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px;font-variant-numeric:tabular-nums}
+.chip b{font-family:var(--f-mono);font-weight:500}
+/* panel de cuellos */
+.bns ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.bn{padding:12px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.bn:first-child{border-top:0;padding-top:0}
+.bn-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.bn-name{font-weight:600}
+.bn-where{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.bn-real{font-size:13px;color:var(--muted)}
+.sws{display:flex;flex-direction:column;gap:4px;margin-top:2px}
+.sw{display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer;min-height:30px;position:relative}
+.sw input{position:absolute;opacity:0;width:1px;height:1px}
+.track{width:36px;height:20px;border-radius:999px;background:var(--soft);border:1px solid var(--line);position:relative;flex:none;transition:background .15s}
+.track::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted);transition:transform .15s,background .15s}
+.sw input:checked + .track{background:var(--warn);border-color:var(--warn)}
+.sw.fix input:checked + .track{background:var(--happy);border-color:var(--happy)}
+.sw input:checked + .track::after{transform:translateX(16px);background:#fff}
+.sw input:focus-visible + .track{outline:2px solid var(--accent);outline-offset:2px}
+.sw input:disabled + .track{opacity:.45}
+.sw input:disabled ~ .lbl{opacity:.5}
+.sw.fix .lbl{color:var(--ink)}
+/* ranking */
+.rks{display:flex;flex-direction:column;gap:8px}
+.rk{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;text-align:left;width:100%;background:transparent;border:1px solid var(--line);border-radius:8px;padding:9px 12px;cursor:pointer}
+.rk:hover{border-color:var(--happy)}
+.rk .n{font-size:13.5px;font-weight:500;min-width:0}
+.rk .n small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.rk .pc{font-family:var(--f-mono);font-size:14px;color:var(--happy);font-variant-numeric:tabular-nums}
+.rk .bar{grid-column:1/-1;height:6px;border-radius:3px;background:var(--soft);overflow:hidden}
+.rk .bar i{display:block;height:100%;background:var(--happy);border-radius:3px}
+.empty{font-size:13.5px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:12px}
+#map{border:1px solid var(--line);border-radius:8px;background:var(--bg);cursor:crosshair;touch-action:manipulation}
+#mapInfo{font-size:13px;margin-top:10px;min-height:40px}
+#mapInfo b{font-weight:600}
+@media (prefers-reduced-motion: reduce){.track,.track::after{transition:none}}
+</style>
+
+<main class="wrap">
+  <header class="top">
+    <p class="kicker">Simulación social · trámite ficticio de una oficina pública</p>
+    <h1>Laboratorio Happy Path</h1>
+    <p class="lede">Un trámite ideal fluye sin fricción. Active los cuellos de botella de la realidad y observe cómo aparecen las demoras y las irregularidades. Después aplique mejoras y compruebe cuál rinde más.</p>
+  </header>
+
+  <section class="card" aria-label="Escenarios predefinidos">
+    <div class="row">
+      <span class="label-s">Escenario</span>
+      <div class="seg" id="presets" role="group" aria-label="Escenarios predefinidos">
+        <button class="btn" data-p="happy" aria-pressed="false">Happy path</button>
+        <button class="btn" data-p="real" aria-pressed="false">Realidad típica</button>
+        <button class="btn" data-p="fixed" aria-pressed="false">Realidad con mejoras</button>
+        <button class="btn" data-p="rand" aria-pressed="false">Al azar</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <div class="main">
+      <section class="card" aria-label="Simulación">
+        <div class="card-head">
+          <h2>El trámite en movimiento</h2>
+          <p class="sub">Cada punto es un expediente. Las casillas de cada etapa son las personas que lo atienden.</p>
+        </div>
+        <div class="toolbar">
+          <div class="row">
+            <button class="btn" id="play" aria-pressed="true">Pausar</button>
+            <button class="btn" id="restart">Reiniciar</button>
+          </div>
+          <div class="row">
+            <span class="label-s">Velocidad</span>
+            <div class="seg" id="speeds" role="group" aria-label="Velocidad">
+              <button class="btn" data-s="1" aria-pressed="false">1×</button>
+              <button class="btn" data-s="3" aria-pressed="true">3×</button>
+              <button class="btn" data-s="8" aria-pressed="false">8×</button>
+            </div>
+          </div>
+        </div>
+        <canvas id="sim" role="img" aria-label="Flujo de expedientes por las cinco etapas del trámite"></canvas>
+        <div class="legend">
+          <span><i class="dot" style="background:var(--happy)"></i>Trámite normal</span>
+          <span><i class="dot" style="background:var(--warn)"></i>Devuelto</span>
+          <span><i class="dot" style="background:var(--viol)"></i>Saltó la fila</span>
+          <span><i class="dot" style="background:var(--bad)"></i>Extraviado</span>
+          <span><i class="dot ring"></i>Plazo legal vencido</span>
+        </div>
+        <div class="kpis">
+          <div class="kpi" id="k1"><div class="label-s">Tiempo medio</div><div class="v">–</div><div class="s">&nbsp;</div></div>
+          <div class="kpi" id="k2"><div class="label-s">En trámite</div><div class="v">–</div><div class="s">&nbsp;</div></div>
+          <div class="kpi" id="k3"><div class="label-s">Concluidos</div><div class="v">–</div><div class="s">&nbsp;</div></div>
+          <div class="kpi" id="k4"><div class="label-s">Irregularidades</div><div class="v">–</div><div class="s">&nbsp;</div></div>
+        </div>
+        <div class="chips" id="chips"></div>
+      </section>
+
+      <section class="card" aria-label="Prioridad de mejora">
+        <div class="card-head">
+          <h2>Qué mejora rinde más</h2>
+          <p class="sub">Cada mejora se prueba por separado sobre el escenario actual. Haga clic en una para aplicarla.</p>
+        </div>
+        <div class="rks" id="ranks"></div>
+      </section>
+    </div>
+
+    <aside class="card bns" aria-label="Cuellos de botella">
+      <div class="card-head">
+        <h2>Cuellos de botella</h2>
+        <p class="sub">Siete fricciones comunes en procesos del Estado.</p>
+      </div>
+      <ol id="bnList"></ol>
+    </aside>
+  </div>
+
+  <section class="card" aria-label="Mapa de escenarios">
+    <div class="card-head">
+      <h2>Los 128 escenarios posibles</h2>
+      <p class="sub">Con siete cuellos que se encienden o apagan hay 128 combinaciones. El happy path es el punto de partida y los demás salen de añadirle realidad. Haga clic en un punto para verlo en el laboratorio.</p>
+    </div>
+    <canvas id="map" role="img" aria-label="Gráfico de dispersión: tiempo medio contra irregularidades para cada uno de los 128 escenarios"></canvas>
+    <div id="mapInfo"></div>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+var PLAZO=40, TICKS=500, SEEDS=[11,23], COST_W=20, SPAWN=0.40;
+var STAGES=[
+  {n:"Entrada",full:"Mesa de entrada",cap:2,svc:2},
+  {n:"Verificación",full:"Verificación",cap:2,svc:3},
+  {n:"Análisis",full:"Análisis técnico",cap:3,svc:4},
+  {n:"Firma",full:"Autorización",cap:2,svc:2},
+  {n:"Resolución",full:"Resolución",cap:2,svc:2}
+];
+var BN=[
+  {name:"Todo depende de una persona",where:"Análisis técnico",stage:2,real:"Solo una funcionaria conoce el criterio. Si se atrasa, se atrasa todo.",fix:"Capacitar a un suplente y documentar el criterio"},
+  {name:"Datos incompletos al ingresar",where:"Mesa de entrada",stage:0,real:"El expediente entra sin requisitos y vuelve al ciudadano.",fix:"Formulario con validación y lista de requisitos"},
+  {name:"Sistemas que no se hablan",where:"Verificación",stage:1,real:"Los mismos datos se cargan de nuevo en cada registro.",fix:"Conectar los registros existentes"},
+  {name:"Papel y traslado físico",where:"Entre etapas",stage:-1,real:"El expediente viaja de escritorio en escritorio y a veces se pierde.",fix:"Expediente digital con seguimiento"},
+  {name:"Firmas en cascada",where:"Autorización",stage:3,real:"Cada monto necesita varias firmas, una después de otra.",fix:"Firma electrónica y delegación por monto"},
+  {name:"Ausencias y feriados",where:"Cualquier etapa",stage:-1,real:"Una oficina queda sin personal por días y nadie la cubre.",fix:"Calendario de cobertura entre oficinas"},
+  {name:"Excepciones por criterio personal",where:"Todas",stage:-1,real:"Algunos casos pasan adelante sin una regla escrita.",fix:"Regla escrita y orden cronológico visible"}
+];
+var N=BN.length;
+
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+function eff(S,i){return S.b[i]?(S.m[i]?0.2:1):0;}
+function makeSim(b,m,rand){
+  return {b:b,m:m,rand:rand,t:0,nextId:1,arrived:0,doneN:0,sumDone:0,active:[],
+    st:STAGES.map(function(){return{q:[],srv:[],out:0,cap:0};}),
+    transit:[],back:[],lost:[],irr:{rework:0,lost:0,jump:0,late:0}};
+}
+function enq(S,k,it){
+  var q=S.st[k].q;
+  if(q.length>0 && S.rand()<0.04*eff(S,6)){q.unshift(it);S.irr.jump++;it.f.jump=1;}
+  else q.push(it);
+}
+function finishStage(S,k,it){
+  if(k===0 && !it.f.rework && S.rand()<0.3*eff(S,1)){
+    S.back.push({item:it,rem:8,to:0});S.irr.rework++;it.f.rework=1;return;
+  }
+  if(k===STAGES.length-1){
+    var ix=S.active.indexOf(it);if(ix>=0)S.active.splice(ix,1);
+    S.doneN++;S.sumDone+=S.t-it.born;return;
+  }
+  var e3=eff(S,3);
+  if(S.rand()<0.03*e3){S.lost.push({item:it,rem:25,to:k+1});S.irr.lost++;it.f.lost=1;return;}
+  var d=Math.round(3*e3*(0.5+S.rand()));
+  if(d>0)S.transit.push({item:it,rem:d,to:k+1});else enq(S,k+1,it);
+}
+function step(S){
+  S.t++;
+  if(S.rand()<SPAWN){var it={id:S.nextId++,born:S.t,f:{},late:false};S.active.push(it);S.arrived++;enq(S,0,it);}
+  if(S.rand()<0.04*eff(S,5)){S.st[Math.floor(S.rand()*STAGES.length)].out=12;}
+  var lists=[S.transit,S.back,S.lost];
+  for(var a=0;a<lists.length;a++){
+    var list=lists[a];
+    for(var i=list.length-1;i>=0;i--){var x=list[i];x.rem--;if(x.rem<=0){list.splice(i,1);enq(S,x.to,x.item);}}
+  }
+  for(var k=0;k<STAGES.length;k++){
+    var def=STAGES[k],st=S.st[k],cap=def.cap;
+    if(k===2)cap=Math.max(1,Math.round(def.cap-1*eff(S,0)));
+    st.cap=cap;
+    if(st.out>0){st.out--;st.cap=0;continue;}
+    for(var j=st.srv.length-1;j>=0;j--){var s=st.srv[j];s.rem--;if(s.rem<=0){st.srv.splice(j,1);finishStage(S,k,s.item);}}
+    while(st.srv.length<cap && st.q.length){
+      var item=st.q.shift(),mult=1;
+      if(k===2)mult=1+0.4*eff(S,0);
+      if(k===1)mult=1+0.8*eff(S,2);
+      if(k===3)mult=1+1.2*eff(S,4);
+      st.srv.push({item:item,rem:Math.max(1,Math.round(def.svc*mult*(0.7+0.6*S.rand())))});
+    }
+  }
+  for(var n=0;n<S.active.length;n++){var c=S.active[n];if(!c.late && S.t-c.born>PLAZO){c.late=true;S.irr.late++;}}
+}
+function metrics(S){
+  var sum=S.sumDone;for(var i=0;i<S.active.length;i++)sum+=S.t-S.active[i].born;
+  var cnt=S.doneN+S.active.length,avg=cnt?sum/cnt:0;
+  var irr=S.irr.rework+S.irr.lost+S.irr.jump+S.irr.late;
+  return{avg:avg,irr:irr,irrPer:S.arrived?irr/S.arrived:0,done:S.doneN,wip:S.active.length};
+}
+var cache={};
+function evalScenario(b,m){
+  var key=b.join("")+"|"+m.join("");
+  if(cache[key])return cache[key];
+  var avg=0,ip=0;
+  for(var s=0;s<SEEDS.length;s++){
+    var S=makeSim(b,m,rng(SEEDS[s]));
+    for(var i=0;i<TICKS;i++)step(S);
+    var r=metrics(S);avg+=r.avg;ip+=r.irrPer;
+  }
+  var o={avg:avg/SEEDS.length,irrPer:ip/SEEDS.length};
+  o.cost=o.avg+COST_W*o.irrPer;
+  cache[key]=o;return o;
+}
+function zeros(){var z=[];for(var i=0;i<N;i++)z.push(0);return z;}
+function ones(){var z=[];for(var i=0;i<N;i++)z.push(1);return z;}
+function maskToB(mask){var b=[];for(var i=0;i<N;i++)b.push((mask>>i)&1);return b;}
+var BASE=evalScenario(zeros(),zeros());
+
+/* ---------- estado ---------- */
+var $=function(s){return document.querySelector(s);};
+var B=[1,1,0,1,0,0,0], M=zeros();
+var S=null, SB=null, playing=true, speed=3, acc=0, last=0;
+var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if(reduce)playing=false;
+
+function fmt(n,d){return n.toLocaleString("es",{minimumFractionDigits:d,maximumFractionDigits:d});}
+
+function resetSim(){
+  var seed=(Math.random()*1e9)|0;
+  S=makeSim(B.slice(),M.slice(),rng(seed));
+  SB=makeSim(zeros(),zeros(),rng(seed+1));
+  for(var i=0;i<80;i++){step(S);step(SB);}
+  updateKpis();draw();
+}
+
+/* ---------- panel de cuellos ---------- */
+var list=$("#bnList");
+BN.forEach(function(bn,i){
+  var li=document.createElement("li");li.className="bn";
+  li.innerHTML='<div class="bn-head"><span class="bn-name">'+bn.name+'</span><span class="bn-where">'+bn.where+'</span></div>'+
+    '<p class="bn-real">'+bn.real+'</p>'+
+    '<div class="sws">'+
+    '<label class="sw"><input type="checkbox" id="b'+i+'"><span class="track"></span><span class="lbl">Cuello activo</span></label>'+
+    '<label class="sw fix"><input type="checkbox" id="m'+i+'"><span class="track"></span><span class="lbl">Mejora: '+bn.fix+'</span></label>'+
+    '</div>';
+  list.appendChild(li);
+  li.querySelector("#b"+i).addEventListener("change",function(ev){
+    B[i]=ev.target.checked?1:0;if(!B[i])M[i]=0;scenarioChanged();
+  });
+  li.querySelector("#m"+i).addEventListener("change",function(ev){
+    M[i]=ev.target.checked?1:0;scenarioChanged();
+  });
+});
+function syncControls(){
+  for(var i=0;i<N;i++){
+    $("#b"+i).checked=!!B[i];
+    var mi=$("#m"+i);mi.checked=!!M[i];mi.disabled=!B[i];
+  }
+  var cur=currentPreset();
+  document.querySelectorAll("#presets .btn").forEach(function(btn){btn.setAttribute("aria-pressed",String(btn.dataset.p===cur));});
+}
+function same(a,b){for(var i=0;i<a.length;i++)if(a[i]!==b[i])return false;return true;}
+function currentPreset(){
+  if(same(B,zeros())&&same(M,zeros()))return "happy";
+  if(same(B,ones())&&same(M,zeros()))return "real";
+  if(same(B,ones())&&same(M,ones()))return "fixed";
+  return "";
+}
+document.querySelectorAll("#presets .btn").forEach(function(btn){
+  btn.addEventListener("click",function(){
+    var p=btn.dataset.p;
+    if(p==="happy"){B=zeros();M=zeros();}
+    else if(p==="real"){B=ones();M=zeros();}
+    else if(p==="fixed"){B=ones();M=ones();}
+    else{B=zeros();do{for(var i=0;i<N;i++)B[i]=Math.random()<0.5?1:0;}while(same(B,zeros())||same(B,ones()));M=zeros();}
+    scenarioChanged();
+  });
+});
+function scenarioChanged(){syncControls();resetSim();renderRanks();drawMap();mapInfoDefault();}
+
+/* ---------- controles de la simulación ---------- */
+$("#play").addEventListener("click",function(){playing=!playing;updatePlay();});
+function updatePlay(){var b=$("#play");b.textContent=playing?"Pausar":"Reanudar";b.setAttribute("aria-pressed",String(playing));}
+$("#restart").addEventListener("click",resetSim);
+document.querySelectorAll("#speeds .btn").forEach(function(btn){
+  btn.addEventListener("click",function(){
+    speed=+btn.dataset.s;
+    document.querySelectorAll("#speeds .btn").forEach(function(o){o.setAttribute("aria-pressed",String(o===btn));});
+  });
+});
+
+/* ---------- KPIs ---------- */
+function updateKpis(){
+  var r=metrics(S),rb=metrics(SB);
+  var delta=rb.avg>0?(r.avg-rb.avg)/rb.avg:0;
+  var k1=$("#k1");
+  k1.querySelector(".v").textContent=fmt(r.avg,1)+" d";
+  k1.querySelector(".s").textContent=Math.abs(delta)<0.05?"Igual al happy path":(delta>0?"+":"−")+Math.round(Math.abs(delta)*100)+"% frente al happy path";
+  k1.className="kpi"+(delta>0.25?" bad":(Math.abs(delta)<0.05?" ok":""));
+  var k2=$("#k2");k2.querySelector(".v").textContent=r.wip;k2.querySelector(".s").textContent="Happy path: "+rb.wip;
+  var k3=$("#k3");k3.querySelector(".v").textContent=r.done;k3.querySelector(".s").textContent="Happy path: "+rb.done;
+  var k4=$("#k4");k4.querySelector(".v").textContent=r.irr;k4.querySelector(".s").textContent=r.irr===0?"Ninguna por ahora":"En "+S.arrived+" expedientes";
+  k4.className="kpi"+(r.irr>0?" bad":" ok");
+  var ir=S.irr;
+  $("#chips").innerHTML=
+    chip("var(--warn)","Devueltos",ir.rework)+chip("var(--bad)","Extraviados",ir.lost)+
+    chip("var(--viol)","Saltos de fila",ir.jump)+chip("var(--bad)","Plazo vencido",ir.late);
+}
+function chip(c,l,n){return '<span class="chip"><i class="dot" style="background:'+c+'"></i>'+l+' <b>'+n+'</b></span>';}
+
+/* ---------- dibujo ---------- */
+var simC=$("#sim"),mapC=$("#map");
+function sizeCanvas(c,h){
+  var dpr=window.devicePixelRatio||1,w=c.clientWidth;
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);c.style.height=h+"px";}
+  var g=c.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);return g;
+}
+function colors(){
+  var cs=getComputedStyle(document.documentElement),v=function(n){return cs.getPropertyValue(n).trim();};
+  return{ink:v("--ink"),muted:v("--muted"),line:v("--line"),soft:v("--soft"),happy:v("--happy"),warn:v("--warn"),bad:v("--bad"),viol:v("--viol"),surface:v("--surface"),dotL:v("--dot-l")||"45%"};
+}
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function itemColor(C,it){return it.f.lost?C.bad:it.f.rework?C.warn:it.f.jump?C.viol:C.happy;}
+function dotAt(g,C,it,x,y,r){
+  g.beginPath();g.arc(x,y,r,0,6.2832);g.fillStyle=itemColor(C,it);g.fill();
+  if(it.late){g.beginPath();g.arc(x,y,r+1.6,0,6.2832);g.strokeStyle=C.bad;g.lineWidth=1.4;g.stroke();}
+}
+var STAGE_BN={0:1,1:2,2:0,3:4};
+function draw(){
+  if(!S)return;
+  var C=colors(),W=simC.clientWidth,narrow=W<560,H=narrow?306:300;
+  var g=sizeCanvas(simC,H);g.clearRect(0,0,W,H);
+  var pad=8,colW=(W-pad*2)/STAGES.length,boxY=30,boxH=56;
+  g.textBaseline="alphabetic";
+  for(var k=0;k<STAGES.length;k++){
+    var def=STAGES[k],st=S.st[k],x0=pad+k*colW,bx=x0+3,bw=colW-6;
+    g.fillStyle=C.ink;g.font="600 "+(narrow?10.5:12)+"px 'IBM Plex Sans',sans-serif";g.textAlign="center";
+    g.fillText(narrow?def.n:def.full,x0+colW/2,18);
+    var bi=STAGE_BN[k],active=bi!==undefined&&S.b[bi],mit=active&&S.m[bi];
+    rr(g,bx,boxY,bw,boxH,8);
+    g.fillStyle=st.out>0?"rgba(196,55,44,.14)":C.surface;g.fill();
+    g.lineWidth=active?2:1;g.strokeStyle=active?(mit?C.happy:C.warn):C.line;
+    g.setLineDash(mit?[4,3]:[]);g.stroke();g.setLineDash([]);
+    var slotR=narrow?6.5:8,gap=slotR*2+5,total=def.cap*gap-5,sx=x0+colW/2-total/2+slotR,sy=boxY+24;
+    for(var j=0;j<def.cap;j++){
+      var cx=sx+j*gap;
+      g.beginPath();g.arc(cx,sy,slotR,0,6.2832);
+      if(j<st.srv.length){g.fillStyle=itemColor(C,st.srv[j].item);g.fill();
+        if(st.srv[j].item.late){g.strokeStyle=C.bad;g.lineWidth=1.4;g.stroke();}}
+      else if(j<st.cap){g.strokeStyle=C.muted;g.lineWidth=1;g.stroke();}
+      else{g.setLineDash([2,2]);g.strokeStyle=C.line;g.lineWidth=1;g.stroke();g.setLineDash([]);}
+    }
+    g.font="10px 'IBM Plex Mono',monospace";g.textAlign="center";
+    if(st.out>0){g.fillStyle=C.bad;g.fillText("sin personal",x0+colW/2,boxY+boxH-8);}
+    else{g.fillStyle=C.muted;g.fillText(st.srv.length+"/"+st.cap+" en curso",x0+colW/2,boxY+boxH-8);}
+    if(k<STAGES.length-1){g.beginPath();var ax=x0+colW,ay=boxY+boxH/2;g.moveTo(ax-2,ay-4);g.lineTo(ax+2,ay);g.lineTo(ax-2,ay+4);g.strokeStyle=C.muted;g.lineWidth=1.2;g.stroke();}
+    g.textAlign="left";g.fillStyle=C.muted;g.font="10px 'IBM Plex Mono',monospace";
+    g.fillText(st.q.length+" en espera",bx+2,boxY+boxH+16);
+    var step_=8.4,r=3.1,cols=Math.max(3,Math.floor((bw-4)/step_)),rows=8,max=cols*rows;
+    for(var q=0;q<Math.min(st.q.length,max);q++){
+      dotAt(g,C,st.q[q],bx+4+r+(q%cols)*step_,boxY+boxH+26+Math.floor(q/cols)*step_,r);
+    }
+    if(st.q.length>max){g.fillStyle=C.ink;g.font="500 10px 'IBM Plex Mono',monospace";g.textAlign="right";g.fillText("+"+(st.q.length-max),bx+bw-2,boxY+boxH+16);}
+  }
+  var by=204;
+  g.strokeStyle=C.line;g.lineWidth=1;g.beginPath();g.moveTo(pad,by);g.lineTo(W-pad,by);g.stroke();
+  g.fillStyle=C.muted;g.textAlign="left";g.font="500 10px 'IBM Plex Mono',monospace";
+  g.fillText("FUERA DEL FLUJO NORMAL",pad,by+16);
+  var rows2=[
+    {l:"En traslado",a:S.transit,hl:S.b[3]?(S.m[3]?"m":"b"):""},
+    {l:"Devueltos",a:S.back,hl:S.b[1]?(S.m[1]?"m":"b"):""},
+    {l:"Extraviados",a:S.lost,hl:S.b[3]?(S.m[3]?"m":"b"):""}
+  ];
+  var lx=narrow?84:100;
+  rows2.forEach(function(row,i){
+    var y=by+40+i*24;
+    g.fillStyle=row.hl==="b"?C.warn:C.muted;g.font="11px 'IBM Plex Sans',sans-serif";g.textAlign="left";
+    g.fillText(row.l,pad,y+3);
+    var st2=9.5,fit=Math.floor((W-pad-lx-26)/st2);
+    for(var n=0;n<Math.min(row.a.length,fit);n++)dotAt(g,C,row.a[n].item,lx+n*st2+3.5,y,3.4);
+    if(row.a.length>fit){g.fillStyle=C.ink;g.font="500 10px 'IBM Plex Mono',monospace";g.textAlign="right";g.fillText("+"+(row.a.length-fit),W-pad,y+3);}
+    if(!row.a.length){g.fillStyle=C.line;g.font="11px 'IBM Plex Sans',sans-serif";g.textAlign="left";g.fillText("—",lx,y+3);}
+  });
+  simC.setAttribute("aria-label","Día "+S.t+". En espera por etapa: "+S.st.map(function(s,i){return STAGES[i].full+" "+s.q.length;}).join(", "));
+}
+
+/* ---------- ranking de mejoras ---------- */
+function renderRanks(){
+  var box=$("#ranks"),cur=evalScenario(B,M),items=[];
+  for(var i=0;i<N;i++){
+    if(B[i]&&!M[i]){
+      var m2=M.slice();m2[i]=1;
+      var e=evalScenario(B,m2);
+      items.push({i:i,red:Math.max(0,(cur.cost-e.cost)/cur.cost)});
+    }
+  }
+  items.sort(function(a,b){return b.red-a.red;});
+  var gap=BASE.cost>0?(cur.cost-BASE.cost)/BASE.cost:0;
+  var head="";
+  if(!items.length){
+    box.innerHTML='<p class="empty">'+(same(B,zeros())?"Este es el happy path: no hay cuellos que mejorar. Active alguno en el panel para ver cómo se deforma el flujo.":"Todas las mejoras posibles ya están aplicadas en este escenario.")+'</p>';
+    if(!same(B,zeros()))box.innerHTML+='<p class="sub">Distancia que queda frente al happy path: '+Math.round(Math.max(0,gap)*100)+"%.</p>";
+    return;
+  }
+  head='<p class="sub">Hoy el escenario está un '+Math.round(Math.max(0,gap)*100)+'% por encima del costo del happy path (tiempo medio más irregularidades).</p>';
+  box.innerHTML=head+items.map(function(it){
+    var pc=Math.round(it.red*100);
+    return '<button class="rk" data-i="'+it.i+'"><span class="n">'+BN[it.i].fix+'<small>Resuelve: '+BN[it.i].name+'</small></span><span class="pc">−'+pc+'%</span><span class="bar"><i style="width:'+Math.min(100,pc*1.4)+'%"></i></span></button>';
+  }).join("");
+  box.querySelectorAll(".rk").forEach(function(b){
+    b.addEventListener("click",function(){M[+b.dataset.i]=1;scenarioChanged();});
+  });
+}
+
+/* ---------- mapa de escenarios ---------- */
+var SW=null,hover=null,pts=[];
+function sweep(){
+  SW=[];
+  for(var mask=0;mask<(1<<N);mask++){
+    var b=maskToB(mask),e=evalScenario(b,zeros());
+    SW.push({mask:mask,n:b.reduce(function(a,c){return a+c;},0),avg:e.avg,irrPer:e.irrPer,b:b});
+  }
+  drawMap();mapInfoDefault();
+}
+function niceStep(v,n){var raw=v/n,p=Math.pow(10,Math.floor(Math.log10(raw))),f=raw/p;return(f<1.5?1:f<3?2:f<7?5:10)*p;}
+function niceMax(v){var s=niceStep(v,5);return Math.ceil(v/s)*s;}
+function drawMap(){
+  var W=mapC.clientWidth,H=W<560?280:320,g=sizeCanvas(mapC,H);g.clearRect(0,0,W,H);
+  if(!SW){g.fillStyle=colors().muted;g.font="13px 'IBM Plex Sans',sans-serif";g.fillText("Calculando escenarios…",16,28);return;}
+  var C=colors(),L=46,R=14,T=20,Bt=40;
+  var xm=niceMax(Math.max(PLAZO+10,Math.max.apply(null,SW.map(function(p){return p.avg;})))),
+      ym=niceMax(Math.max(0.5,Math.max.apply(null,SW.map(function(p){return p.irrPer;}))));
+  var X=function(v){return L+v/xm*(W-L-R);},Y=function(v){return H-Bt-v/ym*(H-Bt-T);};
+  var xs=niceStep(xm,6),ys=niceStep(ym,5);
+  g.font="10px 'IBM Plex Mono',monospace";g.lineWidth=1;
+  g.textAlign="right";
+  for(var y=0;y<=ym+1e-9;y+=ys){g.strokeStyle=C.line;g.beginPath();g.moveTo(L,Y(y));g.lineTo(W-R,Y(y));g.stroke();g.fillStyle=C.muted;g.fillText(fmt(y,ys<1?1:0),L-6,Y(y)+3);}
+  g.textAlign="center";
+  for(var x=0;x<=xm+1e-9;x+=xs){g.fillStyle=C.muted;g.fillText(String(Math.round(x)),X(x),H-Bt+14);}
+  g.fillStyle=C.muted;g.font="11px 'IBM Plex Sans',sans-serif";
+  g.fillText("Tiempo medio de trámite (días)",L+(W-L-R)/2,H-8);
+  g.save();g.translate(12,T+(H-T-Bt)/2);g.rotate(-Math.PI/2);g.fillText("Irregularidades por expediente",0,0);g.restore();
+  g.setLineDash([4,4]);g.strokeStyle=C.bad;g.beginPath();g.moveTo(X(PLAZO),T);g.lineTo(X(PLAZO),H-Bt);g.stroke();g.setLineDash([]);
+  g.fillStyle=C.bad;g.textAlign="left";g.font="10px 'IBM Plex Mono',monospace";g.fillText("plazo legal "+PLAZO+" d",X(PLAZO)+4,T+8);
+  pts=[];
+  SW.forEach(function(p){
+    var px=X(p.avg),py=Y(p.irrPer);pts.push({p:p,x:px,y:py});
+  });
+  pts.sort(function(a,b){return a.p.n-b.p.n;});
+  pts.forEach(function(o){
+    var hue=172-o.p.n/N*160;
+    g.beginPath();g.arc(o.x,o.y,o.p.mask===0?6:4.2,0,6.2832);
+    g.fillStyle="hsla("+hue+",62%,"+C.dotL+",.85)";g.fill();
+  });
+  var hp=pts.filter(function(o){return o.p.mask===0;})[0];
+  if(hp){g.fillStyle=C.ink;g.font="600 11px 'IBM Plex Sans',sans-serif";g.textAlign="left";g.fillText("Happy path",hp.x+10,hp.y-8);}
+  var ce=evalScenario(B,M),cxp=X(ce.avg),cyp=Y(ce.irrPer);
+  g.beginPath();g.arc(cxp,cyp,9,0,6.2832);g.strokeStyle=C.ink;g.lineWidth=2;g.stroke();
+  if(hover){g.beginPath();g.arc(hover.x,hover.y,8,0,6.2832);g.strokeStyle=C.muted;g.lineWidth=1.5;g.stroke();}
+}
+function describe(prefix,n,avg,ip,names){
+  return '<b>'+prefix+'</b> · '+n+(n===1?' cuello':' cuellos')+' activos · '+fmt(avg,1)+' días · '+fmt(ip,2)+' irregularidades por expediente'+(names.length?'<br><span class="sub">'+names.join(" · ")+'</span>':'');
+}
+function mapInfoDefault(){
+  var e=evalScenario(B,M),names=[];
+  for(var i=0;i<N;i++)if(B[i])names.push(BN[i].name+(M[i]?" (mejorado)":""));
+  $("#mapInfo").innerHTML=describe("Escenario actual",B.reduce(function(a,c){return a+c;},0),e.avg,e.irrPer,names);
+}
+function nearest(ev){
+  var r=mapC.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top,best=null,bd=18*18;
+  pts.forEach(function(o){var d=(o.x-x)*(o.x-x)+(o.y-y)*(o.y-y);if(d<bd){bd=d;best=o;}});
+  return best;
+}
+mapC.addEventListener("pointermove",function(ev){
+  var o=nearest(ev);hover=o;drawMap();
+  if(o){var names=[];o.p.b.forEach(function(v,i){if(v)names.push(BN[i].name);});
+    $("#mapInfo").innerHTML=describe(o.p.mask===0?"Happy path":"Escenario",o.p.n,o.p.avg,o.p.irrPer,names);}
+  else mapInfoDefault();
+});
+mapC.addEventListener("pointerleave",function(){hover=null;drawMap();mapInfoDefault();});
+mapC.addEventListener("click",function(ev){
+  var o=nearest(ev);if(!o)return;
+  B=o.p.b.slice();M=zeros();hover=null;scenarioChanged();
+  simC.scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});
+});
+
+/* ---------- bucle ---------- */
+function frame(ts){
+  if(!last)last=ts;
+  var dt=Math.min(0.25,(ts-last)/1000);last=ts;
+  if(playing&&S){
+    acc+=dt*5*speed;var n=0;
+    while(acc>=1&&n<40){step(S);step(SB);acc--;n++;}
+    if(n){updateKpis();draw();}
+  }
+  requestAnimationFrame(frame);
+}
+if(window.ResizeObserver){
+  new ResizeObserver(function(){draw();drawMap();}).observe(document.body);
+}else window.addEventListener("resize",function(){draw();drawMap();});
+if(window.matchMedia){
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",function(){draw();drawMap();});
+}
+new MutationObserver(function(){draw();drawMap();}).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+
+updatePlay();syncControls();resetSim();renderRanks();mapInfoDefault();drawMap();
+setTimeout(sweep,30);
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
