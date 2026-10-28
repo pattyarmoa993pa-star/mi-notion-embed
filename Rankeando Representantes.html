@@ -1,0 +1,520 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Rankeando Representantes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Pixelify+Sans:wght@500;700&display=swap">
+<style>
+/* Concepto: una aldea de bloques. La estructura (cadena y matriz) se estudia primero; luego se juega por estaciones y se mide antes y después. */
+:root{
+  --bg:#e8f0dc; --surface:#fbfaf1; --ink:#232a1c; --muted:#5b6650; --edge:#6b7a5a; --soft:#eef0e1;
+  --btn:#2f7d22; --on-btn:#ffffff; --btn-edge:#1f5516;
+  --g1:#7fb35c; --g2:#76ab54; --dirt:#8a5d36;
+  --ok:#2c7a22; --ok-bg:#d8efc9; --no:#b8392a; --no-bg:#f6d9d3; --warn-bg:#f8ecc4;
+  --c1:#2f7d22; --c2:#2a78b8; --c3:#c58a0a; --c4:#c0432f; --c5:#7b4fc0; --c6:#1f8f8a;
+  --f-d:"Pixelify Sans","Courier New",monospace; --f-b:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141a10; --surface:#1e261a; --ink:#e9f0df; --muted:#a2b093; --edge:#4c5c3d; --soft:#252f20;
+    --btn:#6cc255; --on-btn:#0f2009; --btn-edge:#3f7d2e;
+    --g1:#3d6a2a; --g2:#396426; --dirt:#a97a4c;
+    --ok:#7fd36a; --ok-bg:#223a1c; --no:#f08a7b; --no-bg:#40201b; --warn-bg:#3d3418;
+    --c1:#6cc255; --c2:#6db4f0; --c3:#eab945; --c4:#f08a7b; --c5:#b99af2; --c6:#5fd3cd;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141a10; --surface:#1e261a; --ink:#e9f0df; --muted:#a2b093; --edge:#4c5c3d; --soft:#252f20;
+  --btn:#6cc255; --on-btn:#0f2009; --btn-edge:#3f7d2e;
+  --g1:#3d6a2a; --g2:#396426; --dirt:#a97a4c;
+  --ok:#7fd36a; --ok-bg:#223a1c; --no:#f08a7b; --no-bg:#40201b; --warn-bg:#3d3418;
+  --c1:#6cc255; --c2:#6db4f0; --c3:#eab945; --c4:#f08a7b; --c5:#b99af2; --c6:#5fd3cd;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-b);font-size:16px;line-height:1.5;
+  padding-block:24px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-d);margin:0;text-wrap:balance;line-height:1.15;font-weight:700}
+h1{font-size:clamp(28px,6vw,44px)}
+h2{font-size:24px}
+h3{font-size:18px}
+p{margin:0}
+.kicker{font-weight:800;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--c1)}
+.lede{max-width:64ch;color:var(--muted);font-size:17px;margin-top:8px}
+.blk{background:var(--surface);border:3px solid var(--edge);border-radius:4px;box-shadow:inset -4px -4px 0 rgba(0,0,0,.10),inset 4px 4px 0 rgba(255,255,255,.18)}
+.card{padding:18px;min-width:0}
+.sec{display:flex;flex-direction:column;gap:14px}
+.sub{color:var(--muted);font-size:15px}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{background:var(--btn);color:var(--on-btn);border:0;border-bottom:4px solid var(--btn-edge);border-radius:4px;padding:10px 18px;min-height:44px;font-weight:800;font-size:16px}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(2px);border-bottom-width:2px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.alt{background:var(--soft);color:var(--ink);border:2px solid var(--edge);border-bottom-width:4px}
+:focus-visible{outline:3px solid var(--c2);outline-offset:2px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{background:var(--surface);border:2px solid var(--edge);border-bottom-width:4px;border-radius:4px;padding:8px 14px;min-height:42px;font-weight:800}
+.tab[aria-selected="true"]{background:var(--btn);color:var(--on-btn);border-color:var(--btn-edge)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:13px}
+.chip i{width:14px;height:14px;display:inline-block;border:2px solid rgba(0,0,0,.35);border-radius:2px}
+.c1{background:var(--c1)}.c2{background:var(--c2)}.c3{background:var(--c3)}.c4{background:var(--c4)}.c5{background:var(--c5)}.c6{background:var(--c6)}
+/* cadena */
+.chain{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+@media (max-width:820px){.chain{grid-template-columns:minmax(0,1fr)}}
+.node{padding:12px;position:relative;display:flex;flex-direction:column;gap:6px;min-width:0}
+.node b{font-family:var(--f-d);font-size:16px;line-height:1.1}
+.node span.t{font-size:13.5px;color:var(--muted)}
+.node:not(:last-child)::after{content:"";position:absolute;right:-12px;top:50%;width:12px;height:12px;margin-top:-6px;background:var(--edge);clip-path:polygon(0 0,100% 50%,0 100%)}
+@media (max-width:820px){.node:not(:last-child)::after{right:auto;left:50%;top:auto;bottom:-12px;margin:0 0 0 -6px;clip-path:polygon(0 0,100% 0,50% 100%)}}
+.band{padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:14px}
+.band.loop{border-style:dashed}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14.5px}
+th,td{text-align:left;padding:10px 10px;border-bottom:2px solid var(--soft);vertical-align:top}
+th{font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.rule{padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.rule code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:var(--soft);padding:2px 6px;border-radius:3px;overflow-wrap:anywhere}
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.flow{grid-template-columns:minmax(0,1fr)}}
+.flow .blk{padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+/* jugar */
+.pbar{height:14px;background:var(--soft);border:2px solid var(--edge);border-radius:3px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--btn)}
+.q{font-size:20px;font-weight:700;max-width:56ch}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{text-align:left;background:var(--surface);border:2px solid var(--edge);border-bottom-width:4px;border-radius:4px;padding:12px 14px;min-height:48px;font-weight:700;font-size:16.5px}
+.opt:hover{border-color:var(--c2)}
+.opt.sel{background:var(--warn-bg);border-color:var(--c3)}
+.opt.ok{background:var(--ok-bg);border-color:var(--ok)}
+.opt.no{background:var(--no-bg);border-color:var(--no)}
+.opt[disabled]{cursor:default}
+.village{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:14px;border:3px solid var(--edge);border-radius:4px;background:repeating-conic-gradient(var(--g1) 0 25%,var(--g2) 0 50%) 0 0/28px 28px}
+@media (max-width:700px){.village{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:420px){.village{grid-template-columns:minmax(0,1fr)}}
+.st{background:var(--surface);border:3px solid var(--edge);border-bottom-width:6px;border-radius:4px;padding:12px;text-align:left;display:flex;flex-direction:column;gap:6px;min-width:0;min-height:118px}
+.st:hover{border-color:var(--c2)}
+.st b{font-family:var(--f-d);font-size:17px;line-height:1.1}
+.st small{color:var(--muted);font-size:13.5px}
+.st .stt{margin-top:auto;font-weight:800;font-size:13px}
+.st.done{background:var(--ok-bg);border-color:var(--ok)}
+.st.done .stt{color:var(--ok)}
+.chips2{display:flex;flex-wrap:wrap;gap:8px}
+.pick{background:var(--surface);border:2px solid var(--edge);border-bottom-width:4px;border-radius:4px;padding:9px 12px;min-height:44px;font-weight:700}
+.pick.sel{background:var(--warn-bg);border-color:var(--c3)}
+.pick.ok{background:var(--ok-bg);border-color:var(--ok)}
+.pick.no{background:var(--no-bg);border-color:var(--no)}
+.fb{padding:12px 14px;border-left:6px solid var(--c3);background:var(--warn-bg);border-radius:3px}
+.fb.good{border-color:var(--ok);background:var(--ok-bg)}
+.fb.bad{border-color:var(--no);background:var(--no-bg)}
+.item{display:flex;flex-direction:column;gap:8px;padding:12px;border:2px solid var(--soft);border-radius:4px;min-width:0}
+.item .two{display:flex;flex-wrap:wrap;gap:8px}
+.mchain{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:stretch}
+@media (max-width:760px){.mchain{grid-template-columns:minmax(0,1fr)}}
+.mnode{padding:10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.mnode b{font-family:var(--f-d);font-size:15px}
+.mnode span{font-size:14.5px}
+.lnk{align-self:center;background:var(--soft);border:2px dashed var(--edge);border-radius:4px;padding:8px 10px;font-weight:800;font-size:13px;min-height:44px;max-width:100%}
+.lnk:hover{border-color:var(--c4)}
+.lnk.ok{background:var(--ok-bg);border-color:var(--ok);border-style:solid}
+.lnk.no{background:var(--no-bg);border-color:var(--no);border-style:solid}
+/* ranking */
+.reps{display:flex;flex-direction:column;gap:12px}
+.rep{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;padding:12px;align-items:center}
+@media (max-width:560px){.rep{grid-template-columns:auto minmax(0,1fr)}.rep .mv{grid-column:1/-1;flex-direction:row}}
+.rep .pos{font-family:var(--f-d);font-size:26px;color:var(--muted);width:26px;text-align:center}
+.av{width:56px;height:56px;border:3px solid var(--edge);border-radius:3px;display:block;flex:none}
+.rep .nm{display:flex;gap:12px;align-items:center;min-width:0}
+.mv{display:flex;flex-direction:column;gap:6px}
+.mv .btn{padding:4px 12px;min-height:36px;font-size:14px}
+.cells{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin-top:8px}
+@media (max-width:560px){.cells{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.cell{font-size:12px;font-weight:800;text-align:center;padding:4px 2px;border:2px solid var(--edge);border-radius:3px;background:var(--soft);min-width:0}
+.cell small{display:block;font-weight:600;color:var(--muted);font-size:11px;line-height:1.1}
+.cell.v2{background:var(--ok-bg);border-color:var(--ok)}
+.cell.v1{background:var(--warn-bg);border-color:var(--c3)}
+.cell.v0{background:var(--no-bg);border-color:var(--no)}
+.cell.vq{border-style:dashed}
+.cell.chg{outline:3px solid var(--c5);outline-offset:1px}
+.tot{font-family:var(--f-d);font-size:15px}
+/* resultados */
+.rtab{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(4,minmax(0,.7fr));gap:8px;align-items:center;padding:8px 0;border-bottom:2px solid var(--soft);font-size:14.5px}
+.rtab.h{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:800}
+@media (max-width:560px){.rtab{grid-template-columns:minmax(0,1.3fr) repeat(4,minmax(0,.8fr));font-size:13px}}
+.dl{font-weight:800}
+.dl.up{color:var(--ok)}.dl.dn{color:var(--no)}
+textarea{width:100%;min-height:160px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;background:var(--soft);color:var(--ink);border:2px solid var(--edge);border-radius:4px;padding:10px}
+.empty{padding:18px;border:3px dashed var(--edge);border-radius:4px;color:var(--muted)}
+.mc{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.mc .blk{padding:12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+ul.l{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+</style>
+
+<main class="wrap">
+  <header>
+    <p class="kicker">Laboratorio social · educación cívica</p>
+    <h1>Rankeando Representantes</h1>
+    <p class="lede">¿Qué debería observar para que mi voto sea relevante? Un entrenamiento para toda la ciudadanía, con diseño de aldea de bloques para que también lo puedan jugar niñas y niños.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button class="tab" role="tab" data-tab="estructura" aria-selected="true">1. Estructura</button>
+    <button class="tab" role="tab" data-tab="jugar" aria-selected="false">2. Jugar</button>
+    <button class="tab" role="tab" data-tab="resultados" aria-selected="false">3. Resultados</button>
+    <button class="tab" role="tab" data-tab="minecraft" aria-selected="false">4. En Minecraft</button>
+  </nav>
+
+  <!-- ESTRUCTURA -->
+  <section id="p-estructura" class="sec" role="tabpanel">
+    <div class="blk card sec">
+      <div><h2>La cadena de traducción</h2>
+      <p class="sub">Una necesidad de la gente llega a una decisión pasando por varios agentes traductores. El representante es el primero. Cada eslabón es un lugar donde mirar.</p></div>
+      <div class="chain" id="chain"></div>
+      <div class="blk band"><span class="chip"><i class="c4"></i>CA · Cadena de traducción</span><span>En cada flecha puede cambiar el mensaje. Lo que se pidió debe ser lo que se decide.</span></div>
+      <div class="blk band loop"><span class="chip"><i class="c6"></i>Bucle</span><span>La evidencia nueva vuelve al principio de la cadena y obliga a revisar la conclusión.</span></div>
+    </div>
+
+    <div class="blk card sec">
+      <div><h2>Matriz de evaluación: seis cosas para observar</h2>
+      <p class="sub">Son las seis habilidades que mide la simulación antes y después, y también las columnas con las que se rankea a los representantes.</p></div>
+      <div class="tw"><table id="matriz"></table></div>
+    </div>
+
+    <div class="blk card sec">
+      <div><h2>Cómo se mide</h2><p class="sub">Cuatro momentos. Los datos de cada persona alimentan al laboratorio.</p></div>
+      <div class="flow">
+        <div class="blk"><b class="chip"><i class="c3"></i>Antes</b><span>6 preguntas, una por habilidad, sin pistas.</span></div>
+        <div class="blk"><b class="chip"><i class="c2"></i>Misiones</b><span>6 estaciones en la aldea. Cada una entrena una habilidad con retroalimentación inmediata.</span></div>
+        <div class="blk"><b class="chip"><i class="c1"></i>Después</b><span>6 preguntas parecidas, con otros casos.</span></div>
+        <div class="blk"><b class="chip"><i class="c5"></i>Datos</b><span>Mejora por habilidad y conceptos difíciles.</span></div>
+      </div>
+      <div class="rules">
+        <div class="blk rule"><b>Puntaje por habilidad</b><span>Antes y después: acierto 1 o 0. Misión: aciertos ÷ ítems, de 0 a 1.</span></div>
+        <div class="blk rule"><b>Mejora</b><code>mejora = después − antes</code><span>Positiva: la habilidad se entrenó. Negativa: revisar la misión.</span></div>
+        <div class="blk rule"><b>Concepto difícil</b><code>antes = 0 o misión &lt; 0,6</code><span>Marca dónde falta educación cívica.</span></div>
+        <div class="blk rule"><b>Matriz de un representante</b><span>Cada columna vale 2 (documentado), 1 (parcial) o 0 (solo dichos). Un "?" vale 0 y avisa que falta información.</span></div>
+      </div>
+      <p class="sub">La matriz es un entrenamiento del criterio, no un veredicto sobre personas reales. Los tres representantes del juego son ficticios.</p>
+      <div class="row"><button class="btn" data-go="jugar">Entrar a la aldea</button></div>
+    </div>
+  </section>
+
+  <!-- JUGAR -->
+  <section id="p-jugar" class="sec" role="tabpanel" hidden><div id="play" class="sec"></div></section>
+
+  <!-- RESULTADOS -->
+  <section id="p-resultados" class="sec" role="tabpanel" hidden><div id="res" class="sec"></div></section>
+
+  <!-- MINECRAFT -->
+  <section id="p-minecraft" class="sec" role="tabpanel" hidden>
+    <div class="blk card sec">
+      <div><h2>La misma aldea, construida en Minecraft Education</h2>
+      <p class="sub">Esta página es la maqueta liviana. En el mundo de Minecraft cada misión es una zona construida con bloques comunes, aldeanos NPC y marcadores. No hace falta ningún complemento.</p></div>
+      <div class="mc" id="mc"></div>
+    </div>
+    <div class="blk card sec">
+      <h3>Materiales y marcador</h3>
+      <ul class="l">
+        <li>Carteles y libros con pluma para las promesas y las actas.</li>
+        <li>NPC con diálogo para los tres representantes y para las oficinas.</li>
+        <li>Placas de presión de colores para responder el antes y el después.</li>
+        <li>Un marcador (scoreboard) con un puntaje por habilidad: pr, in, co, ca, re, de, para el antes, la misión y el después.</li>
+        <li>Al final, una pizarra con los seis puntajes de cada persona. En grupo se suman los registros y se ve qué concepto cuesta más.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s);};
+var SK=[
+ {id:"prom",code:"PR",n:"Promesa o acción",c:1,obs:"¿Hay un documento (acta, proyecto, fecha, firma) o solo palabras?",alert:"Frases grandes sin fecha, número ni firma.",st:"Galería de carteles",desc:"Carteles de promesas frente a libros con actas. Se clasifica cada uno."},
+ {id:"info",code:"IN",n:"Información que falta",c:2,obs:"¿Qué datos me faltan: dónde, cuánto cuesta, quién lo mantiene, cuándo?",alert:"Una propuesta que suena bien y no responde ninguna de esas preguntas.",st:"Taller de preguntas",desc:"Seis cofres con preguntas. Solo se pueden llevar tres, las útiles."},
+ {id:"comp",code:"CO",n:"Quién tiene competencia",c:3,obs:"¿Esta persona o institución puede decidir esto?",alert:"Prometer algo que le toca a otra oficina.",st:"Calle de las oficinas",desc:"Cuatro edificios con estandartes. Cada problema va a su oficina."},
+ {id:"cadena",code:"CA",n:"Cadena de traducción",c:4,obs:"¿Lo que pidió la gente es lo que llegó a la decisión?",alert:"El problema cambia de forma entre un paso y el siguiente.",st:"Línea de mensajes",desc:"Una línea de palancas. Hay que encontrar el eslabón donde el mensaje se rompió."},
+ {id:"rev",code:"RE",n:"Revisar con evidencia nueva",c:6,obs:"¿Cambia de opinión cuando aparecen datos nuevos? ¿Y yo?",alert:"Defender una conclusión aunque llegue una prueba en contra.",st:"Sala del ranking",desc:"Tres NPC con su matriz. Se ordena el ranking y luego llega un libro nuevo."},
+ {id:"desig",code:"DE",n:"Efectos desiguales",c:5,obs:"¿A quién ayuda y a quién perjudica esta decisión?",alert:"Beneficios para unos y costos ocultos para otros.",st:"Colina de escalones",desc:"Se recorre un camino con restricciones distintas para sentir quién queda afuera."}
+];
+var CHAIN=[
+ {n:"Ciudadanía",t:"Tiene una necesidad.",k:null},
+ {n:"Representante",t:"Escucha y traduce.",k:"PR",c:1},
+ {n:"Especialistas",t:"Convierten en propuesta con datos.",k:"IN",c:2},
+ {n:"Institución",t:"La que puede decidir.",k:"CO",c:3},
+ {n:"Decisión",t:"Se aplica y se revisa.",k:"RE",c:6},
+ {n:"Grupos afectados",t:"Cada grupo la vive distinto.",k:"DE",c:5}
+];
+/* ---------- estructura ---------- */
+$("#chain").innerHTML=CHAIN.map(function(x){
+  return '<div class="blk node"><b>'+x.n+'</b><span class="t">'+x.t+'</span>'+(x.k?'<span class="chip"><i class="c'+x.c+'"></i>'+x.k+'</span>':'<span class="chip">Punto de partida</span>')+'</div>';
+}).join("");
+$("#matriz").innerHTML='<thead><tr><th>Habilidad</th><th>Qué observo antes de votar</th><th>Señal de alerta</th><th>Se entrena en</th></tr></thead><tbody>'+
+SK.map(function(s){return '<tr><td><span class="chip"><i class="c'+s.c+'"></i>'+s.code+' · '+s.n+'</span></td><td>'+s.obs+'</td><td>'+s.alert+'</td><td>'+s.st+'</td></tr>';}).join("")+'</tbody>';
+$("#mc").innerHTML=SK.map(function(s){return '<div class="blk"><span class="chip"><i class="c'+s.c+'"></i>'+s.code+'</span><b>'+s.st+'</b><span>'+s.desc+'</span></div>';}).join("");
+
+/* ---------- preguntas ---------- */
+var PRE=[
+ {sk:"prom",q:"Un candidato dice: «¡Voy a construir un puente nuevo!». Otro muestra el permiso firmado y la lista de materiales del puente. ¿Quién muestra una acción documentada?",o:["El que lo dice más fuerte","El que muestra el permiso y la lista","Los dos por igual"],a:1},
+ {sk:"info",q:"Te proponen «plantar 100 árboles». ¿Qué necesitas saber primero para evaluarlo?",o:["De qué color es el cartel","Nada, suena bien","Dónde, cuánto cuesta y quién los cuidará"],a:2},
+ {sk:"comp",q:"Se rompió el camino de la aldea. ¿Qué oficina tiene competencia para arreglarlo?",o:["La Oficina de Obras","El Centro de Salud","La Escuela"],a:0},
+ {sk:"cadena",q:"Los niños dicen: «Falta luz en el camino». El representante le cuenta a la oficina: «Falta agua». ¿Qué falló?",o:["Los niños hablaron bajito","La traducción: el problema cambió","Nada falló"],a:1},
+ {sk:"rev",q:"Pensabas que el aldeano A cumplía todo. Aparece un acta que muestra que no hizo nada. ¿Qué haces?",o:["Mantengo mi opinión, ya decidí","Ignoro el acta","Reviso mi conclusión con la nueva evidencia"],a:2},
+ {sk:"desig",q:"Deciden poner el mercado en lo alto de la colina. ¿Quién puede salir perjudicado?",o:["Nadie","Las personas mayores o en silla de ruedas","Todos por igual"],a:1}
+];
+var POST=[
+ {sk:"prom",q:"Una representante dice: «Cuidaré los ríos». Otra muestra el acta donde votó la limpieza del río y los análisis del agua. ¿Cuál es una acción documentada?",o:["La que muestra el acta y los análisis","La que lo dice con más cariño","Ninguna"],a:0},
+ {sk:"info",q:"Proponen «abrir una biblioteca nueva». ¿Qué necesitas saber para evaluarla?",o:["Qué tan linda será la puerta","Nada, las bibliotecas siempre son buenas","Dónde estará, qué libros tendrá y quién la atenderá"],a:2},
+ {sk:"comp",q:"Muchos niños de la aldea se enferman. ¿Qué institución tiene competencia?",o:["La Oficina de Obras","El Centro de Salud","La Escuela de Deportes"],a:1},
+ {sk:"cadena",q:"Los vecinos piden «un parque seguro». El especialista diseña «un estacionamiento». ¿Dónde se rompió la cadena?",o:["El especialista tradujo mal la necesidad","Los vecinos pidieron mal","No se rompió nada"],a:0},
+ {sk:"rev",q:"Dijiste que una obra era barata. Llega la factura y cuesta el triple. ¿Qué haces?",o:["Digo que la factura está mal","Reviso mi conclusión","Me quedo con lo que dije"],a:1},
+ {sk:"desig",q:"Cierran la única escuela del barrio sur y abren otra en el norte. ¿A quién afecta más?",o:["A todos por igual","A nadie","A los niños del sur, que ahora caminan lejos"],a:2}
+];
+var M1=[
+ {t:"«Prometo arreglar todo en mi primer día.»",a:"P",w:"No tiene fecha ni documento: es una promesa."},
+ {t:"El proyecto N.° 12 fue presentado el 3 de mayo y tiene firmas.",a:"A",w:"Hay número, fecha y firmas: se puede comprobar."},
+ {t:"Un acta firmada muestra cómo votó en la sesión del consejo.",a:"A",w:"El acta es un documento que otros pueden revisar."},
+ {t:"Dijo por la radio: «Me preocupa mucho la escuela».",a:"P",w:"Preocuparse es una frase. Falta ver qué hizo."}
+];
+var M2=[
+ {t:"¿Dónde se haría?",u:1,w:"El lugar decide quién se beneficia."},
+ {t:"¿Cuánto cuesta?",u:1,w:"Sin costo no se puede comparar con otras ideas."},
+ {t:"¿Quién lo mantiene después?",u:1,w:"Una obra sin quien la cuide se rompe."},
+ {t:"¿De qué color es el cartel?",u:0,w:"No cambia si la propuesta sirve."},
+ {t:"¿Cuántos «me gusta» tiene?",u:0,w:"La popularidad no es evidencia."},
+ {t:"¿Es famoso quien la propone?",u:0,w:"Importa lo que se hace, no la fama."}
+];
+var OFI=["Salud","Obras","Educación","Seguridad"];
+var M3=[
+ {t:"Falta la vacuna en la aldea.",a:0},
+ {t:"Hay baches enormes en la calle.",a:1},
+ {t:"Faltan maestros en la escuela.",a:2},
+ {t:"Robaron en el mercado.",a:3}
+];
+var M4=[
+ {n:["Ciudadanía","Representante","Especialistas","Institución"],s:["Los niños no pueden cruzar el río cuando llueve.","Los vecinos quieren un lago para pescar.","Diseñamos un lago.","Aprobamos el lago."],a:0,w:"Los niños pidieron cruzar el río y el representante entendió «un lago». El mensaje cambió en el primer paso."},
+ {n:["Ciudadanía","Representante","Especialistas","Institución"],s:["Necesitamos agua limpia.","Piden agua limpia en el pozo del norte.","Pondremos un cartel que diga «hierva el agua».","Aprobamos el cartel."],a:1,w:"El pedido llegó bien al representante. Los especialistas lo cambiaron por un cartel y el agua sigue sucia."}
+];
+var M5G=[
+ {t:"Personas mayores",u:1},{t:"Personas en silla de ruedas",u:1},{t:"Jóvenes que corren por deporte",u:0},{t:"Vecinos que viven junto a la colina",u:0}
+];
+var REPS=[
+ {id:"mara",n:"Mara",d:"Habla poco. Llega temprano a las reuniones.",cells:[2,2,2,1,null,1],hair:"#4a2f1b",skin:"#e0ac7e",cloth:"#2a78b8"},
+ {id:"tomas",n:"Tomás",d:"Habla muy bien y tiene muchos seguidores.",cells:[1,1,1,2,2,0],hair:"#c58a0a",skin:"#f0c9a0",cloth:"#c0432f"},
+ {id:"ivan",n:"Iván",d:"Es muy simpático y saluda a todos.",cells:[1,null,1,1,1,1],hair:"#222",skin:"#c98d5e",cloth:"#7b4fc0"}
+];
+var COLS=["PR","IN","CO","CA","RE","DE"];
+var TWIST={rep:"mara",col:0,val:0,txt:"El acta que mostró Mara era de otra aldea. Su acción documentada no cuenta."};
+function repTotal(r,twist){return r.cells.reduce(function(a,v,i){var x=(twist&&r.id===TWIST.rep&&i===TWIST.col)?TWIST.val:v;return a+(x||0);},0);}
+
+/* ---------- estado ---------- */
+var S;
+function fresh(){return{tab:"estructura",phase:"intro",qi:0,pre:{},post:{},mis:{},preAns:[],postAns:[],m:{},order:["tomas","ivan","mara"],r1:null,r2:null,twist:false,rankLog:null};}
+S=fresh();
+var tabs=["estructura","jugar","resultados","minecraft"];
+function setTab(t){
+  S.tab=t;
+  tabs.forEach(function(x){$("#p-"+x).hidden=x!==t;});
+  document.querySelectorAll(".tab").forEach(function(b){b.setAttribute("aria-selected",String(b.dataset.tab===t));});
+  if(t==="resultados")renderRes();
+  window.scrollTo(0,0);
+}
+function sk(id){return SK.filter(function(s){return s.id===id;})[0];}
+function misDone(){return SK.filter(function(s){return S.mis[s.id]!==undefined;}).length;}
+function pct(x){return Math.round(x*100)+"%";}
+
+/* ---------- avatar ---------- */
+var PAT=["HHHHHHHH","HHHHHHHH","HSSSSSSH","HSESSESH","SSSSSSSS","SSSMMSSS","SSSSSSSS","CCCCCCCC"];
+function avatar(r){
+  var pal={H:r.hair,S:r.skin,E:"#1b1b1b",M:"#8b3a2c",C:r.cloth},out="";
+  PAT.forEach(function(row,y){for(var x=0;x<8;x++){out+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="'+pal[row[x]]+'"/>';}});
+  return '<svg class="av" viewBox="0 0 8 8" shape-rendering="crispEdges" role="img" aria-label="Avatar de '+r.n+'">'+out+'</svg>';
+}
+
+/* ---------- jugar ---------- */
+function head(t,s){return '<div><h2>'+t+'</h2>'+(s?'<p class="sub">'+s+'</p>':'')+'</div>';}
+function renderPlay(){
+  var el=$("#play"),h="";
+  if(S.phase==="intro"){
+    h='<div class="blk card sec">'+head("Bienvenida a la aldea","Antes de empezar hay 6 preguntas rápidas. No importa si no sabes: sirven para ver cuánto aprendes después.")+
+      '<div class="row"><button class="btn" data-act="startpre">Empezar el antes</button></div></div>';
+  }else if(S.phase==="pre"||S.phase==="post"){
+    var L=S.phase==="pre"?PRE:POST,q=L[S.qi];
+    h='<div class="blk card sec">'+head(S.phase==="pre"?"Antes":"Después","Pregunta "+(S.qi+1)+" de "+L.length)+
+      '<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="'+L.length+'" aria-valuenow="'+S.qi+'"><i style="width:'+(S.qi/L.length*100)+'%"></i></div>'+
+      '<p class="q">'+q.q+'</p><div class="opts">'+q.o.map(function(o,i){return '<button class="opt" data-act="ans" data-i="'+i+'">'+o+'</button>';}).join("")+'</div></div>';
+  }else if(S.phase==="hub"){
+    var d=misDone();
+    h='<div class="blk card sec">'+head("La aldea","Visita las seis estaciones en el orden que quieras. "+d+" de 6 completadas.")+
+      '<div class="village">'+SK.map(function(s){
+        var done=S.mis[s.id]!==undefined;
+        return '<button class="st'+(done?" done":"")+'" data-act="open" data-m="'+s.id+'"><span class="chip"><i class="c'+s.c+'"></i>'+s.code+'</span><b>'+s.st+'</b><small>'+s.n+'</small><span class="stt">'+(done?"Completada · "+pct(S.mis[s.id]):"Entrar")+'</span></button>';
+      }).join("")+'</div>'+
+      '<div class="row"><button class="btn" data-act="startpost"'+(d<6?" disabled":"")+'>Hacer el después</button>'+(d<6?'<span class="sub">Se abre al completar las seis estaciones.</span>':"")+'</div></div>';
+  }else if(S.phase==="mission"){h=renderMission(S.cur);}
+  else if(S.phase==="finished"){
+    h='<div class="blk card sec">'+head("¡Aldea completa!","Ya hay datos para mirar cómo mejoró cada habilidad.")+'<div class="row"><button class="btn" data-go="resultados">Ver resultados</button><button class="btn alt" data-act="again">Jugar otra vez</button></div></div>';
+  }
+  el.innerHTML=h;
+}
+function back(){return '<div class="row"><button class="btn alt" data-act="hub">Volver a la aldea</button></div>';}
+function fbBox(ok,txt){return '<div class="fb '+(ok?"good":"bad")+'" role="status">'+txt+'</div>';}
+
+function renderMission(id){
+  var s=sk(id),M=S.m[id]||(S.m[id]={}),h='<div class="blk card sec">'+head(s.st,s.n+" · "+s.obs);
+  if(id==="prom"){
+    M.a=M.a||[];
+    h+='<div class="sec">'+M1.map(function(x,i){
+      var v=M.a[i],chk=M.done;
+      var right=chk&&v===x.a;
+      return '<div class="item"><span>'+x.t+'</span><div class="two">'+
+        ['P','A'].map(function(k){var cls="pick"+(v===k?(chk?(right?" ok":" no"):" sel"):"");return '<button class="'+cls+'" data-act="m1" data-i="'+i+'" data-v="'+k+'"'+(chk?" disabled":"")+'>'+(k==="P"?"Promesa":"Acción documentada")+'</button>';}).join("")+'</div>'+
+        (chk?'<span class="sub">'+x.w+'</span>':"")+'</div>';
+    }).join("")+'</div>';
+    if(!M.done)h+='<div class="row"><button class="btn" data-act="m1check"'+(M.a.filter(Boolean).length<M1.length?" disabled":"")+'>Comprobar</button></div>';
+  }
+  if(id==="info"){
+    M.p=M.p||[];
+    h+='<p class="q">Propuesta: «Construir un pozo nuevo». Elige las 3 preguntas que más ayudan a evaluarla.</p><div class="chips2">'+M2.map(function(x,i){
+      var on=M.p.indexOf(i)>=0,cls="pick";
+      if(M.done&&on)cls+=x.u?" ok":" no";else if(on)cls+=" sel";
+      return '<button class="'+cls+'" data-act="m2" data-i="'+i+'" aria-pressed="'+on+'"'+(M.done?" disabled":"")+'>'+x.t+'</button>';
+    }).join("")+'</div>';
+    if(M.done)h+='<ul class="l">'+M2.map(function(x){return '<li><b>'+x.t+'</b> '+x.w+'</li>';}).join("")+'</ul>';
+    else h+='<div class="row"><button class="btn" data-act="m2check"'+(M.p.length!==3?" disabled":"")+'>Comprobar ('+M.p.length+'/3)</button></div>';
+  }
+  if(id==="comp"){
+    M.a=M.a||[];
+    h+='<div class="sec">'+M3.map(function(x,i){
+      var v=M.a[i],chk=M.done;
+      return '<div class="item"><span>'+x.t+'</span><div class="two">'+OFI.map(function(o,k){
+        var cls="pick";if(v===k)cls+=chk?(k===x.a?" ok":" no"):" sel";if(chk&&k===x.a&&v!==k)cls+=" ok";
+        return '<button class="'+cls+'" data-act="m3" data-i="'+i+'" data-v="'+k+'"'+(chk?" disabled":"")+'>'+o+'</button>';}).join("")+'</div></div>';
+    }).join("")+'</div>';
+    if(!M.done)h+='<div class="row"><button class="btn" data-act="m3check"'+(M.a.filter(function(v){return v!==undefined;}).length<M3.length?" disabled":"")+'>Comprobar</button></div>';
+    else h+='<p class="sub">Cada oficina decide solo lo que le toca. Si le llevas el problema a otra, se pierde tiempo.</p>';
+  }
+  if(id==="cadena"){
+    M.r=M.r||0;M.res=M.res||[];
+    var R=M4[Math.min(M.r,M4.length-1)],fin=M.r>=M4.length;
+    h+='<p class="q">Ronda '+Math.min(M.r+1,M4.length)+' de '+M4.length+'. Toca la flecha donde el mensaje se rompió.</p>';
+    var parts=[];
+    for(var i=0;i<4;i++){
+      parts.push('<div class="blk mnode"><b>'+R.n[i]+'</b><span>'+R.s[i]+'</span></div>');
+      if(i<3){var cls="lnk";if(M.pick!==undefined&&M.pick===i)cls+=(i===R.a?" ok":" no");else if(M.pick!==undefined&&i===R.a)cls+=" ok";
+        parts.push('<button class="'+cls+'" data-act="m4" data-i="'+i+'"'+(M.pick!==undefined?" disabled":"")+'>¿Aquí?</button>');}
+    }
+    h+='<div class="mchain">'+parts.join("")+'</div>';
+    if(M.pick!==undefined){
+      h+=fbBox(M.pick===R.a,(M.pick===R.a?"¡Eso es! ":"Casi. ")+R.w)+'<div class="row"><button class="btn" data-act="m4next">'+(M.r+1<M4.length?"Siguiente ronda":"Terminar")+'</button></div>';
+    }
+  }
+  if(id==="rev"){
+    var map={};REPS.forEach(function(r){map[r.id]=r;});
+    var tw=S.twist;
+    h+='<p class="sub">Ordena a los tres representantes, del primero al último, según lo que muestran en su matriz. Una celda con «?» significa que falta información.</p><div class="reps">'+
+    S.order.map(function(rid,idx){
+      var r=map[rid],locked=S.r2!==null;
+      return '<div class="blk rep"><span class="pos">'+(idx+1)+'</span><div><div class="nm">'+avatar(r)+'<div><b>'+r.n+'</b><div class="sub">'+r.d+'</div></div></div>'+
+        '<div class="cells">'+r.cells.map(function(v,i){
+          var chg=tw&&r.id===TWIST.rep&&i===TWIST.col,x=chg?TWIST.val:v;
+          var cls=x===null?"vq":"v"+x,lab=x===null?"?":(x===2?"Sí":x===1?"A medias":"Solo dichos");
+          return '<div class="cell '+cls+(chg?" chg":"")+'">'+COLS[i]+'<small>'+lab+'</small></div>';}).join("")+'</div></div>'+
+        '<div class="mv"><button class="btn alt" data-act="up" data-i="'+idx+'"'+(idx===0||locked?" disabled":"")+' aria-label="Subir a '+r.n+'">Subir</button><button class="btn alt" data-act="dn" data-i="'+idx+'"'+(idx===2||locked?" disabled":"")+' aria-label="Bajar a '+r.n+'">Bajar</button></div></div>';
+    }).join("")+'</div>';
+    if(S.r1===null)h+='<div class="row"><button class="btn" data-act="m6a">Confirmar mi ranking</button></div>';
+    else if(!tw)h+=fbBox(S.r1,S.r1?"Buen criterio: miraste las celdas y no la simpatía ni los seguidores.":"Mira de nuevo: Tomás habla muy bien y tiene seguidores, pero eso no está en la matriz.")+
+      '<div class="row"><button class="btn" data-act="twist">Llegó evidencia nueva</button></div>';
+    else if(S.r2===null)h+='<div class="fb" role="status"><b>Evidencia nueva.</b> '+TWIST.txt+' Revisa tu ranking y confírmalo otra vez.</div><div class="row"><button class="btn" data-act="m6b">Confirmar de nuevo</button></div>';
+    else h+=fbBox(S.r2,S.r2?"Revisaste tu conclusión cuando cambió la evidencia. Eso es lo que hace un buen votante.":"La evidencia cambió y tu orden no. Con la nueva celda, Tomás queda arriba de Mara.")+
+      '<p class="sub">Totales con la evidencia nueva: '+REPS.map(function(r){return r.n+" "+repTotal(r,true);}).join(" · ")+'.</p>';
+  }
+  if(id==="desig"){
+    M.p=M.p||[];
+    h+='<p class="q">Decisión: «Cerrar el puente bajo y usar solo el camino de escalones de la colina.» ¿Quiénes salen más perjudicados? Elige todos los que correspondan.</p><div class="chips2">'+M5G.map(function(g,i){
+      var on=M.p.indexOf(i)>=0,cls="pick";
+      if(M.done){if(g.u)cls+=on?" ok":" no";else if(on)cls+=" no";}else if(on)cls+=" sel";
+      return '<button class="'+cls+'" data-act="m5" data-i="'+i+'" aria-pressed="'+on+'"'+(M.done?" disabled":"")+'>'+g.t+'</button>';
+    }).join("")+'</div>';
+    if(M.done)h+=fbBox(S.mis.desig===1,"Los escalones frenan a quien no puede subirlos. Una decisión que parece igual para todos cae distinto en cada grupo.");
+    else h+='<div class="row"><button class="btn" data-act="m5check"'+(M.p.length<1?" disabled":"")+'>Comprobar</button></div>';
+  }
+  var fin2=S.mis[id]!==undefined&&(id!=="cadena"||(S.m.cadena.r>=M4.length));
+  if(fin2)h+='<p><b>Resultado de la estación: '+pct(S.mis[id])+'</b></p>'+back();
+  else h+='<div class="row"><button class="btn alt" data-act="hub">Salir de la estación</button></div>';
+  return h+'</div>';
+}
+
+/* ---------- resultados ---------- */
+function renderRes(){
+  var has=Object.keys(S.pre).length||Object.keys(S.post).length||misDone();
+  if(!has){$("#res").innerHTML='<div class="empty"><b>Aún no hay datos.</b> Juega el antes y las misiones para ver tu mejora por habilidad y el registro para el laboratorio.</div><div class="row"><button class="btn" data-go="jugar">Ir a jugar</button></div>';return;}
+  var rows=SK.map(function(s){
+    var a=S.pre[s.id],m=S.mis[s.id],p=S.post[s.id];
+    var d=(a!==undefined&&p!==undefined)?p-a:null;
+    return '<div class="rtab"><span class="chip"><i class="c'+s.c+'"></i>'+s.code+' '+s.n+'</span><span>'+(a===undefined?"–":(a?"Acertó":"Falló"))+'</span><span>'+(m===undefined?"–":pct(m))+'</span><span>'+(p===undefined?"–":(p?"Acertó":"Falló"))+'</span><span class="dl '+(d>0?"up":d<0?"dn":"")+'">'+(d===null?"–":(d>0?"+1":d<0?"−1":"0"))+'</span></div>';
+  }).join("");
+  var diff=SK.filter(function(s){return S.pre[s.id]===0||(S.mis[s.id]!==undefined&&S.mis[s.id]<0.6);});
+  var done=SK.filter(function(s){return S.post[s.id]!==undefined;}).length===6;
+  var sumPre=SK.reduce(function(a,s){return a+(S.pre[s.id]||0);},0),sumPost=SK.reduce(function(a,s){return a+(S.post[s.id]||0);},0);
+  var rec={antes:S.pre,misiones:S.mis,despues:S.post,mejora:{},ranking:S.rankLog,conceptosDificiles:diff.map(function(s){return s.id;})};
+  SK.forEach(function(s){if(S.pre[s.id]!==undefined&&S.post[s.id]!==undefined)rec.mejora[s.id]=S.post[s.id]-S.pre[s.id];});
+  $("#res").innerHTML='<div class="blk card sec">'+head("Tu mejora por habilidad",done?"Antes "+sumPre+"/6 · Después "+sumPost+"/6":"Completa el después para ver la mejora.")+
+    '<div role="table"><div class="rtab h"><span>Habilidad</span><span>Antes</span><span>Misión</span><span>Después</span><span>Mejora</span></div>'+rows+'</div></div>'+
+    '<div class="blk card sec">'+head("Conceptos difíciles para el laboratorio","Marcan dónde falta educación cívica: falló el antes o la misión quedó bajo 60%.")+
+    (diff.length?'<ul class="l">'+diff.map(function(s){return '<li><b>'+s.code+' · '+s.n+'.</b> '+s.obs+'</li>';}).join("")+'</ul>':'<p>Ninguno por ahora.</p>')+'</div>'+
+    '<div class="blk card sec">'+head("Registro para el laboratorio","Copia este texto y súmalo a los de tu grupo.")+
+    '<textarea id="rec" readonly aria-label="Registro en formato JSON">'+JSON.stringify(rec,null,2)+'</textarea><div class="row"><button class="btn" id="cp">Copiar registro</button><span class="sub" id="cpm"></span></div></div>';
+  $("#cp").addEventListener("click",function(){
+    var t=$("#rec"),m=$("#cpm");
+    var ok=function(){m.textContent="Copiado.";};
+    var fb=function(){t.select();m.textContent="Seleccionado: usa Copiar de tu teclado.";};
+    try{navigator.clipboard.writeText(t.value).then(ok,fb);}catch(e){fb();}
+  });
+}
+
+/* ---------- acciones ---------- */
+function setMis(id,v){S.mis[id]=v;}
+document.addEventListener("click",function(ev){
+  var t=ev.target.closest("[data-tab],[data-go],[data-act]");if(!t)return;
+  if(t.dataset.tab){setTab(t.dataset.tab);return;}
+  if(t.dataset.go){setTab(t.dataset.go);return;}
+  var a=t.dataset.act,i=+t.dataset.i,M=S.m[S.cur]||{};
+  if(a==="startpre"){S.phase="pre";S.qi=0;}
+  else if(a==="ans"||a==="ansbusy"){
+    var L=S.phase==="pre"?PRE:POST,q=L[S.qi];
+    (S.phase==="pre"?S.pre:S.post)[q.sk]=(i===q.a)?1:0;
+    S.qi++;
+    if(S.qi>=L.length){S.phase=S.phase==="pre"?"hub":"finished";S.qi=0;}
+  }
+  else if(a==="open"){S.cur=t.dataset.m;S.phase="mission";}
+  else if(a==="hub"){S.phase="hub";}
+  else if(a==="startpost"){S.phase="post";S.qi=0;}
+  else if(a==="again"){var tb=S.tab;S=fresh();S.tab=tb;S.phase="pre";}
+  else if(a==="m1"){M.a[i]=t.dataset.v;}
+  else if(a==="m1check"){M.done=1;setMis("prom",M1.filter(function(x,k){return M.a[k]===x.a;}).length/M1.length);}
+  else if(a==="m2"){var p=M.p.indexOf(i);if(p>=0)M.p.splice(p,1);else if(M.p.length<3)M.p.push(i);}
+  else if(a==="m2check"){M.done=1;var g=0,b=0;M.p.forEach(function(k){if(M2[k].u)g++;else b++;});setMis("info",Math.max(0,(g-b)/3));}
+  else if(a==="m3"){M.a[i]=+t.dataset.v;}
+  else if(a==="m3check"){M.done=1;setMis("comp",M3.filter(function(x,k){return M.a[k]===x.a;}).length/M3.length);}
+  else if(a==="m4"){M.pick=i;M.res[M.r]=(i===M4[M.r].a)?1:0;}
+  else if(a==="m4next"){M.pick=undefined;M.r++;if(M.r>=M4.length)setMis("cadena",M.res.reduce(function(x,y){return x+y;},0)/M4.length);}
+  else if(a==="m5"){var q2=M.p.indexOf(i);if(q2>=0)M.p.splice(q2,1);else M.p.push(i);}
+  else if(a==="m5check"){M.done=1;var gg=0,bb=0;M5G.forEach(function(x,k){var on=M.p.indexOf(k)>=0;if(on&&x.u)gg++;if(on&&!x.u)bb++;});setMis("desig",Math.max(0,(gg-bb)/2));}
+  else if(a==="up"&&i>0){var o=S.order;var x=o[i];o[i]=o[i-1];o[i-1]=x;}
+  else if(a==="dn"&&i<2){var o2=S.order;var y=o2[i];o2[i]=o2[i+1];o2[i+1]=y;}
+  else if(a==="m6a"){S.r1=(S.order.join()==="mara,tomas,ivan");S.rankLog={inicial:S.order.slice()};}
+  else if(a==="twist"){S.twist=true;}
+  else if(a==="m6b"){S.r2=(S.order.join()==="tomas,mara,ivan");S.rankLog.final=S.order.slice();S.rankLog.reviso=S.r2;setMis("rev",S.r2?1:0);}
+  renderPlay();
+  if(a==="ans"||a==="startpre"||a==="open"||a==="hub")window.scrollTo(0,0);
+});
+renderPlay();setTab("estructura");
+})();
+</script>
+
+</body></html>
