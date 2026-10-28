@@ -1,0 +1,430 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Laboratorio de Arraigo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: encabezado, mapa de la comunidad junto a las condiciones, luego fichas, resultados y lectura. Hilos de ñandutí = vínculos entre referentes e hijas. */
+:root{
+  --bg:#F1F5F4; --surface:#FFFFFF; --ink:#14272B; --muted:#566C70; --line:#D6E0DE; --track:#E3EBEA;
+  --accent:#12545B; --accent-ink:#FFFFFF; --soft:#E4F0EE; --alert:#D1481A;
+  --c0:#3B8A47; --c1:#3B6FD4; --c2:#8650C2; --c3:#9A8300; --c4:#B0388F; --on-c:#FFFFFF;
+  --display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --body:'Public Sans','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1A1D; --surface:#15262A; --ink:#E4EEEC; --muted:#92A9AC; --line:#284041; --track:#213639;
+  --accent:#7FD3DC; --accent-ink:#0E1A1D; --soft:#1A3639; --alert:#FF8F66;
+  --c0:#7CCB86; --c1:#7EA5F2; --c2:#B991EA; --c3:#D9C34A; --c4:#E581C9; --on-c:#0E1A1D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1A1D; --surface:#15262A; --ink:#E4EEEC; --muted:#92A9AC; --line:#284041; --track:#213639;
+  --accent:#7FD3DC; --accent-ink:#0E1A1D; --soft:#1A3639; --alert:#FF8F66;
+  --c0:#7CCB86; --c1:#7EA5F2; --c2:#B991EA; --c3:#D9C34A; --c4:#E581C9; --on-c:#0E1A1D; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;
+  padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.page{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(26px,4.4vw,40px);font-weight:700;max-width:22ch}
+h2{font-size:18px;font-weight:600}
+h3{font-size:15px;font-weight:600}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.lede{max-width:64ch;color:var(--muted);font-size:16px}
+.note{font-size:13px;color:var(--muted);max-width:70ch}
+header{display:flex;flex-direction:column;gap:12px}
+.grid{display:grid;gap:20px;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}
+.grid.even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media (max-width:880px){.grid,.grid.even{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sub{color:var(--muted);font-size:13px}
+.stats{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted)}
+.stats b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+.evline{font-size:14px;min-height:44px;padding:8px 12px;border-radius:8px;background:var(--soft)}
+.evline.warn{border-left:3px solid var(--alert)}
+svg{display:block;max-width:100%;height:auto}
+.map text{font-family:var(--body)}
+.lbl{font-size:12.5px;font-weight:600;fill:var(--ink)}
+.lbl2{font-size:11px;fill:var(--muted)}
+.ring{fill:none;stroke:var(--alert);stroke-width:2;stroke-dasharray:5 5}
+.node{cursor:pointer}
+.node:focus-visible{outline:none}
+.node:focus-visible .halo{stroke:var(--accent);stroke-width:3}
+.halo{fill:none;stroke:transparent;stroke-width:3}
+.play{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+button{font:inherit;cursor:pointer}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:7px;padding:8px 14px;font-weight:600;min-height:38px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.play input[type=range]{flex:1;min-width:140px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label,.field .lab{font-weight:600;font-size:14px;display:flex;justify-content:space-between;gap:8px}
+.field .hint{font-size:12.5px;color:var(--muted)}
+select{font:inherit;padding:8px 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-height:38px;width:100%}
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tab{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 12px 5px 8px;font-size:13.5px}
+.tab[aria-pressed=true]{background:var(--soft);border-color:var(--accent);font-weight:600}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.ficha{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px 14px;margin:0}
+@media (max-width:480px){.ficha{grid-template-columns:minmax(0,1fr);gap:2px}.ficha dd{margin-bottom:10px}}
+.ficha dt{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-top:2px}
+.ficha dd{margin:0;min-width:0}
+.mini{display:grid;grid-template-columns:150px minmax(0,1fr);gap:3px 10px;align-items:center;font-size:12.5px}
+@media (max-width:480px){.mini{grid-template-columns:110px minmax(0,1fr)}}
+.bar{height:8px;background:var(--track);border-radius:4px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:6px;padding:4px 10px;font-size:13px}
+.chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.row{display:grid;grid-template-columns:150px minmax(0,1fr) 34px;gap:10px;align-items:center;font-size:13px}
+@media (max-width:480px){.row{grid-template-columns:96px minmax(0,1fr) 30px}}
+.row .bar{height:16px;border-radius:3px}
+.num{font-variant-numeric:tabular-nums;text-align:right;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:5px}
+.stack{display:flex;flex-direction:column;gap:8px}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tr.cur td{background:var(--soft)}
+.ok{color:var(--accent);font-weight:600}.bad{color:var(--alert);font-weight:600}
+ul.clean{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:9px}
+.axis{stroke:var(--line);stroke-width:1}
+.axt{font-size:10.5px;fill:var(--muted);font-family:var(--body)}
+.cline{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.cfull{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 4;opacity:.6}
+.evl{stroke:var(--alert);stroke-width:1.5;stroke-dasharray:4 4}
+.evt{font-size:10.5px;fill:var(--alert);font-family:var(--body);font-weight:600}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<main class="page">
+  <header>
+    <p class="eyebrow">Laboratorio social · demo con personajes inventados</p>
+    <h1>¿Qué mujeres quisiera que mis hijas conocieran?</h1>
+    <p class="lede">Una comunidad nueva, cinco referentes y cuatro niñas que crecen observándolas. Cambia las condiciones iniciales y mira qué saberes y valores llegan a las hijas, cuáles se pierden por el camino y qué cambia cuando aparece un conflicto.</p>
+    <p class="note">Los arquetipos son categorías para observar, no etiquetas sobre mujeres reales. Cada personaje combina varias capas y actúa distinto según la situación. Todos los nombres y números son inventados; la demo no predice nada, solo permite explorar mecanismos y detectar qué información real habría que investigar.</p>
+  </header>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="t-mapa">
+      <div>
+        <h2 id="t-mapa">La comunidad semana a semana</h2>
+        <p class="sub">Los círculos grandes son las referentes; los pequeños, las hijas. Cuanto más grueso el hilo, más aprende la niña de esa referente. Toca una referente para ver sus capas.</p>
+      </div>
+      <div class="stats" id="stats"></div>
+      <svg class="map" id="map" viewBox="0 0 680 430" role="img" aria-label="Mapa de referentes e hijas con hilos de aprendizaje"></svg>
+      <div class="evline" id="evline" aria-live="polite"></div>
+      <div class="play">
+        <button class="btn" id="play" type="button">Ver desde la semana 0</button>
+        <input type="range" id="scrub" min="0" max="16" step="1" value="16" aria-label="Semana mostrada">
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="t-cond">
+      <h2 id="t-cond">Condiciones iniciales</h2>
+      <div class="field">
+        <label for="conn"><span>Conexión entre familias</span><output id="connOut">60%</output></label>
+        <input type="range" id="conn" min="10" max="100" step="5" value="60">
+        <span class="hint">Cuánto ven las niñas a mujeres de otros hogares, más allá de su casa.</span>
+      </div>
+      <div class="field">
+        <label for="evt">Evento en la comunidad</label>
+        <select id="evt">
+          <option value="none">Sin conflicto</option>
+          <option value="mild">Conflicto leve por un espacio común</option>
+          <option value="strong" selected>Conflicto fuerte por el agua compartida</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="week"><span>Semana del evento</span><output id="weekOut">8</output></label>
+        <input type="range" id="week" min="3" max="14" step="1" value="8">
+      </div>
+      <div class="field">
+        <span class="lab">Escenarios de partida</span>
+        <div class="presets">
+          <button class="btn ghost" type="button" data-p="conectada">Comunidad conectada</button>
+          <button class="btn ghost" type="button" data-p="aislada">Comunidad aislada</button>
+          <button class="btn ghost" type="button" data-p="calma">Sin conflicto</button>
+          <button class="btn ghost" type="button" data-p="base">Restablecer</button>
+        </div>
+        <span class="hint">El motivo de cada referente se cambia en su ficha, abajo.</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid even">
+    <section class="card" aria-labelledby="t-ficha">
+      <h2 id="t-ficha">Las capas de cada referente</h2>
+      <div class="tabs" id="tabs" role="group" aria-label="Elegir referente"></div>
+      <dl class="ficha" id="ficha"></dl>
+    </section>
+
+    <section class="card" aria-labelledby="t-aprend">
+      <h2 id="t-aprend">Qué aprendieron las hijas</h2>
+      <p class="sub">Promedio de las cuatro niñas, de 0 a 100. El color indica de quién lo aprendieron; el gris es lo que ya traían.</p>
+      <div class="stack" id="saberes"></div>
+      <div class="legend" id="legend"></div>
+      <div id="valores"></div>
+      <h3>Cohesión de la comunidad</h3>
+      <svg id="coh" viewBox="0 0 360 165" role="img" aria-label="Evolución de la cohesión semana a semana"></svg>
+      <p class="sub">Cohesión: qué tan unidos se sienten los hogares (0 a 100). Valor inventado para la demo.</p>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="t-comp">
+    <div>
+      <h2 id="t-comp">Mismo gesto, distinto motivo</h2>
+      <p class="sub" id="compSub"></p>
+    </div>
+    <div class="tblwrap"><table id="comp"></table></div>
+  </section>
+
+  <div class="grid even">
+    <section class="card" aria-labelledby="t-lect">
+      <h2 id="t-lect">Qué muestra esta simulación</h2>
+      <ul class="clean" id="lect"></ul>
+    </section>
+    <section class="card" aria-labelledby="t-datos">
+      <h2 id="t-datos">Qué datos reales habría que buscar</h2>
+      <ul class="clean">
+        <li><b>Contacto entre hogares.</b> Visitas, redes de cuidado y trabajo compartido. En la demo es la «conexión».</li>
+        <li><b>Quién interviene en los conflictos y por qué.</b> Entrevistas y observación. En la demo es el «motivo».</li>
+        <li><b>Dónde se transmiten los oficios.</b> Talleres, ferias, cooperativas, la casa. En la demo es la «transmisión».</li>
+        <li><b>La voz de las propias mujeres y de las niñas.</b> Ninguna regla de este modelo sale de personas reales y ninguna conclusión se traslada sin contrastarla.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<script>
+(()=>{
+const W=16, CX=340, CY=212;
+const SAB=['Oficios y producción','Administrar recursos','Mediar conflictos','Adaptarse e innovar','Tejer red comunitaria'];
+const MOT={
+  sol:{n:'Solidaridad',d:'Coopera porque le importa el bienestar de todos, haya o no público.'},
+  rep:{n:'Reputación',d:'Coopera cuando la comunidad la mira y el resultado parece seguro. Si la cohesión baja de 60, se retira.'},
+  obl:{n:'Obligación social',d:'Coopera porque se espera de ella. Lo hace aunque pese y le cuesta más adaptarse.'}
+};
+const REFS=[
+ {name:'Marta',rol:'Articuladora comunitaria',s:[.3,.4,.6,.4,.95],t:.7,a:.6,prin:'Que ninguna familia quede afuera de las decisiones del barrio.',lim:'No acepta que se excluya a quienes llegaron después.'},
+ {name:'Rosa',rol:'Administradora de recursos',s:[.4,.95,.3,.3,.4],t:.5,a:.5,prin:'Que lo compartido alcance para todos y se rindan cuentas.',lim:'No acepta gastos sin registro, aunque sean de buena fe.'},
+ {name:'Celia',rol:'Maestra de oficio',s:[.95,.5,.2,.3,.3],t:.8,a:.3,prin:'Que el oficio se aprenda completo, sin atajos.',lim:'No acepta enseñar a medias ni apurar el aprendizaje.'},
+ {name:'Dani',rol:'Innovadora',s:[.4,.4,.2,.95,.4],t:.3,a:.9,prin:'Probar formas nuevas antes de dar algo por perdido.',lim:'No acepta repetir un método que ya falló.'},
+ {name:'Inés',rol:'Mediadora',s:[.2,.3,.95,.5,.5],t:.6,a:.7,prin:'Que cada parte sea escuchada antes de decidir.',lim:'No acepta que se decida a gritos o por presión.'}
+];
+const MOT0=['sol','obl','obl','rep','sol'];
+const DAU=[{n:'Lía',home:1},{n:'Jazmín',home:2},{n:'Aylén',home:3},{n:'Mara',home:4}];
+const AFF=[[.8,1,.7,.6,.9],[.6,.7,1,.8,.5],[.9,.5,.6,1,.7],[.7,.8,.5,.6,1]];
+const VAL=[{k:'sol',n:'Cuidar lo común'},{k:'rep',n:'Cuidar la imagen'},{k:'obl',n:'Cumplir aunque pese'},{k:'away',n:'Mirar desde lejos'}];
+const exposure=(d,i,conn)=>DAU[d].home===i?1:conn*AFF[d][i];
+
+function conflict(c,conn,motives,sev){
+  const q=sev==='strong'?.7:1, thr=sev==='strong'?.68:.5, reach=.6+.4*conn;
+  let prod=1; const list=[];
+  REFS.forEach((r,i)=>{
+    const m=motives[i]; let p,f=1;
+    if(m==='sol') p=.9; else if(m==='rep') p=c>=60?.9:.25; else {p=.7; f=.5+.5*r.a;}
+    const e=(r.s[2]*.5+r.s[4]*.3+r.a*.2)*f*q*reach;
+    prod*=1-p*e; list.push({i,p,e,eff:p*e});
+  });
+  const res=1-prod; return {res,thr,ok:res>=thr,list};
+}
+function sim(o){
+  const nD=DAU.length,nK=5,nR=REFS.length;
+  let c=50,conn=o.conn/100,ev=null,vals=null;
+  const L=DAU.map(()=>Array(nK).fill(8));
+  const C=DAU.map(()=>Array.from({length:nK},()=>Array(nR).fill(0)));
+  const snaps=[];
+  const snap=()=>{
+    snaps.push({c,conn,Ld:L.map(r=>r.slice()),
+      avg:Array.from({length:nK},(_,k)=>L.reduce((s,r)=>s+r[k],0)/nD),
+      con:Array.from({length:nK},(_,k)=>Array.from({length:nR},(_,i)=>C.reduce((s,d)=>s+d[k][i],0)/nD))});
+  };
+  snap();
+  for(let w=1;w<=W;w++){
+    if(o.evt!=='none'&&w===o.week){
+      ev=conflict(c,conn,o.motives,o.evt); ev.week=w; ev.sev=o.evt;
+      const tot={sol:0,rep:0,obl:0,away:0};
+      ev.list.forEach(x=>{const m=o.motives[x.i];
+        for(let d=0;d<nD;d++){const e=exposure(d,x.i,conn); tot[m]+=x.eff*e; if(m==='rep') tot.away+=(1-x.p)*e;}});
+      const sum=Object.values(tot).reduce((a,b)=>a+b,0)||1;
+      vals={}; for(const k in tot) vals[k]=tot[k]/sum;
+      if(ev.ok){c=Math.min(100,c+8);conn=Math.min(1,conn*1.08);}
+      else{c=Math.max(0,c-(o.evt==='strong'?28:12));conn*=.7;}
+    }
+    c+=.12*(25+55*conn-c);
+    for(let d=0;d<nD;d++)for(let k=0;k<nK;k++){
+      const terms=REFS.map((r,i)=>exposure(d,i,conn)*r.t*r.s[k]);
+      const raw=terms.reduce((a,b)=>a+b,0);
+      const gain=3.2*raw*(1-L[d][k]/100);
+      L[d][k]+=gain; terms.forEach((t,i)=>{C[d][k][i]+=raw?gain*t/raw:0;});
+    }
+    snap();
+  }
+  return {snaps,ev,vals,o};
+}
+/*==UI==*/
+if(typeof document==='undefined') return {sim,REFS,MOT0};
+const $=s=>document.querySelector(s);
+const S={conn:60,evt:'strong',week:8,motives:MOT0.slice(),sel:0,w:W,run:null};
+let timer=null;
+const pct=x=>Math.round(x*100);
+const col=i=>`var(--c${i})`;
+
+function drawMap(){
+  const sn=S.run.snaps[S.w],ev=S.run.ev,after=ev&&S.w>=ev.week;
+  const rp=REFS.map((_,i)=>{const a=(-90+i*72)*Math.PI/180;return [CX+150*Math.cos(a),CY+150*Math.sin(a)];});
+  const dp=DAU.map((_,j)=>{const a=(45+j*90)*Math.PI/180;return [CX+56*Math.cos(a),CY+56*Math.sin(a)];});
+  let h='';
+  if(ev&&S.w===ev.week) h+=`<circle class="ring" cx="${CX}" cy="${CY}" r="100"/>`;
+  REFS.forEach((r,i)=>DAU.forEach((d,j)=>{
+    const ex=exposure(j,i,sn.conn), dim=S.sel!==i;
+    h+=`<line x1="${rp[i][0].toFixed(1)}" y1="${rp[i][1].toFixed(1)}" x2="${dp[j][0].toFixed(1)}" y2="${dp[j][1].toFixed(1)}" stroke="${col(i)}" stroke-width="${(.6+5*ex*r.t).toFixed(2)}" stroke-linecap="round" opacity="${dim?.16:.7}"/>`;
+  }));
+  DAU.forEach((d,j)=>{
+    const avg=sn.Ld[j].reduce((a,b)=>a+b,0)/5, r=12+avg/7;
+    h+=`<circle cx="${dp[j][0].toFixed(1)}" cy="${dp[j][1].toFixed(1)}" r="${r.toFixed(1)}" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>
+    <text x="${dp[j][0].toFixed(1)}" y="${(dp[j][1]+4).toFixed(1)}" text-anchor="middle" class="lbl" style="font-size:12px">${d.n[0]}</text>
+    <text x="${dp[j][0].toFixed(1)}" y="${(dp[j][1]+r+11).toFixed(1)}" text-anchor="middle" class="lbl2" style="font-size:10px">${d.n}</text>`;
+  });
+  REFS.forEach((r,i)=>{
+    const [x,y]=rp[i]; const side=i===0?'top':(i===1||i===2)?'bottom':(i===3?'left':'right');
+    // posiciones de nodos: 0 arriba, 1 derecha, 2 abajo-derecha, 3 abajo-izquierda, 4 izquierda
+    let tx=x,ty=y+40,an='middle',ty2=y+53;
+    if(i===0){ty=y-34;ty2=y-21;}
+    if(i===1){tx=x+32;ty=y-1;ty2=y+12;an='start';}
+    if(i===4){tx=x-32;ty=y-1;ty2=y+12;an='end';}
+    const sel=S.sel===i;
+    let badge='';
+    if(after){const it=ev.list[i]; badge=it.p>=.5?`<circle cx="${x+18}" cy="${y-18}" r="8" fill="var(--ink)"/><text x="${x+18}" y="${y-14.5}" text-anchor="middle" style="font-size:11px;fill:var(--surface);font-weight:700">✓</text>`:`<circle cx="${x+18}" cy="${y-18}" r="8" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/><text x="${x+18}" y="${y-14.5}" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:700">–</text>`;}
+    h+=`<g class="node" tabindex="0" role="button" aria-label="${r.name}, ${r.rol}" data-i="${i}">
+      <circle class="halo" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="31"/>
+      ${sel?`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="29" fill="none" stroke="var(--ink)" stroke-width="2"/>`:''}
+      <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="24" fill="${col(i)}"/>
+      <text x="${x.toFixed(1)}" y="${(y+6).toFixed(1)}" text-anchor="middle" style="font-family:var(--display);font-weight:700;font-size:19px;fill:var(--on-c)">${r.name[0]}</text>
+      <text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${an}" class="lbl">${r.name}</text>
+      <text x="${tx.toFixed(1)}" y="${ty2.toFixed(1)}" text-anchor="${an}" class="lbl2">${r.rol}</text>
+      ${badge}</g>`;
+  });
+  $('#map').innerHTML=h;
+  $('#stats').innerHTML=`<span>Semana <b>${S.w}</b> de ${W}</span><span>Cohesión <b>${Math.round(sn.c)}</b></span><span>Conexión efectiva <b>${pct(sn.conn)}%</b></span>`;
+  const el=$('#evline'); el.classList.remove('warn');
+  if(!ev) el.textContent='Sin conflicto en esta simulación. La comunidad se sostiene, pero no se probó qué pasa bajo tensión.';
+  else if(S.w<ev.week) el.textContent=`Conflicto ${ev.sev==='strong'?'fuerte':'leve'} previsto en la semana ${ev.week}.`;
+  else{
+    el.classList.toggle('warn',!ev.ok);
+    el.innerHTML=`Semana ${ev.week}: conflicto ${ev.sev==='strong'?'fuerte':'leve'}. ${ev.ok?'Se resolvió':'No se resolvió'}, con ${pct(ev.res)}% de capacidad frente a ${pct(ev.thr)}% necesario. ✓ intervino · – se retiró.`;
+  }
+}
+function drawBars(){
+  const sn=S.run.snaps[S.w];
+  $('#saberes').innerHTML=SAB.map((n,k)=>{
+    const seg=sn.con[k].map((v,i)=>`<i style="width:${v}%;background:${col(i)}" title="${REFS[i].name}: ${v.toFixed(1)}"></i>`).join('');
+    return `<div class="row"><span>${n}</span><div class="bar"><i style="width:8%;background:var(--muted);opacity:.45" title="Lo que ya traían"></i>${seg}</div><span class="num">${Math.round(sn.avg[k])}</span></div>`;
+  }).join('');
+  const ev=S.run.ev,v=S.run.vals;
+  if(ev&&S.w>=ev.week){
+    $('#valores').innerHTML=`<h3>Qué vieron las hijas en el conflicto</h3><p class="sub" style="margin-bottom:8px">Reparto de lo que presenciaron, según quién actuó y por qué motivo.</p><div class="stack">`+VAL.map(x=>`<div class="row"><span>${x.n}</span><div class="bar" style="height:12px"><i style="width:${pct(v[x.k])}%;background:var(--accent)"></i></div><span class="num">${pct(v[x.k])}%</span></div>`).join('')+`</div>`;
+  } else $('#valores').innerHTML='';
+}
+function drawCoh(){
+  const sn=S.run.snaps,ev=S.run.ev;
+  const X=i=>34+i/W*312, Y=v=>128-v/100*114;
+  const path=n=>sn.slice(0,n+1).map((s,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(s.c).toFixed(1)).join('');
+  let h='';
+  [0,50,100].forEach(v=>h+=`<line class="axis" x1="34" x2="346" y1="${Y(v)}" y2="${Y(v)}"/><text class="axt" x="28" y="${Y(v)+3.5}" text-anchor="end">${v}</text>`);
+  [0,4,8,12,16].forEach(w=>h+=`<text class="axt" x="${X(w)}" y="148" text-anchor="middle">${w}</text>`);
+  h+=`<text class="axt" x="190" y="162" text-anchor="middle">semana</text>`;
+  if(ev) h+=`<line class="evl" x1="${X(ev.week)}" x2="${X(ev.week)}" y1="14" y2="128"/><text class="evt" x="${X(ev.week)+(ev.week>11?-5:5)}" y="22" text-anchor="${ev.week>11?'end':'start'}">conflicto</text>`;
+  h+=`<path class="cfull" d="${path(W)}"/><path class="cline" d="${path(S.w)}"/><circle cx="${X(S.w)}" cy="${Y(sn[S.w].c)}" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>`;
+  $('#coh').innerHTML=h;
+}
+function renderWeek(){drawMap();drawBars();drawCoh();$('#scrub').value=S.w;}
+
+function renderFicha(){
+  const i=S.sel,r=REFS[i],f=S.run.snaps[W],ev=S.run.ev;
+  $('#tabs').innerHTML=REFS.map((x,j)=>`<button class="tab" type="button" data-i="${j}" aria-pressed="${j===i}"><span class="dot" style="background:${col(j)}"></span>${x.name}</button>`).join('');
+  const tot=f.con.reduce((s,a)=>s+a.reduce((p,q)=>p+q,0),0)||1;
+  const mine=f.con.reduce((s,a)=>s+a[i],0);
+  let eff=`Aportó ${Math.round(mine/tot*100)}% de lo que aprendieron las hijas.`;
+  if(ev){const it=ev.list[i];eff+=` En el conflicto ${it.p>=.5?'intervino':'se retiró'}; su aporte a la resolución fue de ${pct(it.eff)}%.`;}
+  $('#ficha').innerHTML=`
+   <dt>Capacidades</dt><dd><div class="mini">${SAB.map((n,k)=>`<span>${n}</span><div class="bar"><i style="width:${r.s[k]*100}%;background:${col(i)}"></i></div>`).join('')}</div></dd>
+   <dt>Principios</dt><dd>${r.prin}</dd>
+   <dt>Motivación</dt><dd><div class="chips" role="group" aria-label="Motivación de ${r.name}">${Object.keys(MOT).map(m=>`<button class="chip" type="button" data-m="${m}" aria-pressed="${S.motives[i]===m}">${MOT[m].n}</button>`).join('')}</div><p class="sub" style="margin-top:6px">${MOT[S.motives[i]].d}</p></dd>
+   <dt>Límites</dt><dd>${r.lim}</dd>
+   <dt>Adaptabilidad</dt><dd><div class="mini" style="grid-template-columns:minmax(0,1fr) 30px"><div class="bar"><i style="width:${r.a*100}%;background:${col(i)}"></i></div><span class="num">${pct(r.a)}</span></div></dd>
+   <dt>Transmisión</dt><dd><div class="mini" style="grid-template-columns:minmax(0,1fr) 30px"><div class="bar"><i style="width:${r.t*100}%;background:${col(i)}"></i></div><span class="num">${pct(r.t)}</span></div><p class="sub" style="margin-top:4px">Con qué constancia comparte lo que sabe.</p></dd>
+   <dt>Efectos sociales</dt><dd>${eff}</dd>`;
+  $('#legend').innerHTML=`<span><span class="dot" style="background:var(--muted);opacity:.45"></span>Ya lo traían</span>`+REFS.map((x,j)=>`<span><span class="dot" style="background:${col(j)}"></span>${x.name}</span>`).join('');
+}
+function renderComp(){
+  const r=REFS[S.sel];
+  if(S.evt==='none'){$('#compSub').textContent='Activa un conflicto en las condiciones iniciales para comparar.';$('#comp').innerHTML='';return;}
+  $('#compSub').textContent=`Todo igual salvo el motivo de ${r.name}. Desde afuera se ve la misma conducta, pero el conflicto no termina igual. Cambia de referente arriba para repetir la comparación.`;
+  const rows=Object.keys(MOT).map(m=>{
+    const mo=S.motives.slice();mo[S.sel]=m;
+    const x=sim({conn:S.conn,evt:S.evt,week:S.week,motives:mo}),e=x.ev,f=x.snaps[W];
+    return `<tr class="${m===S.motives[S.sel]?'cur':''}"><td>${MOT[m].n}${m===S.motives[S.sel]?' (actual)':''}</td><td>${pct(e.res)}% de ${pct(e.thr)}%</td><td class="${e.ok?'ok':'bad'}">${e.ok?'Se resuelve':'No se resuelve'}</td><td>${Math.round(f.c)}</td><td>${Math.round(f.avg[2])}</td></tr>`;
+  }).join('');
+  $('#comp').innerHTML=`<thead><tr><th>Motivo de ${r.name}</th><th>Capacidad de resolver</th><th>Resultado</th><th>Cohesión final</th><th>Mediar (hijas)</th></tr></thead><tbody>${rows}</tbody>`;
+}
+function renderLect(){
+  const R=S.run,f=R.snaps[W],ev=R.ev,out=[];
+  let kmin=0;f.avg.forEach((v,k)=>{if(v<f.avg[kmin])kmin=k;});
+  let h=0;REFS.forEach((r,i)=>{if(r.s[kmin]>REFS[h].s[kmin])h=i;});
+  const hr=REFS[h];
+  const why=hr.t<.5?`${hr.name} lo domina, pero lo transmite poco.`:(S.conn<45?`${hr.name} lo domina, pero casi ninguna niña la ve de cerca.`:`${hr.name} lo domina, pero comparte menos tiempo con las niñas que otras referentes.`);
+  out.push(`El saber que menos llegó a las hijas fue «${SAB[kmin]}» (${Math.round(f.avg[kmin])} de 100). ${why}`);
+  if(!ev) out.push(`Sin conflicto, la cohesión llegó a ${Math.round(f.c)}. Falta ver cómo responde la comunidad bajo tensión.`);
+  else{
+    const a=R.snaps[ev.week-1],b=R.snaps[ev.week];
+    out.push(ev.ok?`El conflicto de la semana ${ev.week} se resolvió: la cohesión subió de ${Math.round(a.c)} a ${Math.round(b.c)} y las familias se acercaron (conexión de ${pct(a.conn)}% a ${pct(b.conn)}%).`
+      :`El conflicto de la semana ${ev.week} no se resolvió: la cohesión cayó de ${Math.round(a.c)} a ${Math.round(b.c)} y las familias redujeron el contacto (conexión de ${pct(a.conn)}% a ${pct(b.conn)}%). Las hijas empezaron a ver a menos referentes.`);
+  }
+  const av=f.Ld.map(r=>r.reduce((x,y)=>x+y,0)/5);
+  let bi=0,wi=0;av.forEach((v,j)=>{if(v>av[bi])bi=j;if(v<av[wi])wi=j;});
+  out.push(`${DAU[bi].n} terminó con ${Math.round(av[bi])} puntos de promedio y ${DAU[wi].n} con ${Math.round(av[wi])}. En el modelo todas aprenden al mismo ritmo; la diferencia viene de a quién ve cada una a diario.`);
+  $('#lect').innerHTML=out.map(t=>`<li>${t}</li>`).join('');
+}
+function run(){
+  S.run=sim({conn:S.conn,evt:S.evt,week:S.week,motives:S.motives});
+  $('#connOut').textContent=S.conn+'%';$('#weekOut').textContent=S.week;
+  $('#week').disabled=S.evt==='none';
+  renderFicha();renderComp();renderLect();renderWeek();
+}
+function stop(){if(timer){clearInterval(timer);timer=null;}$('#play').textContent='Ver desde la semana 0';}
+function play(){
+  if(timer){stop();return;}
+  S.w=0;renderWeek();$('#play').textContent='Pausar';
+  timer=setInterval(()=>{if(S.w>=W){stop();return;}S.w++;renderWeek();},450);
+}
+$('#play').addEventListener('click',play);
+$('#scrub').addEventListener('input',e=>{stop();S.w=+e.target.value;renderWeek();});
+$('#conn').addEventListener('input',e=>{S.conn=+e.target.value;stop();S.w=W;run();});
+$('#evt').addEventListener('change',e=>{S.evt=e.target.value;stop();S.w=W;run();});
+$('#week').addEventListener('input',e=>{S.week=+e.target.value;stop();S.w=W;run();});
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(b){S.sel=+b.dataset.i;renderFicha();renderComp();drawMap();}});
+$('#ficha').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(b){S.motives[S.sel]=b.dataset.m;stop();S.w=W;run();}});
+$('#map').addEventListener('click',e=>{const g=e.target.closest('.node');if(g){S.sel=+g.dataset.i;renderFicha();renderComp();drawMap();}});
+$('#map').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const g=e.target.closest('.node');if(g){e.preventDefault();S.sel=+g.dataset.i;renderFicha();renderComp();drawMap();const n=document.querySelector(`.node[data-i="${S.sel}"]`);if(n)n.focus();}}});
+document.querySelector('.presets').addEventListener('click',e=>{
+  const b=e.target.closest('[data-p]');if(!b)return;
+  const p=b.dataset.p;
+  S.motives=MOT0.slice();
+  if(p==='conectada'){S.conn=90;S.evt='strong';S.week=8;}
+  if(p==='aislada'){S.conn=20;S.evt='strong';S.week=8;}
+  if(p==='calma'){S.conn=60;S.evt='none';}
+  if(p==='base'){S.conn=60;S.evt='strong';S.week=8;S.sel=0;}
+  $('#conn').value=S.conn;$('#evt').value=S.evt;$('#week').value=S.week;
+  stop();S.w=W;run();
+});
+run();
+})();
+</script>
+
+</body></html>
