@@ -1,0 +1,586 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tablero del Reclutador</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Concepto: mesa de planificación. Neutros de piedra (andesita de día, pizarra de noche) y los materiales de Minecraft como código de color de las seis capacidades. */
+  --bg:#e3e6e3; --surface:#f1f3f0; --soft:#e8ebe7; --ink:#141c1b; --muted:#53615c; --line:#bcc5c0; --edge:#a5afaa;
+  --act:#141c1b; --actfg:#f1f3f0;
+  --rel:#3a6cb5; --con:#c0642a; --log:#b08d1f; --com:#1894a8; --tec:#c13b3b; --cal:#7656b5;
+  --display:'Big Shoulders Display','Arial Narrow',Impact,sans-serif;
+  --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101615; --surface:#182120; --soft:#1e2928; --ink:#e3e9e6; --muted:#9aa9a3; --line:#2f3e3c; --edge:#0b100f;
+    --act:#e3e9e6; --actfg:#101615;
+    --rel:#6a9be0; --con:#e48a52; --log:#d4b13e; --com:#3cc0d6; --tec:#ea6c6c; --cal:#a78de3;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101615; --surface:#182120; --soft:#1e2928; --ink:#e3e9e6; --muted:#9aa9a3; --line:#2f3e3c; --edge:#0b100f;
+  --act:#e3e9e6; --actfg:#101615;
+  --rel:#6a9be0; --con:#e48a52; --log:#d4b13e; --com:#3cc0d6; --tec:#ea6c6c; --cal:#a78de3;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);
+  padding-block:22px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:22px}
+h1,h2,h3,p,ul{margin:0}
+h1{font:800 clamp(2.2rem,6vw,3.6rem)/.95 var(--display);letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+h2{font:800 1.7rem/1 var(--display);letter-spacing:.02em;text-transform:uppercase;text-wrap:balance}
+h3{font:600 1rem/1.25 var(--body)}
+.eyebrow{font:500 .7rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sm{font-size:.82rem;color:var(--muted)}
+.lead{max-width:62ch;color:var(--muted);margin-top:10px}
+
+.hdr{display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:flex-end}
+.hdr>div{min-width:0}
+.modebox{display:grid;gap:6px}
+.seg{display:flex;flex-wrap:wrap;border:2px solid var(--ink);background:var(--surface);box-shadow:3px 3px 0 var(--edge)}
+.seg button{flex:1 1 150px;text-align:left;border:0;background:transparent;color:var(--ink);padding:9px 14px;cursor:pointer;display:grid;gap:1px;font-family:var(--body)}
+.seg button small{font-size:.74rem;color:var(--muted)}
+.seg button.on{background:var(--act);color:var(--actfg)}
+.seg button.on small{color:var(--actfg);opacity:.75}
+
+.ribbon{display:flex;flex-wrap:wrap;gap:10px}
+.step{flex:1 1 160px;min-width:0;text-align:left;border:2px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 10px;cursor:pointer;display:grid;gap:2px;font-family:var(--body)}
+.step b{font-size:.88rem;font-weight:600;text-wrap:balance}
+.step .tg{font:500 .66rem var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.step[aria-current="true"]{border-color:var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.step[disabled]{opacity:.5;cursor:not-allowed}
+
+.panel{background:var(--surface);border:2px solid var(--ink);box-shadow:4px 4px 0 var(--edge);padding:16px;min-width:0}
+.brief{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px}
+.brief p+p{margin-top:8px}
+.rule{font:700 .95rem var(--body);margin-top:12px}
+.blindnote{border:2px dashed var(--line);padding:10px 12px;color:var(--muted);font-size:.88rem}
+
+.board{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:22px;align-items:start}
+.sec-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px;margin-bottom:12px}
+.sec-h p{font-size:.84rem;color:var(--muted);max-width:52ch}
+.pool{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,235px),1fr));gap:14px}
+.cand{background:var(--surface);border:2px solid var(--line);box-shadow:3px 3px 0 var(--edge);padding:12px;display:grid;gap:10px;align-content:start;min-width:0}
+.cand.is-sel{border-color:var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.c-head{display:flex;justify-content:space-between;gap:8px}
+.c-head>div{min-width:0}
+.role{font-size:.84rem;color:var(--muted)}
+.cost{font:500 .9rem var(--mono);white-space:nowrap}
+.cost b{font-weight:500;font-size:1.1rem}
+.score{display:flex;align-items:baseline;gap:6px}
+.score b{font:800 2.1rem/1 var(--display)}
+.score span,.lvl{font:500 .68rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 .72rem var(--mono);display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border:1px solid var(--line);background:var(--soft)}
+.chips.big .chip{font-size:.8rem;padding:4px 9px}
+.sq{width:9px;height:9px;background:var(--c);display:inline-block;flex:none}
+.mods{list-style:none;padding:0;font-size:.84rem;color:var(--muted);display:grid;gap:2px}
+.mods li{display:flex;gap:7px;align-items:baseline}
+.mods li::before{content:"";width:5px;height:5px;background:var(--edge);flex:none;transform:translateY(-1px)}
+.unread{border:2px dashed var(--line);padding:14px 10px;text-align:center;color:var(--muted);font-size:.84rem}
+.latent{font:500 .7rem var(--mono);color:var(--muted);border:1px dashed var(--edge);padding:3px 7px;justify-self:start}
+.c-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+
+.btn{font:600 .85rem var(--body);padding:8px 14px;border:2px solid var(--ink);background:var(--act);color:var(--actfg);box-shadow:2px 2px 0 var(--edge);cursor:pointer}
+.btn:hover:not(:disabled){filter:brightness(1.15)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.small{padding:5px 10px;font-size:.78rem}
+.btn:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--com);outline-offset:2px}
+
+.team{display:grid;gap:14px}
+@media (min-width:961px){.team{position:sticky;top:calc(12px + env(safe-area-inset-top,0px))}}
+.slots{list-style:none;padding:0;display:grid;gap:6px}
+.slots li{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--line);background:var(--soft);padding:6px 10px;font-weight:600;font-size:.9rem}
+.slots li small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
+.slots li.empty{font-weight:400;color:var(--muted);border-style:dashed;background:transparent}
+.x{border:0;background:transparent;color:var(--muted);font:500 .74rem var(--mono);text-decoration:underline;cursor:pointer}
+.bud{height:10px;border:2px solid var(--ink);background:transparent}
+.bud span{display:block;height:100%;background:var(--ink)}
+.bud.over span{background:repeating-linear-gradient(45deg,var(--tec) 0 4px,transparent 4px 8px)}
+.budtxt{display:flex;justify-content:space-between;font:500 .76rem var(--mono);color:var(--muted);margin-bottom:4px}
+.mrow{display:grid;grid-template-columns:minmax(0,8.6rem) minmax(0,1fr) auto;gap:8px;align-items:center;padding:4px 0}
+.mname{font-size:.82rem;display:flex;gap:6px;align-items:center;min-width:0}
+.blocks{display:flex;flex-wrap:wrap;gap:3px}
+.b{width:14px;height:14px;border:2px solid var(--c)}
+.b.f{background:var(--c)}
+.b.w{background:repeating-linear-gradient(45deg,var(--c) 0 3px,transparent 3px 6px)}
+.b.m{border-style:dashed}
+.b.g{border:1px solid var(--line)}
+.mst{font:500 .72rem var(--mono);color:var(--muted);text-align:right;min-width:5rem}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font:500 .68rem var(--mono);color:var(--muted);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend .b{width:11px;height:11px;--c:var(--ink)}
+.mets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.met{border:1px solid var(--line);background:var(--soft);padding:7px 10px}
+.met span{display:block;font:500 .66rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.met b{font:800 1.6rem/1.1 var(--display)}
+.syn{list-style:none;padding:0;display:grid;gap:3px;font-size:.82rem}
+.syn li{display:flex;gap:6px;align-items:center}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.why{font-size:.82rem;color:var(--muted)}
+
+.scroll{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:.88rem;min-width:560px}
+.tbl th,.tbl td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl thead th{border-bottom:2px solid var(--ink);font-weight:600}
+.tbl th small{display:block;font-weight:400;color:var(--muted);font-size:.76rem;max-width:26ch}
+.tbl td.n,.tbl th.n{font-family:var(--mono)}
+.tbl tbody th{font:500 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.tbl .best{background:var(--soft);font-weight:600}
+.bad{color:var(--tec);font-weight:600}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bad{color:var(--tec)}}
+
+.rep{display:grid;gap:16px}
+.verdict{font:800 clamp(1.7rem,4vw,2.4rem)/1 var(--display);text-transform:uppercase}
+.rep-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.rep h3{font:800 1.15rem var(--display);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+.rep ul{padding-left:18px;display:grid;gap:5px;font-size:.9rem}
+.delta{border:2px solid var(--ink);padding:10px 12px;background:var(--soft);font-size:.92rem}
+.delta b{font-family:var(--mono);font-weight:500}
+.train{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:.88rem;border:1px solid var(--line);padding:8px 10px;background:var(--soft)}
+
+details.assump summary{cursor:pointer;font:800 1.3rem var(--display);text-transform:uppercase;letter-spacing:.03em}
+.assump .in{display:grid;gap:14px;margin-top:14px}
+.sl{display:grid;gap:4px;max-width:420px}
+.sl label{display:flex;justify-content:space-between;font-size:.9rem}
+.sl output{font-family:var(--mono)}
+.sl input{width:100%;accent-color:var(--ink)}
+.assump ul{padding-left:18px;display:grid;gap:3px;font-size:.86rem;color:var(--muted)}
+.linkbtn{border:0;background:transparent;color:var(--muted);font:500 .74rem var(--mono);text-decoration:underline;cursor:pointer;padding:0}
+
+@media (max-width:960px){
+  .board{grid-template-columns:minmax(0,1fr)}
+  .brief{grid-template-columns:minmax(0,1fr);gap:16px}
+}
+@media (max-width:480px){
+  .mrow{grid-template-columns:minmax(0,1fr) auto}
+  .mname{grid-column:1/-1}
+  .mst{text-align:right}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="hdr">
+    <div>
+      <p class="eyebrow">Entrenamiento para reclutadores · Minecraft</p>
+      <h1>Tablero del Reclutador</h1>
+      <p class="lead">Primero se identifican las capacidades que necesita la misión. Después se eligen las personas. El mejor equipo casi nunca es el que suma más puntos individuales.</p>
+    </div>
+    <div class="modebox">
+      <p class="eyebrow">Cómo recluta</p>
+      <div class="seg" role="group" aria-label="Modo de selección">
+        <button id="m-blind" data-act="mode" data-v="blind"><b>A ojo</b><small>Puntaje y CV uno por uno</small></button>
+        <button id="m-method" data-act="mode" data-v="method"><b>Con método y tablero</b><small>Capacidades, CV modular, comparador</small></button>
+      </div>
+    </div>
+  </header>
+
+  <nav id="ribbon" class="ribbon" aria-label="Misiones"></nav>
+  <section id="brief" class="panel brief"></section>
+
+  <div class="board">
+    <section aria-labelledby="h-pool">
+      <div class="sec-h"><h2 id="h-pool">Candidatos</h2><p id="poolnote"></p></div>
+      <div id="pool" class="pool"></div>
+    </section>
+    <aside id="teamp" class="panel team" aria-label="Equipo armado"></aside>
+  </div>
+
+  <section id="compare" class="panel"></section>
+  <section id="report"></section>
+  <section id="registry" class="panel"></section>
+
+  <details id="assump" class="panel assump">
+    <summary>Supuestos del modelo</summary>
+    <div class="in">
+      <div class="sl"><label for="rw">Menos retrabajo por método <output id="rwo">12 %</output></label><input id="rw" type="range" min="0" max="30" value="12"></div>
+      <div class="sl"><label for="tc">Menos tiempo por tecnología <output id="tco">15 %</output></label><input id="tc" type="range" min="0" max="30" value="15"></div>
+      <ul>
+        <li>Cobertura = puntos de capacidad útiles sobre los que pide la misión. Lo que sobra no suma, y cada punto duplicado agrega 1,5 % de coordinación.</li>
+        <li>Cada sinergia activa (dos capacidades aportadas por personas distintas) reduce el tiempo 6 %.</li>
+        <li>Cada pareja que ya trabajó junta reduce el tiempo 4 %.</li>
+        <li>Leer un CV a mano toma 1,5 h. Con CV modular y tablero toma 0,25 h. Una hora de selección cuesta 0,5 Em.</li>
+        <li>Inversión = presupuesto de contratación × (días reales ÷ días planificados) + costo de selección.</li>
+      </ul>
+      <p class="sm">Los porcentajes son ilustrativos para enseñar la mecánica. Una empresa o institución puede reemplazarlos con sus propios datos.</p>
+      <div class="acts"><button class="btn ghost small" data-act="unlock">Abrir todas las misiones</button><button class="btn ghost small" data-act="reset">Reiniciar entrenamiento</button></div>
+    </div>
+  </details>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var CAPS=[
+ {k:'REL',n:'Relevamiento',v:'--rel'},
+ {k:'CON',n:'Construcción',v:'--con'},
+ {k:'LOG',n:'Logística',v:'--log'},
+ {k:'COM',n:'Coordinación',v:'--com'},
+ {k:'TEC',n:'Automatización',v:'--tec'},
+ {k:'CAL',n:'Control de calidad',v:'--cal'}
+];
+var CN={};CAPS.forEach(function(c){CN[c.k]=c;});
+var SYN=[
+ {a:'REL',b:'CON',n:'Planos antes de obra'},
+ {a:'CON',b:'LOG',n:'Materiales a tiempo'},
+ {a:'LOG',b:'COM',n:'Acuerdos con proveedores y vecinos'},
+ {a:'REL',b:'COM',n:'Relevamiento con la comunidad'},
+ {a:'REL',b:'TEC',n:'Datos en tablero'},
+ {a:'TEC',b:'CAL',n:'Pruebas automáticas'}
+];
+var MISSIONS=[
+ {id:'puente',tag:'Obra',name:'Reabrir el puente de Tres Ríos',ctx:'obra',slots:3,budget:18,days:20,pass:.85,
+  brief:'La crecida cortó el único puente de la aldea. Hay que relevar el cauce, reconstruir la estructura y llevar los materiales sin frenar la obra.',
+  req:{REL:3,CON:4,LOG:3,COM:2,TEC:0,CAL:2}},
+ {id:'taller',tag:'Empresa',name:'Montar el taller cooperativo',ctx:'empresa',slots:4,budget:26,days:28,pass:.8,
+  brief:'Un grupo de vecinos quiere abrir un taller de herramientas con producción automatizada y ventas. Hay que ordenar proveedores, acuerdos, máquinas y control de calidad.',
+  req:{REL:2,CON:2,LOG:4,COM:4,TEC:3,CAL:3}},
+ {id:'ciudad',tag:'Ciudad',name:'Administrar Tres Ríos',ctx:'ciudad',slots:5,budget:36,days:36,pass:.8,
+  brief:'La aldea creció hasta ser ciudad. Servicios, abastecimiento, convivencia y datos públicos tienen que funcionar a la vez con un presupuesto limitado.',
+  req:{REL:4,CON:2,LOG:5,COM:5,TEC:3,CAL:4}},
+ {id:'barrio',tag:'Comunidad',name:'Reconstruir el barrio',ctx:'comunidad',slots:5,budget:34,days:34,pass:.8,
+  brief:'Cien casas dañadas y vecinos desconfiados. La obra importa, pero sin acuerdos y sin abastecimiento nadie vuelve a su casa.',
+  req:{REL:3,CON:5,LOG:5,COM:5,TEC:1,CAL:3}},
+ {id:'red',tag:'Infraestructura',name:'Red de energía y datos',ctx:'tecnologia',slots:5,budget:40,days:40,pass:.8,
+  brief:'Una red eléctrica automatizada con sensores y un tablero público de consumo. Hay que medir, construir, automatizar y probar cada tramo antes de activarlo.',
+  req:{REL:4,CON:3,LOG:3,COM:3,TEC:7,CAL:4}}
+];
+var CAST0=[
+ {id:'itati',name:'Itatí Ferreira',role:'Topógrafa',cost:5,mods:[{n:'Topografía',c:{REL:4}},{n:'Lectura de planos',c:{CAL:1}}]},
+ {id:'ramon',name:'Ramón Báez',role:'Maestro constructor',cost:8,mods:[{n:'Estructuras de piedra',c:{CON:4}},{n:'Dirección de obra',c:{COM:1,CAL:1}}]},
+ {id:'joaquin',name:'Joaquín Rojas',role:'Gestor de suministros',cost:4,mods:[{n:'Cadena de suministro',c:{LOG:4}},{n:'Planificación',c:{COM:1}}],latent:{ctx:'empresa',n:'Control presupuestario',c:{CAL:2}}},
+ {id:'yvoty',name:'Yvoty Duarte',role:'Facilitadora comunitaria',cost:4,mods:[{n:'Mediación',c:{COM:4}},{n:'Entrevistas de campo',c:{REL:1}}]},
+ {id:'mateo',name:'Mateo Giménez',role:'Ingeniero de redstone',cost:7,mods:[{n:'Automatización redstone',c:{TEC:4}},{n:'Diagnóstico de fallas',c:{CAL:2}}]},
+ {id:'lucia',name:'Lucía Acosta',role:'Inspectora de calidad',cost:5,mods:[{n:'Inspección de obra',c:{CAL:4}},{n:'Documentación',c:{REL:1}}]},
+ {id:'cecilia',name:'Cecilia Benítez',role:'Analista de datos',cost:6,mods:[{n:'Análisis de datos',c:{REL:3}},{n:'Paneles y tableros',c:{TEC:2}},{n:'Informes',c:{COM:1}}]},
+ {id:'tomas',name:'Tomás Villalba',role:'Constructor junior',cost:3,mods:[{n:'Albañilería básica',c:{CON:2}},{n:'Acarreo de materiales',c:{LOG:1}}],latent:{ctx:'comunidad',n:'Liderazgo de cuadrilla',c:{COM:2}}},
+ {id:'ramona',name:'Ramona Cabrera',role:'Formadora técnica',cost:4,mods:[{n:'Capacitación de equipos',c:{COM:3}},{n:'Ensayo y repetición',c:{CAL:1}}],latent:{ctx:'tecnologia',n:'Instrucción técnica',c:{TEC:2}}}
+];
+
+var S;
+function fresh(keep){
+  return {
+    cast:CAST0.map(function(m){return {id:m.id,name:m.name,role:m.role,cost:m.cost,
+      mods:m.mods.map(function(x){return {n:x.n,c:Object.assign({},x.c)};}),
+      latent:m.latent?{ctx:m.latent.ctx,n:m.latent.n,c:Object.assign({},m.latent.c),revealed:false}:null,
+      xp:0,level:1};}),
+    collab:{},done:{},mi:0,mode:'method',sel:[],read:new Set(),phase:'pick',report:null,log:[],
+    rework:keep?keep.rework:12,tech:keep?keep.tech:15,unlockAll:false,trainSpent:0,msg:''
+  };
+}
+S=fresh();
+
+function $(id){return document.getElementById(id);}
+var NF=new Intl.NumberFormat('es',{minimumFractionDigits:1,maximumFractionDigits:1});
+var NF2=new Intl.NumberFormat('es',{minimumFractionDigits:2,maximumFractionDigits:2});
+function f1(x){return NF.format(x);}
+function f2(x){return NF2.format(x);}
+function mem(id){return S.cast.filter(function(m){return m.id===id;})[0];}
+function val(m,k){var s=0;m.mods.forEach(function(x){s+=(x.c[k]||0);});return Math.min(5,s);}
+function power(m){var s=0;CAPS.forEach(function(c){s+=val(m,c.k);});return s;}
+function tot(mod){var s=0;for(var k in mod.c){s+=mod.c[k];}return s;}
+function sq(k){return '<i class="sq" style="--c:var('+CN[k].v+')"></i>';}
+function chips(m){return CAPS.filter(function(c){return val(m,c.k)>0;}).map(function(c){return '<span class="chip">'+sq(c.k)+c.k+' '+val(m,c.k)+'</span>';}).join('');}
+function capText(c){return Object.keys(c).map(function(k){return CN[k].n+' +'+c[k];}).join(', ');}
+function pairKey(a,b){return [a,b].sort().join('|');}
+function names(ids){return ids.map(function(i){return mem(i).name.split(' ')[0];}).join(', ');}
+
+function evalTeam(ids,M,method){
+  var T=ids.map(mem),sum={},reqT=0,eff=0,waste=0;
+  CAPS.forEach(function(c){
+    var s=0;T.forEach(function(m){s+=val(m,c.k);});
+    sum[c.k]=s;var r=M.req[c.k]||0;reqT+=r;eff+=Math.min(s,r);waste+=Math.max(0,s-r);
+  });
+  var cov=reqT?eff/reqT:0;
+  var syn=SYN.filter(function(y){return T.some(function(a){return val(a,y.a)>=2&&T.some(function(b){return b!==a&&val(b,y.b)>=2;});});});
+  var pairs=0;
+  for(var i=0;i<ids.length;i++){for(var j=i+1;j<ids.length;j++){if(S.collab[pairKey(ids[i],ids[j])])pairs++;}}
+  var hire=0;T.forEach(function(m){hire+=m.cost;});
+  var d=M.days*(1+(1-cov))*(1-.06*syn.length)*(1-.04*pairs)*(1+.015*waste);
+  if(method)d*=(1-S.rework/100)*(1-S.tech/100);
+  d=Math.max(M.days*.5,d);
+  return {sum:sum,cov:cov,eff:eff,waste:waste,syn:syn,pairs:pairs,hire:hire,days:d,work:hire*d/M.days,reqT:reqT};
+}
+
+function combos(a,k){
+  var out=[];
+  (function go(s,cur){
+    if(cur.length===k){out.push(cur.slice());return;}
+    for(var i=s;i<a.length;i++){cur.push(a[i]);go(i+1,cur);cur.pop();}
+  })(0,[]);
+  return out;
+}
+function cmp(a,b){for(var i=0;i<a.length;i++){if(a[i]!==b[i])return a[i]-b[i];}return 0;}
+function suggest(M){
+  var ids=S.cast.map(function(m){return m.id;}),best=null;
+  for(var k=1;k<=M.slots;k++){
+    combos(ids,k).forEach(function(c){
+      var r=evalTeam(c,M,true);
+      if(r.hire>M.budget)return;
+      var key=[Math.round(r.cov*1000),r.syn.length,-r.hire,-r.waste];
+      if(!best||cmp(key,best.key)>0)best={ids:c,key:key};
+    });
+  }
+  return best?best.ids:[];
+}
+function topPower(M){
+  return S.cast.slice().sort(function(a,b){return power(b)-power(a);}).slice(0,M.slots).map(function(m){return m.id;});
+}
+function unlocked(i){return i===0||S.unlockAll||!!S.done[MISSIONS[i-1].id];}
+function hoursNow(){return S.mode==='method'?S.cast.length*.25:S.read.size*1.5;}
+function resetPick(){S.sel=[];S.read=new Set();S.phase='pick';S.report=null;S.msg='';}
+
+/* ---------- render ---------- */
+function renderRibbon(){
+  $('ribbon').innerHTML=MISSIONS.map(function(m,i){
+    var u=unlocked(i),st=S.done[m.id]?'Cumplida':(u?'Disponible':'Bloqueada');
+    return '<button class="step" data-act="mission" data-i="'+i+'"'+(u?'':' disabled')+(i===S.mi?' aria-current="true"':'')+
+      '><span class="tg">'+(i+1)+' · '+m.tag+' · '+st+'</span><b>'+m.name+'</b></button>';
+  }).join('');
+}
+function renderModes(){
+  var mb=$('m-blind'),mm=$('m-method');
+  mb.className=S.mode==='blind'?'on':'';mm.className=S.mode==='method'?'on':'';
+  mb.setAttribute('aria-pressed',S.mode==='blind');mm.setAttribute('aria-pressed',S.mode==='method');
+}
+function renderBrief(){
+  var M=MISSIONS[S.mi],method=S.mode==='method';
+  var reqs=CAPS.filter(function(c){return M.req[c.k]>0;});
+  var meta='<p class="sm">Equipo de hasta '+M.slots+' personas · presupuesto de contratación '+M.budget+' Em · cobertura mínima '+Math.round(M.pass*100)+' %</p>';
+  $('brief').innerHTML=
+    '<div><p class="eyebrow">Misión '+(S.mi+1)+' de '+MISSIONS.length+' · '+M.tag+'</p><h2>'+M.name+'</h2><p style="margin-top:8px">'+M.brief+'</p>'+
+    '<p class="rule">Primero la necesidad, después las personas.</p></div>'+
+    '<div><p class="eyebrow" style="margin-bottom:8px">Capacidades que pide la misión</p>'+
+    (method?'<div class="chips big">'+reqs.map(function(c){return '<span class="chip">'+sq(c.k)+c.n+' '+M.req[c.k]+'</span>';}).join('')+'</div>'
+      :'<p class="blindnote">Sin tablero no hay mapa de capacidades. Hay que deducirlas del texto y leer cada CV por separado.</p>')+
+    '<div style="margin-top:10px">'+meta+'</div></div>';
+}
+function card(m){
+  var M=MISSIONS[S.mi],method=S.mode==='method',sel=S.sel.indexOf(m.id)>-1,done=S.phase==='done';
+  var read=method||S.read.has(m.id),body='';
+  if(read){body='<div class="chips">'+chips(m)+'</div><ul class="mods">'+m.mods.map(function(x){return '<li>'+x.n+'</li>';}).join('')+'</ul>';}
+  else{body='<p class="unread">CV sin leer</p>';}
+  var score=method?'':'<div class="score"><b>'+power(m)+'</b><span>puntaje</span></div>';
+  var latent=(method&&m.latent&&!m.latent.revealed)?'<p class="latent">Capacidad latente sin revelar</p>':'';
+  var readBtn=(!method&&!read)?'<button class="btn ghost small" data-act="read" data-id="'+m.id+'"'+(done?' disabled':'')+'>Leer CV · 1,5 h</button>':'';
+  var full=!sel&&S.sel.length>=M.slots;
+  return '<article class="cand'+(sel?' is-sel':'')+'"><div class="c-head"><div><h3>'+m.name+'</h3><p class="role">'+m.role+'</p></div><div class="cost"><b>'+m.cost+'</b> Em</div></div>'+
+    score+body+latent+
+    '<div class="c-foot"><span class="lvl">Nivel '+m.level+' · XP '+m.xp+'/3</span><span class="acts">'+readBtn+
+    '<button class="btn small" data-act="pick" data-id="'+m.id+'"'+((done||full)?' disabled':'')+'>'+(sel?'Quitar':'Elegir')+'</button></span></div></article>';
+}
+function renderPool(){
+  $('poolnote').textContent=S.mode==='method'
+    ?'Cada CV es un conjunto de módulos independientes. Las barras del equipo se actualizan al elegir.'
+    :'Solo se ve el puntaje total. El detalle de cada CV hay que leerlo por separado y toma tiempo.';
+  $('pool').innerHTML=S.cast.map(card).join('');
+}
+function meterRow(c,s,q){
+  var n=Math.min(12,Math.max(q,s,5)),h='';
+  for(var i=1;i<=n;i++){h+='<i class="b '+(i<=Math.min(s,q)?'f':(i<=s?'w':(i<=q?'m':'g')))+'"></i>';}
+  var st=q===0?(s>0?'sobra '+s:''):(s>=q?(s>q?'sobran '+(s-q):'cubierto'):'falta '+(q-s));
+  return '<div class="mrow" style="--c:var('+c.v+')"><div class="mname">'+sq(c.k)+c.n+'</div><div class="blocks">'+h+'</div><div class="mst">'+s+'/'+q+' · '+st+'</div></div>';
+}
+function renderTeam(){
+  var M=MISSIONS[S.mi],method=S.mode==='method',ids=S.sel,r=evalTeam(ids,M,method),done=S.phase==='done';
+  var over=r.hire-M.budget,pct=Math.min(100,Math.round(r.hire/M.budget*100));
+  var list=ids.length?ids.map(function(id){var m=mem(id);
+    return '<li><span>'+m.name+'<small>'+m.role+'</small></span><button class="x" data-act="pick" data-id="'+id+'"'+(done?' disabled':'')+' aria-label="Quitar a '+m.name+'">quitar</button></li>';}).join('')
+    :'<li class="empty">Nadie elegido todavía.</li>';
+  var meters='';
+  if(method){
+    meters='<div>'+CAPS.filter(function(c){return (M.req[c.k]||0)>0||r.sum[c.k]>0;}).map(function(c){return meterRow(c,r.sum[c.k],M.req[c.k]||0);}).join('')+
+      '<div class="legend"><span><i class="b f"></i>cubierto</span><span><i class="b w"></i>exceso</span><span><i class="b m"></i>falta</span></div></div>';
+  }else{
+    meters='<p class="blindnote">El medidor de capacidades solo existe con tablero. A ojo, el resultado se conoce al ejecutar la misión.</p>';
+  }
+  var mets='';
+  if(method){
+    mets='<div class="mets"><div class="met"><span>Cobertura</span><b>'+(ids.length?Math.round(r.cov*100)+' %':'—')+'</b></div>'+
+      '<div class="met"><span>Sinergias</span><b>'+(ids.length?r.syn.length:'—')+'</b></div>'+
+      '<div class="met"><span>Días estimados</span><b>'+(ids.length?Math.round(r.days):'—')+'</b></div>'+
+      '<div class="met"><span>Inversión</span><b>'+(ids.length?f1(r.work)+' Em':'—')+'</b></div></div>';
+  }
+  var hours='<div class="met"><span>Horas de selección</span><b>'+f2(hoursNow())+' h</b></div>';
+  var syn=(method&&r.syn.length)?'<ul class="syn">'+r.syn.map(function(y){return '<li>'+sq(y.a)+sq(y.b)+y.n+'</li>';}).join('')+'</ul>':'';
+  var pairs=(method&&r.pairs)?'<p class="sm">Colaboración previa: '+r.pairs+(r.pairs===1?' pareja':' parejas')+' (−4 % de tiempo cada una).</p>':'';
+  var why='';
+  if(done)why='Misión ejecutada. Ver el informe más abajo.';
+  else if(S.msg)why=S.msg;
+  else if(!ids.length)why='Elegir al menos una persona para ejecutar.';
+  else if(over>0)why='El equipo supera el presupuesto por '+over+' Em.';
+  var canRun=!done&&ids.length>0&&over<=0;
+  $('teamp').innerHTML=
+    '<div><p class="eyebrow">Equipo · '+ids.length+' de '+M.slots+'</p><h2>Tu equipo</h2></div>'+
+    '<ul class="slots">'+list+'</ul>'+
+    '<div><div class="budtxt"><span>Presupuesto de contratación</span><span>'+r.hire+' / '+M.budget+' Em</span></div><div class="bud'+(over>0?' over':'')+'"><span style="width:'+pct+'%"></span></div></div>'+
+    meters+mets+syn+pairs+hours+
+    '<div class="acts">'+
+    '<button class="btn" data-act="run"'+(canRun?'':' disabled')+'>Ejecutar misión</button>'+
+    (method?'<button class="btn ghost" data-act="load" data-ids="'+suggest(M).join(',')+'"'+(done?' disabled':'')+'>Sugerir equipo</button>':'')+
+    '<button class="btn ghost" data-act="clear"'+(done||!ids.length?' disabled':'')+'>Limpiar</button></div>'+
+    '<p class="why">'+why+'</p>';
+}
+function colCell(ids,M){
+  if(!ids.length)return null;
+  var r=evalTeam(ids,M,true);return r;
+}
+function renderCompare(){
+  var el=$('compare'),M=MISSIONS[S.mi];
+  if(S.mode!=='method'){
+    el.innerHTML='<h2>Comparador de equipos</h2><p class="blindnote" style="margin-top:10px">El comparador usa los requisitos por capacidad, por eso solo está disponible con método y tablero. A ojo, la única referencia es el puntaje individual.</p>';
+    return;
+  }
+  var sug=suggest(M),top=topPower(M);
+  var cols=[
+    {t:'Tu equipo',d:'Lo que armaste ahora.',ids:S.sel,act:''},
+    {t:'Mayor puntaje individual',d:'Las personas con más puntos, sin mirar qué pide la misión.',ids:top,act:'load'},
+    {t:'Sugerido por el tablero',d:'Revisa todas las combinaciones: cubrir, sumar sinergias y gastar menos.',ids:sug,act:'load'}
+  ];
+  var rs=cols.map(function(c){return colCell(c.ids,M);});
+  function row(label,fn){return '<tr><th scope="row">'+label+'</th>'+rs.map(function(r,i){return '<td class="n'+(i===2?' best':'')+'">'+(r?fn(r,cols[i]):'—')+'</td>';}).join('')+'</tr>';}
+  var head='<tr><th></th>'+cols.map(function(c,i){
+    return '<th'+(i===2?' class="best"':'')+'>'+c.t+'<small>'+c.d+'</small>'+
+      (c.act&&c.ids.length?'<button class="btn ghost small" style="margin-top:6px" data-act="load" data-ids="'+c.ids.join(',')+'"'+(S.phase==='done'?' disabled':'')+'>Cargar</button>':'')+'</th>';}).join('')+'</tr>';
+  el.innerHTML='<div class="sec-h"><h2>Comparador de equipos</h2><p>Misma misión, tres formas de elegir. La contribución conjunta decide, no el puntaje de cada persona.</p></div>'+
+    '<div class="scroll"><table class="tbl"><thead>'+head+'</thead><tbody>'+
+    '<tr><th scope="row">Personas</th>'+cols.map(function(c,i){return '<td'+(i===2?' class="best"':'')+'>'+(c.ids.length?names(c.ids):'Sin elegir todavía')+'</td>';}).join('')+'</tr>'+
+    row('Cobertura',function(r){return Math.round(r.cov*100)+' %';})+
+    row('Puntos duplicados',function(r){return r.waste;})+
+    row('Sinergias',function(r){return r.syn.length;})+
+    row('Presupuesto',function(r){return r.hire+' / '+M.budget+' Em'+(r.hire>M.budget?' <span class="bad">excede</span>':'');})+
+    row('Días estimados',function(r){return Math.round(r.days);})+
+    row('Inversión estimada',function(r){return f1(r.work)+' Em';})+
+    row('Capacidad útil por Em',function(r){return f2(r.eff/r.work);})+
+    '</tbody></table></div>';
+}
+function renderReport(){
+  var el=$('report'),R=S.report;
+  if(!R){el.innerHTML='';return;}
+  var M=R.M,saved=R.invAlt-R.inv;
+  var ok=R.success;
+  var gaps=R.gaps.length?R.gaps.map(function(g){
+    var t=R.trained[g.k];
+    var who=R.ids.map(mem).sort(function(a,b){return val(b,g.k)-val(a,g.k)||a.cost-b.cost;})[0];
+    return '<div class="train"><span>'+sq(g.k)+' Faltaron '+g.miss+' puntos de '+CN[g.k].n.toLowerCase()+'.</span>'+
+      (t?'<span class="sm">Capacitación hecha: '+t+'.</span>':'<button class="btn ghost small" data-act="train" data-k="'+g.k+'" data-id="'+who.id+'">Capacitar a '+who.name.split(' ')[0]+' · +2 · 3 Em</button>')+'</div>';
+  }).join(''):'<p class="sm">No hubo capacidades sin cubrir.</p>';
+  var over=R.over.length?'<p class="sm">Esfuerzo duplicado en '+R.over.map(function(o){return CN[o.k].n.toLowerCase()+' (+'+o.x+')';}).join(', ')+'.</p>':'';
+  var delta=R.method
+    ?'Con el mismo equipo, sin método ni tablero habría costado <b>'+f1(R.invAlt)+' Em</b> y <b>'+Math.round(R.alt.days)+' días</b>, con <b>'+f2(R.hrsAlt)+' h</b> de selección. Ahorro: <b>'+f1(saved)+' Em</b>.'
+    :'Con el mismo equipo, con método y tablero habría costado <b>'+f1(R.invAlt)+' Em</b> y <b>'+Math.round(R.alt.days)+' días</b>, con <b>'+f2(R.hrsAlt)+' h</b> de selección. Diferencia: <b>'+f1(R.inv-R.invAlt)+' Em</b> de más.';
+  var evs=R.ev.length?'<ul>'+R.ev.map(function(e){return '<li>'+e+'</li>';}).join('')+'</ul>':'<p class="sm">Sin cambios esta vez.</p>';
+  var nextOk=S.mi+1<MISSIONS.length&&unlocked(S.mi+1);
+  el.innerHTML='<div class="panel rep">'+
+    '<div><p class="eyebrow">Informe · '+M.name+' · '+(R.method?'con método y tablero':'a ojo')+'</p>'+
+    '<p class="verdict">'+(ok?'Misión cumplida':'Misión incompleta')+'</p>'+
+    '<p class="sm">Cobertura '+Math.round(R.r.cov*100)+' % de un mínimo de '+Math.round(M.pass*100)+' % · '+Math.round(R.r.days)+' días reales de '+M.days+' planificados · inversión total '+f1(R.inv)+' Em</p></div>'+
+    '<p class="delta">'+delta+'</p>'+
+    '<div class="rep-grid"><div><h3>Errores y necesidades de formación</h3>'+gaps+over+'<p class="sm" style="margin-top:8px">Los errores marcan qué formación necesita el equipo. No son un motivo para descartar a nadie.</p></div>'+
+    '<div><h3>Cómo evolucionaron los CV</h3>'+evs+'</div></div>'+
+    '<div class="acts"><button class="btn" data-act="retry">Reintentar con los CV actualizados</button>'+
+    '<button class="btn ghost" data-act="next"'+(nextOk?'':' disabled')+'>Siguiente misión</button></div>'+
+    (nextOk||S.mi+1>=MISSIONS.length?'':'<p class="why">Para pasar a la siguiente misión hay que cumplir esta o abrir todas desde Supuestos del modelo.</p>')+
+    '</div>';
+}
+function renderRegistry(){
+  var el=$('registry');
+  if(!S.log.length){
+    el.innerHTML='<div class="sec-h"><h2>Registro de misiones</h2><p>Cada misión ejecutada queda aquí, con lo que habría costado el otro enfoque.</p></div><p class="sm">Todavía no se ejecutó ninguna misión.</p>';
+    return;
+  }
+  var a=0,b=0;
+  var rows=S.log.map(function(l){a+=l.inv;b+=l.invAlt;
+    return '<tr><td>'+l.name+'</td><td>'+(l.method?'Con método':'A ojo')+'</td><td class="n">'+Math.round(l.cov*100)+' %</td><td class="n">'+Math.round(l.days)+'</td><td class="n">'+f1(l.inv)+'</td><td class="n">'+f1(l.invAlt)+'</td></tr>';}).join('');
+  el.innerHTML='<div class="sec-h"><h2>Registro de misiones</h2><p>Inversión de formación acumulada: '+S.trainSpent+' Em.</p></div>'+
+    '<div class="scroll"><table class="tbl" style="min-width:520px"><thead><tr><th>Misión</th><th>Modo</th><th>Cobertura</th><th>Días</th><th>Inversión (Em)</th><th>Con el otro enfoque (Em)</th></tr></thead><tbody>'+rows+
+    '<tr><td><b>Total</b></td><td></td><td></td><td></td><td class="n"><b>'+f1(a)+'</b></td><td class="n"><b>'+f1(b)+'</b></td></tr></tbody></table></div>';
+}
+function render(){renderRibbon();renderModes();renderBrief();renderPool();renderTeam();renderCompare();renderReport();renderRegistry();}
+
+/* ---------- acciones ---------- */
+function run(){
+  var M=MISSIONS[S.mi],method=S.mode==='method',ids=S.sel.slice();
+  if(!ids.length)return;
+  var r=evalTeam(ids,M,method),alt=evalTeam(ids,M,!method),n=S.cast.length;
+  var hrs=method?n*.25:S.read.size*1.5,hrsAlt=method?n*1.5:n*.25;
+  var inv=r.work+hrs*.5,invAlt=alt.work+hrsAlt*.5;
+  var success=r.cov>=M.pass-1e-9;
+  var gaps=CAPS.filter(function(c){return r.sum[c.k]<(M.req[c.k]||0);}).map(function(c){return {k:c.k,miss:(M.req[c.k]||0)-r.sum[c.k]};});
+  var over=CAPS.filter(function(c){return r.sum[c.k]>(M.req[c.k]||0);}).map(function(c){return {k:c.k,x:r.sum[c.k]-(M.req[c.k]||0)};});
+  var ev=[],T=ids.map(mem);
+  T.forEach(function(m){
+    m.xp+=success?2:1;
+    while(m.xp>=3){
+      m.xp-=3;m.level++;
+      var mod=m.mods.slice().sort(function(a,b){return tot(b)-tot(a);})[0];
+      var k=Object.keys(mod.c).sort(function(a,b){return mod.c[b]-mod.c[a];})[0];
+      if(val(m,k)<5){var before=val(m,k);mod.c[k]++;ev.push(m.name+' sube a nivel '+m.level+'. '+mod.n+': '+CN[k].n+' '+before+' → '+val(m,k)+'.');}
+      else{ev.push(m.name+' sube a nivel '+m.level+'. Su capacidad principal ya está al máximo.');}
+    }
+  });
+  var np=0;
+  for(var i=0;i<ids.length;i++){for(var j=i+1;j<ids.length;j++){var key=pairKey(ids[i],ids[j]);if(!S.collab[key])np++;S.collab[key]=(S.collab[key]||0)+1;}}
+  if(np)ev.push(np+(np===1?' pareja nueva trabajó':' parejas nuevas trabajaron')+' junta. En próximas misiones compartidas reducen 4 % el tiempo cada una.');
+  T.forEach(function(m){
+    if(m.latent&&!m.latent.revealed&&m.latent.ctx===M.ctx){
+      m.latent.revealed=true;m.mods.push({n:m.latent.n,c:Object.assign({},m.latent.c)});
+      ev.push('Capacidad revelada: '+m.name+' muestra el módulo '+m.latent.n+' ('+capText(m.latent.c)+'). El cambio de contexto la dejó a la vista.');
+    }
+  });
+  S.report={M:M,ids:ids,r:r,alt:alt,hrs:hrs,hrsAlt:hrsAlt,inv:inv,invAlt:invAlt,success:success,gaps:gaps,over:over,ev:ev,method:method,trained:{}};
+  S.phase='done';S.msg='';
+  if(success)S.done[M.id]=true;
+  S.log.push({name:M.name,method:method,cov:r.cov,days:r.days,inv:inv,invAlt:invAlt});
+}
+function train(k,id){
+  var R=S.report;if(!R||R.trained[k])return;
+  var m=mem(id),nm='Taller de '+CN[k].n.toLowerCase(),ex=m.mods.filter(function(x){return x.n===nm;})[0];
+  if(ex)ex.c[k]=(ex.c[k]||0)+2;else{var c={};c[k]=2;m.mods.push({n:nm,c:c});}
+  S.trainSpent+=3;R.trained[k]=m.name;
+}
+
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');
+  if(!b||b.disabled)return;
+  var a=b.dataset.act,d=b.dataset,M=MISSIONS[S.mi];
+  if(a==='mode'){if(S.phase==='pick'){S.mode=d.v;S.msg='';}}
+  else if(a==='mission'){var i=+d.i;if(unlocked(i)){S.mi=i;resetPick();}}
+  else if(a==='pick'){
+    var ix=S.sel.indexOf(d.id);S.msg='';
+    if(ix>-1)S.sel.splice(ix,1);
+    else if(S.sel.length<M.slots)S.sel.push(d.id);
+    else S.msg='El equipo está completo. Quitar a alguien para elegir otra persona.';
+  }
+  else if(a==='read'){S.read.add(d.id);}
+  else if(a==='clear'){S.sel=[];S.msg='';}
+  else if(a==='load'){S.sel=d.ids?d.ids.split(',').slice(0,M.slots):[];S.msg='';}
+  else if(a==='run'){run();}
+  else if(a==='retry'){resetPick();}
+  else if(a==='next'){if(S.mi+1<MISSIONS.length&&unlocked(S.mi+1)){S.mi++;resetPick();}}
+  else if(a==='train'){train(d.k,d.id);}
+  else if(a==='unlock'){S.unlockAll=true;}
+  else if(a==='reset'){S=fresh({rework:S.rework,tech:S.tech});}
+  render();
+});
+document.addEventListener('input',function(e){
+  var t=e.target;
+  if(t.id==='rw'){S.rework=+t.value;$('rwo').textContent=t.value+' %';render();}
+  else if(t.id==='tc'){S.tech=+t.value;$('tco').textContent=t.value+' %';render();}
+});
+render();
+})();
+</script>
+
+</body></html>
