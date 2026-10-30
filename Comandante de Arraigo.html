@@ -1,0 +1,498 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Comandante de Arraigo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+/* Concepto: inventario de campaña tipo Resident Evil sobre musgo oscuro, hueso y tierra colorada. Una sola pantalla, una sola decisión: qué combinar. Look oscuro único a propósito. */
+:root{
+  --bg:#0e1310; --panel:#151c17; --panel-2:#1b241e; --line:#2b382f;
+  --fg:#e8e2cf; --muted:#9ba597; --earth:#c8643a;
+  --hp:#cf4b3f; --bad:#e0705f; --good:#8ccf94; --warn:#d9a23a;
+  --g:#5fbf6e; --b:#4f8fd8; --r:#d9534f;
+  --display:'Special Elite','Courier New',monospace;
+  --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-block:18px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between}
+.brand{flex:1 1 300px;min-width:0}
+h1{font-size:clamp(26px,5vw,38px);line-height:1.1}
+.sub{color:var(--muted);margin:6px 0 0;max-width:56ch}
+.hud{flex:1 1 320px;max-width:480px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.meter label{display:flex;justify-content:space-between;gap:6px;font:500 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.meter b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.bar{height:11px;background:#0a0e0b;border:1px solid var(--line);margin-top:5px;overflow:hidden}
+.bar i{display:block;height:100%;width:0}
+#hpbar{background:var(--hp)} #dawnbar{background:var(--earth)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media(max-width:820px){.layout{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);padding:14px;min-width:0}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.label{font:500 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+.scene{position:relative;height:190px;overflow:hidden;border:1px solid var(--line);background:#111}
+.scene .art{position:absolute;inset:0}
+.scene svg{width:100%;height:100%;display:block}
+.scene .cap{position:absolute;left:0;right:0;bottom:0;padding:30px 14px 12px;background:linear-gradient(transparent,rgba(8,12,9,.92));display:flex;flex-direction:column;gap:6px}
+.scene h2{font-size:clamp(19px,3.4vw,24px);line-height:1.15}
+.climate{align-self:flex-start;font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border:1px solid currentColor}
+.climate.dry{color:#e3b66c} .climate.wet{color:#79b7d9}
+.rain{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;background:repeating-linear-gradient(105deg,rgba(170,205,225,.22) 0 1px,transparent 1px 11px);animation:rain .6s linear infinite}
+.scene.wet .rain{opacity:1}
+@keyframes rain{to{background-position:-22px 22px}}
+.scene.hurt{animation:hurt .3s}
+@keyframes hurt{0%,100%{box-shadow:none}50%{box-shadow:inset 0 0 0 3px var(--hp)}}
+
+.diary{margin:0;color:#cfc9b4;font-size:14px;min-height:2.9em}
+.chips{display:flex;flex-wrap:wrap;gap:6px;min-height:24px}
+.chip{font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border:1px solid currentColor}
+.chip.bad{color:var(--bad)} .chip.good{color:var(--good)} .chip.idle{color:var(--muted)}
+
+.finds{display:flex;flex-wrap:wrap;gap:8px}
+.mata{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px dashed #44574a;padding:7px 10px;cursor:pointer;text-align:left}
+.mata:hover{border-color:var(--earth)}
+.mata small{display:block;font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.mata span{font-weight:500}
+.empty-note{color:var(--muted);font-size:13px;margin:0}
+
+.btn{background:var(--earth);color:#120a06;border:0;padding:10px 12px;font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;min-height:42px}
+.btn:hover:not(:disabled){filter:brightness(1.1)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid #4a5d50}
+.btn.ghost:hover:not(:disabled){border-color:var(--earth);color:#fff}
+.btn.big{font-size:15px;padding:14px 26px}
+button:focus-visible{outline:2px solid #f0d9a0;outline-offset:2px}
+
+.packhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.packhead h3{font-size:20px}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.slot{position:relative;aspect-ratio:1/1;max-width:100%;background:var(--panel-2);border:1px solid var(--line);padding:6px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;text-align:center;min-width:0}
+.slot.empty{cursor:default;background:repeating-linear-gradient(135deg,#131a15 0 6px,#161e18 6px 12px);opacity:.8}
+.slot[aria-pressed="true"]{border-color:var(--earth);box-shadow:inset 0 0 0 1px var(--earth);background:#232019}
+.slot svg{width:40px;height:40px;flex:none}
+.slot .nm{font-size:12px;line-height:1.15;font-weight:500;overflow-wrap:anywhere}
+.slot .tg{font:500 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.slot .jar{position:absolute;top:4px;right:4px;font:600 8.5px var(--mono);color:#8cc4de;border:1px solid #8cc4de;padding:0 3px}
+.pips{display:flex;gap:3px}
+.pips i{width:7px;height:7px;border-radius:50%;border:1px solid #7da6bd;display:block}
+.pips i.on{background:#7da6bd}
+.slot.rotten .nm{color:#b59a73}
+.acts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px}
+.acts .btn{padding:9px 2px;font-size:11px;letter-spacing:.03em}
+.legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 10px;margin:12px 0 0;padding:0;list-style:none;font-size:12px;color:#cfc9b4}
+.legend li{display:flex;align-items:center;gap:6px;min-width:0}
+.legend i{width:10px;height:10px;flex:none;display:block}
+.ficha-wrap{border:1px solid var(--line);background:#0c110e;padding:10px 12px;overflow-x:auto}
+.ficha{margin:0;font:400 min(12.5px,2.6vw) var(--mono);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;color:#d8d3bf}
+details{border:1px solid var(--line);background:var(--panel-2)}
+summary{cursor:pointer;padding:10px 12px;font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+summary:focus-visible{outline:2px solid #f0d9a0;outline-offset:2px}
+.tablewrap{overflow-x:auto;padding:0 10px 10px}
+table{border-collapse:collapse;width:100%;min-width:420px;font-size:12.5px}
+th,td{text-align:left;padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+th{font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+.log{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13.5px}
+.log li{padding-left:10px;border-left:2px solid var(--line);color:#cfc9b4}
+.log li.bad{border-color:var(--bad);color:#f1c1b8} .log li.good{border-color:var(--good);color:#cfe9d2}
+.foot{color:var(--muted);font-size:12px;margin:0}
+
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(6,9,7,.92);display:flex;align-items:center;justify-content:center;
+  padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow-y:auto}
+.overlay[hidden]{display:none}
+.card{max-width:600px;width:100%;background:var(--panel);border:1px solid #3b4c40;padding:22px;display:flex;flex-direction:column;gap:14px;margin:auto}
+.card h2{font-size:clamp(26px,5vw,34px);line-height:1.1}
+.card ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:#d6d0bb}
+.card p{margin:0}
+.big-num{font:600 40px var(--mono);color:var(--good)}
+@media(prefers-reduced-motion:reduce){.rain,.scene.hurt{animation:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Comandante de Arraigo</h1>
+      <p class="sub">Una noche en el monte, sin botica y sin médico. Resiste hasta el amanecer con lo que sabe curar la tierra guaraní.</p>
+    </div>
+    <div class="hud" aria-label="Estado del comandante">
+      <div class="meter"><label>Vida <b id="hpv">100</b></label><div class="bar"><i id="hpbar"></i></div></div>
+      <div class="meter"><label>Amanecer <b id="dawnv">120 s</b></label><div class="bar"><i id="dawnbar"></i></div></div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="col" aria-label="El monte">
+      <div class="scene" id="scene">
+        <div class="art" id="art"></div>
+        <div class="rain"></div>
+        <div class="cap">
+          <span class="label" id="turnno">Turno 1 de 6</span>
+          <h2>Claro del fortín</h2>
+          <span class="climate dry" id="climate">Seco</span>
+        </div>
+      </div>
+      <p class="diary panel" id="diary"></p>
+      <div class="chips" id="chips" aria-live="polite"></div>
+      <div>
+        <div class="label" style="margin-bottom:6px">Matas a la vista</div>
+        <div class="finds" id="finds"></div>
+      </div>
+      <div>
+        <div class="label">Diario del comandante</div>
+        <ul class="log" id="log" aria-live="polite"></ul>
+      </div>
+    </section>
+
+    <aside class="col panel" aria-label="Mochila">
+      <div class="packhead">
+        <h3>Mochila</h3>
+        <span class="label">Espacios <b id="slotcount" style="color:var(--fg)">0/6</b> · Frascos <b id="jars" style="color:var(--fg)">3</b></span>
+      </div>
+      <div class="slots" id="slots"></div>
+      <div class="acts">
+        <button class="btn ghost" id="b-use" type="button">Usar</button>
+        <button class="btn ghost" id="b-mix" type="button">Combinar</button>
+        <button class="btn ghost" id="b-store" type="button">Guardar</button>
+        <button class="btn ghost" id="b-drop" type="button">Descartar</button>
+      </div>
+      <ul class="legend" aria-label="Qué hace cada color">
+        <li><i style="background:var(--g)"></i>Verde: cura</li>
+        <li><i style="background:var(--b)"></i>Azul: antídoto</li>
+        <li><i style="background:var(--r)"></i>Roja: potencia</li>
+      </ul>
+      <div class="label">Examinar</div>
+      <div class="ficha-wrap"><pre class="ficha" id="ficha"></pre></div>
+      <details>
+        <summary>Recetario del chamán</summary>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Plantas</th><th>Resultado</th><th>Efecto</th></tr></thead>
+            <tbody>
+              <tr><td>Verde + Verde</td><td>Poción de Amambay Doble</td><td>Cura 60% de vida</td></tr>
+              <tr><td>Verde + Roja</td><td>Elíxir de Amambay Potenciado</td><td>Cura 100% de vida</td></tr>
+              <tr><td>Verde + Azul</td><td>Mezcla Depurativa Básica</td><td>Cura 25% y quita el veneno</td></tr>
+              <tr><td>Azul + Roja</td><td>Antídoto Purificador Chamánico</td><td>Quita el veneno y da inmunidad 60 s</td></tr>
+              <tr><td>Verde + Azul + Roja</td><td>Brebaje del Chamán Supremo</td><td>Vida al 100%, sin veneno y escudo +20% por 60 s</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </aside>
+  </main>
+  <p class="foot">Juego didáctico inspirado en la fitoterapia guaraní. No reemplaza la consulta médica ni a quienes conservan este saber.</p>
+</div>
+
+<div class="overlay" id="overlay"><div class="card" id="card"></div></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s);};
+var clamp=function(v,a,b){return Math.max(a,Math.min(b,v));};
+var TOTAL=120, TURN=20, SLOTS=6;
+
+var PLANTS={
+ AMAMBAI:{nombre:'Amambay',alias:'Helecho',re:'Verde',col:'#5fbf6e',
+  prop:'Analgésico, antiinflamatorio y cicatrizante de tejidos.',
+  uso:'Infusión de hojas secas (10g por litro de agua). Máximo 2 tazas al día.',
+  cons:'Almacenar en frasco de vidrio oscuro, hermético, libre de humedad ambiental.',
+  fito:'Pomadas cicatrizantes de extracto de helecho.',
+  sobre:'Irritación gástrica severa y náuseas.',
+  efecto:'Planta Verde. Cura 25% de vida.',env:'frasco de vidrio oscuro'},
+ AGOARA:{nombre:'Agoara Rugua',alias:'Cola de Zorro',re:'Azul',col:'#4f8fd8',
+  prop:'Diurético potente, depurativo y protector renal.',
+  uso:'Decocción de la raíz (15g por litro). Tomar como agua de tiempo (tereré) sin exceder 3 días seguidos.',
+  cons:'Secado al sol colgado boca abajo; guardar en bolsas de papel kraft.',
+  fito:'Cápsulas diuréticas naturales depurativas.',
+  sobre:'Deshidratación aguda y bajada de presión arterial (hipotensión).',
+  efecto:'Planta Azul. Cura el veneno y la infección.',env:'bolsa de papel kraft'},
+ KAAHEE:{nombre:"Ka'a he'ê",alias:'Stevia',re:'Roja',col:'#d9534f',
+  prop:'Energizante natural, regulador glucémico, potenciador inmunológico.',
+  uso:'Hojas frescas machacadas en el agua de infusión (mate) o extracto líquido (3-5 gotas).',
+  cons:'Conservar en recipientes herméticos alejados de la luz solar directa.',
+  fito:'Edulcorante y tónico reconstituyente en gotas.',
+  sobre:'Hipoglucemia leve y fatiga extrema si se consume en cantidades masivas.',
+  efecto:'Planta Roja. No cura sola, pero potencia a otra planta.',env:'recipiente hermético'}
+};
+var KEYS=['AMAMBAI','AGOARA','KAAHEE'];
+var RECIPES={
+ 'AMAMBAI+AMAMBAI':{rid:'DOBLE',nombre:'Poción de Amambay Doble',cols:['AMAMBAI','AMAMBAI'],efecto:'Cura 60% de vida.'},
+ 'AMAMBAI+KAAHEE':{rid:'ELIXIR',nombre:'Elíxir de Amambay Potenciado',cols:['AMAMBAI','KAAHEE'],efecto:'Cura 100% de vida al instante.'},
+ 'AGOARA+AMAMBAI':{rid:'DEPURA',nombre:'Mezcla Depurativa Básica',cols:['AMAMBAI','AGOARA'],efecto:'Cura 25% de vida y elimina el veneno.'},
+ 'AGOARA+KAAHEE':{rid:'ANTIDOTO',nombre:'Antídoto Purificador Chamánico',cols:['AGOARA','KAAHEE'],efecto:'Elimina el veneno y da inmunidad a toxinas por 60 s.'},
+ 'AGOARA+AMAMBAI+KAAHEE':{rid:'BREBAJE',nombre:'Brebaje del Chamán Supremo',cols:['AMAMBAI','AGOARA','KAAHEE'],efecto:'Vida al 100%, cura el veneno y da escudo de defensa +20% por 60 s.'}
+};
+var RID={};Object.keys(RECIPES).forEach(function(k){RID[RECIPES[k].rid]=RECIPES[k];});
+
+var DIARY=[
+ 'Primera noche en el fortín. Una vecina guaraní te dejó unas hojas y te mostró cómo se usan. El monte está seco y tranquilo, por ahora.',
+ 'Algo se mueve cerca del corral. Ordena tu mochila: lo que no se usa, se guarda.',
+ 'Empieza la llovizna. La humedad se mete en todo lo que no esté en su frasco.',
+ 'La lluvia no afloja. Tus plantas sueltas empiezan a ablandarse.',
+ 'El barro llega a las rodillas. Una picadura más y vas a necesitar el antídoto.',
+ 'Clarea por el este. Falta poco para el amanecer.'
+];
+var HUMID=[false,false,true,true,true,false];
+
+var G=null,dirty={inv:true,finds:true,log:true},lastChips='',lastTurn=-1;
+
+function mkPlant(pid){G.uid++;return {uid:G.uid,kind:'p',pid:pid,stored:false,exp:0,rot:false};}
+function mkCraft(rid,ing){G.uid++;return {uid:G.uid,kind:'c',rid:rid,ing:ing};}
+function rndKey(){return KEYS[Math.floor(Math.random()*KEYS.length)];}
+function L(m,c){G.log.unshift({m:m,c:c||''});if(G.log.length>30)G.log.pop();dirty.log=true;}
+
+function newGame(){
+  G={run:false,over:false,hp:100,t:0,uid:0,inv:[],frascos:3,sel:[],finds:[],log:[],
+     poison:0,immTox:0,shield:0,nextHit:5,nextBite:17,turn:-1,hurt:0};
+  var start=['AMAMBAI','AMAMBAI','AGOARA','KAAHEE'];
+  start.forEach(function(p){G.inv.push(mkPlant(p));});
+  dirty.inv=dirty.finds=dirty.log=true;lastTurn=-1;
+  newTurn(0);
+}
+function newTurn(i){
+  G.turn=i;
+  G.finds=[{fid:++G.uid,pid:rndKey()}];
+  if(i>0&&G.frascos<4){G.frascos++;L('El poblado te cambia un frasco por maíz.','good');}
+  // humedad: plantas sueltas absorben agua
+  if(HUMID[i]){
+    G.inv.forEach(function(it){
+      if(it.kind==='p'&&!it.stored&&!it.rot){
+        it.exp++;
+        if(it.exp>2){it.rot=true;L('Tu '+PLANTS[it.pid].nombre+' sin envase se pudrió.','bad');}
+      }
+    });
+  }
+  L(HUMID[i]?'Turno '+(i+1)+': llueve. Las plantas sueltas se humedecen.':'Turno '+(i+1)+': el monte está seco.');
+  dirty.finds=dirty.inv=true;
+}
+
+function hurtHP(n){
+  var m=G.shield>0?0.8:1;
+  G.hp=clamp(G.hp-n*m,0,100);G.hurt=0.3;
+  if(G.hp<=0&&!G.over)end(false);
+}
+function heal(p){G.hp=Math.min(100,G.hp+p);}
+
+function itemName(it){if(it.rot)return 'Materia Orgánica Descompuesta';return it.kind==='p'?PLANTS[it.pid].nombre:RID[it.rid].nombre;}
+function itemTag(it){if(it.rot)return 'Podrida';return it.kind==='p'?('Planta '+PLANTS[it.pid].re):'Preparado';}
+function leafSVG(col,rot,sz){
+  var f=rot?'#6b5a43':col;
+  return '<svg viewBox="0 0 48 48"'+(sz?' width="'+sz+'" height="'+sz+'"':'')+' aria-hidden="true"><path d="M7 41C6 18 21 5 43 6C43 29 30 43 7 41Z" fill="'+f+'"/><path d="M9 39L35 13" stroke="rgba(0,0,0,.35)" stroke-width="2" fill="none"/>'+(rot?'<circle cx="28" cy="28" r="3" fill="#3d3225"/><circle cx="19" cy="31" r="2" fill="#3d3225"/>':'')+'</svg>';
+}
+function flaskSVG(it){
+  var r=RID[it.rid],id='g'+it.uid,n=r.cols.length,st='';
+  r.cols.forEach(function(c,i){st+='<stop offset="'+(i/(n-1))+'" stop-color="'+PLANTS[c].col+'"/>';});
+  return '<svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="1" y2="1">'+st+'</linearGradient></defs><path d="M19 5h10v10l10 19a5 5 0 0 1-4.4 7.4H13.4A5 5 0 0 1 9 34l10-19Z" fill="url(#'+id+')" stroke="#e8e2cf" stroke-width="1.5"/><rect x="17" y="3" width="14" height="4" fill="#e8e2cf"/></svg>';
+}
+function iconHTML(it){return it.kind==='p'?leafSVG(PLANTS[it.pid].col,it.rot):flaskSVG(it);}
+
+function box(t){var l='═'.repeat(46);return '╔'+l+'╗\n  INVENTARIO: '+t+'\n╚'+l+'╝';}
+function ficha(it){
+  var ln='─'.repeat(48);
+  if(it.rot){return box('Materia Orgánica Descompuesta')+'\n▶ [PROPIEDADES]: Restos de '+PLANTS[it.pid].nombre+' que se pudrieron por la humedad.\n▶ [USO Y DOSIS]: No consumir.\n▶ [CONSERVACIÓN]: Se perdió: faltó su envase durante 2 turnos húmedos.\n▶ [FITOTERÁPICO COMPATIBLE]: Ninguno.\n▶ [⚠️ ADVERTENCIA POR SOBREDOSIS]: Infección y daño si se consume.\n'+ln+'\n⚡ [EFECTO EN JUEGO]: ¡No la uses! Resta 15 de vida y te envenena. Descártala.';}
+  if(it.kind==='p'){
+    var p=PLANTS[it.pid];
+    return box(p.nombre+' ('+p.alias+')')+'\n▶ [PROPIEDADES]: '+p.prop+'\n▶ [USO Y DOSIS]: '+p.uso+'\n▶ [CONSERVACIÓN]: '+p.cons+'\n▶ [FITOTERÁPICO COMPATIBLE]: '+p.fito+'\n▶ [⚠️ ADVERTENCIA POR SOBREDOSIS]: '+p.sobre+'\n'+ln+'\n⚡ [EFECTO EN JUEGO]: '+p.efecto+(it.stored?' Guardada en '+p.env+'.':'');
+  }
+  var r=RID[it.rid],seen={},names=[],so=[];
+  it.ing.forEach(function(k){if(!seen[k]){seen[k]=1;names.push(PLANTS[k].nombre);so.push(PLANTS[k].nombre+': '+PLANTS[k].sobre);}});
+  return box(r.nombre)+'\n▶ [PROPIEDADES]: Preparado de '+names.join(' + ')+'.\n▶ [USO Y DOSIS]: Se toma de inmediato.\n▶ [CONSERVACIÓN]: Los preparados ya no se pudren.\n▶ [FITOTERÁPICO COMPATIBLE]: Preparados naturales compuestos.\n▶ [⚠️ ADVERTENCIA POR SOBREDOSIS]: '+so.join(' ')+'\n'+ln+'\n⚡ [EFECTO EN JUEGO]: '+r.efecto;
+}
+
+function selItems(){return G.sel.map(function(id){return G.inv.filter(function(i){return i.uid===id;})[0];}).filter(Boolean);}
+function toggle(id){var k=G.sel.indexOf(id);if(k>=0)G.sel.splice(k,1);else{if(G.sel.length>=3)G.sel.shift();G.sel.push(id);}dirty.inv=true;}
+function removeItem(it){G.inv=G.inv.filter(function(x){return x.uid!==it.uid;});G.sel=G.sel.filter(function(i){return i!==it.uid;});dirty.inv=true;}
+function act(){return G.run&&!G.over;}
+
+function pick(fid){
+  if(!act())return;
+  var f=G.finds.filter(function(x){return x.fid===fid;})[0];if(!f)return;
+  if(G.inv.length>=SLOTS){L('Mochila llena. Usa o descarta algo primero.','bad');return;}
+  G.inv.push(mkPlant(f.pid));G.finds=G.finds.filter(function(x){return x.fid!==fid;});
+  L('Recolectas '+PLANTS[f.pid].nombre+'.');dirty.finds=dirty.inv=true;
+}
+
+function useItem(it){
+  if(!act())return;
+  if(it.rot){hurtHP(15);G.poison=Math.max(G.poison,10);L('Comes materia podrida: −15 de vida y veneno.','bad');removeItem(it);return;}
+  if(it.kind==='p'){
+    if(it.pid==='KAAHEE'){L("El ka'a he'ê no cura solo. Combínalo con otra planta.");return;}
+    if(it.pid==='AMAMBAI'){heal(25);L('Amambay: recuperas 25% de vida.','good');}
+    else{if(G.poison>0){G.poison=0;L('Agoara Rugua: el veneno se va.','good');}else{L('Agoara Rugua: no había veneno que curar.');}}
+  }else{
+    var r=it.rid;
+    if(r==='DOBLE'){heal(60);L('Poción de Amambay Doble: +60% de vida.','good');}
+    else if(r==='ELIXIR'){heal(100);L('Elíxir de Amambay Potenciado: vida al 100%.','good');}
+    else if(r==='DEPURA'){heal(25);G.poison=0;L('Mezcla Depurativa Básica: +25% y sin veneno.','good');}
+    else if(r==='ANTIDOTO'){G.poison=0;G.immTox=60;L('Antídoto Purificador: sin veneno e inmune 60 s.','good');}
+    else if(r==='BREBAJE'){G.hp=100;G.poison=0;G.shield=60;L('Brebaje del Chamán Supremo: vida al 100%, sin veneno y escudo por 60 s.','good');}
+  }
+  removeItem(it);
+}
+function combine(){
+  if(!act())return;
+  var s=selItems();
+  if(s.length<2){L('Elige 2 o 3 plantas para combinar.');return;}
+  for(var i=0;i<s.length;i++){
+    if(s[i].rot){L('La materia podrida no sirve para combinar. Descártala.','bad');return;}
+    if(s[i].kind!=='p'){L('Los preparados ya están listos. Combina plantas.');return;}
+  }
+  var key=s.map(function(x){return x.pid;}).sort().join('+'),r=RECIPES[key];
+  if(!r){L('Sin reacción: esas plantas no se potencian entre sí. No se gastó nada.');return;}
+  var ing=s.map(function(x){return x.pid;});
+  s.forEach(removeItem);
+  var c=mkCraft(r.rid,ing);G.inv.push(c);G.sel=[c.uid];
+  L('Preparas: '+r.nombre+'.','good');dirty.inv=true;
+}
+function store(){
+  if(!act())return;
+  var s=selItems();if(s.length!==1)return;var it=s[0];
+  if(it.kind!=='p'||it.stored||it.rot)return;
+  if(G.frascos<=0){L('No te quedan frascos. En el próximo turno el poblado te cambia uno.','bad');return;}
+  it.stored=true;G.frascos--;
+  L(PLANTS[it.pid].nombre+' queda en '+PLANTS[it.pid].env+'. Ya no se humedece.','good');dirty.inv=true;
+}
+function drop(){
+  if(!act())return;
+  selItems().forEach(function(it){L('Descartas '+itemName(it)+'.');removeItem(it);});
+}
+
+function step(dt){
+  G.t+=dt;
+  if(G.hurt>0)G.hurt=Math.max(0,G.hurt-dt);
+  if(G.poison>0){hurtHP(1.5*dt);G.poison=Math.max(0,G.poison-dt);}
+  G.immTox=Math.max(0,G.immTox-dt);G.shield=Math.max(0,G.shield-dt);
+  if(G.over)return;
+  if(G.t>=G.nextHit){
+    G.nextHit+=6;hurtHP(5);L('La amenaza te alcanza: −5 de vida.','bad');
+  }
+  if(G.t>=G.nextBite){
+    G.nextBite+=22;
+    if(G.immTox>0)L('Una yarará te muerde, pero el antídoto te protege.','good');
+    else{G.poison=14;L('Una yarará te muerde la bota. Veneno en la sangre.','bad');}
+  }
+  var ti=Math.min(5,Math.floor(G.t/TURN));
+  if(ti!==G.turn)newTurn(ti);
+  if(G.t>=TOTAL&&!G.over)end(true);
+}
+
+function end(win){
+  G.over=true;
+  var html;
+  if(win){
+    html='<h2>Amaneció en el fortín</h2><div class="big-num">'+Math.round(G.hp)+'% de vida</div><p>Resististe la noche entera con lo que enseña la herbolaria guaraní. Lo que se guarda a tiempo, se cura a tiempo.</p><button class="btn big" data-act="restart" type="button">Jugar otra noche</button>';
+  }else{
+    html='<h2>El monte te venció</h2><p>Caíste en el turno '+(G.turn+1)+' de 6. Prueba guardar tus plantas en su envase antes de que llegue la lluvia y combínalas antes de que te dañen.</p><button class="btn big" data-act="restart" type="button">Intentarlo de nuevo</button>';
+  }
+  $('#card').innerHTML=html;$('#overlay').hidden=false;
+}
+
+function art(){
+  var s='<svg viewBox="0 0 640 190" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d2b33"/><stop offset="1" stop-color="#5a5a46"/></linearGradient></defs><rect width="640" height="190" fill="url(#sky)"/><circle cx="520" cy="56" r="22" fill="#d9c58c" opacity=".8"/>';
+  s+='<path d="M0,190 L0,112 L60,98 L120,114 L200,92 L280,110 L360,90 L440,108 L520,94 L640,112 L640,190Z" fill="#26382a"/><path d="M0,190 L0,140 L90,126 L180,142 L300,124 L420,142 L540,126 L640,140 L640,190Z" fill="#18271c"/>';
+  s+='<g fill="#3b2a1d"><rect x="86" y="110" width="6" height="46"/><rect x="120" y="104" width="6" height="52"/><rect x="154" y="112" width="6" height="44"/><rect x="80" y="102" width="86" height="6"/></g><g stroke="#0f1a12" stroke-width="2" stroke-linecap="round">';
+  for(var i=0;i<34;i++){var x=(i*19+7)%640,h=16+((i*37)%30);s+='<line x1="'+x+'" y1="190" x2="'+(x+((i%5)-2)*2)+'" y2="'+(190-h)+'"/>';}
+  return s+'</g></svg>';
+}
+
+function renderInv(){
+  var h='',i,it;
+  for(i=0;i<SLOTS;i++){
+    it=G.inv[i];
+    if(!it){h+='<button class="slot empty" type="button" disabled aria-label="Espacio vacío"></button>';continue;}
+    var sel=G.sel.indexOf(it.uid)>=0;
+    var jar=(it.kind==='p'&&it.stored)?'<span class="jar">ENV</span>':'';
+    var pips='';
+    if(it.kind==='p'&&!it.stored&&!it.rot){pips='<span class="pips" title="Humedad acumulada">'+[0,1,2].map(function(n){return '<i class="'+(it.exp>n?'on':'')+'"></i>';}).join('')+'</span>';}
+    h+='<button class="slot'+(it.rot?' rotten':'')+'" type="button" data-uid="'+it.uid+'" aria-pressed="'+(sel?'true':'false')+'" aria-label="'+itemName(it)+'">'+jar+iconHTML(it)+'<span class="nm">'+itemName(it)+'</span><span class="tg">'+itemTag(it)+'</span>'+pips+'</button>';
+  }
+  $('#slots').innerHTML=h;
+  $('#slotcount').textContent=G.inv.length+'/'+SLOTS;$('#jars').textContent=G.frascos;
+  var s=selItems(),ln='─'.repeat(48);
+  if(s.length===1)$('#ficha').textContent=ficha(s[0]);
+  else if(s.length>1)$('#ficha').textContent=box('Combinación en preparación')+'\n▶ [PLANTAS]: '+s.map(itemName).join(' + ')+'\n'+ln+'\n⚡ Pulsa Combinar para ver qué sale.';
+  else $('#ficha').textContent=box('Mochila')+'\n▶ Toca una planta para examinar su ficha.\n▶ Toca 2 o 3 plantas para combinarlas.\n'+ln+'\n⚡ Cada ficha trae dosis, conservación y riesgo.';
+  dirty.inv=false;
+}
+function renderFinds(){
+  var h='';
+  if(G.finds.length){G.finds.forEach(function(f){var p=PLANTS[f.pid];h+='<button class="mata" type="button" data-fid="'+f.fid+'">'+leafSVG(p.col,false,30)+'<span><small>Planta '+p.re+'</small>Recolectar '+p.nombre+'</span></button>';});}
+  else h='<p class="empty-note">No queda nada útil en este turno. En el próximo aparece otra mata.</p>';
+  $('#finds').innerHTML=h;dirty.finds=false;
+}
+function renderLog(){$('#log').innerHTML=G.log.slice(0,6).map(function(l){return '<li class="'+l.c+'">'+l.m+'</li>';}).join('');dirty.log=false;}
+function chipsNow(){
+  var a=[];
+  if(G.poison>0)a.push(['bad','Veneno '+Math.ceil(G.poison)+'s']);
+  if(G.immTox>0)a.push(['good','Inmune a toxinas '+Math.ceil(G.immTox)+'s']);
+  if(G.shield>0)a.push(['good','Escudo +20% '+Math.ceil(G.shield)+'s']);
+  if(!a.length)a.push(['idle','Sin estados alterados']);
+  return a;
+}
+function render(){
+  if(lastTurn!==G.turn){
+    lastTurn=G.turn;
+    $('#turnno').textContent='Turno '+(G.turn+1)+' de 6';
+    var w=HUMID[G.turn],c=$('#climate');
+    c.textContent=w?'Húmedo · lluvia':'Seco';c.className='climate '+(w?'wet':'dry');
+    $('#scene').classList.toggle('wet',w);
+    $('#diary').textContent=DIARY[G.turn];
+  }
+  if(dirty.inv)renderInv();if(dirty.finds)renderFinds();if(dirty.log)renderLog();
+  $('#hpv').textContent=Math.round(G.hp);$('#hpbar').style.width=G.hp+'%';
+  var left=Math.max(0,Math.ceil(TOTAL-G.t));$('#dawnv').textContent=left+' s';$('#dawnbar').style.width=(G.t/TOTAL*100)+'%';
+  var ch=chipsNow(),sig=ch.map(function(c){return c[0]+c[1];}).join('|');
+  if(sig!==lastChips){$('#chips').innerHTML=ch.map(function(c){return '<span class="chip '+c[0]+'">'+c[1]+'</span>';}).join('');lastChips=sig;}
+  $('#scene').classList.toggle('hurt',G.hurt>0);
+  var a=act(),s=selItems(),one=s.length===1?s[0]:null;
+  $('#b-use').disabled=!(a&&one&&!(one.kind==='p'&&one.pid==='KAAHEE'&&!one.rot));
+  $('#b-mix').disabled=!(a&&s.length>=2);
+  $('#b-store').disabled=!(a&&one&&one.kind==='p'&&!one.stored&&!one.rot&&G.frascos>0);
+  $('#b-drop').disabled=!(a&&s.length>=1);
+  var fb=document.querySelectorAll('.mata');for(var i=0;i<fb.length;i++)fb[i].disabled=!a;
+}
+
+var last=performance.now();
+function loop(now){
+  var dt=Math.min(0.1,(now-last)/1000);last=now;
+  if(G&&G.run&&!G.over)step(dt);
+  if(G)render();
+  requestAnimationFrame(loop);
+}
+function intro(){
+  $('#card').innerHTML='<h2>Comandante de Arraigo</h2><p>Fundaste un fortín en tierra guaraní. No hay botica ni médico. Tu farmacia son las plantas del monte y el saber de tus vecinos.</p><ol><li>Recolecta plantas y toca una para examinar su ficha.</li><li>Combina 2 o 3 colores, como en Resident Evil.</li><li>Guarda tus plantas en su frasco antes de la lluvia.</li><li>Resiste 120 segundos hasta el amanecer.</li></ol><button class="btn big" data-act="start" type="button">Comenzar</button>';
+  $('#overlay').hidden=false;
+}
+document.addEventListener('click',function(e){
+  var a=e.target.closest('[data-act]');
+  if(a){
+    var k=a.getAttribute('data-act');
+    if(k==='start'){$('#overlay').hidden=true;G.run=true;last=performance.now();}
+    else if(k==='restart'){$('#overlay').hidden=true;newGame();G.run=true;last=performance.now();}
+    return;
+  }
+  var sl=e.target.closest('.slot[data-uid]');if(sl){toggle(parseInt(sl.getAttribute('data-uid'),10));return;}
+  var m=e.target.closest('.mata[data-fid]');if(m){pick(parseInt(m.getAttribute('data-fid'),10));}
+});
+$('#b-use').addEventListener('click',function(){var s=selItems();if(s.length===1)useItem(s[0]);});
+$('#b-mix').addEventListener('click',combine);
+$('#b-store').addEventListener('click',store);
+$('#b-drop').addEventListener('click',drop);
+$('#art').innerHTML=art();
+newGame();intro();requestAnimationFrame(loop);
+})();
+</script>
+
+</body></html>
