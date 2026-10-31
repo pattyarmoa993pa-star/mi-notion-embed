@@ -1,0 +1,727 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Trampa Mental</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=Pirata+One&family=Press+Start+2P&display=swap">
+<style>
+/* Concepto: una sola columna. El mar de noche arriba como mapa de juego; cada puerto se abre como un cartel de "Se busca: significado" sobre pergamino. Un solo mundo visual, por eso un solo tema. */
+:root{
+  --abismo:#06182b; --mar:#0d3558; --ola:#2a8bb3; --espuma:#e6f6f2; --suave:#9fc9cf;
+  --pergamino:#e6cf96; --tinta:#1e1409; --sol:#ffc233; --coral:#e2472e; --alga:#2fae86;
+  --f-display:'Pirata One',Georgia,serif;
+  --f-cuerpo:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-hud:'Press Start 2P',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background-color:var(--abismo);background-image:radial-gradient(900px 480px at 50% -8%,#0f4a73 0%,transparent 70%);background-repeat:no-repeat;color:var(--espuma);font:500 16px/1.55 var(--f-cuerpo);padding-block:18px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:920px;margin-inline:auto;display:grid;gap:14px;min-width:0}
+main{display:grid;gap:14px;min-width:0}
+h1,h2,h3{margin:0;text-wrap:balance}
+p{margin:0;overflow-wrap:anywhere}
+.pantalla{display:grid;gap:14px;min-width:0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.etq{font:800 11px/1.2 var(--f-cuerpo);letter-spacing:.14em;text-transform:uppercase;color:var(--suave)}
+.suave{color:var(--suave);font-size:14px}
+:focus-visible{outline:3px solid var(--sol);outline-offset:2px}
+
+/* botones */
+.btn{font:800 15px/1.1 var(--f-cuerpo);min-height:46px;padding:12px 20px;border-radius:10px;border:2px solid var(--tinta);background:var(--sol);color:var(--tinta);cursor:pointer;box-shadow:0 4px 0 var(--tinta)}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--tinta)}
+.btn.sec{background:transparent;color:var(--espuma);border-color:var(--ola);box-shadow:none}
+.acciones{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center}
+.check{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--suave);min-height:44px}
+.check input{width:20px;height:20px;accent-color:var(--sol)}
+
+/* HUD */
+.hud{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;background:var(--mar);border:2px solid var(--ola);border-radius:12px;padding:10px 14px}
+.grupo{display:flex;align-items:center;gap:8px;min-width:0}
+.slots{display:flex;gap:5px}
+.slot{width:22px;height:22px;border:2px solid var(--ola);border-radius:5px;display:grid;place-items:center;font:10px/1 var(--f-hud);color:var(--tinta)}
+.num{font:12px/1 var(--f-hud);color:var(--sol);font-variant-numeric:tabular-nums}
+.hud .btn{min-height:38px;padding:8px 14px;font-size:14px}
+
+/* portada */
+.portada{background:linear-gradient(180deg,var(--mar),var(--abismo));border:2px solid var(--ola);border-radius:16px;padding:clamp(18px,5vw,34px);display:grid;gap:14px}
+.portada h1{font:400 clamp(46px,12vw,104px)/.95 var(--f-display);color:var(--sol);text-shadow:3px 3px 0 var(--coral),6px 6px 0 var(--tinta);transform:rotate(-2deg);letter-spacing:.01em;margin:6px 0 4px}
+.sub{font:400 clamp(22px,5vw,34px)/1.1 var(--f-display);color:var(--espuma)}
+.premisa{max-width:62ch}
+.pasos{margin:0;padding:0;list-style:none;display:grid;gap:8px;max-width:62ch}
+.pasos li{padding-left:16px;border-left:3px solid var(--sol);font-size:15px}
+
+/* mar */
+.marco{position:relative;border:2px solid var(--ola);border-radius:12px;overflow:hidden;background:var(--mar)}
+#mar{display:block;width:100%;touch-action:none;cursor:crosshair}
+.toast{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);max-width:90%;background:var(--tinta);color:var(--espuma);border:2px solid var(--sol);border-radius:10px;padding:8px 14px;font-size:14px;font-weight:700;text-align:center}
+.crew{position:absolute;inset:auto 10px 10px 10px;background:var(--pergamino);color:var(--tinta);border:3px solid var(--tinta);border-radius:10px;padding:14px;display:grid;gap:8px;max-height:92%;overflow:auto;box-shadow:0 6px 0 rgba(6,24,43,.7)}
+.crew h3{font:400 28px/1 var(--f-display)}
+.crew .etq{color:#5a4120}
+.ayuda{font-size:14px;color:var(--suave)}
+.rumor{font-size:14px;font-style:italic;color:var(--suave)}
+
+/* cartel pergamino */
+.cartel{background:var(--pergamino);color:var(--tinta);border:3px solid var(--tinta);border-radius:8px;padding:clamp(14px,4vw,24px);box-shadow:inset 0 0 44px rgba(120,80,20,.35),6px 6px 0 rgba(6,24,43,.75);display:grid;gap:12px;min-width:0}
+.cartel h2{font:400 clamp(30px,8vw,52px)/1 var(--f-display);text-align:center;letter-spacing:.05em}
+.cartel .etq{color:#5a4120}
+.jerga{font:400 clamp(22px,5.4vw,30px)/1.2 var(--f-display);text-align:center}
+.jerga mark,.cartel mark{background:var(--sol);color:var(--tinta);padding:0 .25em;border-radius:3px}
+.recompensa{font:800 12px/1.3 var(--f-cuerpo);letter-spacing:.12em;text-transform:uppercase;text-align:center;border-top:2px dashed #7a5a2a;padding-top:10px}
+
+/* puerto */
+.panel{background:var(--mar);border:2px solid var(--ola);border-radius:14px;padding:clamp(16px,4vw,26px);display:grid;gap:12px;min-width:0}
+.panel h2{font:400 clamp(34px,8vw,54px)/1 var(--f-display);color:var(--sol)}
+.chip-rival{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--suave)}
+.bandera{width:18px;height:12px;border-radius:2px;border:2px solid var(--tinta);display:inline-block}
+.ayuda-crew{border-left:4px solid var(--alga);padding-left:12px;font-size:15px}
+
+/* pistas */
+.pistas{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:10px}
+.pista{text-align:left;font:inherit;color:var(--espuma);background:var(--mar);border:2px dashed var(--ola);border-radius:10px;padding:12px;min-height:96px;cursor:pointer;display:grid;gap:6px;align-content:start}
+.pista .quien{font:800 12px/1.2 var(--f-cuerpo);letter-spacing:.1em;text-transform:uppercase}
+.pista .dice{display:none}
+.pista[aria-expanded="true"]{background:var(--espuma);color:var(--tinta);border:2px solid var(--sol)}
+.pista[aria-expanded="true"] .dice{display:block}
+.pista[aria-expanded="true"] .tapa{display:none}
+.tapa{color:var(--suave);font-size:14px}
+
+/* carrera */
+.carrera{display:grid;gap:6px;background:var(--abismo);border:2px solid var(--ola);border-radius:10px;padding:10px 12px}
+.carrera-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;font-weight:700}
+.barra{height:14px;background:var(--mar);border:2px solid var(--ola);border-radius:99px;overflow:hidden}
+.barra i{display:block;height:100%;width:0;background:var(--coral);transition:width .25s linear}
+.rv-nota{font-size:14px;color:var(--suave);min-height:1.5em}
+.rv-resp{border-left:4px solid var(--coral);padding-left:12px;font-size:15px}
+
+/* opciones */
+.opciones{display:grid;gap:10px}
+.op{text-align:left;font:inherit;display:flex;gap:12px;align-items:flex-start;color:var(--espuma);background:var(--mar);border:2px solid var(--ola);border-radius:10px;padding:12px 14px;cursor:pointer;min-height:56px}
+.op .letra{flex:none;width:30px;height:30px;border-radius:50%;background:var(--sol);color:var(--tinta);display:grid;place-items:center;font:800 14px/1 var(--f-cuerpo)}
+.op .cuerpo{display:grid;gap:4px;min-width:0}
+.op .nota{font-size:14px;color:var(--suave)}
+.op:disabled{cursor:default;background:var(--abismo);border-color:#3a3f4a;color:var(--suave)}
+.op:disabled .letra{background:#4a5260;color:var(--espuma)}
+.op.mal{border-color:var(--coral)}
+
+/* resultado */
+.burst{font:400 clamp(38px,10vw,76px)/1 var(--f-display);color:var(--sol);text-shadow:3px 3px 0 var(--coral),6px 6px 0 var(--tinta);transform:rotate(-3deg);animation:pop .5s cubic-bezier(.2,1.6,.4,1) both;text-align:center;padding:8px 0}
+@keyframes pop{from{transform:scale(.3) rotate(-12deg);opacity:0}to{transform:scale(1) rotate(-3deg);opacity:1}}
+@media (prefers-reduced-motion:reduce){.burst{animation:none}.barra i{transition:none}}
+.dos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}
+.criollo{background:var(--espuma);color:var(--tinta);border:3px solid var(--tinta);border-radius:8px;padding:16px;display:grid;gap:8px;align-content:start}
+.criollo .etq{color:#2d5a52}
+.criollo .frase{font-size:18px;font-weight:800}
+.jerga-mini{font:400 24px/1.2 var(--f-display)}
+.pieza-ganada{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--abismo);border:2px solid var(--sol);border-radius:10px;padding:10px 14px}
+.pz{flex:none}
+.puntos{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:15px}
+.puntos b{color:var(--sol);font-variant-numeric:tabular-nums}
+
+/* traductor */
+.herr{border:2px solid var(--sol);border-radius:12px;padding:14px;background:var(--abismo);display:grid;gap:4px}
+.herr h2{font:400 clamp(28px,7vw,44px)/1 var(--f-display);color:var(--sol)}
+.entradas{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px;margin:0;padding:0;list-style:none}
+.entrada{border:2px solid var(--ola);border-radius:10px;padding:12px;display:grid;gap:6px;background:var(--mar);align-content:start}
+.entrada.vacia{border-style:dashed;color:var(--suave)}
+.entrada .lat{font:400 24px/1.1 var(--f-display);color:var(--sol)}
+
+/* jefe */
+.discurso{font:400 clamp(24px,6vw,34px)/1.35 var(--f-display);text-align:center}
+.discurso mark.ahora{outline:3px solid var(--coral);outline-offset:2px}
+.discurso mark.pend{background:#c9b27a;color:#5a4120}
+.discurso mark.ok{background:var(--alga);color:var(--tinta)}
+.piezas-btn{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
+.pz-btn{display:flex;gap:10px;align-items:center;text-align:left;font:inherit;color:var(--espuma);background:var(--mar);border:2px solid var(--ola);border-radius:10px;padding:10px 12px;cursor:pointer;min-height:56px}
+.pz-btn:disabled{opacity:.45;cursor:default}
+.pz-btn strong{display:block}
+.pz-btn small{color:var(--suave);font-size:13px}
+.niebla{height:10px;background:var(--abismo);border:2px solid var(--ola);border-radius:99px;overflow:hidden}
+.niebla i{display:block;height:100%;width:0;background:#8da2b4}
+.aviso{font-weight:700;min-height:1.5em}
+
+/* ranking */
+.ranking{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.fila{border:2px solid var(--ola);border-radius:10px;padding:10px 12px;display:grid;gap:6px;background:var(--mar)}
+.fila.tu{border-color:var(--sol);background:#14466f}
+.fila.oculta{border-style:dashed}
+.fila-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.tag{font:800 11px/1.2 var(--f-cuerpo);letter-spacing:.12em;text-transform:uppercase;color:var(--suave)}
+.metro{display:grid;grid-template-columns:72px 1fr 64px;gap:8px;align-items:center;font-size:13px}
+.metro b{text-align:right;font-variant-numeric:tabular-nums}
+.metro .b{height:10px;background:var(--abismo);border-radius:99px;overflow:hidden}
+.metro .b i{display:block;height:100%}
+.metro.f .b i{background:#6b7f93}
+.metro.c .b i{background:var(--sol)}
+.cierre{font-size:18px;font-weight:800}
+</style>
+
+<div class="wrap">
+  <header class="hud" id="hud" hidden>
+    <div class="grupo"><span class="etq">Piezas</span><div class="slots" id="slots" role="img" aria-label="Piezas de traducción"></div></div>
+    <div class="grupo"><span class="etq">Claridad</span><span class="num" id="h-clar">0</span></div>
+    <div class="grupo"><span class="etq">Tripulaciones</span><span class="num" id="h-crew">0/5</span></div>
+    <button class="btn sec" id="b-trad" type="button">Traductor</button>
+  </header>
+
+  <main>
+    <section id="p-titulo" class="pantalla portada">
+      <p class="etq">Minijuego arcade · tributo pirata</p>
+      <h1>¡Trampa mental!</h1>
+      <p class="sub">El Fiscal que habla en latín para no trabajar</p>
+      <p class="premisa">Zarpa con tus compañeritos del Ministerio Público y recorre todo el territorio nacional. Desembarca en cada puerto y supera las incógnitas que esconden las reglas básicas de convivencia. Cada barco pirata es una persona que hace de puente traductor para la comunidad. Adelántate a las demás tripulaciones, pero ten presente que no todas las que importan están a la vista.</p>
+      <ul class="pasos">
+        <li><strong>Navega</strong> con las flechas o WASD, o toca el mar para ir hacia ese punto.</li>
+        <li><strong>Desembarca</strong> cuando llegues a un puerto.</li>
+        <li><strong>Investiga</strong> las pistas y elige la traducción correcta antes de que la tripulación rival entregue la suya.</li>
+        <li><strong>Desbloquea</strong> una pieza de la Traducción Comunitaria con cada acierto.</li>
+      </ul>
+      <div class="acciones">
+        <button class="btn" id="b-zarpar" type="button">Zarpar</button>
+        <label class="check" for="c-tranquilo"><input id="c-tranquilo" type="checkbox"> Modo tranquilo, sin carrera contra el reloj</label>
+      </div>
+      <p class="suave" id="t-mejor" hidden></p>
+    </section>
+
+    <section id="p-mar" class="pantalla" hidden>
+      <h2 class="sr">Mar abierto</h2>
+      <div class="marco">
+        <canvas id="mar" width="480" height="270" role="img" aria-label="Mapa del mar con cinco puertos, Asunción al norte y tripulaciones silenciosas escondidas"></canvas>
+        <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+        <div id="crew-card" class="crew" hidden role="dialog" aria-label="Tripulación silenciosa"></div>
+      </div>
+      <p class="ayuda">Flechas o WASD para navegar. Toca el mar para ir hacia ese punto. Acércate a un puerto para desembarcar.</p>
+      <p class="rumor">Dicen que algunas tripulaciones jamás salen a la vista. Cuando el agua tiembla, algo hay.</p>
+    </section>
+
+    <section id="p-puerto" class="pantalla panel" hidden></section>
+    <section id="p-acertijo" class="pantalla" hidden></section>
+    <section id="p-resultado" class="pantalla" hidden></section>
+    <section id="p-jefe" class="pantalla" hidden></section>
+    <section id="p-final" class="pantalla" hidden></section>
+    <section id="p-traductor" class="pantalla" hidden></section>
+  </main>
+</div>
+
+<!-- Bloque 1: datos y reglas puras (se valida sin navegador) -->
+<script id="datos">
+const RIVALES={
+  rimbombantes:{nombre:"Los Rimbombantes",color:"#e2472e",fama:9800,claridad:140},
+  bufete:{nombre:"Bufete Dorado",color:"#d9a21b",fama:12500,claridad:90},
+  expedientes:{nombre:"Los Expedientes",color:"#a8957a",fama:7400,claridad:210},
+  citadores:{nombre:"Los Citadores",color:"#a77bff",fama:6100,claridad:160}
+};
+const PIEZAS={
+  dubio:{latin:"In dubio pro reo",lat:"in dubio pro reo",nombre:"La duda favorece",criollo:"Ante la duda, se decide a favor de la persona acusada.",slot:"ante la duda, a favor del acusado",color:"#ffc233"},
+  oficio:{latin:"Ex officio",lat:"ex officio",nombre:"Iniciativa propia",criollo:"Se actúa por iniciativa propia, sin esperar que alguien lo pida.",slot:"por iniciativa propia",color:"#38b48b"},
+  quid:{latin:"Quid pro quo",lat:"quid pro quo",nombre:"Favor por favor",criollo:"Algo a cambio de algo.",slot:"favores a cambio",color:"#ff7a5c"},
+  prima:{latin:"Prima facie",lat:"Prima facie",nombre:"A primera vista",criollo:"A primera vista, con lo que se ve ahora. Falta confirmarlo.",slot:"A primera vista",color:"#5cc8ff"},
+  sine:{latin:"Sine die",lat:"sine die",nombre:"Sin fecha",criollo:"Se posterga sin fijar una fecha para retomarlo.",slot:"sin fecha fijada",color:"#b58cff"}
+};
+const PUERTOS=[
+  {id:"pilar",nombre:"Pilar",region:"Ñeembucú",x:112,y:206,rival:"rimbombantes",pieza:"dubio",
+   llegada:"Huele a río y a chipa recién sacada del horno. En el muelle ya flamea una bandera enorme: Los Rimbombantes llegaron primero.",
+   jerga:"«In dubio pro reo», sentenció el Fiscal Latinoso, y se fue a tomar tereré.",
+   situacion:"A doña Lidia le desapareció una gallina del patio. Todo el barrio sospecha de Cirilo, el vecino, porque «tiene cara de gallinero». Pero nadie lo vio, no hay plumas en su casa y capaz que la gallina se escapó sola. ¿Qué regla de convivencia se esconde detrás del latín?",
+   pistas:[
+    {q:"Doña Lidia, la dueña",t:"Yo digo que fue él, pero la verdad... con mis propios ojos no lo vi."},
+    {q:"El pescador del muelle",t:"Acusar es fácil, che. Lo difícil es probar. Sin prueba, a nadie se le cuelga el sambenito."},
+    {q:"La chica de la despensa",t:"Prefiero que se escape una gallina antes que castigar a un inocente."}],
+   opciones:[
+    {t:"Cuando hay duda, se decide a favor de la persona acusada.",ok:true,porque:""},
+    {t:"El acusado tiene que demostrar su inocencia frente a todo el barrio.",tipo:"trampa",porque:"Suena serio, pero es al revés: quien acusa es quien tiene que probar."},
+    {t:"Cirilo se queda con la gallina si la encuentra.",porque:"El latín no habla de gallinas. Habla de qué hacer cuando no hay certeza."}],
+   rivalDice:"«Principio de raigambre romanista que informa la carga probatoria en sede represiva.»",
+   regla:"No se castiga a nadie por una simple sospecha. Antes de señalar al vecino hace falta una prueba."},
+  {id:"encarnacion",nombre:"Encarnación",region:"Itapúa",x:385,y:215,rival:"bufete",pieza:"oficio",
+   llegada:"Los colectivos tocan bocina frente al puerto y el viento trae olor a asado. En el muelle espera Bufete Dorado, con alfombra roja y todo.",
+   jerga:"«El caso procede ex officio», anunció el Fiscal Latinoso sin levantar la vista del expediente.",
+   situacion:"Un camión derramó aceite en plena ruta y varios motociclistas se cayeron. Nadie fue a hacer la denuncia: cada uno pensó «que lo haga otro». Sin embargo, al día siguiente la fiscalía ya estaba investigando. ¿Cómo puede ser, si nadie pidió nada?",
+   pistas:[
+    {q:"El colectivero",t:"Ninguno se fue a quejar y aun así vinieron. Ni nos preguntaron si queríamos."},
+    {q:"La vendedora de chipa",t:"Cuando el peligro es de todos no hace falta que alguien toque el timbre. Se actúa nomás."},
+    {q:"El mecánico",t:"Es como el bombero: no espera invitación cuando huele a humo."}],
+   opciones:[
+    {t:"La autoridad actúa por iniciativa propia, sin esperar que alguien lo pida.",ok:true,porque:""},
+    {t:"La autoridad actúa solo si alguien paga los gastos del trámite.",tipo:"trampa",porque:"Suena a trámite, pero nadie tiene que pagar para que se investigue un peligro."},
+    {t:"La investigación se hace solo dentro de la oficina.",porque:"«Oficio» no es el escritorio: es el deber del cargo. Y ese deber incluye salir a la ruta."}],
+   rivalDice:"«Actuación oficiosa del órgano en ejercicio de su potestad persecutoria.»",
+   regla:"Hay problemas que no esperan denuncia. Si algo pone en riesgo a todos, las autoridades deben actuar igual."},
+  {id:"cde",nombre:"Ciudad del Este",region:"Alto Paraná",x:400,y:95,rival:"expedientes",pieza:"quid",
+   llegada:"Entre bocinas, sombrillas y carteles de ofertas, el puerto no para. En el muelle, Los Expedientes ya apilaron tres cajas de papeles.",
+   jerga:"«Esto es un quid pro quo», murmuró el Fiscal Latinoso, y se acomodó los lentes.",
+   situacion:"En la puerta de una oficina pública, un «gestor» le dice a Marcos: «Yo te agilizo el trámite, vos me das una colaboración y quedamos bien». Marcos siente que algo huele raro. ¿Qué significa el latín y qué regla se está rompiendo?",
+   pistas:[
+    {q:"Marcos, el del trámite",t:"Me dijo «una mano lava la otra». Yo no pedí ninguna mano."},
+    {q:"La señora de la fila",t:"Acá nadie hace nada gratis, dicen. Pero un trámite público no se compra con favores."},
+    {q:"El guardia de la entrada",t:"Te dan algo y te piden algo de vuelta. Si hay devolución, hay trato."}],
+   opciones:[
+    {t:"Algo a cambio de algo: te doy una cosa y vos me devolvés otra.",ok:true,porque:""},
+    {t:"Un trámite que sale gratis porque es un derecho de todos.",tipo:"trampa",porque:"Un trámite público sí es un derecho, pero la frase habla de otra cosa: de un intercambio."},
+    {t:"Preguntar «qué» dos veces para ganar tiempo.",porque:"El latín parece pregunta, pero significa «algo por algo»."}],
+   rivalDice:"«Locución que denota la contraprestación recíproca entre las partes.»",
+   regla:"Un trámite público no se acelera con favores ni «colaboraciones». Si piden algo a cambio, es una señal de alerta."},
+  {id:"villarrica",nombre:"Villarrica",region:"Guairá",x:265,y:165,rival:"citadores",pieza:"prima",
+   llegada:"Calles de adoquín y gente que saluda con un «mba'éichapa». En el muelle, Los Citadores ya empezaron a recitar a un romano de hace dos mil años.",
+   jerga:"«Prima facie hay un hecho», dijo el Fiscal Latinoso, y volvió a su café.",
+   situacion:"Raúl llega a casa y encuentra el portón abierto, el candado roto y la bicicleta de su hijo desaparecida. «¡Nos robaron!», grita. Su vecina le dice: «Capaz que el chico la prestó y el candado ya estaba flojo». ¿Qué quiere decir «prima facie» en este caso?",
+   pistas:[
+    {q:"Raúl",t:"Veo el portón roto y la bici no está. Con eso me parece robo."},
+    {q:"La vecina",t:"Puede ser. Pero antes de gritar, preguntemos. A veces lo que parece, no es."},
+    {q:"El comisario del barrio",t:"Lo primero que se ve cuenta, pero se confirma después. Una impresión no es una sentencia."}],
+   opciones:[
+    {t:"A primera vista, con lo que se ve ahora. Falta confirmarlo.",ok:true,porque:""},
+    {t:"Está comprobado y no se puede discutir.",tipo:"trampa",porque:"Suena firme, pero «prima facie» es justo lo contrario: algo que todavía hay que confirmar."},
+    {t:"El primer hecho que ocurrió en el día.",porque:"«Prima» viene de «primera», pero habla de la primera impresión, no del primer suceso."}],
+   rivalDice:"«Como decía un romano hace dos mil años, y ahí lo dejamos.»",
+   regla:"Una primera impresión sirve para empezar a investigar, no para sentenciar. Antes de acusar, se confirma."},
+  {id:"filadelfia",nombre:"Filadelfia",region:"Boquerón",x:85,y:70,rival:"rimbombantes",pieza:"sine",
+   llegada:"El viento seco del Chaco levanta polvo rojizo sobre el muelle. Los Rimbombantes volvieron a madrugar y ya están sentados esperando.",
+   jerga:"«La audiencia queda sine die», declaró el Fiscal Latinoso, y se fue a descansar.",
+   situacion:"La comisión vecinal iba a decidir cómo arreglar el camino que se inunda cada vez que llueve. En la reunión se dijo: «Se suspende y se retoma sine die». Pasaron tres meses y nadie sabe cuándo volver a juntarse. ¿Qué quiso decir en realidad?",
+   pistas:[
+    {q:"El presidente de la comisión",t:"Dije que se suspendía. No puse fecha porque ni yo sabía cuándo íbamos a poder."},
+    {q:"La almacenera",t:"Desde entonces, cada vez que pregunto «¿cuándo?», me dicen «ya veremos»."},
+    {q:"El maestro del pueblo",t:"Fijate: «sine» suena a «sin» y «die» suena a «día». Armá la frase con lo que falta."}],
+   opciones:[
+    {t:"Se posterga sin fijar una fecha para retomarlo.",ok:true,porque:""},
+    {t:"Se cancela para siempre y no se vuelve a tratar.",tipo:"trampa",porque:"Suena definitivo, pero dice que no hay fecha, no que no habrá nunca."},
+    {t:"Se retoma de inmediato, al día siguiente.",porque:"«Día» sí está en la palabra, pero con «sin» adelante: sin día."}],
+   rivalDice:"«Diferimiento sine die con reserva de oportuna fijación.»",
+   regla:"Cuando algo se posterga sin fecha, el tema queda en el aire. Pide siempre una fecha, aunque sea aproximada."}
+];
+const ASUNCION={id:"asuncion",nombre:"Asunción",region:"Capital",x:225,y:62};
+const TRIPS=[
+  {id:"donas",nombre:"Las Doñas de la Feria",x:45,y:148,puerto:"pilar",fama:80,claridad:910,
+   linea:"Explicamos el contrato del puesto como una receta: ingredientes, pasos y quién se queda con qué."},
+  {id:"choferes",nombre:"Los Choferes del Último Colectivo",x:300,y:248,puerto:"encarnacion",fama:60,claridad:960,
+   linea:"Cuando algo se complica lo contamos con el recorrido: de dónde sale, por dónde pasa y adónde llega."},
+  {id:"mbarete",nombre:"Radio Mbarete",x:445,y:160,puerto:"cde",fama:210,claridad:1180,
+   linea:"Leemos el comunicado al aire, pero lo decimos como se lo diríamos a mi tía."},
+  {id:"tere",nombre:"La Brigada del Tereré",x:330,y:128,puerto:"villarrica",fama:40,claridad:1040,
+   linea:"Una ronda de tereré explica más que cien oficios. Ahí se aclara todo."},
+  {id:"maestras",nombre:"Las Maestras de la Escuela Rural",x:150,y:28,puerto:"filadelfia",fama:30,claridad:860,
+   linea:"Si un chico de segundo grado no lo entiende, todavía no está bien explicado."}
+];
+const AYUDA_CREW="descartaron una opción que sonaba muy linda pero no decía nada.";
+const JEFE={
+  orden:["prima","oficio","sine","dubio","quid"],
+  segmentos:[{k:"prima"},{t:", la causa sigue "},{k:"oficio"},{t:" y quedó "},{k:"sine"},{t:"; "},{k:"dubio"},{t:", y nada de "},{k:"quid"},{t:"."}]
+};
+const REGLAS={base:120,penalErr:25,minBase:40,bonoRival:40,bonoCrew:60,jefeBase:150,jefePenal:20,jefeMin:50,rivalSeg:80,penalRivalPct:0.2,famaMax:12500,claridadMax:1250};
+function puntosAcertijo(errores,ganoCarrera){var base=Math.max(REGLAS.minBase,REGLAS.base-REGLAS.penalErr*errores);var bono=ganoCarrera?REGLAS.bonoRival:0;return{base:base,bono:bono,total:base+bono};}
+function puntosJefe(errores){return Math.max(REGLAS.jefeMin,REGLAS.jefeBase-REGLAS.jefePenal*errores);}
+function rango(c){return c>=1000?"Tripulación Legendaria":c>=700?"Tripulación de Confianza":"Tripulación en Marcha";}
+function famaJugador(piezas){return 300+400*piezas;}
+function fmt(n){return Number(n).toLocaleString("es-PY");}
+function barajar(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
+function listaRanking(claridad,fama,halladas){
+  var l=[{nombre:"Tu tripulación",fama:fama,claridad:claridad,tipo:"tu",tag:rango(claridad)}];
+  Object.keys(RIVALES).forEach(function(k){var r=RIVALES[k];l.push({nombre:r.nombre,fama:r.fama,claridad:r.claridad,tipo:"rival",tag:"A la vista"});});
+  TRIPS.forEach(function(c){var h=halladas.indexOf(c.id)>=0;l.push({nombre:h?c.nombre:"Tripulación que no encontraste",fama:c.fama,claridad:c.claridad,tipo:h?"silenciosa":"oculta",tag:h?"Silenciosa":"Sin descubrir"});});
+  return l.sort(function(a,b){return b.claridad-a.claridad;});
+}
+</script>
+
+<!-- Bloque 2: motor y pantallas -->
+<script id="motor">
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s);};
+var ANCHO=480,ALTO=270,RADIO_REVELA=95;
+var reducir=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches);
+var E={estado:"titulo",piezas:[],claridad:0,crews:[],hecho:{},tranquilo:false,r:null,jefe:null,jefeHecho:false,enPuerto:null,pausa:false,ocultoDesde:0,pAct:null,enNiebla:false};
+var PANT=["titulo","mar","puerto","acertijo","resultado","jefe","final","traductor"];
+var cv=$("#mar"),cx=cv.getContext("2d");
+var escala=1,fondo=null,raf=0,ultimo=0,t=0,destino=null,timerRival=0,toastT=0;
+var teclas={};
+var nave={x:240,y:140,dir:1,estela:[],acum:0};
+var NIEBLAS=[{x:170,y:135,r:28,p:0,w:"ut supra"},{x:330,y:62,r:24,p:2,w:"ergo"},{x:75,y:112,r:22,p:4,w:"ipso facto"}];
+NIEBLAS.forEach(function(n){n._x=n.x;n._y=n.y;});
+var AMB=[
+  {k:"rimbombantes",cx:150,cy:120,rx:60,ry:18,w:0.35,ph:0},
+  {k:"bufete",cx:350,cy:165,rx:55,ry:20,w:-0.3,ph:1.7},
+  {k:"expedientes",cx:255,cy:225,rx:70,ry:14,w:0.28,ph:3.1},
+  {k:"citadores",cx:380,cy:40,rx:45,ry:12,w:0.4,ph:4.4}
+];
+var TODOS=PUERTOS.concat([ASUNCION]);
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+/* ---------- utilidades de pantalla ---------- */
+function toast(m,ms){var el=$("#toast");el.textContent=m;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){el.hidden=true;},ms||2800);}
+function icoPieza(color,size){return '<svg class="pz" width="'+size+'" height="'+size+'" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 8h12a6 6 0 1 1 12 0h8v12a6 6 0 1 0 0 12v8H8z" fill="'+color+'" stroke="#1e1409" stroke-width="2.5" stroke-linejoin="round"/></svg>';}
+function hud(){
+  var h="";
+  for(var i=0;i<5;i++){var id=E.piezas[i];h+=id?'<span class="slot" style="background:'+PIEZAS[id].color+';border-color:'+PIEZAS[id].color+'" title="'+PIEZAS[id].nombre+'">✓</span>':'<span class="slot"></span>';}
+  $("#slots").innerHTML=h;
+  $("#h-clar").textContent=fmt(E.claridad);
+  $("#h-crew").textContent=E.crews.length+"/5";
+}
+function ir(n){
+  E.estado=n;
+  PANT.forEach(function(p){$("#p-"+p).hidden=(p!==n);});
+  $("#hud").hidden=(n==="titulo");
+  $("#b-trad").hidden=(n!=="mar");
+  if(n==="mar")iniciarMar();else detenerMar();
+  if(n!=="acertijo")detenerRival();
+  var hd=$("#p-"+n+" h1, #p-"+n+" h2");
+  if(hd){hd.setAttribute("tabindex","-1");try{hd.focus({preventScroll:true});}catch(e){}}
+  window.scrollTo(0,0);
+  hud();
+}
+
+/* ---------- mar ---------- */
+function armarFondo(){
+  var c=document.createElement("canvas");c.width=cv.width;c.height=cv.height;var g=c.getContext("2d");
+  var gr=g.createLinearGradient(0,0,0,c.height);gr.addColorStop(0,"#0f4a73");gr.addColorStop(1,"#07203a");
+  g.fillStyle=gr;g.fillRect(0,0,c.width,c.height);
+  g.setTransform(escala,0,0,escala,0,0);
+  var s=7;var rnd=function(){s=(s*16807)%2147483647;return s/2147483647;};
+  g.fillStyle="rgba(230,246,242,.07)";
+  for(var i=0;i<90;i++){g.beginPath();g.arc(rnd()*ANCHO,rnd()*ALTO,rnd()*1.6+.4,0,6.283);g.fill();}
+  g.strokeStyle="rgba(230,246,242,.05)";g.lineWidth=.6;
+  for(var y=30;y<ALTO;y+=40){g.beginPath();g.moveTo(0,y);g.lineTo(ANCHO,y);g.stroke();}
+  for(var x=40;x<ANCHO;x+=80){g.beginPath();g.moveTo(x,0);g.lineTo(x,ALTO);g.stroke();}
+  return c;
+}
+function ajustar(){
+  var w=cv.parentElement.clientWidth;if(!w)return;
+  var dpr=Math.min(window.devicePixelRatio||1,2);var h=w*ALTO/ANCHO;
+  cv.style.height=h+"px";cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  escala=cv.width/ANCHO;fondo=armarFondo();
+}
+function iniciarMar(){
+  ajustar();
+  if(!raf&&!E.pausa&&!document.hidden){ultimo=performance.now();raf=requestAnimationFrame(cuadro);}
+  dibujar();
+}
+function detenerMar(){if(raf){cancelAnimationFrame(raf);raf=0;}}
+function cuadro(ts){
+  raf=0;
+  if(E.estado!=="mar"||E.pausa||document.hidden)return;
+  if(ts-ultimo>=33){var dt=Math.min(.06,(ts-ultimo)/1000);ultimo=ts;t+=dt;actualizar(dt);dibujar();}
+  raf=requestAnimationFrame(cuadro);
+}
+function actualizar(dt){
+  var ix=0,iy=0;
+  if(teclas.ArrowLeft||teclas.a)ix-=1;
+  if(teclas.ArrowRight||teclas.d)ix+=1;
+  if(teclas.ArrowUp||teclas.w)iy-=1;
+  if(teclas.ArrowDown||teclas.s)iy+=1;
+  if(ix||iy){destino=null;var m=Math.hypot(ix,iy);ix/=m;iy/=m;}
+  else if(destino){var dx=destino.x-nave.x,dy=destino.y-nave.y,d=Math.hypot(dx,dy);if(d<3)destino=null;else{ix=dx/d;iy=dy/d;}}
+  NIEBLAS.forEach(function(n){n._x=n.x+Math.sin(t*.25+n.p)*28;n._y=n.y+Math.cos(t*.2+n.p)*8;});
+  var v=82,dentro=false;
+  NIEBLAS.forEach(function(n){if(Math.hypot(nave.x-n._x,nave.y-n._y)<n.r)dentro=true;});
+  if(dentro){v*=.45;if(!E.enNiebla)toast("Niebla de jerga: avanzas más lento.",1800);}
+  E.enNiebla=dentro;
+  nave.x=clamp(nave.x+ix*v*dt,14,ANCHO-14);nave.y=clamp(nave.y+iy*v*dt,20,ALTO-14);
+  if(ix)nave.dir=ix>0?1:-1;
+  nave.acum+=dt;
+  if((ix||iy)&&nave.acum>.12){nave.acum=0;nave.estela.push({x:nave.x-nave.dir*8,y:nave.y+6,a:1});if(nave.estela.length>9)nave.estela.shift();}
+  nave.estela.forEach(function(e){e.a-=dt*1.2;});
+  nave.estela=nave.estela.filter(function(e){return e.a>0;});
+  // puertos
+  for(var i=0;i<TODOS.length;i++){
+    var p=TODOS[i],dd=Math.hypot(nave.x-p.x,nave.y-p.y);
+    if(dd<22&&E.enPuerto!==p.id){E.enPuerto=p.id;tocarPuerto(p);return;}
+    if(E.enPuerto===p.id&&dd>40)E.enPuerto=null;
+  }
+  // tripulaciones silenciosas
+  for(var j=0;j<TRIPS.length;j++){
+    var c=TRIPS[j];
+    if(E.crews.indexOf(c.id)<0&&Math.hypot(nave.x-c.x,nave.y-c.y)<16){encontrarCrew(c);return;}
+  }
+}
+function barco(x,y,dir,s,casco,vela,bandera,jugador){
+  cx.save();cx.translate(x,y);cx.scale(dir*s,s);
+  cx.fillStyle=casco;cx.beginPath();cx.moveTo(-12,0);cx.lineTo(12,0);cx.lineTo(8,6);cx.lineTo(-9,6);cx.closePath();cx.fill();
+  cx.fillStyle="#2b1d10";cx.fillRect(-1,-17,2,17);
+  cx.fillStyle=vela;
+  cx.beginPath();cx.moveTo(1.5,-16);cx.lineTo(11,-4);cx.lineTo(1.5,-4);cx.closePath();cx.fill();
+  cx.beginPath();cx.moveTo(-1.5,-13);cx.lineTo(-9,-4);cx.lineTo(-1.5,-4);cx.closePath();cx.fill();
+  cx.fillStyle=bandera;cx.fillRect(1,-22,9,6);
+  if(jugador){cx.fillStyle="#fff";cx.beginPath();cx.arc(5.5,-19,2,0,6.283);cx.fill();cx.fillRect(4.5,-17.5,2,1.5);}
+  cx.restore();
+}
+function barquito(x,y,col){
+  cx.fillStyle=col;cx.beginPath();cx.moveTo(x-5,y);cx.lineTo(x+5,y);cx.lineTo(x+3,y+3);cx.lineTo(x-3,y+3);cx.closePath();cx.fill();
+  cx.beginPath();cx.moveTo(x,y-8);cx.lineTo(x+4,y-1);cx.lineTo(x,y-1);cx.closePath();cx.fill();
+}
+function casa(x,y,pared,techo){
+  cx.fillStyle=pared;cx.fillRect(x,y,9,7);
+  cx.fillStyle=techo;cx.beginPath();cx.moveTo(x-1.5,y);cx.lineTo(x+4.5,y-5);cx.lineTo(x+10.5,y);cx.closePath();cx.fill();
+}
+function isla(p){
+  var grande=p.id==="asuncion",rx=grande?34:26;
+  cx.fillStyle="#e2c27e";cx.beginPath();cx.ellipse(p.x,p.y+5,rx,12,0,0,6.283);cx.fill();
+  cx.fillStyle="#2f8f5b";cx.beginPath();cx.ellipse(p.x,p.y+2,rx-6,8,0,0,6.283);cx.fill();
+  casa(p.x-9,p.y-4,"#e6cf96","#c0452d");casa(p.x+4,p.y-6,"#cfe3e8","#2a8bb3");
+  if(grande)casa(p.x+16,p.y-3,"#e6cf96","#7a3b8c");
+  cx.fillStyle="#6b4528";cx.fillRect(p.x-3,p.y+8,6,9);
+  cx.font="800 9px Nunito,system-ui,sans-serif";cx.textAlign="center";cx.lineWidth=3;cx.strokeStyle="#06182b";
+  cx.strokeText(p.nombre,p.x,p.y+28);cx.fillStyle="#e6f6f2";cx.fillText(p.nombre,p.x,p.y+28);
+  var hecho=grande?E.jefeHecho:E.hecho[p.id];var bloq=grande&&E.piezas.length<5&&!E.jefeHecho;
+  if(hecho){
+    cx.fillStyle="#2fae86";cx.fillRect(p.x-1,p.y-26,1.8,16);
+    cx.beginPath();cx.moveTo(p.x+.8,p.y-26);cx.lineTo(p.x+12,p.y-21);cx.lineTo(p.x+.8,p.y-16);cx.closePath();cx.fill();
+  }else{
+    var by=p.y-22+(reducir?0:Math.sin(t*4+p.x)*2);
+    cx.fillStyle=bloq?"#7d8fa0":"#ffc233";cx.beginPath();cx.arc(p.x,by,6.5,0,6.283);cx.fill();
+    cx.fillStyle="#1e1409";cx.font="800 10px Nunito,system-ui,sans-serif";cx.fillText(bloq?"?":"!",p.x,by+3.6);
+  }
+}
+function dibujar(){
+  if(!fondo)return;
+  cx.setTransform(1,0,0,1,0,0);cx.drawImage(fondo,0,0);cx.setTransform(escala,0,0,escala,0,0);
+  var mv=reducir?0:t;
+  cx.strokeStyle="rgba(230,246,242,.16)";cx.lineWidth=1;cx.beginPath();
+  for(var i=0;i<34;i++){var x=((i*61+mv*9)%520)-20,y=14+((i*43)%250);cx.moveTo(x,y);cx.quadraticCurveTo(x+5,y-3,x+10,y);}
+  cx.stroke();
+  nave.estela.forEach(function(e){cx.fillStyle="rgba(230,246,242,"+(e.a*.5).toFixed(2)+")";cx.beginPath();cx.arc(e.x,e.y,1.6+e.a*1.5,0,6.283);cx.fill();});
+  TODOS.forEach(isla);
+  TRIPS.forEach(function(c){
+    var d=Math.hypot(nave.x-c.x,nave.y-c.y),hallada=E.crews.indexOf(c.id)>=0;
+    if(hallada){barquito(c.x,c.y,"#2fae86");return;}
+    if(d<RADIO_REVELA){
+      var a=(1-d/RADIO_REVELA)*.6;cx.strokeStyle="rgba(255,194,51,"+a.toFixed(2)+")";cx.lineWidth=1.2;
+      for(var k=0;k<2;k++){var r=4+((mv*14+k*9)%18);cx.beginPath();cx.arc(c.x,c.y,r,0,6.283);cx.stroke();}
+      if(d<55)barquito(c.x,c.y,"rgba(166,196,204,.85)");
+    }
+  });
+  NIEBLAS.forEach(function(n){
+    var x=n._x,y=n._y;cx.fillStyle="rgba(165,182,196,.42)";
+    [[0,0,1],[-.7,.2,.75],[.7,.15,.8]].forEach(function(q){cx.beginPath();cx.arc(x+q[0]*n.r*.8,y+q[1]*n.r*.5,n.r*.7*q[2],0,6.283);cx.fill();});
+    cx.fillStyle="rgba(230,246,242,.78)";cx.font="italic 700 8px Nunito,system-ui,sans-serif";cx.textAlign="center";cx.fillText(n.w,x,y+3);
+  });
+  AMB.forEach(function(a){
+    var ang=mv*a.w+a.ph,x=a.cx+Math.cos(ang)*a.rx,y=a.cy+Math.sin(ang)*a.ry;
+    var dir=(-Math.sin(ang)*a.w)>=0?1:-1;var rv=RIVALES[a.k];
+    barco(x,y+(reducir?0:Math.sin(t*3+a.ph)),dir,1.25,"#3b2a1a",rv.color,rv.color,false);
+  });
+  barco(nave.x,nave.y+(reducir?0:Math.sin(t*3)*1.2),nave.dir,1,"#8a4b2a","#f2ede0","#111",true);
+}
+function puntoMapa(e){var r=cv.getBoundingClientRect();return{x:clamp((e.clientX-r.left)/r.width*ANCHO,14,ANCHO-14),y:clamp((e.clientY-r.top)/r.height*ALTO,20,ALTO-14)};}
+cv.addEventListener("pointerdown",function(e){if(E.pausa)return;destino=puntoMapa(e);e.preventDefault();});
+cv.addEventListener("pointermove",function(e){if((e.buttons&1)&&!E.pausa)destino=puntoMapa(e);});
+function tecla(e){return e.key.length===1?e.key.toLowerCase():e.key;}
+window.addEventListener("keydown",function(e){
+  if(E.estado!=="mar"||E.pausa)return;var k=tecla(e);
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","w","a","s","d"].indexOf(k)>=0){teclas[k]=true;e.preventDefault();}
+});
+window.addEventListener("keyup",function(e){delete teclas[tecla(e)];});
+window.addEventListener("blur",function(){for(var k in teclas)delete teclas[k];});
+window.addEventListener("resize",function(){if(E.estado==="mar"){ajustar();dibujar();}});
+document.addEventListener("visibilitychange",function(){
+  if(document.hidden){E.ocultoDesde=performance.now();detenerMar();}
+  else{var d=performance.now()-E.ocultoDesde;if(E.r&&!E.r.resuelto)E.r.t0+=d;if(E.estado==="mar"&&!E.pausa)iniciarMar();}
+});
+
+/* ---------- puertos y tripulaciones ---------- */
+function alejar(p){
+  var dx=240-p.x,dy=140-p.y,d=Math.hypot(dx,dy)||1;
+  nave.x=clamp(p.x+dx/d*46,14,ANCHO-14);nave.y=clamp(p.y+dy/d*46,20,ALTO-14);E.enPuerto=null;destino=null;
+}
+function tocarPuerto(p){
+  if(p.id==="asuncion"){
+    if(E.jefeHecho){toast("El Fiscal ya navega con tu tripulación.");return;}
+    if(E.piezas.length<5){toast("Una niebla de jerga cubre Asunción. Necesitas las 5 piezas ("+E.piezas.length+"/5).",3400);return;}
+    E.pAct=p;abrirJefe();return;
+  }
+  if(E.hecho[p.id]){toast("Ya tradujiste este puerto.");return;}
+  E.pAct=p;abrirPuerto(p);
+}
+function crewDe(p){return TRIPS.filter(function(c){return c.puerto===p.id;})[0];}
+function encontrarCrew(c){
+  E.crews.push(c.id);E.claridad+=REGLAS.bonoCrew;E.pausa=true;detenerMar();
+  var p=PUERTOS.filter(function(x){return x.id===c.puerto;})[0];
+  var card=$("#crew-card");
+  card.innerHTML='<p class="etq">Tripulación silenciosa descubierta</p><h3>'+c.nombre+'</h3><p>«'+c.linea+'»</p><p><strong>+'+REGLAS.bonoCrew+'</strong> personas entendieron. Dejaron una ayuda para el puerto de '+p.nombre+'.</p><div><button class="btn" id="b-crew-ok" type="button">Seguir navegando</button></div>';
+  card.hidden=false;hud();dibujar();
+  $("#b-crew-ok").focus();
+}
+function cerrarCrew(){$("#crew-card").hidden=true;E.pausa=false;iniciarMar();}
+function abrirPuerto(p){
+  var rv=RIVALES[p.rival],crew=crewDe(p),ayuda=crew&&E.crews.indexOf(crew.id)>=0;
+  $("#p-puerto").innerHTML='<p class="etq">Puerto de '+p.nombre+' · '+p.region+'</p><h2>'+p.nombre+'</h2><p>'+p.llegada+'</p>'+
+    '<div class="chip-rival"><span class="bandera" style="background:'+rv.color+'"></span><strong>'+rv.nombre+'</strong> · fama '+fmt(rv.fama)+'</div>'+
+    (ayuda?'<p class="ayuda-crew"><strong>'+crew.nombre+'</strong> pasó por aquí: '+AYUDA_CREW+'</p>':'')+
+    '<div class="acciones"><button class="btn" id="b-inv" type="button">Investigar</button><button class="btn sec" id="b-seguir" type="button">Seguir navegando</button></div>';
+  ir("puerto");
+}
+
+/* ---------- acertijo ---------- */
+function abrirAcertijo(p){
+  var rv=RIVALES[p.rival],crew=crewDe(p),ayuda=crew&&E.crews.indexOf(crew.id)>=0;
+  var ops=barajar(p.opciones.map(function(o){return{t:o.t,ok:!!o.ok,tipo:o.tipo||"",porque:o.porque,off:false,usada:false};}));
+  ops.forEach(function(o){if(ayuda&&o.tipo==="trampa"){o.off=true;o.nota="Descartada por "+crew.nombre+".";}});
+  E.r={p:p,rev:[false,false,false],err:0,t0:performance.now(),penal:0,listo:false,aviso:false,resuelto:false,dur:E.tranquilo?Infinity:REGLAS.rivalSeg*1000,ops:ops};
+  var h='<div class="cartel"><p class="etq">Puerto de '+p.nombre+'</p><h2>Se busca: significado</h2><p class="jerga">'+p.jerga.replace(/«([^»]+)»/,'<mark>«$1»</mark>')+'</p><p>'+p.situacion+'</p><p class="recompensa">Recompensa: una pieza de traducción comunitaria</p></div>';
+  h+='<h2 class="sr">Pistas</h2><div class="pistas">';
+  p.pistas.forEach(function(s,i){h+='<button type="button" class="pista" data-i="'+i+'" aria-expanded="false"><span class="quien">Pista '+(i+1)+' · '+s.q+'</span><span class="tapa">Toca para investigar</span><span class="dice">«'+s.t+'»</span></button>';});
+  h+='</div>';
+  h+='<div class="carrera"><div class="carrera-top"><span><span class="bandera" style="background:'+rv.color+'"></span> '+rv.nombre+'</span><span id="rv-pct">'+(E.tranquilo?"Modo tranquilo":"0%")+'</span></div>'+
+     (E.tranquilo?'':'<div class="barra"><i id="rv-barra"></i></div>')+'<p class="rv-nota" id="rv-nota" aria-live="polite"></p><p class="rv-resp" id="rv-resp" hidden></p></div>';
+  h+='<div class="opciones">';
+  ops.forEach(function(o,i){h+='<button type="button" class="op" data-i="'+i+'"'+(o.off?' disabled':'')+'><span class="letra">'+"ABC"[i]+'</span><span class="cuerpo"><span>'+o.t+'</span><span class="nota" '+(o.off?'':'hidden')+'>'+(o.off?o.nota:'')+'</span></span></button>';});
+  h+='</div>';
+  $("#p-acertijo").innerHTML=h;
+  ir("acertijo");
+  var tit=$("#p-acertijo .cartel h2");if(tit){tit.setAttribute("tabindex","-1");}
+  if(!E.tranquilo)iniciarRival();
+}
+function iniciarRival(){detenerRival();timerRival=setInterval(tickRival,250);tickRival();}
+function detenerRival(){if(timerRival){clearInterval(timerRival);timerRival=0;}}
+function tickRival(){
+  var r=E.r;if(!r||r.resuelto||document.hidden||!isFinite(r.dur))return;
+  var barra=$("#rv-barra");if(!barra)return;
+  var prog=Math.min(1,(performance.now()-r.t0+r.penal)/r.dur);
+  barra.style.width=(prog*100).toFixed(1)+"%";$("#rv-pct").textContent=Math.round(prog*100)+"%";
+  if(prog>=.6&&!r.aviso){r.aviso=true;$("#rv-nota").textContent="Ya casi entregan una traducción muy elegante. Date prisa.";}
+  if(prog>=1&&!r.listo){
+    r.listo=true;var rv=RIVALES[r.p.rival];
+    $("#rv-nota").textContent=rv.nombre+" entregó su traducción.";
+    var rs=$("#rv-resp");rs.innerHTML='<strong>'+rv.nombre+' dijo:</strong> '+r.p.rivalDice+' Nadie en el puerto la entendió. Todavía puedes dar la tuya.';rs.hidden=false;
+  }
+}
+function elegir(i){
+  var r=E.r;if(!r||r.resuelto)return;var o=r.ops[i];if(!o||o.off||o.usada)return;
+  if(o.ok){resolver();return;}
+  o.usada=true;r.err++;if(isFinite(r.dur))r.penal+=r.dur*REGLAS.penalRivalPct;
+  var b=document.querySelector('.op[data-i="'+i+'"]');b.disabled=true;b.classList.add("mal");
+  var n=b.querySelector(".nota");n.textContent=o.porque;n.hidden=false;tickRival();
+}
+function resolver(){
+  var r=E.r,p=r.p;r.resuelto=true;detenerRival();
+  var gano=!r.listo&&isFinite(r.dur);var pts=puntosAcertijo(r.err,gano);
+  E.claridad+=pts.total;E.piezas.push(p.pieza);E.hecho[p.id]=true;
+  var pz=PIEZAS[p.pieza],rv=RIVALES[p.rival];
+  var h='<p class="burst" role="status">¡Ah! ¡Ya entendí!</p>';
+  h+='<div class="dos"><div class="cartel"><p class="etq">El Fiscal dijo</p><p class="jerga-mini">'+p.jerga+'</p></div><div class="criollo"><p class="etq">En criollo</p><p class="frase">'+pz.criollo+'</p></div></div>';
+  h+='<p><strong>Regla de convivencia:</strong> '+p.regla+'</p>';
+  h+='<div class="pieza-ganada">'+icoPieza(pz.color,44)+'<div><strong>Pieza desbloqueada: '+pz.nombre+'</strong><br><span class="suave">Ya está en tu Traducción Comunitaria.</span></div></div>';
+  h+='<ul class="puntos"><li><b>+'+pts.base+'</b> personas entendieron tu traducción</li>'+(pts.bono?'<li><b>+'+pts.bono+'</b> por llegar antes que '+rv.nombre+'</li>':'')+'</ul>';
+  if(r.listo)h+='<p class="rv-resp"><strong>'+rv.nombre+' entregó antes:</strong> '+p.rivalDice+' Fue rápido, pero nadie entendió.</p>';
+  else if(!E.tranquilo)h+='<p class="suave">'+rv.nombre+' todavía seguía armando su explicación cuando entregaste la tuya.</p>';
+  h+='<div class="acciones"><button class="btn" id="b-res-sig" type="button">'+(E.piezas.length===5?"Rumbo a Asunción":"Seguir navegando")+'</button></div>';
+  $("#p-resultado").innerHTML=h;ir("resultado");
+}
+
+/* ---------- traductor ---------- */
+function abrirTraductor(){
+  var h='<div class="herr"><p class="etq">Herramienta desbloqueada</p><h2>Traducción Comunitaria</h2><p>Convertir la complejidad institucional en comprensión ciudadana.</p></div><ul class="entradas">';
+  PUERTOS.forEach(function(p){
+    var pz=PIEZAS[p.pieza],ok=E.piezas.indexOf(p.pieza)>=0;
+    h+=ok?'<li class="entrada"><div style="display:flex;gap:10px;align-items:center">'+icoPieza(pz.color,36)+'<span class="lat">'+pz.latin+'</span></div><p><strong>'+pz.criollo+'</strong></p><p class="suave">'+p.regla+'</p></li>'
+         :'<li class="entrada vacia"><p class="etq">Pieza por descubrir</p><p>Está en el puerto de '+p.nombre+'.</p></li>';
+  });
+  h+='</ul><div class="acciones"><button class="btn" id="b-trad-volver" type="button">Volver al mar</button></div>';
+  $("#p-traductor").innerHTML=h;ir("traductor");
+}
+
+/* ---------- jefe ---------- */
+function abrirJefe(){
+  E.jefe={i:0,err:0,fin:false,activo:false};
+  $("#p-jefe").innerHTML='<div class="panel"><p class="etq">Asunción · Puerto final</p><h2>El Fiscal Latinoso</h2><p>Cuando no sabe cómo explicar algo, se refugia en el latín. No es mala persona: es un hábito. Tiene un discurso entero atrapado en jerga y tú traes cinco piezas para traducirlo.</p><div class="acciones"><button class="btn" id="b-jefe-ini" type="button">Empezar la traducción en vivo</button><button class="btn sec" id="b-jefe-salir" type="button">Volver al mar</button></div></div>';
+  ir("jefe");
+}
+function discurso(){
+  var j=E.jefe,h="";
+  JEFE.segmentos.forEach(function(s){
+    if(s.t!==undefined){h+=s.t;return;}
+    var idx=JEFE.orden.indexOf(s.k),pz=PIEZAS[s.k];
+    if(idx<j.i)h+='<mark class="ok">'+pz.slot+'</mark>';
+    else if(idx===j.i&&!j.fin)h+='<mark class="ahora">'+pz.lat+'</mark>';
+    else h+='<mark class="pend">'+pz.lat+'</mark>';
+  });
+  return h;
+}
+function renderJefe(msg){
+  var j=E.jefe,k=JEFE.orden[j.i],h="";
+  h+='<div class="cartel"><p class="etq">Habla el Fiscal Latinoso</p><h2>Se busca: significado</h2><p class="discurso">«'+discurso()+'»</p></div>';
+  h+='<div class="panel"><p><strong>El Fiscal dijo «'+PIEZAS[k].lat+'».</strong> ¿Qué pieza de tu Traducción Comunitaria lo traduce?</p><p class="aviso" id="j-aviso" aria-live="polite">'+(msg||"")+'</p><div class="niebla" aria-hidden="true"><i style="width:'+Math.min(100,j.err*20)+'%"></i></div><div class="piezas-btn">';
+  JEFE.orden.slice().sort().forEach(function(id){var pz=PIEZAS[id];h+='<button type="button" class="pz-btn" data-id="'+id+'">'+icoPieza(pz.color,34)+'<span><strong>'+pz.nombre+'</strong><small>'+pz.criollo+'</small></span></button>';});
+  h+='</div></div>';
+  $("#p-jefe").innerHTML=h;
+}
+function elegirPieza(id){
+  var j=E.jefe;if(!j||j.fin)return;var k=JEFE.orden[j.i];
+  if(id===k){j.i++;if(j.i>=JEFE.orden.length){finJefe();return;}renderJefe("¡Eso es! Sigue el discurso.");}
+  else{j.err++;renderJefe("Esa pieza traduce otra cosa: «"+PIEZAS[id].latin+"». Prueba de nuevo.");}
+}
+function finJefe(){
+  var j=E.jefe;j.fin=true;E.jefeHecho=true;var pts=puntosJefe(j.err);E.claridad+=pts;hud();
+  var plano="";JEFE.segmentos.forEach(function(s){plano+=s.t!==undefined?s.t:PIEZAS[s.k].slot;});
+  var h='<p class="burst" role="status">¡Ah! ¡Ya entendí!</p>';
+  h+='<div class="dos"><div class="cartel"><p class="etq">El Fiscal dijo</p><p class="discurso" style="text-align:left">«'+discursoLatin()+'»</p></div><div class="criollo"><p class="etq">En criollo</p><p class="frase">'+plano+'</p></div></div>';
+  h+='<div class="panel"><p>El Fiscal Latinoso se quedó callado un momento. «¿Eso era todo lo que quería decir?», preguntó, y por primera vez sonrió. «Dicho así, hasta yo lo entiendo.» Subió a bordo como Fiscal Traductor.</p><ul class="puntos"><li><b>+'+pts+'</b> personas entendieron la traducción final</li></ul><div class="acciones"><button class="btn" id="b-final" type="button">Ver el ranking</button></div></div>';
+  $("#p-jefe").innerHTML=h;
+}
+function discursoLatin(){var h="";JEFE.segmentos.forEach(function(s){h+=s.t!==undefined?s.t:PIEZAS[s.k].lat;});return h;}
+
+/* ---------- final ---------- */
+function renderFinal(){
+  var fama=famaJugador(E.piezas.length);
+  var lista=listaRanking(E.claridad,fama,E.crews);
+  var faltan=5-E.crews.length;
+  var mejor=0;try{mejor=Number(localStorage.getItem("trampaMental.mejor")||0);if(E.claridad>mejor){localStorage.setItem("trampaMental.mejor",String(E.claridad));}}catch(e){}
+  var h='<div class="panel"><p class="etq">Fin del episodio</p><h2>'+rango(E.claridad)+'</h2><p class="cierre">Fama es lo que se ve. Claridad es lo que se entiende.</p>';
+  h+='<ol class="ranking" aria-label="Ranking por claridad">';
+  lista.forEach(function(f){
+    h+='<li class="fila '+f.tipo+'"><div class="fila-top"><strong>'+f.nombre+'</strong><span class="tag">'+f.tag+'</span></div>'+
+       '<div class="metro f"><span>Fama</span><div class="b"><i style="width:'+Math.max(2,f.fama/REGLAS.famaMax*100).toFixed(1)+'%"></i></div><b>'+fmt(f.fama)+'</b></div>'+
+       '<div class="metro c"><span>Claridad</span><div class="b"><i style="width:'+Math.max(2,Math.min(100,f.claridad/REGLAS.claridadMax*100)).toFixed(1)+'%"></i></div><b>'+fmt(f.claridad)+'</b></div></li>';
+  });
+  h+='</ol>';
+  h+='<p>'+(faltan>0?'Te quedaron '+faltan+' tripulaciones sin descubrir. Las más fuertes casi nunca salen a la vista: hay que navegar fuera de la ruta.':'Descubriste a todas las tripulaciones silenciosas. Ninguna salía en el mapa, y todas hacían más claro el camino para otros.')+'</p>';
+  h+='<p class="suave">Herramienta desbloqueada: Traducción Comunitaria. Convertir la complejidad institucional en comprensión ciudadana.</p>';
+  h+='<div class="acciones"><button class="btn" id="b-reiniciar" type="button">Navegar de nuevo</button></div></div>';
+  $("#p-final").innerHTML=h;
+}
+function reiniciar(){
+  E.piezas=[];E.claridad=0;E.crews=[];E.hecho={};E.r=null;E.jefe=null;E.jefeHecho=false;E.enPuerto=null;E.pausa=false;E.enNiebla=false;
+  nave.x=240;nave.y=140;nave.dir=1;nave.estela=[];destino=null;$("#crew-card").hidden=true;
+  mostrarMejor();ir("titulo");
+}
+function mostrarMejor(){
+  try{var m=Number(localStorage.getItem("trampaMental.mejor")||0);var el=$("#t-mejor");if(m>0){el.textContent="Tu mejor claridad: "+fmt(m)+" personas.";el.hidden=false;}}catch(e){}
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener("click",function(e){
+  var b=e.target.closest("button");if(!b)return;
+  if(b.classList.contains("pista")){var ab=b.getAttribute("aria-expanded")==="true";b.setAttribute("aria-expanded",ab?"false":"true");return;}
+  if(b.classList.contains("op")){elegir(Number(b.getAttribute("data-i")));return;}
+  if(b.classList.contains("pz-btn")){elegirPieza(b.getAttribute("data-id"));return;}
+  switch(b.id){
+    case"b-zarpar":E.tranquilo=$("#c-tranquilo").checked;ir("mar");break;
+    case"b-trad":abrirTraductor();break;
+    case"b-trad-volver":ir("mar");break;
+    case"b-crew-ok":cerrarCrew();break;
+    case"b-inv":abrirAcertijo(E.pAct);break;
+    case"b-seguir":alejar(E.pAct);ir("mar");break;
+    case"b-res-sig":ir("mar");if(E.piezas.length===5&&!E.jefeHecho)toast("Asunción ya está a la vista. Rumbo al norte.",3200);break;
+    case"b-jefe-ini":E.jefe.activo=true;renderJefe("");break;
+    case"b-jefe-salir":alejar(E.pAct);ir("mar");break;
+    case"b-final":renderFinal();ir("final");break;
+    case"b-reiniciar":reiniciar();break;
+  }
+});
+
+/* ---------- arranque ---------- */
+window.TM={E:E,abrirPuerto:function(i){E.pAct=PUERTOS[i];abrirPuerto(PUERTOS[i]);},abrirJefe:function(){E.pAct=ASUNCION;abrirJefe();},ir:ir};
+function instantanea(){return{piezas:E.piezas,claridad:E.claridad,crews:E.crews,hecho:E.hecho,tranquilo:E.tranquilo,jefeHecho:E.jefeHecho,x:nave.x,y:nave.y};}
+try{if(window.claude&&window.claude.hot&&window.claude.hot.snapshot)window.claude.hot.snapshot(instantanea);}catch(e){}
+function arrancar(d){
+  d=d||{};
+  mostrarMejor();
+  if(d.piezas&&(d.piezas.length||(d.crews&&d.crews.length))&&!d.jefeHecho){
+    E.piezas=d.piezas;E.claridad=d.claridad||0;E.crews=d.crews||[];E.hecho=d.hecho||{};E.tranquilo=!!d.tranquilo;
+    nave.x=d.x||240;nave.y=d.y||140;ir("mar");
+  }else ir("titulo");
+}
+if(window.claude&&window.claude.hot&&window.claude.hot.ready)window.claude.hot.ready(arrancar);
+else arrancar((window.claude&&window.claude.hot&&window.claude.hot.data)||{});
+})();
+</script>
+
+</body></html>
