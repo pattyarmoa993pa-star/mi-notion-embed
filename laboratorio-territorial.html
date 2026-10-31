@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laboratorio de análisis territorial</title>
+<style>
+:root{--bg:#060a13;--panel:#0b1220;--panel2:#0f1830;--line:#1b2744;--txt:#d9e3f7;--mut:#7c8cae;--teal:#2ee6a6;--amber:#ffb347;--red:#ff4d6d;--violet:#a78bfa;--cyan:#4cc9f0}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px}
+header{padding:14px 20px 10px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0a1226,#060a13)}
+header .kicker{font-size:11px;letter-spacing:.18em;color:var(--teal);text-transform:uppercase}
+header h1{margin:2px 0 2px;font-size:20px;font-weight:650;letter-spacing:.01em}
+header p{margin:0;color:var(--mut);max-width:980px;line-height:1.45}
+header .q{color:var(--txt);font-style:italic}
+.app{display:grid;grid-template-columns:292px minmax(0,1fr) 312px;gap:12px;padding:12px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.panel h3{margin:0 0 8px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);font-weight:600}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tabs{display:flex;gap:6px}
+.tab{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:8px 4px;border-radius:8px;cursor:pointer;font-size:12px;line-height:1.2}
+.tab b{display:block;font-size:15px;color:var(--teal)}
+.tab.on{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal) inset,0 0 18px rgba(46,230,166,.15)}
+.desc{margin-top:8px;color:var(--mut);line-height:1.45}
+.desc b{color:var(--txt)}
+.goal{margin-top:8px;padding:8px;border-radius:8px;background:rgba(46,230,166,.07);border:1px solid rgba(46,230,166,.25);line-height:1.4}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+button{font:inherit;background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:7px 10px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--cyan)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.pri{background:linear-gradient(180deg,#1bb98a,#118765);border-color:#2ee6a6;color:#02150f;font-weight:650}
+button.warn{border-color:var(--red);color:#ffc3cd}
+button.full{width:100%;text-align:left;margin-top:6px}
+button small{color:var(--mut);float:right}
+input[type=range]{width:100%;accent-color:var(--teal)}
+label.chk{display:flex;gap:6px;align-items:center;margin-top:6px;color:var(--txt)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;border-radius:0;font-size:11.5px;padding:7px 4px}
+.seg button.on{background:#18305a;color:#fff}
+.bar{height:8px;background:#121c35;border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--cyan));width:0;transition:width .3s}
+.stage{position:relative;height:min(78vh,780px);min-height:540px;background:radial-gradient(ellipse at 50% 45%,#0e1a36 0%,#070c18 70%);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+.hud{position:absolute;pointer-events:none;font-size:11px;color:var(--mut)}
+.hud.tl{left:12px;top:10px}
+.hud.bl{left:12px;bottom:10px;width:min(300px,45%)}
+.hud.br{right:12px;bottom:10px;text-align:right}
+.hud .yr{font-size:26px;color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums}
+.vbar{margin-top:5px}
+.vbar span{display:block;margin-bottom:2px}
+.vbar .bar{height:6px}
+.vbar.soc i{background:linear-gradient(90deg,#7c3aed,var(--violet))}
+.vbar.ins i{background:linear-gradient(90deg,#d97706,var(--amber))}
+.legend{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.legend i{display:inline-block;width:14px;height:0;border-top:2px solid;vertical-align:middle;margin-right:4px}
+#tip{position:absolute;display:none;pointer-events:none;background:rgba(7,12,24,.95);border:1px solid var(--line);padding:6px 8px;border-radius:8px;font-size:11.5px;line-height:1.4;max-width:230px;z-index:5}
+#res{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(3,6,12,.72);backdrop-filter:blur(3px);z-index:8}
+#res .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;max-width:430px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#res h2{margin:0 0 4px;font-size:20px}
+#res .v{font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+#res ul{padding-left:18px;color:var(--mut);line-height:1.55}
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.k{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px}
+.k .l{font-size:10.5px;color:var(--mut);line-height:1.25}
+.k .n{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.k .s{font-size:10.5px;color:var(--mut)}
+.k.big{grid-column:1/3}
+.k.big .n{font-size:34px}
+.gauge{position:relative;height:10px;border-radius:6px;margin-top:6px;background:linear-gradient(90deg,var(--teal),var(--amber) 55%,var(--red))}
+.gauge b{position:absolute;top:-4px;width:3px;height:18px;background:#fff;border-radius:2px;box-shadow:0 0 8px #fff;transition:left .3s}
+#chart{width:100%;height:150px;display:block}
+#log{height:170px;overflow:auto;font-size:11.5px;line-height:1.45;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+#log div{padding:2px 0;border-bottom:1px dashed #131d36}
+.ev{color:#ff9aae}.act{color:var(--cyan)}.inst{color:var(--amber)}.ok{color:var(--teal)}.warn{color:#ff7a90}
+#sel .t{font-size:14px;font-weight:650;margin-bottom:4px}
+#sel .m{color:var(--mut);line-height:1.5}
+#sel .m b{color:var(--txt);font-weight:600}
+.modal{position:fixed;inset:0;background:rgba(2,4,9,.8);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:760px;max-height:88vh;overflow:auto;padding:18px 20px}
+.modal h2{margin:0 0 8px}
+table{border-collapse:collapse;width:100%;margin:8px 0}
+td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+pre{background:#050810;border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;color:#b9c7e6;font-size:12px}
+.note{color:var(--mut);font-size:11px;margin-top:8px;line-height:1.4}
+@media(max-width:1180px){.app{grid-template-columns:1fr}.stage{height:70vh}}
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Experimentar con el futuro · Laboratorio de análisis territorial</div>
+  <h1>Brecha de adaptación: el país real vs. el país que las instituciones creen administrar</h1>
+  <p><span class="q">¿Puede el Estado acompañar la velocidad de transformación de su sociedad?</span> Ningún punto está completamente aislado: cada comunidad forma parte de una red de dependencias económicas, sociales, territoriales e internacionales. Simulá décadas en minutos y decidí dónde invertir antes de que los problemas se vuelvan difíciles y costosos de corregir.</p>
+</header>
+
+<div class="app">
+  <!-- IZQUIERDA -->
+  <div class="col">
+    <div class="panel">
+      <h3>Escenario de entrenamiento</h3>
+      <div class="tabs" id="tabs"></div>
+      <div class="desc" id="scDesc"></div>
+      <div class="goal" id="scGoal"></div>
+    </div>
+    <div class="panel">
+      <h3>Tiempo</h3>
+      <div class="row">
+        <button class="pri" id="bPlay">▶ Iniciar</button>
+        <button id="bStep">⏭ Paso</button>
+        <button id="bReset">↺ Reiniciar</button>
+      </div>
+      <div style="margin-top:8px;color:var(--mut)">Velocidad: <span id="spdL"></span></div>
+      <input type="range" id="spd" min="250" max="2500" step="50" value="1100">
+      <h3 style="margin-top:12px">Capas</h3>
+      <div class="seg" id="views">
+        <button data-v="real">Realidad</button>
+        <button data-v="over" class="on">Superpuesta</button>
+        <button data-v="state">Lo que ve el Estado</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="oDep"> Dependencias de servicios</label>
+      <label class="chk"><input type="checkbox" id="oCen"> Centralidad (PageRank) y rutas críticas</label>
+    </div>
+    <div class="panel">
+      <h3>Gestión institucional</h3>
+      <div class="row" style="justify-content:space-between"><span>Puntos de gestión</span><b id="budN">6 / 15</b></div>
+      <div class="bar" style="margin-top:5px"><i id="budB"></i></div>
+      <div class="note">+3 por año. Cada acción tarda en surtir efecto: la institución nunca responde al instante.</div>
+      <button class="full" id="bInt">Integrar sistemas <small id="cInt">5 pts</small></button>
+      <button class="full" id="bDig">Digitalizar trámites <small id="cDig">4 pts</small></button>
+      <div id="evBox"></div>
+      <button class="full" id="bAdv">🧭 Sugerir dónde invertir en conectividad</button>
+      <div class="note" id="advTxt"></div>
+    </div>
+    <div class="panel" id="sel"><h3>Selección</h3><div class="m">Hacé clic en una localidad, un hub externo o una conexión.</div></div>
+  </div>
+
+  <!-- CENTRO -->
+  <div class="col">
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="hud tl"><div class="yr" id="yr">Año 0</div><div id="scName"></div></div>
+      <div class="hud bl">
+        <div class="vbar soc"><span>Velocidad de la sociedad · nuevas relaciones/año <b id="vsN"></b></span><div class="bar"><i id="vsB"></i></div></div>
+        <div class="vbar ins"><span>Velocidad institucional · registros/año <b id="viN"></b></span><div class="bar"><i id="viB"></i></div></div>
+      </div>
+      <div class="hud br"><div class="legend" id="legend"></div></div>
+      <div id="tip"></div>
+      <div id="res"><div class="card" id="resCard"></div></div>
+    </div>
+    <div class="note">Datos ilustrativos y posiciones aproximadas, pensados para entrenar el razonamiento sobre sistemas, no para predecir la realidad.</div>
+  </div>
+
+  <!-- DERECHA -->
+  <div class="col">
+    <div class="panel">
+      <h3>Brecha de adaptación</h3>
+      <div class="kgrid">
+        <div class="k big"><div class="l">Brecha total (0 = Estado ve todo · 1 = Estado ciego)</div><div class="n" id="kB">0.00</div><div class="gauge"><b id="gB" style="left:0"></b></div><div class="s" id="kBs"></div></div>
+        <div class="k"><div class="l">Brecha de red (conexiones no registradas)</div><div class="n" id="kBe">–</div></div>
+        <div class="k"><div class="l">Brecha de datos (población desactualizada)</div><div class="n" id="kBd">–</div></div>
+        <div class="k"><div class="l">Presión máx. real</div><div class="n" id="kP">–</div><div class="s" id="kPs"></div></div>
+        <div class="k"><div class="l">Presión máx. que ve el Estado</div><div class="n" id="kPr">–</div><div class="s">subestimación</div></div>
+        <div class="k"><div class="l">Población sin servicio</div><div class="n" id="kU">–</div></div>
+        <div class="k"><div class="l">Bloques de territorio</div><div class="n" id="kC">–</div><div class="s" id="kCs"></div></div>
+        <div class="k"><div class="l">Rutas sin punto único de falla</div><div class="n" id="kR">–</div></div>
+        <div class="k"><div class="l">Conexión internacional degradada</div><div class="n" id="kI">–</div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Dos velocidades</h3>
+      <canvas id="chart"></canvas>
+      <div class="note"><span style="color:var(--violet)">━</span> red real · <span style="color:var(--amber)">━</span> red registrada · <span style="color:var(--red)">▒</span> brecha · <span style="color:var(--teal)">╌</span> índice de brecha</div>
+    </div>
+    <div class="panel"><h3>Bitácora</h3><div id="log"></div></div>
+    <div class="panel">
+      <h3>Para desarrolladores</h3>
+      <button class="full" id="bMc">🧱 Cómo se traslada a Minecraft Education</button>
+      <button class="full" id="bJson">⬇ Exportar estado (JSON)</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="mc"><div class="box">
+  <h2>Del simulador a Minecraft Education</h2>
+  <div class="note" style="margin-top:0">El motor (<code>ENGINE</code> + <code>METRICS</code>) no toca el DOM: son funciones puras sobre un grafo. Cada regla del tick se puede copiar a Python (Code Builder) casi línea por línea.</div>
+  <table>
+    <tr><th>Simulador</th><th>En Minecraft</th></tr>
+    <tr><td>Nodo localidad</td><td>Plataforma con una torre; altura = población</td></tr>
+    <tr><td>Presión de servicios</td><td>Color del bloque: concreto verde, amarillo, rojo</td></tr>
+    <tr><td>Arista de ruta</td><td>Camino o vía de rieles; cortarla = quitar bloques</td></tr>
+    <tr><td>Relación internacional / conocimiento</td><td>Línea de linternas o redstone hacia un portal (hub externo)</td></tr>
+    <tr><td>Red real vs. red registrada</td><td>Dos capas: la real a nivel suelo y la «registrada» elevada. Lo que no tiene contraparte arriba es la brecha</td></tr>
+    <tr><td>Puntos de gestión</td><td>Ítems en el inventario del jugador-Estado</td></tr>
+    <tr><td>Un año (tick)</td><td>Un ciclo de día o un temporizador de comandos</td></tr>
+    <tr><td>Cola institucional con retardo</td><td>Cofres/embudos con un temporizador antes de «oficializar» un bloque</td></tr>
+  </table>
+  <b>Un año de simulación, en pseudocódigo</b>
+<pre>def tick(S):
+    S.t += 1
+    ejecutar_cola(S)            # acciones institucionales que vencen
+    for n in S.nodos:
+        n.poblacion *= 1.008
+        n.extranjeros += n.extranjeros * tasa * (1 + 0.1 * n.peso_intl)
+        for _ in poisson(lambda_relaciones(n)):
+            crear_o_reforzar_arista(n)       # intl 55% / conocimiento 45%
+    aplicar_eventos(S)          # +20% población, ruta cortada...
+    institucion(S)              # registra las R aristas con mayor brecha (retardo d)
+    capacidad *= 1.008          # el Estado crece más lento que la sociedad
+    metricas(S)                 # presión, componentes, brecha</pre>
+  <b>Fórmulas clave</b>
+<pre>presion_i   = (poblacion_i + derivaciones_hijos + desborde_hijos) / capacidad_i
+brecha_red  = 1 - Σ min(peso_real, peso_registrado) / Σ peso_real
+brecha_datos= Σ |N_real - N_registrado| / Σ N_real
+BRECHA      = 0.6·brecha_red + 0.4·min(1, 4·brecha_datos)</pre>
+  <div class="note">Con «Exportar estado (JSON)» obtenés el grafo actual con coordenadas en bloques (0–200) listo para generar la estructura con un script.</div>
+  <div style="text-align:right;margin-top:10px"><button id="mcX">Cerrar</button></div>
+</div></div>
+
+<script>
+//ENGINE-START
+const MAPR={lon0:-62.7,lon1:-54.2,lat0:-19.2,lat1:-27.6};
+const NODE_DEF=[
+['asu','Asunción',-57.63,-25.28,640,30,null,1.30],
+['cde','Ciudad del Este',-54.61,-25.51,270,60,'asu',1.10],
+['enc','Encarnación',-55.87,-27.33,125,20,'asu',1.12],
+['con','Concepción',-57.43,-23.40,88,2,'asu',1.25],
+['pjc','Pedro Juan Caballero',-55.73,-22.55,105,25,'con',1.14],
+['sal','Salto del Guairá',-54.31,-24.06,28,12,'cde',1.20],
+['vil','Villarrica',-56.20,-26.05,62,3,'asu',1.25],
+['cov','Coronel Oviedo',-56.44,-25.35,71,4,'asu',1.25],
+['pil','Pilar',-58.30,-26.86,33.5,1.5,'asu',1.25],
+['sep','San Estanislao',-56.44,-24.45,38,2,'cov',1.25],
+['fil','Filadelfia',-60.03,-22.35,17,8,'asu',1.15],
+['poz','Pozo Colorado',-58.80,-23.49,7.7,0.3,'con',1.30],
+['fol','Fuerte Olimpo',-57.87,-21.04,4.9,0.1,'con',1.30],
+['caa','Caazapá',-56.00,-26.75,11.6,0.4,'vil',1.30]];
+const HUB_DEF=[['bra','Brasil',.92,.55,.30],['arg','Argentina',.10,.80,.25],['asi','Asia Oriental',.88,.10,.20],['eur','Europa',.12,.15,.15],['nor','Norteamérica',.50,.06,.10]];
+const ROUTE_DEF=[['asu','cov'],['cov','cde'],['cov','vil'],['vil','caa'],['caa','enc'],['enc','cde'],['asu','pil'],['pil','enc'],['asu','con'],['con','pjc'],['con','sep'],['sep','cov'],['cde','sal'],['asu','poz'],['poz','fil'],['poz','con'],['con','fol'],['asu','vil']];
+const INTL_DEF=[['bra','pjc',2],['bra','cde',3],['bra','sal',1.5],['bra','enc',.6],['arg','enc',2.5],['arg','pil',1],['arg','asu',2],['asi','cde',2],['asi','asu',1.5],['eur','asu',2],['eur','fil',2],['nor','asu',1.5]];
+const KNOW_DEF=[['asu','enc',.8],['asu','cde',1],['cde','pjc',.6],['fil','asu',.7]];
+const SC={
+ A:{id:'A',name:'Presión demográfica',T:20,fgn:.04,rel:1,seed:11,b0:6},
+ B:{id:'B',name:'Ruptura de ruta',T:20,fgn:.04,rel:1,seed:22,b0:6},
+ C:{id:'C',name:'Brecha de adaptación',T:30,fgn:.12,rel:4,seed:33,b0:6}};
+const BROAD={reg:true};
+
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function effN(n){return n.nat+1.6*n.fgn}
+function lg(S,msg,kind){S.log.push({t:S.t,msg:msg,kind:kind||''});if(S.log.length>200)S.log.shift()}
+function nm(S,id){return S.nodes[id]?S.nodes[id].name:(S.hubs[id]?S.hubs[id].name:id)}
+function normPos(n){return {x:(n.lon-MAPR.lon0)/(MAPR.lon1-MAPR.lon0),y:(MAPR.lat0-n.lat)/(MAPR.lat0-MAPR.lat1)}}
+
+function addEdge(S,a,b,type,w,wReg){
+ const e={id:S.nid++,a:a,b:b,type:type,w:w,wReg:wReg,active:true,seenActive:true,pendReg:false};
+ S.edges.push(e);return e}
+
+function initState(key){
+ const sc=SC[key],rng=mulberry(sc.seed);
+ const S={key:key,sc:sc,t:0,T:sc.T,rng:rng,nodes:{},hubs:{},edges:[],nid:1,queue:[],log:[],hist:[],budget:sc.b0,R:1,delay:3,lev:{int:0,dig:0},boosts:0,cuts:0,done:false,res:null,vSoc:0,vInst:0,acc:{add:0,reg:0},order:[],M:null,adv:null};
+ NODE_DEF.forEach(function(d){S.nodes[d[0]]={id:d[0],name:d[1],lon:d[2],lat:d[3],nat:d[4],fgn:d[5],fgn0:d[5],parent:d[6],k:d[7],cap:0,popReg:0,pendUpd:false,pendCap:false,intlW:0}});
+ HUB_DEF.forEach(function(d){S.hubs[d[0]]={id:d[0],name:d[1],fx:d[2],fy:d[3],size:d[4]}});
+ const depth=function(id){let d=0,n=S.nodes[id];while(n.parent){d++;n=S.nodes[n.parent]}return d};
+ S.order=Object.keys(S.nodes).sort(function(a,b){return depth(b)-depth(a)});
+ ROUTE_DEF.forEach(function(r){const e=addEdge(S,r[0],r[1],'route',1.5,1.5)});
+ INTL_DEF.forEach(function(r){addEdge(S,r[0],r[1],'intl',r[2],rng()<.55?r[2]:0)});
+ KNOW_DEF.forEach(function(r){addEdge(S,r[0],r[1],'know',r[2],rng()<.5?r[2]:0)});
+ // calibración de capacidades: demanda inicial con derivaciones x k
+ const D={};S.order.forEach(function(id){D[id]=effN(S.nodes[id])});
+ S.order.forEach(function(id){const n=S.nodes[id];if(n.parent)D[n.parent]+=0.1*effN(n)});
+ // (el orden hijos->padre garantiza D completo antes de acumular hacia arriba)
+ const D2={};S.order.forEach(function(id){D2[id]=effN(S.nodes[id])});
+ S.order.forEach(function(id){const n=S.nodes[id];if(n.parent)D2[n.parent]+=0.1*effN(n)});
+ S.order.forEach(function(id){const n=S.nodes[id];n.cap=D2[id]*n.k;n.popReg=effN(n)*(0.93+0.07*rng())});
+ metrics(S);
+ S.hist.push({t:0,wReal:S.M.wReal,wReg:S.M.wRegE,B:S.M.B});
+ lg(S,'Escenario '+sc.id+' · '+sc.name+' iniciado.','ok');
+ return S}
+
+function comps(S,skip){
+ const adj={};Object.keys(S.nodes).forEach(function(i){adj[i]=[]});
+ S.edges.forEach(function(e){if(e.type==='route'&&e.active&&e.id!==skip){adj[e.a].push(e.b);adj[e.b].push(e.a)}});
+ const comp={};let c=0;const pops=[];
+ Object.keys(S.nodes).forEach(function(s){if(comp[s]!==undefined)return;const q=[s];comp[s]=c;let p=0;
+  while(q.length){const u=q.pop();p+=effN(S.nodes[u]);adj[u].forEach(function(v){if(comp[v]===undefined){comp[v]=c;q.push(v)}})}
+  pops.push(p);c++});
+ return {comp:comp,pops:pops,n:c}}
+
+function cascade(S,useReg,cc){
+ const comp=cc.comp,inflow={},P={},ovr={};let un=0,tot=0;
+ Object.keys(S.nodes).forEach(function(i){inflow[i]=0});
+ S.order.forEach(function(id){
+  const n=S.nodes[id],L=useReg?n.popReg:effN(n);tot+=L;
+  const Dm=L+inflow[id];P[id]=Dm/n.cap;
+  const ov=Math.max(0,Dm-n.cap),ref=0.1*L+ov;
+  if(n.parent){if(comp[id]===comp[n.parent])inflow[n.parent]+=ref;else un+=ref}else un+=ov});
+ return {P:P,un:un,tot:tot}}
+
+function metrics(S){
+ const cc=comps(S),M={};M.cc=cc;
+ const real=cascade(S,false,cc),reg=cascade(S,true,cc);
+ M.P=real.P;M.Preg=reg.P;M.unPct=real.un/real.tot*100;
+ let pm=0,pmId='',pr=0;Object.keys(M.P).forEach(function(i){if(M.P[i]>pm){pm=M.P[i];pmId=i}if(M.Preg[i]>pr)pr=M.Preg[i]});
+ M.pmax=pm;M.pmaxId=pmId;M.pregmax=pr;
+ const tot=Object.keys(S.nodes).reduce(function(a,i){return a+effN(S.nodes[i])},0);
+ let big=0,bi=0;cc.pops.forEach(function(p,i){if(p>big){big=p;bi=i}});M.mainComp=bi;M.ncomp=cc.n;M.isoPct=(tot-big)/tot*100;
+ // brecha de red
+ let num=0,den=0,wReal=0;
+ S.edges.forEach(function(e){const seen=e.seenActive&&e.wReg>0;
+  if(e.active){den+=e.w;wReal+=e.w}else if(seen)den+=e.wReg;
+  if(e.active&&e.seenActive)num+=Math.min(e.w,e.wReg)});
+ M.wReal=wReal;M.wRegE=num;M.Be=den>0?1-num/den:0;
+ let dd=0;Object.keys(S.nodes).forEach(function(i){const n=S.nodes[i],N=effN(n);dd+=Math.min(Math.abs(N-n.popReg),N)});
+ M.Bd=dd/tot;M.B=0.6*M.Be+0.4*Math.min(1,4*M.Bd);
+ // robustez y criticidad de rutas
+ M.crit={};let rts=0,nonBridge=0;
+ S.edges.forEach(function(e){if(e.type!=='route'||!e.active)return;rts++;
+  const c2=comps(S,e.id);let b2=0;c2.pops.forEach(function(p){if(p>b2)b2=p});
+  const loss=Math.max(0,(big-b2)/tot);M.crit[e.id]=loss;if(c2.n===cc.n)nonBridge++});
+ M.redund=rts?nonBridge/rts:1;
+ // internacional degradado
+ let iw=0,idg=0;S.edges.forEach(function(e){if(e.type==='intl'&&e.active){iw+=e.w;if(cc.comp[e.b]!==bi)idg+=e.w}});
+ M.intlDeg=iw?idg/iw:0;
+ // pagerank sobre aristas activas
+ const ids=Object.keys(S.nodes).concat(Object.keys(S.hubs)),idx={};ids.forEach(function(i,k){idx[i]=k});
+ const nN=ids.length,adj=ids.map(function(){return {}}),deg=new Array(nN).fill(0);
+ S.edges.forEach(function(e){if(!e.active)return;const a=idx[e.a],b=idx[e.b];adj[a][b]=(adj[a][b]||0)+e.w;adj[b][a]=(adj[b][a]||0)+e.w;deg[a]+=e.w;deg[b]+=e.w});
+ let pr0=new Array(nN).fill(1/nN);
+ for(let it=0;it<30;it++){const nx=new Array(nN).fill(0.15/nN);
+  for(let a=0;a<nN;a++){if(!deg[a])continue;for(const b in adj[a])nx[b]+=0.85*pr0[a]*adj[a][b]/deg[a]}
+  pr0=nx}
+ const mx=Math.max.apply(null,pr0);M.pr={};ids.forEach(function(i,k){M.pr[i]=pr0[k]/mx});
+ S.M=M;return M}
+
+function runQueue(S){
+ const keep=[];
+ S.queue.forEach(function(q){
+  if(q.at>S.t){keep.push(q);return}
+  if(q.type==='reg'){const e=S.edges.find(function(x){return x.id===q.id});if(e){S.acc.reg+=Math.max(0,e.w-e.wReg);e.wReg=e.w;e.pendReg=false}}
+  else if(q.type==='upd'){const n=S.nodes[q.id];n.popReg=effN(n);n.pendUpd=false;S.acc.reg+=0.3}
+  else if(q.type==='seen'){const e=S.edges.find(function(x){return x.id===q.id});if(e)e.seenActive=q.val}
+  else if(q.type==='cap'){const n=S.nodes[q.id];n.cap*=1.25;n.pendCap=false;lg(S,'Servicios ampliados en '+n.name+' (+25 % de capacidad).','act')}
+  else if(q.type==='build'){const e=addEdge(S,q.a,q.b,'route',1.5,0);lg(S,'Ruta habilitada: '+nm(S,q.a)+' – '+nm(S,q.b)+'.','act')}
+  else if(q.type==='repair'){const e=S.edges.find(function(x){return x.id===q.id});if(e){e.active=true;lg(S,'Ruta reparada: '+nm(S,e.a)+' – '+nm(S,e.b)+'.','act');S.queue.push({at:S.t+S.delay,type:'seen',id:e.id,val:true})}}
+ });
+ S.queue=keep}
+
+function relation(S,n){
+ const rng=S.rng;
+ if(rng()<.55){
+  let hid=null;const own=S.edges.filter(function(e){return e.type==='intl'&&e.b===n.id});
+  if(own.length&&rng()<.7){let tw=0;own.forEach(function(e){tw+=e.w});let r=rng()*tw;for(let i=0;i<own.length;i++){r-=own[i].w;if(r<=0){hid=own[i].a;break}}if(!hid)hid=own[0].a}
+  else{let r=rng();const hs=Object.keys(S.hubs);for(let i=0;i<hs.length;i++){r-=S.hubs[hs[i]].size;if(r<=0){hid=hs[i];break}}if(!hid)hid=hs[0]}
+  let e=S.edges.find(function(x){return x.type==='intl'&&x.a===hid&&x.b===n.id});
+  if(e){e.w=Math.min(6,e.w+.45);S.acc.add+=.45}else{addEdge(S,hid,n.id,'intl',.6,0);S.acc.add+=.6}
+ }else{
+  const ids=Object.keys(S.nodes).filter(function(i){return i!==n.id});
+  const wts=ids.map(function(i){return 1+S.edges.filter(function(e){return e.active&&(e.a===i||e.b===i)}).length});
+  let tw=wts.reduce(function(a,b){return a+b},0),r=rng()*tw,o=ids[0];
+  for(let i=0;i<ids.length;i++){r-=wts[i];if(r<=0){o=ids[i];break}}
+  let e=S.edges.find(function(x){return x.type==='know'&&((x.a===n.id&&x.b===o)||(x.a===o&&x.b===n.id))});
+  if(e){e.w=Math.min(6,e.w+.4);S.acc.add+=.4}else{addEdge(S,n.id,o,'know',.5,0);S.acc.add+=.5}
+ }}
+
+function poisson(rng,l){const L=Math.exp(-l);let k=0,p=1;do{k++;p*=rng()}while(p>L);return k-1}
+
+function expand(S){
+ Object.keys(S.nodes).forEach(function(id){
+  const n=S.nodes[id];
+  n.intlW=S.edges.reduce(function(a,e){return a+(e.type==='intl'&&e.b===id&&e.active?e.w:0)},0);
+  n.nat*=1.008;
+  const dF=n.fgn0*S.sc.fgn*(1+0.05*n.intlW);n.fgn+=dF;
+  const k=poisson(S.rng,(0.08+0.05*dF)*S.sc.rel);
+  for(let i=0;i<k;i++)relation(S,n);
+  n.cap*=1.008})}
+
+function boost(S,id,f){const n=S.nodes[id];n.nat*=f;n.fgn*=f;lg(S,'Evento: +'+Math.round((f-1)*100)+' % de población en '+n.name+'.','ev')}
+function cutEdge(S,e,manual){
+ e.active=false;S.queue.push({at:S.t+S.delay,type:'seen',id:e.id,val:false});
+ lg(S,(manual?'Corte aplicado: ':'Evento: ruta interrumpida · ')+nm(S,e.a)+' – '+nm(S,e.b)+'.','ev')}
+function routeBy(S,a,b){return S.edges.find(function(e){return e.type==='route'&&((e.a===a&&e.b===b)||(e.a===b&&e.b===a))})}
+function runEvents(S){
+ if(S.key==='A'){if(S.t===4)boost(S,'cde',1.2);if(S.t===9)boost(S,'enc',1.2)}
+ if(S.key==='B'){if(S.t===3)cutEdge(S,routeBy(S,'cov','cde'));if(S.t===6)cutEdge(S,routeBy(S,'enc','cde'))}
+ if(S.key==='C'){if(S.t===1)lg(S,'La red internacional de residentes se acelera: cada llegada abre nuevas relaciones.','ev')}}
+
+function institution(S){
+ const ec=S.edges.filter(function(e){return e.active&&e.w-e.wReg>0.25&&!e.pendReg}).sort(function(a,b){return (b.w-b.wReg)-(a.w-a.wReg)});
+ for(let k=0;k<S.R&&k<ec.length;k++){ec[k].pendReg=true;S.queue.push({at:S.t+S.delay,type:'reg',id:ec[k].id})}
+ const nc=Object.keys(S.nodes).map(function(i){return S.nodes[i]}).filter(function(n){return !n.pendUpd&&Math.abs(effN(n)-n.popReg)/effN(n)>0.04}).sort(function(a,b){return Math.abs(effN(b)-b.popReg)-Math.abs(effN(a)-a.popReg)});
+ for(let k=0;k<S.R&&k<nc.length;k++){nc[k].pendUpd=true;S.queue.push({at:S.t+S.delay,type:'upd',id:nc[k].id})}}
+
+function tick(S){
+ if(S.done)return;
+ S.t++;S.acc={add:0,reg:0};
+ runQueue(S);expand(S);runEvents(S);institution(S);
+ S.budget=Math.min(15,S.budget+3);
+ metrics(S);
+ S.hist.push({t:S.t,wReal:S.M.wReal,wReg:S.M.wRegE,B:S.M.B});
+ S.vSoc=0.5*S.vSoc+0.5*S.acc.add;S.vInst=0.5*S.vInst+0.5*S.acc.reg;
+ S.adv=null;
+ if(S.t>=S.T)finish(S)}
+
+function finish(S){
+ S.done=true;const M=S.M;let v,title,lines=[];
+ if(S.key==='A'){
+  lines.push('Presión máxima final: '+M.pmax.toFixed(2)+' en '+nm(S,M.pmaxId));
+  lines.push('Población sin servicio: '+M.unPct.toFixed(1)+' %');
+  v=(M.pmax<=1.0&&M.unPct<=0.5)?'ok':(M.pmax<=1.2&&M.unPct<=3?'mid':'bad');
+  title=v==='ok'?'La red absorbió el crecimiento':v==='mid'?'Presión contenida, con zonas desatendidas':'Los servicios se saturaron en cascada';
+ }else if(S.key==='B'){
+  lines.push('Bloques de territorio: '+M.ncomp+' · población aislada: '+M.isoPct.toFixed(1)+' %');
+  lines.push('Conexión internacional degradada: '+Math.round(M.intlDeg*100)+' %');
+  v=(M.ncomp===1&&M.intlDeg<=0.05)?'ok':(M.isoPct<=5?'mid':'bad');
+  title=v==='ok'?'Red reconectada':v==='mid'?'Reconexión parcial':'Territorio fragmentado';
+ }else{
+  lines.push('Brecha final: '+M.B.toFixed(2)+' (red '+M.Be.toFixed(2)+' · datos '+M.Bd.toFixed(2)+')');
+  lines.push('El Estado ve una presión máxima de '+M.pregmax.toFixed(2)+'; la real es '+M.pmax.toFixed(2)+'.');
+  v=M.B<=0.25?'ok':(M.B<=0.38?'mid':'bad');
+  title=v==='ok'?'El Estado acompañó a su sociedad':v==='mid'?'Brecha contenida, pero abierta':'Dos países paralelos';}
+ S.res={v:v,title:title,lines:lines};lg(S,'Fin del escenario: '+title+'.',v==='ok'?'ok':'warn')}
+
+function spend(S,c,what){if(S.done)return false;if(S.budget<c){lg(S,'Puntos insuficientes para '+what+' (necesitás '+c+').','warn');return false}S.budget-=c;return true}
+function actUpd(S,id){const n=S.nodes[id];if(n.pendUpd){lg(S,'Ya hay una actualización en curso en '+n.name+'.','warn');return}if(!spend(S,1,'actualizar'))return;n.pendUpd=true;S.queue.push({at:S.t+1,type:'upd',id:id});lg(S,'Actualización de registro solicitada: '+n.name+'.','act')}
+function actCap(S,id){const n=S.nodes[id];if(n.pendCap){lg(S,'Ya hay una ampliación en curso en '+n.name+'.','warn');return}if(!spend(S,3,'ampliar servicios'))return;n.pendCap=true;S.queue.push({at:S.t+2,type:'cap',id:id});lg(S,'Ampliación de servicios en curso: '+n.name+' (2 años).','act')}
+function actBuild(S,a,b){
+ if(a===b)return false;
+ if(S.edges.some(function(e){return e.type==='route'&&e.active&&((e.a===a&&e.b===b)||(e.a===b&&e.b===a))})){lg(S,'Esa ruta ya existe.','warn');return false}
+ if(S.queue.some(function(q){return q.type==='build'&&((q.a===a&&q.b===b)||(q.a===b&&q.b===a))}))return false;
+ if(!spend(S,4,'construir una ruta'))return false;
+ S.queue.push({at:S.t+2,type:'build',a:a,b:b});lg(S,'Construcción de ruta iniciada: '+nm(S,a)+' – '+nm(S,b)+' (2 años).','act');S.adv=null;return true}
+function actRepair(S,eid){const e=S.edges.find(function(x){return x.id===eid});if(!e||e.active)return;if(S.queue.some(function(q){return q.type==='repair'&&q.id===eid}))return;if(!spend(S,2,'reparar'))return;S.queue.push({at:S.t+2,type:'repair',id:eid});lg(S,'Reparación en curso: '+nm(S,e.a)+' – '+nm(S,e.b)+'.','act')}
+function actCut(S,eid){if(S.key!=='B'||S.cuts>=2||S.done)return;const e=S.edges.find(function(x){return x.id===eid});if(!e||e.type!=='route'||!e.active)return;S.cuts++;cutEdge(S,e,true);metrics(S)}
+function actReg(S,eid){const e=S.edges.find(function(x){return x.id===eid});if(!e||e.pendReg||!e.active)return;if(!spend(S,1,'registrar'))return;e.pendReg=true;S.queue.push({at:S.t+1,type:'reg',id:eid});lg(S,'Registro acelerado: '+nm(S,e.a)+' – '+nm(S,e.b)+'.','act')}
+function actLever(S,k){
+ if(k==='int'){if(S.lev.int>=3)return;if(!spend(S,5,'integrar sistemas'))return;S.lev.int++;S.R++;lg(S,'Sistemas integrados: la institución registra '+S.R+' elementos por año.','inst')}
+ else{if(S.lev.dig>=2)return;if(!spend(S,4,'digitalizar'))return;S.lev.dig++;S.delay=Math.max(1,S.delay-1);lg(S,'Trámites digitalizados: el retardo institucional baja a '+S.delay+' años.','inst')}}
+function actBoost(S,id){if(S.key!=='A'||S.boosts>=2||S.done)return;S.boosts++;boost(S,id,1.2);metrics(S)}
+
+function bestRoute(S){
+ const ids=Object.keys(S.nodes),n=ids.length,idx={};ids.forEach(function(i,k){idx[i]=k});
+ const P=ids.map(function(i){const p=normPos(S.nodes[i]);return p});
+ const len=function(a,b){return Math.hypot(P[a].x-P[b].x,P[a].y-P[b].y)};
+ const INF=1e9,d=[];for(let i=0;i<n;i++){d.push(new Array(n).fill(INF));d[i][i]=0}
+ S.edges.forEach(function(e){if(e.type==='route'&&e.active){const a=idx[e.a],b=idx[e.b],l=len(a,b);d[a][b]=Math.min(d[a][b],l);d[b][a]=d[a][b]}});
+ for(let k=0;k<n;k++)for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(d[i][k]+d[k][j]<d[i][j])d[i][j]=d[i][k]+d[k][j];
+ const N=ids.map(function(i){return effN(S.nodes[i])}),PEN=3;
+ const score=function(D){let s=0;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)s+=N[i]*N[j]*Math.min(D(i,j),PEN);return s};
+ const s0=score(function(i,j){return d[i][j]});
+ const pend=S.queue.filter(function(q){return q.type==='build'});
+ let best=null;
+ for(let a=0;a<n;a++)for(let b=a+1;b<n;b++){
+  if(d[a][b]<INF&&len(a,b)>d[a][b]*0.75)continue;
+  const l=len(a,b);if(l>0.5)continue;
+  if(pend.some(function(q){return (q.a===ids[a]&&q.b===ids[b])||(q.a===ids[b]&&q.b===ids[a])}))continue;
+  const s1=score(function(i,j){return Math.min(d[i][j],d[i][a]+l+d[b][j],d[i][b]+l+d[a][j])});
+  const g=(s0-s1)/s0;if(!best||g>best.gain)best={a:ids[a],b:ids[b],gain:g}}
+ return best}
+
+function pressured(S){return Object.keys(S.nodes).sort(function(a,b){return S.M.P[b]-S.M.P[a]})}
+//ENGINE-END
+
+//UI-START
+const $=function(i){return document.getElementById(i)};
+let S=initState('A'),view='over',playing=false,timer=0,last=0,mouse={x:-1,y:-1},hover=null,mode=null;
+const cv=$('cv'),cx=cv.getContext('2d');let W=0,H=0,DPR=1;
+const SCTXT={
+A:{d:'<b>Expansión demográfica.</b> Una localidad crece un 20 %. ¿Qué servicios se saturan? ¿Qué otras localidades dependen de ellos? Ampliá capacidad a tiempo y mirá cómo se propaga la presión por las dependencias.',g:'<b>Objetivo (20 años):</b> terminar con presión máxima ≤ 1,00 y menos de 0,5 % de la población sin servicio.'},
+B:{d:'<b>Ruptura de ruta.</b> Se interrumpen conexiones viales. Observá cómo se fragmenta el territorio, qué comunidades quedan aisladas y qué conexiones internacionales se degradan. Reparar o construir rutas cuesta puntos y tarda años.',g:'<b>Objetivo (20 años):</b> terminar con un solo bloque de territorio y menos de 5 % de conexión internacional degradada.'},
+C:{d:'<b>Brecha de adaptación.</b> La red de residentes extranjeros y sus relaciones crece al doble de ritmo. La sociedad ya opera en red; las instituciones registran con retardo. No hay colapso: hay dos países paralelos.',g:'<b>Objetivo (30 años):</b> mantener la brecha total ≤ 0,25. Mejorá la capacidad de registrar antes de querer ampliar nada.'}};
+const NAME={A:'Presión demográfica',B:'Ruptura de ruta',C:'Brecha de adaptación'};
+
+function layout(){
+ const side=Math.min(W*0.62,H*0.82),x0=(W-side)/2,y0=(H-side)/2+4,pad=side*0.05;
+ S.mp={x0:x0,y0:y0,side:side};
+ Object.keys(S.nodes).forEach(function(i){const n=S.nodes[i],p=normPos(n);n.x=x0+pad+p.x*(side-2*pad);n.y=y0+pad+p.y*(side-2*pad)});
+ Object.keys(S.hubs).forEach(function(i){const h=S.hubs[i];h.x=h.fx*W;h.y=h.fy*H})}
+function resize(){const r=$('stage').getBoundingClientRect();DPR=window.devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0);layout()}
+window.addEventListener('resize',function(){resize();drawChart()});
+
+function pos(id){return S.nodes[id]||S.hubs[id]}
+function ctrl(e){const A=pos(e.a),B=pos(e.b),mx=(A.x+B.x)/2,my=(A.y+B.y)/2,dx=B.x-A.x,dy=B.y-A.y,L=Math.hypot(dx,dy)||1;let off=0;
+ if(e.type==='intl')off=0.2*L*(e.id%2?1:-1);else if(e.type==='know')off=0.14*L*(e.id%2?-1:1);
+ return {A:A,B:B,cx:mx-dy/L*off,cy:my+dx/L*off}}
+function bez(c,t){const u=1-t;return {x:u*u*c.A.x+2*u*t*c.cx+t*t*c.B.x,y:u*u*c.A.y+2*u*t*c.cy+t*t*c.B.y}}
+function pcol(P){const t=Math.max(0,Math.min(1,(P-0.7)/0.45)),a=[46,230,166],b=[255,179,71],c=[255,77,109];let m,k,u;if(t<.5){m=a;k=b;u=t/.5}else{m=b;k=c;u=(t-.5)/.5}return [0,1,2].map(function(i){return Math.round(m[i]+(k[i]-m[i])*u)})}
+function rgba(c,a){return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'}
+function nodeR(N){return 4+Math.sqrt(N)*0.62}
+const POLY=[[-62.6,-22.3],[-61.5,-20.0],[-60.0,-19.3],[-58.2,-19.3],[-57.6,-20.0],[-57.9,-22.1],[-56.0,-22.3],[-55.7,-22.6],[-55.4,-23.9],[-54.3,-24.0],[-54.6,-25.6],[-54.8,-26.5],[-55.6,-27.2],[-56.5,-27.5],[-58.6,-27.3],[-57.6,-25.3],[-58.3,-24.4],[-60.5,-23.0]];
+const COL={route:'#8fa6d0',intl:'#a78bfa',know:'#4cc9f0'};
+
+function edgeVisible(e){
+ if(view==='state')return e.wReg>0&&e.seenActive;
+ return e.active||true}
+function edgeW(e){return view==='state'?e.wReg:e.w}
+
+function draw(ts){
+ cx.clearRect(0,0,W,H);
+ const T=ts/1000,M=S.M,mp=S.mp;
+ // rejilla
+ cx.strokeStyle='rgba(76,201,240,0.045)';cx.lineWidth=1;
+ for(let x=0;x<W;x+=34){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,H);cx.stroke()}
+ for(let y=0;y<H;y+=34){cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke()}
+ // contorno del país
+ cx.beginPath();POLY.forEach(function(p,i){const q=normPos({lon:p[0],lat:p[1]}),pad=mp.side*0.05,x=mp.x0+pad+q.x*(mp.side-2*pad),y=mp.y0+pad+q.y*(mp.side-2*pad);if(i)cx.lineTo(x,y);else cx.moveTo(x,y)});cx.closePath();
+ cx.fillStyle=view==='state'?'rgba(255,179,71,0.035)':'rgba(46,230,166,0.035)';cx.fill();cx.strokeStyle='rgba(140,170,220,0.28)';cx.setLineDash([5,5]);cx.lineWidth=1.2;cx.stroke();cx.setLineDash([]);
+ // anillo orbital
+ cx.strokeStyle='rgba(167,139,250,0.10)';cx.beginPath();cx.ellipse(W/2,H/2,W*0.43,H*0.43,0,0,7);cx.stroke();
+ // dependencias
+ if($('oDep').checked){
+  cx.lineWidth=1;Object.keys(S.nodes).forEach(function(i){const n=S.nodes[i];if(!n.parent)return;const p=S.nodes[n.parent],ok=M.cc.comp[i]===M.cc.comp[n.parent];
+   cx.strokeStyle=ok?'rgba(255,255,255,0.22)':'rgba(255,77,109,0.7)';cx.setLineDash([2,4]);cx.beginPath();cx.moveTo(n.x,n.y);cx.lineTo(p.x,p.y);cx.stroke();cx.setLineDash([]);
+   const a=Math.atan2(p.y-n.y,p.x-n.x),mx=(n.x+p.x)/2,my=(n.y+p.y)/2;cx.fillStyle=ok?'rgba(255,255,255,0.45)':'rgba(255,77,109,0.9)';cx.beginPath();cx.moveTo(mx+Math.cos(a)*5,my+Math.sin(a)*5);cx.lineTo(mx+Math.cos(a+2.5)*5,my+Math.sin(a+2.5)*5);cx.lineTo(mx+Math.cos(a-2.5)*5,my+Math.sin(a-2.5)*5);cx.fill()})}
+ // aristas
+ const cen=$('oCen').checked;
+ S.edges.forEach(function(e){
+  if(!edgeVisible(e))return;
+  const c=ctrl(e),w=edgeW(e);if(view==='state'&&w<=0)return;
+  const lw=e.type==='route'?2.2:0.7+Math.min(w,6)*0.85;
+  let degr=false;if(e.type==='intl'&&e.active&&M.cc.comp[e.b]!==M.mainComp)degr=true;
+  const unreg=(view==='over')&&e.active&&(e.w-e.wReg>0.3);
+  const shownActive=view==='state'?e.seenActive:e.active;
+  const path=function(){cx.beginPath();cx.moveTo(c.A.x,c.A.y);cx.quadraticCurveTo(c.cx,c.cy,c.B.x,c.B.y)};
+  if(cen&&e.type==='route'&&e.active&&M.crit[e.id]>0.002){path();cx.strokeStyle='rgba(255,214,102,'+Math.min(.55,.2+M.crit[e.id]*5)+')';cx.lineWidth=lw+6;cx.shadowColor='#ffd666';cx.shadowBlur=14;cx.stroke();cx.shadowBlur=0}
+  path();
+  if(!shownActive){cx.strokeStyle='rgba(255,77,109,0.75)';cx.setLineDash([4,5]);cx.lineWidth=1.4;cx.stroke();cx.setLineDash([]);
+   const m=bez(c,.5);cx.fillStyle='#ff4d6d';cx.font='bold 13px sans-serif';cx.textAlign='center';cx.fillText('✕',m.x,m.y+4);return}
+  if(degr&&view!=='state'){cx.strokeStyle='rgba(255,77,109,0.65)';cx.setLineDash([5,4]);cx.lineWidth=lw;cx.stroke();cx.setLineDash([])}
+  else if(unreg){
+   cx.strokeStyle='rgba(255,179,71,'+(0.35+0.25*Math.sin(T*3+e.id)).toFixed(2)+')';cx.setLineDash([6,5]);cx.lineWidth=lw;cx.shadowColor='#ffb347';cx.shadowBlur=10;cx.stroke();cx.shadowBlur=0;cx.setLineDash([]);
+   if(e.wReg>0){path();cx.strokeStyle=COL[e.type];cx.globalAlpha=.9;cx.lineWidth=0.7+Math.min(e.wReg,6)*0.85;cx.stroke();cx.globalAlpha=1}}
+  else{cx.strokeStyle=COL[e.type];cx.globalAlpha=e.type==='route'?.6:.75;cx.lineWidth=lw;cx.shadowColor=COL[e.type];cx.shadowBlur=e.type==='route'?0:6;cx.stroke();cx.shadowBlur=0;cx.globalAlpha=1}
+  // pulsos
+  if(shownActive&&!degr&&e.type!=='route'){const sp=0.00022*(1+w*0.25);const t=((ts*sp)+e.id*0.137)%1,p=bez(c,t);cx.fillStyle=unreg?'#ffd08a':(e.type==='intl'?'#d9ccff':'#a8e8fb');cx.beginPath();cx.arc(p.x,p.y,1.8,0,7);cx.fill()}
+ });
+ // ghost asesor
+ if(S.adv){const a=S.nodes[S.adv.a],b=S.nodes[S.adv.b];cx.strokeStyle='rgba(46,230,166,'+(0.5+0.4*Math.sin(T*4)).toFixed(2)+')';cx.setLineDash([3,6]);cx.lineWidth=3;cx.shadowColor='#2ee6a6';cx.shadowBlur=16;cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y);cx.stroke();cx.setLineDash([]);cx.shadowBlur=0}
+ // conexión en curso
+ if(mode&&mode.type==='connect'){const a=S.nodes[mode.from];cx.strokeStyle='rgba(255,255,255,.6)';cx.setLineDash([4,4]);cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(mouse.x,mouse.y);cx.stroke();cx.setLineDash([])}
+ // obras en construcción
+ S.queue.forEach(function(q){if(q.type==='build'||q.type==='repair'){let a,b;if(q.type==='build'){a=S.nodes[q.a];b=S.nodes[q.b]}else{const e=S.edges.find(function(x){return x.id===q.id});a=S.nodes[e.a];b=S.nodes[e.b]}
+  cx.strokeStyle='rgba(255,214,102,.55)';cx.setLineDash([2,5]);cx.lineWidth=2;cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y);cx.stroke();cx.setLineDash([])}});
+ // nodos
+ Object.keys(S.nodes).forEach(function(i){
+  const n=S.nodes[i],N=effN(n),Nr=n.popReg,rr=nodeR(N),rg=nodeR(Nr);
+  const r=view==='state'?rg:rr,P=view==='state'?M.Preg[i]:M.P[i],col=pcol(P);
+  if(cen){const h=r+5+M.pr[i]*18;const g=cx.createRadialGradient(n.x,n.y,r,n.x,n.y,h);g.addColorStop(0,'rgba(167,139,250,0.35)');g.addColorStop(1,'rgba(167,139,250,0)');cx.fillStyle=g;cx.beginPath();cx.arc(n.x,n.y,h,0,7);cx.fill()}
+  if(P>1&&view!=='state'){const pr=r+4+3*Math.abs(Math.sin(T*3));cx.strokeStyle=rgba([255,77,109],.55);cx.lineWidth=1.5;cx.beginPath();cx.arc(n.x,n.y,pr,0,7);cx.stroke()}
+  cx.shadowColor=rgba(col,.9);cx.shadowBlur=14;cx.fillStyle=rgba(col,.92);cx.beginPath();cx.arc(n.x,n.y,r,0,7);cx.fill();cx.shadowBlur=0;
+  cx.fillStyle='rgba(6,10,19,.55)';cx.beginPath();cx.arc(n.x,n.y,r*0.55,0,7);cx.fill();
+  if(view==='over'){cx.strokeStyle='rgba(255,255,255,0.65)';cx.setLineDash([3,3]);cx.lineWidth=1;cx.beginPath();cx.arc(n.x,n.y,rg,0,7);cx.stroke();cx.setLineDash([])}
+  if(M.cc.comp[i]!==M.mainComp&&view!=='state'){cx.strokeStyle='#ff4d6d';cx.lineWidth=2;cx.setLineDash([2,3]);cx.beginPath();cx.arc(n.x,n.y,r+5,0,7);cx.stroke();cx.setLineDash([])}
+  if(S.sel&&S.sel.type==='node'&&S.sel.id===i){cx.strokeStyle='#fff';cx.lineWidth=2;cx.beginPath();cx.arc(n.x,n.y,r+8,0,7);cx.stroke()}
+  if(hover&&hover.type==='node'&&hover.id===i){cx.strokeStyle='rgba(255,255,255,.6)';cx.lineWidth=1;cx.beginPath();cx.arc(n.x,n.y,r+6,0,7);cx.stroke()}
+  cx.fillStyle='rgba(217,227,247,.82)';cx.font='10.5px sans-serif';cx.textAlign='center';cx.fillText(n.name,n.x,n.y+r+13)});
+ // hubs
+ Object.keys(S.hubs).forEach(function(i){const h=S.hubs[i],r=10+h.size*22;
+  const g=cx.createRadialGradient(h.x,h.y,0,h.x,h.y,r*2.2);g.addColorStop(0,'rgba(167,139,250,0.5)');g.addColorStop(1,'rgba(167,139,250,0)');cx.fillStyle=g;cx.beginPath();cx.arc(h.x,h.y,r*2.2,0,7);cx.fill();
+  cx.strokeStyle='#a78bfa';cx.lineWidth=1.6;cx.fillStyle='rgba(20,14,50,.9)';cx.beginPath();
+  for(let k=0;k<6;k++){const a=k*Math.PI/3+Math.PI/6;const x=h.x+Math.cos(a)*r,y=h.y+Math.sin(a)*r;if(k)cx.lineTo(x,y);else cx.moveTo(x,y)}cx.closePath();cx.fill();cx.stroke();
+  if(S.sel&&S.sel.type==='hub'&&S.sel.id===i){cx.strokeStyle='#fff';cx.beginPath();cx.arc(h.x,h.y,r+7,0,7);cx.stroke()}
+  cx.fillStyle='#d9ccff';cx.font='11px sans-serif';cx.textAlign='center';cx.fillText(h.name,h.x,h.y+r+14)});
+ requestAnimationFrame(draw)}
+
+// ---------- chart ----------
+function drawChart(){
+ const c=$('chart'),g=c.getContext('2d'),r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;
+ c.width=r.width*d;c.height=r.height*d;g.setTransform(d,0,0,d,0,0);const w=r.width,h=r.height,p=18;
+ g.clearRect(0,0,w,h);const H_=S.hist,T=S.T;
+ const mx=Math.max.apply(null,H_.map(function(x){return x.wReal}).concat([10]))*1.1;
+ const X=function(t){return p+(w-2*p)*t/T},Y=function(v){return h-p-(h-2*p)*v/mx},Yb=function(v){return h-p-(h-2*p)*v};
+ g.strokeStyle='#1b2744';g.lineWidth=1;g.beginPath();g.moveTo(p,h-p);g.lineTo(w-p,h-p);g.moveTo(p,p);g.lineTo(p,h-p);g.stroke();
+ if(H_.length<2)return;
+ g.beginPath();H_.forEach(function(x,i){i?g.lineTo(X(x.t),Y(x.wReal)):g.moveTo(X(x.t),Y(x.wReal))});
+ for(let i=H_.length-1;i>=0;i--)g.lineTo(X(H_[i].t),Y(H_[i].wReg));g.closePath();g.fillStyle='rgba(255,77,109,.22)';g.fill();
+ const line=function(key,col,f,dash){g.beginPath();H_.forEach(function(x,i){const y=f(x[key]);i?g.lineTo(X(x.t),y):g.moveTo(X(x.t),y)});g.strokeStyle=col;g.lineWidth=2;g.setLineDash(dash||[]);g.stroke();g.setLineDash([])};
+ line('wReal','#a78bfa',Y);line('wReg','#ffb347',Y);line('B','#2ee6a6',Yb,[4,4])}
+
+// ---------- panels ----------
+function fmtPct(x){return Math.round(x*100)+' %'}
+function refresh(){
+ const M=S.M;
+ $('yr').textContent='Año '+S.t+' / '+S.T;$('scName').textContent=S.key+' · '+NAME[S.key];
+ $('kB').textContent=M.B.toFixed(2);$('gB').style.left=Math.min(97,M.B*100)+'%';
+ $('kB').style.color=M.B<.25?'var(--teal)':M.B<.38?'var(--amber)':'var(--red)';
+ $('kBs').textContent=M.B<.25?'El Estado ve casi todo lo que ocurre.':M.B<.38?'La brecha se está abriendo.':'Dos países paralelos: el real y el registrado.';
+ $('kBe').textContent=M.Be.toFixed(2);$('kBd').textContent=M.Bd.toFixed(2);
+ $('kP').textContent=M.pmax.toFixed(2);$('kP').style.color='rgb('+pcol(M.pmax).join(',')+')';$('kPs').textContent=S.nodes[M.pmaxId].name;
+ $('kPr').textContent=M.pregmax.toFixed(2);
+ $('kU').textContent=M.unPct.toFixed(1)+' %';$('kU').style.color=M.unPct>3?'var(--red)':M.unPct>0.5?'var(--amber)':'var(--teal)';
+ $('kC').textContent=M.ncomp;$('kC').style.color=M.ncomp>1?'var(--red)':'var(--teal)';$('kCs').textContent=M.ncomp>1?M.isoPct.toFixed(1)+' % de la población aislada':'territorio conectado';
+ $('kR').textContent=fmtPct(M.redund);$('kI').textContent=fmtPct(M.intlDeg);$('kI').style.color=M.intlDeg>.05?'var(--red)':'var(--teal)';
+ $('budN').textContent=S.budget+' / 15';$('budB').style.width=(S.budget/15*100)+'%';
+ const mxv=Math.max(3,S.vSoc,S.vInst);
+ $('vsN').textContent=S.vSoc.toFixed(1);$('viN').textContent=S.vInst.toFixed(1);
+ $('vsB').style.width=Math.min(100,S.vSoc/mxv*100)+'%';$('viB').style.width=Math.min(100,S.vInst/mxv*100)+'%';
+ $('bInt').disabled=S.lev.int>=3||S.done;$('cInt').textContent=S.lev.int>=3?'máx.':'5 pts · '+S.R+' reg/año';
+ $('bDig').disabled=S.lev.dig>=2||S.done;$('cDig').textContent=S.lev.dig>=2?'máx.':'4 pts · retardo '+S.delay+' a.';
+ const L=$('log');L.innerHTML=S.log.slice(-40).reverse().map(function(l){return '<div class="'+l.kind+'">['+l.t+'] '+l.msg+'</div>'}).join('');
+ renderEv();renderSel();drawChart();
+ $('bPlay').textContent=playing?'⏸ Pausar':'▶ Iniciar';
+ if(S.done&&S.res){const c={ok:'var(--teal)',mid:'var(--amber)',bad:'var(--red)'}[S.res.v];
+  $('resCard').innerHTML='<div class="v" style="color:'+c+'">'+({ok:'Objetivo cumplido',mid:'Objetivo parcial',bad:'Objetivo no cumplido'})[S.res.v]+'</div><h2>'+S.res.title+'</h2><ul>'+S.res.lines.map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul><div class="row"><button class="pri" onclick="setSc(\''+S.key+'\')">Reintentar</button><button onclick="document.getElementById(\'res\').style.display=\'none\'">Ver el mapa</button></div>';
+  $('res').style.display='flex'}else $('res').style.display='none'}
+
+function renderEv(){
+ const b=$('evBox');let h='';
+ if(S.key==='A'){const n=S.sel&&S.sel.type==='node'?S.sel.id:null;h='<button class="full warn" '+(n&&S.boosts<2&&!S.done?'':'disabled')+' onclick="uiBoost()">⚡ Aplicar +20 % de población a la localidad seleccionada <small>'+(2-S.boosts)+' usos</small></button>'}
+ else if(S.key==='B'){const e=S.sel&&S.sel.type==='edge'?S.edges.find(function(x){return x.id===S.sel.id}):null;h='<button class="full warn" '+(e&&e.type==='route'&&e.active&&S.cuts<2&&!S.done?'':'disabled')+' onclick="uiCut()">✂ Cortar la ruta seleccionada <small>'+(2-S.cuts)+' usos</small></button>'}
+ else h='<div class="note">Escenario C: sin eventos manuales. La presión viene de la velocidad de la red.</div>';
+ b.innerHTML=h}
+function renderSel(){
+ const el=$('sel'),M=S.M;let h='<h3>Selección</h3>';
+ if(!S.sel){el.innerHTML=h+'<div class="m">Hacé clic en una localidad, un hub externo o una conexión.</div>';return}
+ if(S.sel.type==='node'){const n=S.nodes[S.sel.id],N=effN(n),fr=Math.max(0,1-Math.abs(N-n.popReg)/N);
+  const deps=Object.keys(S.nodes).filter(function(i){return S.nodes[i].parent===n.id}).map(function(i){return S.nodes[i].name});
+  h+='<div class="t">'+n.name+'</div><div class="m">Población efectiva: <b>'+N.toFixed(1)+' mil</b> (extranjeros: '+n.fgn.toFixed(1)+' mil)<br>El Estado cree que son: <b>'+n.popReg.toFixed(1)+' mil</b> · frescura <b>'+Math.round(fr*100)+' %</b><br>Presión real <b>'+M.P[n.id].toFixed(2)+'</b> · que ve el Estado <b>'+M.Preg[n.id].toFixed(2)+'</b><br>Deriva servicios a: <b>'+(n.parent?S.nodes[n.parent].name:'— (cabecera)')+'</b><br>Dependen de esta localidad: <b>'+(deps.length?deps.join(', '):'ninguna')+'</b><br>Centralidad: <b>'+Math.round(M.pr[n.id]*100)+'</b>/100</div>'+
+  '<button class="full" onclick="uiUpd()" '+(S.done?'disabled':'')+'>Actualizar registro <small>1 pt</small></button>'+
+  '<button class="full" onclick="uiCap()" '+(S.done?'disabled':'')+'>Ampliar servicios +25 % <small>3 pts</small></button>'+
+  '<button class="full" onclick="uiConnect()" '+(S.done?'disabled':'')+'>Construir ruta hacia… <small>4 pts</small></button>'}
+ else if(S.sel.type==='hub'){const hb=S.hubs[S.sel.id],es=S.edges.filter(function(e){return e.a===hb.id});
+  h+='<div class="t">'+hb.name+'</div><div class="m">Red humana externa. Conecta con: <b>'+es.map(function(e){return S.nodes[e.b].name}).join(', ')+'</b><br>Peso total: <b>'+es.reduce(function(a,e){return a+e.w},0).toFixed(1)+'</b> · registrado: <b>'+es.reduce(function(a,e){return a+Math.min(e.w,e.wReg)},0).toFixed(1)+'</b></div>'}
+ else{const e=S.edges.find(function(x){return x.id===S.sel.id});if(!e){S.sel=null;renderSel();return}
+  const tp={route:'Ruta física',intl:'Relación internacional',know:'Relación de conocimiento / familia / comercio'}[e.type];
+  h+='<div class="t">'+nm(S,e.a)+' – '+nm(S,e.b)+'</div><div class="m">'+tp+'<br>Peso real: <b>'+e.w.toFixed(1)+'</b> · registrado: <b>'+e.wReg.toFixed(1)+'</b><br>Estado real: <b>'+(e.active?'activa':'interrumpida')+'</b> · el Estado la ve: <b>'+(e.seenActive?'activa':'interrumpida')+'</b>'+(e.type==='route'&&M.crit[e.id]>0.002?'<br><span style="color:#ffd666">Ruta crítica: su corte aísla al '+(M.crit[e.id]*100).toFixed(1)+' % de la población.</span>':'')+'</div>';
+  if(e.type==='route'&&!e.active)h+='<button class="full" onclick="uiRepair()" '+(S.done?'disabled':'')+'>Reparar ruta <small>2 pts</small></button>';
+  if(e.active&&e.w-e.wReg>0.25)h+='<button class="full" onclick="uiReg()" '+(S.done?'disabled':'')+'>Acelerar registro <small>1 pt</small></button>'}
+ el.innerHTML=h}
+
+// ---------- acciones UI ----------
+function act(f){f();metrics(S);refresh()}
+function uiUpd(){act(function(){actUpd(S,S.sel.id)})}
+function uiCap(){act(function(){actCap(S,S.sel.id)})}
+function uiConnect(){mode={type:'connect',from:S.sel.id};lg(S,'Elegí la localidad de destino para la nueva ruta.','act');refresh()}
+function uiRepair(){act(function(){actRepair(S,S.sel.id)})}
+function uiReg(){act(function(){actReg(S,S.sel.id)})}
+function uiCut(){act(function(){actCut(S,S.sel.id)})}
+function uiBoost(){act(function(){actBoost(S,S.sel.id)})}
+function setSc(k){stop();S=initState(k);S.sel=null;mode=null;hover=null;resize();document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.dataset.k===k)});$('scDesc').innerHTML=SCTXT[k].d;$('scGoal').innerHTML=SCTXT[k].g;$('advTxt').textContent='';refresh()}
+function stop(){playing=false;clearTimeout(timer)}
+function loop(){if(!playing)return;doTick();timer=setTimeout(loop,+$('spd').value)}
+function doTick(){tick(S);if(S.done)stop();refresh()}
+
+$('bPlay').onclick=function(){if(S.done)return;playing=!playing;if(playing)loop();else clearTimeout(timer);refresh()};
+$('bStep').onclick=function(){if(!S.done){stop();doTick()}};
+$('bReset').onclick=function(){setSc(S.key)};
+$('spd').oninput=function(){$('spdL').textContent=(($('spd').value)/1000).toFixed(2)+' s por año'};
+$('bInt').onclick=function(){act(function(){actLever(S,'int')})};
+$('bDig').onclick=function(){act(function(){actLever(S,'dig')})};
+$('bAdv').onclick=function(){
+ const b=bestRoute(S);S.adv=b;
+ if(!b){$('advTxt').textContent='No hay una inversión de ruta que mejore la red de forma apreciable.';return}
+ $('advTxt').innerHTML='Inversión sugerida: <b>'+nm(S,b.a)+' – '+nm(S,b.b)+'</b>. Reduce la distancia media ponderada por población en un <b>'+(b.gain*100).toFixed(1)+' %</b>. <a href="#" style="color:var(--teal)" id="buildAdv">Construir (4 pts)</a>';
+ $('buildAdv').onclick=function(ev){ev.preventDefault();act(function(){actBuild(S,b.a,b.b)});$('advTxt').textContent=''}};
+document.querySelectorAll('#views button').forEach(function(b){b.onclick=function(){view=b.dataset.v;document.querySelectorAll('#views button').forEach(function(x){x.classList.toggle('on',x===b)});updLegend()}});
+$('bMc').onclick=function(){$('mc').style.display='flex'};$('mcX').onclick=function(){$('mc').style.display='none'};
+$('bJson').onclick=function(){
+ const out={escenario:S.key,anio:S.t,bloques:'coordenadas 0-200',nodos:Object.keys(S.nodes).map(function(i){const n=S.nodes[i],p=normPos(n);return {id:i,nombre:n.name,x:Math.round(p.x*200),z:Math.round(p.y*200),poblacion_real:+effN(n).toFixed(1),poblacion_registrada:+n.popReg.toFixed(1),capacidad:+n.cap.toFixed(1),presion:+S.M.P[i].toFixed(2),padre_servicios:n.parent}}),
+ hubs:Object.keys(S.hubs).map(function(i){return {id:i,nombre:S.hubs[i].name}}),
+ aristas:S.edges.map(function(e){return {tipo:e.type,a:e.a,b:e.b,peso_real:+e.w.toFixed(2),peso_registrado:+e.wReg.toFixed(2),activa:e.active}}),
+ metricas:{brecha:+S.M.B.toFixed(3),presion_max:+S.M.pmax.toFixed(2),bloques:S.M.ncomp}};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,1)],{type:'application/json'}));a.download='laboratorio-territorial-'+S.key+'-anio'+S.t+'.json';a.click()};
+function updLegend(){
+ $('legend').innerHTML=(view==='state'?'<span style="color:var(--amber)">Vista: lo que el Estado cree que existe</span>':view==='real'?'<span style="color:var(--teal)">Vista: realidad</span>':'<span><i style="border-color:#ffb347;border-top-style:dashed"></i>real no registrado</span><span><i style="border-color:#fff;border-top-style:dashed"></i>tamaño que ve el Estado</span>')+'<span><i style="border-color:#8fa6d0"></i>ruta</span><span><i style="border-color:#a78bfa"></i>internacional</span><span><i style="border-color:#4cc9f0"></i>conocimiento</span>'}
+
+// ---------- interacción ----------
+function hit(x,y){
+ let best=null,bd=1e9;
+ Object.keys(S.nodes).forEach(function(i){const n=S.nodes[i],d=Math.hypot(n.x-x,n.y-y),r=nodeR(effN(n))+7;if(d<r&&d<bd){bd=d;best={type:'node',id:i}}});
+ if(best)return best;
+ Object.keys(S.hubs).forEach(function(i){const h=S.hubs[i],d=Math.hypot(h.x-x,h.y-y);if(d<10+h.size*22+6&&d<bd){bd=d;best={type:'hub',id:i}}});
+ if(best)return best;
+ bd=7;S.edges.forEach(function(e){if(!edgeVisible(e)||(view==='state'&&e.wReg<=0))return;const c=ctrl(e);for(let k=0;k<=14;k++){const p=bez(c,k/14),d=Math.hypot(p.x-x,p.y-y);if(d<bd){bd=d;best={type:'edge',id:e.id}}}});
+ return best}
+function mpos(ev){const r=cv.getBoundingClientRect();return {x:ev.clientX-r.left,y:ev.clientY-r.top}}
+cv.addEventListener('mousemove',function(ev){
+ mouse=mpos(ev);hover=hit(mouse.x,mouse.y);const t=$('tip');
+ if(hover){let s='';const M=S.M;
+  if(hover.type==='node'){const n=S.nodes[hover.id];s='<b>'+n.name+'</b><br>Población efectiva '+effN(n).toFixed(1)+' mil<br>Presión '+M.P[n.id].toFixed(2)+' (Estado: '+M.Preg[n.id].toFixed(2)+')'}
+  else if(hover.type==='hub'){s='<b>'+S.hubs[hover.id].name+'</b><br>Red humana externa'}
+  else{const e=S.edges.find(function(x){return x.id===hover.id});s='<b>'+nm(S,e.a)+' – '+nm(S,e.b)+'</b><br>'+({route:'Ruta',intl:'Internacional',know:'Conocimiento'})[e.type]+' · real '+e.w.toFixed(1)+' / registrado '+e.wReg.toFixed(1)}
+  t.innerHTML=s;t.style.display='block';t.style.left=Math.min(W-240,mouse.x+14)+'px';t.style.top=(mouse.y+14)+'px'}else t.style.display='none'});
+cv.addEventListener('mouseleave',function(){hover=null;$('tip').style.display='none'});
+cv.addEventListener('click',function(ev){
+ const p=mpos(ev),h=hit(p.x,p.y);
+ if(mode&&mode.type==='connect'){const from=mode.from;mode=null;if(h&&h.type==='node'&&h.id!==from){act(function(){actBuild(S,from,h.id)})}else{lg(S,'Construcción cancelada.','warn');refresh()}return}
+ S.sel=h;refresh()});
+document.addEventListener('keydown',function(e){if(e.code==='Space'&&e.target.tagName!=='INPUT'){e.preventDefault();$('bPlay').click()}});
+
+// init
+(function(){
+ const tabs=$('tabs');['A','B','C'].forEach(function(k){const b=document.createElement('button');b.className='tab'+(k==='A'?' on':'');b.dataset.k=k;b.innerHTML='<b>'+k+'</b>'+NAME[k];b.onclick=function(){setSc(k)};tabs.appendChild(b)});
+ $('spd').oninput();updLegend();resize();setSc('A');requestAnimationFrame(draw)})();
+//UI-END
+</script>
+</body>
+</html>
