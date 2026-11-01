@@ -1,0 +1,578 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mestizaje</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: banda de título y tesis, selector de casos, mapa del territorio junto a los controles, gráfica de brecha y tabla de principios.
+   Color: A es oro, B es azul, y donde se mezclan queda el verde de la base común. El rojo marca el malentendido. */
+:root{
+  --bg:#EBF0EE; --surface:#F7FAF9; --ink:#13201B; --ink-dim:#46564F; --line:#C5D1CC;
+  --a:#B9810A; --a-soft:rgba(201,143,10,.20);
+  --b:#2B64AE; --b-soft:rgba(43,100,174,.20);
+  --ok:#1C8454; --ok-soft:rgba(28,132,84,.14); --ok-fill:rgba(28,132,84,.42);
+  --bad:#C0364E; --bad-soft:rgba(192,54,78,.13);
+  --on-core:#FFFFFF;
+  --f-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1412; --surface:#151F1C; --ink:#E7F0EC; --ink-dim:#9DB1A9; --line:#2A3B36;
+    --a:#E3AC24; --a-soft:rgba(227,172,36,.24);
+    --b:#6AA3EA; --b-soft:rgba(106,163,234,.24);
+    --ok:#3FC184; --ok-soft:rgba(63,193,132,.17); --ok-fill:rgba(63,193,132,.40);
+    --bad:#F07088; --bad-soft:rgba(240,112,136,.18);
+    --on-core:#0D1412; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1412; --surface:#151F1C; --ink:#E7F0EC; --ink-dim:#9DB1A9; --line:#2A3B36;
+  --a:#E3AC24; --a-soft:rgba(227,172,36,.24);
+  --b:#6AA3EA; --b-soft:rgba(106,163,234,.24);
+  --ok:#3FC184; --ok-soft:rgba(63,193,132,.17); --ok-fill:rgba(63,193,132,.40);
+  --bad:#F07088; --bad-soft:rgba(240,112,136,.18);
+  --on-core:#0D1412; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.5;
+  padding-block:22px 48px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap{max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:26px}
+h1,h2,h3,h4,p{margin:0}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--b); outline-offset:2px}
+
+/* Encabezado */
+.head{display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+.mark{width:72px; height:44px; flex:none}
+.over{font-family:var(--f-mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim)}
+h1{font-family:var(--f-display); font-weight:800; font-size:clamp(34px,6vw,54px); letter-spacing:.05em; line-height:1}
+.thesis{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:18px 40px; align-items:end; border-top:3px solid var(--ink); padding-top:18px}
+.thesis h2{font-family:var(--f-display); font-weight:600; font-size:clamp(24px,3.6vw,36px); line-height:1.12; text-wrap:balance}
+.thesis p{color:var(--ink-dim); max-width:62ch}
+@media (max-width:820px){.thesis{grid-template-columns:minmax(0,1fr)}}
+
+/* Selector de casos */
+.tabs{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px}
+.tab{display:flex; flex-direction:column; gap:2px; text-align:left; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); cursor:pointer; min-width:0}
+.tab .t1{font-family:var(--f-display); font-weight:600; font-size:18px; line-height:1.2}
+.tab .t2{font-family:var(--f-mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-dim)}
+.tab:hover{border-color:var(--ink)}
+.tab[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.tab[aria-pressed="true"] .t2{color:var(--bg); opacity:.75}
+
+/* Cuadrícula principal */
+.grid{display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:22px; align-items:start}
+.map-card{grid-column:1; grid-row:1}
+.controls{grid-column:2; grid-row:1 / span 2}
+.chart-sec{grid-column:1; grid-row:2}
+@media (max-width:980px){
+  .grid{grid-template-columns:minmax(0,1fr)}
+  .map-card,.controls,.chart-sec{grid-column:1; grid-row:auto}
+}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px; min-width:0}
+.sh{font-family:var(--f-display); font-weight:600; font-size:21px; line-height:1.2}
+.sh-over{font-family:var(--f-mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); display:block; margin-bottom:4px}
+.lead{color:var(--ink-dim); margin-top:6px; max-width:70ch}
+.card-head{margin-bottom:12px}
+
+/* Mapa */
+#map{display:block; width:100%; height:auto}
+.terr{fill:var(--bg); stroke:var(--line); stroke-width:1.5}
+.weave{stroke:var(--line); stroke-width:1; opacity:.55}
+.ring{stroke-width:2.5; stroke-dasharray:7 6}
+.ringA{fill:var(--a-soft); stroke:var(--a)}
+.ringB{fill:var(--b-soft); stroke:var(--b)}
+.lens{fill:var(--ok-fill)}
+.unl{fill:none; stroke:var(--ok); stroke-width:3; stroke-dasharray:3 6}
+.coreA{fill:var(--a)} .coreB{fill:var(--b)}
+.coreT{font-family:var(--f-display); font-weight:800; font-size:28px; fill:var(--on-core)}
+.clab{font-family:var(--f-body); font-weight:600; font-size:17px; fill:var(--ink)}
+.node{fill:var(--surface); stroke:var(--ink); stroke-width:2.5}
+.svcname{font-family:var(--f-display); font-weight:600; font-size:18px; fill:var(--ink)}
+.q{fill:var(--bad)}
+.msg{stroke:var(--surface); stroke-width:2}
+.msg.ok{fill:var(--ok)} .msg.bad{fill:var(--bad)}
+.legend{list-style:none; margin:12px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px 18px; font-size:14px; color:var(--ink-dim)}
+.legend li{display:flex; align-items:center; gap:7px}
+.sw{display:inline-block; width:12px; height:12px; border-radius:50%}
+.sw.ok{background:var(--ok)} .sw.bad{background:var(--bad)}
+.sw.sq{border-radius:2px; background:var(--bad)}
+.sw.ring{background:transparent; border:2px dashed var(--ink-dim)}
+.orig{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:16px; padding-top:14px; border-top:1px solid var(--line)}
+.orig strong{display:block; font-family:var(--f-display); font-weight:600; font-size:17px; margin-top:6px}
+.orig p{font-size:15px; color:var(--ink-dim)}
+.who{display:inline-block; font-family:var(--f-mono); font-size:12px; letter-spacing:.04em; padding:2px 8px; border-radius:5px; color:var(--ink)}
+.who-a{background:var(--a-soft)} .who-b{background:var(--b-soft)}
+.who-h{background:var(--bad-soft)} .who-base{background:var(--ok-soft)}
+.state{display:flex; gap:10px; align-items:flex-start; margin-top:14px; padding:12px 14px; border-radius:10px; background:var(--bg); border:1px solid var(--line); font-weight:600}
+.state i{flex:none; width:12px; height:12px; border-radius:50%; margin-top:6px; background:var(--ink-dim)}
+.state[data-k="ok"] i{background:var(--ok)} .state[data-k="bad"] i{background:var(--bad)}
+
+/* Controles */
+.controls{display:flex; flex-direction:column; gap:16px}
+.ctl label{display:flex; justify-content:space-between; align-items:center; font-weight:600; margin-bottom:2px}
+.ctl output{font-family:var(--f-mono); font-size:14px}
+.ctl input[type=range]{width:100%; margin:2px 0}
+#sA{accent-color:var(--a)} #sB{accent-color:var(--b)}
+.hint{font-size:14px; color:var(--ink-dim)}
+.btnrow{display:flex; flex-wrap:wrap; gap:8px}
+.btn{border:1px solid var(--line); background:var(--bg); color:var(--ink); padding:8px 12px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer}
+.btn:hover{border-color:var(--ink)}
+.btn[aria-pressed="true"]{background:var(--ink); color:var(--bg); border-color:var(--ink)}
+.rule{border:0; border-top:1px solid var(--line); margin:0}
+.meters{display:flex; flex-direction:column; gap:11px}
+.m-top{display:flex; justify-content:space-between; gap:10px; font-size:15px}
+.m-top b{font-family:var(--f-mono); font-weight:500; font-size:14px; white-space:nowrap}
+.bar{height:9px; border-radius:5px; background:var(--bg); border:1px solid var(--line); overflow:hidden; margin-top:4px}
+.bar i{display:block; height:100%; width:0; border-radius:4px; transition:width .35s ease}
+.bar .f-perc{background:repeating-linear-gradient(135deg,var(--ink-dim) 0 4px,transparent 4px 8px)}
+.bar .f-real{background:var(--ok)}
+.bar .f-coop{background:var(--ink)}
+.bar .f-q{background:var(--bad)}
+.bar .f-a{background:var(--a)}
+.bar .f-b{background:var(--b)}
+.read{font-size:15px; padding:12px 14px; border-radius:10px; background:var(--bad-soft)}
+.read[data-k="ok"]{background:var(--ok-soft)}
+.trend{font-family:var(--f-mono); font-size:13px; color:var(--ink-dim)}
+
+/* Gráfica */
+.chart-sec,.table-sec{border-top:3px solid var(--ink); padding-top:14px; min-width:0}
+#chart{display:block; width:100%; height:auto; margin-top:10px}
+.gl{stroke:var(--line); stroke-width:1}
+.ax{font-family:var(--f-mono); font-size:16px; fill:var(--ink-dim)}
+.ln{fill:none; stroke-linejoin:round; stroke-linecap:round}
+.ln-perc{stroke:var(--ink-dim); stroke-width:2.5; stroke-dasharray:6 5}
+.ln-real{stroke:var(--ok); stroke-width:3.5}
+.ln-coop{stroke:var(--ink); stroke-width:2.5}
+.gap{fill:var(--bad-soft)}
+.dot-end{stroke:var(--surface); stroke-width:2}
+.clegend{list-style:none; margin:8px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px 18px; font-size:14px; color:var(--ink-dim)}
+.clegend li{display:flex; align-items:center; gap:7px}
+.ls{display:inline-block; width:22px; height:0; border-top:3px solid var(--ink)}
+.ls.perc{border-top:3px dashed var(--ink-dim)} .ls.real{border-top-color:var(--ok); border-top-width:4px}
+.ls.gapbox{height:12px; width:16px; border:0; background:var(--bad-soft); outline:1px solid var(--bad)}
+
+/* Tabla de principios */
+.prow{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.3fr); border-top:1px solid var(--line)}
+.prow:first-of-type{margin-top:10px}
+.pcell{padding:14px 14px 16px; min-width:0}
+.pcell p{margin-top:8px}
+.heard p{color:var(--ink-dim)}
+.base h4{font-family:var(--f-display); font-weight:600; font-size:18px; margin-top:8px}
+.base p{margin-top:4px; color:var(--ink-dim)}
+.prog{display:flex; align-items:center; gap:10px; margin-top:10px; font-family:var(--f-mono); font-size:13px; flex-wrap:wrap}
+.dots{display:inline-flex; gap:4px}
+.dots i{width:12px; height:12px; border-radius:50%; border:2px solid var(--line); background:transparent}
+.dots i.on{background:var(--ok); border-color:var(--ok)}
+.prow[data-st="mis"] .heard{background:var(--bad-soft)}
+.prow[data-st="ok"] .heard{opacity:.6}
+.prow[data-st="ok"] .base{background:var(--ok-soft)}
+.prow[data-st="ok"] .base p{color:var(--ink)}
+@media (max-width:760px){.prow{grid-template-columns:minmax(0,1fr)} .pcell{padding:10px 4px}}
+details{margin-top:6px; color:var(--ink-dim); font-size:15px}
+summary{cursor:pointer; font-weight:600; color:var(--ink)}
+details p{margin-top:8px; max-width:78ch}
+.foot{font-size:14px; color:var(--ink-dim)}
+@media (prefers-reduced-motion: reduce){.bar i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <svg class="mark" viewBox="0 0 72 44" aria-hidden="true">
+      <defs><clipPath id="mkclip"><circle cx="26" cy="22" r="18"/></clipPath></defs>
+      <circle cx="26" cy="22" r="18" fill="var(--a)"/>
+      <circle cx="46" cy="22" r="18" fill="var(--b)"/>
+      <circle cx="46" cy="22" r="18" fill="var(--ok)" clip-path="url(#mkclip)"/>
+    </svg>
+    <div>
+      <p class="over">International Translation &amp; Knowledge Exchange Center</p>
+      <h1>MESTIZAJE</h1>
+    </div>
+  </header>
+
+  <section class="thesis">
+    <h2>Entender no alcanza. Hay que saber que se entendió lo mismo.</h2>
+    <p>Dos comunidades comparten un territorio y un servicio básico. Cada una habla desde su origen y cree haber entendido a la otra. Mueve los puentes de cada lado y mira cuánto creen entender, cuánto entienden de verdad y qué pasa con la cooperación y con el perímetro de acción de cada una.</p>
+  </section>
+
+  <div class="tabs" id="tabs" role="group" aria-label="Casos"></div>
+
+  <main class="grid">
+    <section class="card map-card">
+      <div class="card-head">
+        <span class="sh-over" id="caseKind"></span>
+        <h3 class="sh" id="caseTitle"></h3>
+        <p class="lead" id="caseDesc"></p>
+      </div>
+      <svg id="map" viewBox="0 0 720 360" role="img" aria-label="Territorio compartido: comunidad A a la izquierda, comunidad B a la derecha y el servicio común en el centro">
+        <defs>
+          <clipPath id="terr"><rect x="8" y="8" width="704" height="344" rx="18"/></clipPath>
+          <clipPath id="clipB"><circle id="clipBc" cx="590" cy="180" r="100"/></clipPath>
+          <pattern id="weave" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 .5H22M0 11.5H22" class="weave"/></pattern>
+        </defs>
+        <rect x="8" y="8" width="704" height="344" rx="18" class="terr"/>
+        <rect x="8" y="8" width="704" height="344" rx="18" fill="url(#weave)"/>
+        <g clip-path="url(#terr)">
+          <circle id="ringA" cx="130" cy="180" r="100" class="ring ringA"/>
+          <circle id="ringB" cx="590" cy="180" r="100" class="ring ringB"/>
+          <circle id="lens" cx="130" cy="180" r="100" class="lens" clip-path="url(#clipB)"/>
+        </g>
+        <circle id="unl" cx="360" cy="180" r="62" class="unl" visibility="hidden"/>
+        <circle cx="130" cy="180" r="36" class="coreA"/>
+        <text x="130" y="190" class="coreT" text-anchor="middle">A</text>
+        <circle cx="590" cy="180" r="36" class="coreB"/>
+        <text x="590" y="190" class="coreT" text-anchor="middle">B</text>
+        <text x="130" y="244" class="clab" text-anchor="middle">Comunidad A</text>
+        <text x="590" y="244" class="clab" text-anchor="middle">Comunidad B</text>
+        <g id="queue"></g>
+        <rect x="322" y="142" width="76" height="76" rx="14" class="node"/>
+        <g id="svcIcon" transform="translate(360 180)"></g>
+        <text id="svcName" x="360" y="252" text-anchor="middle" class="svcname"></text>
+        <g id="msgs"></g>
+      </svg>
+      <ul class="legend">
+        <li><i class="sw ok"></i>Pedido entendido igual</li>
+        <li><i class="sw bad"></i>Pedido entendido distinto</li>
+        <li><i class="sw sq"></i>Pedido trabado en el servicio</li>
+        <li><i class="sw ring"></i>Perímetro de acción</li>
+      </ul>
+      <div class="orig">
+        <div><span class="who who-a">Origen A</span><strong id="nameA"></strong><p id="origA"></p></div>
+        <div><span class="who who-b">Origen B</span><strong id="nameB"></strong><p id="origB"></p></div>
+      </div>
+      <div class="state" id="state" data-k="n" aria-live="polite"><i></i><span id="stateTxt"></span></div>
+    </section>
+
+    <aside class="card controls" aria-label="Controles y medidas">
+      <div>
+        <span class="sh-over">Puente de cada origen</span>
+        <p class="hint">Cuánto expresa cada comunidad sus pedidos en principios que la otra reconoce, y cuánto entiende los de la otra.</p>
+      </div>
+      <div class="ctl">
+        <label for="sA"><span>Comunidad A</span><output id="vA">10%</output></label>
+        <input type="range" id="sA" min="0" max="100" step="5" value="10">
+      </div>
+      <div class="ctl">
+        <label for="sB"><span>Comunidad B</span><output id="vB">10%</output></label>
+        <input type="range" id="sB" min="0" max="100" step="5" value="10">
+      </div>
+      <div class="btnrow" id="presets" role="group" aria-label="Combinaciones"></div>
+      <div class="btnrow">
+        <button type="button" class="btn" id="bPlay" aria-pressed="false">Pausar</button>
+        <button type="button" class="btn" id="bReset">Reiniciar</button>
+        <button type="button" class="btn sp" data-s="1" aria-pressed="true">1×</button>
+        <button type="button" class="btn sp" data-s="2" aria-pressed="false">2×</button>
+        <button type="button" class="btn sp" data-s="4" aria-pressed="false">4×</button>
+      </div>
+      <hr class="rule">
+      <div class="trend" id="week"></div>
+      <div class="meters">
+        <div><div class="m-top"><span>Creen entender</span><b id="vPerc"></b></div><div class="bar"><i class="f-perc" id="bPerc"></i></div></div>
+        <div><div class="m-top"><span>Entienden lo mismo</span><b id="vReal"></b></div><div class="bar"><i class="f-real" id="bReal"></i></div></div>
+        <div><div class="m-top"><span>Cooperación</span><b id="vCoop"></b></div><div class="bar"><i class="f-coop" id="bCoop"></i></div></div>
+        <div><div class="m-top"><span>Pedidos trabados</span><b id="vQ"></b></div><div class="bar"><i class="f-q" id="bQ"></i></div></div>
+        <div><div class="m-top"><span>Perímetro de acción de A</span><b id="vPA"></b></div><div class="bar"><i class="f-a" id="bPA"></i></div></div>
+        <div><div class="m-top"><span>Perímetro de acción de B</span><b id="vPB"></b></div><div class="bar"><i class="f-b" id="bPB"></i></div></div>
+      </div>
+      <p class="read" id="read" data-k="n"></p>
+      <p class="trend" id="trend"></p>
+    </aside>
+
+    <section class="chart-sec">
+      <span class="sh-over">Brecha en el tiempo</span>
+      <h3 class="sh">Lo que creen entender frente a lo que entienden</h3>
+      <svg id="chart" viewBox="0 0 560 220" role="img" aria-label="Gráfica de porcentaje de comprensión percibida, comprensión real y cooperación por semana"></svg>
+      <ul class="clegend">
+        <li><i class="ls perc"></i>Creen entender</li>
+        <li><i class="ls real"></i>Entienden lo mismo</li>
+        <li><i class="ls"></i>Cooperación</li>
+        <li><i class="ls gapbox"></i>Comprensión no comprendida</li>
+      </ul>
+      <p class="foot" style="margin-top:6px">Eje horizontal en semanas, eje vertical en porcentaje.</p>
+    </section>
+  </main>
+
+  <section class="table-sec">
+    <span class="sh-over">Traductor de principios</span>
+    <h3 class="sh">De lo que se dice a la base que las dos reconocen</h3>
+    <p class="lead">Cada tensión se dice desde un origen, se oye desde el otro y se resuelve en un principio común. El principio se confirma cuando varios pedidos llegan entendidos igual.</p>
+    <div id="rows"></div>
+    <details>
+      <summary>Cómo funciona el modelo</summary>
+      <p>Cada semana circulan cuatro pedidos entre las comunidades. Un pedido se entiende igual solo si ambos lados lo expresan y lo interpretan en principios. Si no, quien lo recibe casi siempre cree haber entendido y actúa sobre su propia lectura. Esos choques bajan la confianza y traban el servicio. Cuando la confianza baja, también baja la disposición a traducir, por eso un puente a medias suele no alcanzar.</p>
+      <p>El perímetro de acción de cada comunidad crece con la cooperación y con los principios confirmados. Donde se superponen los dos perímetros queda la zona compartida.</p>
+    </details>
+    <p class="foot" style="margin-top:12px">Casos ficticios con fines didácticos. Las cifras salen de una simulación simplificada.</p>
+  </section>
+</div>
+
+<script>
+(function(){
+  var THRESH=5, N=4, TICK=450, WIN=60, MAXQ=12, NS='http://www.w3.org/2000/svg';
+  var CASES=[
+    {tab:'El pozo compartido', short:'Agua', kind:'Caso 1 · Agua', title:'El pozo compartido',
+     desc:'Dos comunidades toman agua del mismo pozo. Una lo cuida con trabajo en común, la otra con cuotas y medidores.',
+     svc:'Pozo y tanque', icon:'drop',
+     A:{name:'Compañía rural', origin:'Decide en rueda y aporta con trabajo. El saber se transmite haciendo.'},
+     B:{name:'Barrio cooperativo', origin:'Decide con estatutos y aporta con cuota. El saber queda escrito.'},
+     unlock:'un segundo tanque en el límite entre las dos comunidades',
+     rows:[
+      {from:'A', said:'El agua no se vende, se cuida entre todos.', heard:'No quieren aportar nada.', who:'B oye', pr:'Quien usa, cuida', base:'Cada hogar aporta al mantenimiento, con jornadas de trabajo o con cuota. Las dos formas cuentan igual.'},
+      {from:'B', said:'Cada hogar tiene su turno y su medidor.', heard:'Nos van a limitar el agua.', who:'A oye', pr:'El agua llega a todos', base:'El turno protege a los últimos de la cañería. Se acuerda según la necesidad de cada hogar.'},
+      {from:'A', said:'Eso ya lo acordamos en la rueda.', heard:'No hay nada firmado.', who:'B oye', pr:'Lo acordado queda a la vista', base:'Todo acuerdo se anota en un acta simple que ambas comunidades pueden leer y recordar.'}
+     ]},
+    {tab:'El camino de acceso', short:'Camino', kind:'Caso 2 · Camino', title:'El camino de acceso',
+     desc:'Un solo camino conecta a dos comunidades con el mercado. Una lo usa por temporada, la otra todos los días.',
+     svc:'Camino vecinal', icon:'road',
+     A:{name:'Productores de temporada', origin:'Planifica según cosecha y lluvia. Conoce el terreno por experiencia.'},
+     B:{name:'Comercio y transporte', origin:'Planifica según horarios y plazos de entrega. Mide el costo de cada demora.'},
+     unlock:'un desvío alternativo y una alcantarilla en el tramo que más se corta',
+     rows:[
+      {from:'A', said:'Con la lluvia el camino se cierra, así es.', heard:'No les importa que no lleguemos.', who:'B oye', pr:'El paso no se corta', base:'Antes de la época de lluvia se acuerda qué tramo se refuerza primero y quién lo vigila.'},
+      {from:'B', said:'Nosotros pasamos todos los días, que lo arreglen ellos.', heard:'Nos echan la culpa.', who:'A oye', pr:'El esfuerzo se reparte según el uso', base:'Quien más usa el camino y quien más lo desgasta aporta más al arreglo.'},
+      {from:'A', said:'Primero se saca al enfermo, después la mercadería.', heard:'Frenan todo cuando quieren.', who:'B oye', pr:'La emergencia pasa primero', base:'Una regla de prioridad escrita y conocida por ambos, con aviso al otro lado.'}
+     ]},
+    {tab:'La posta de salud', short:'Salud', kind:'Caso 3 · Salud', title:'La posta de salud',
+     desc:'Una posta atiende a dos comunidades. Una cuida con remedios caseros, la otra con consulta y ficha.',
+     svc:'Posta de salud', icon:'cross',
+     A:{name:'Comunidad de remedios caseros', origin:'Cuida con yuyos y parteras de confianza. La palabra de la familia pesa.'},
+     B:{name:'Comunidad de atención clínica', origin:'Cuida con consulta, ficha y medicamentos. Lo escrito y comprobado pesa.'},
+     unlock:'horario ampliado y promotoras de ambas comunidades en la posta',
+     rows:[
+      {from:'A', said:'Primero le damos su yuyo y vemos cómo sigue.', heard:'Retrasan la atención.', who:'B oye', pr:'La vida primero', base:'Se acuerdan señales de alarma que activan la derivación a la posta sin discusión.'},
+      {from:'B', said:'Eso no tiene respaldo, no se puede recomendar.', heard:'Dicen que nuestro saber no vale.', who:'A oye', pr:'El saber previo se respeta', base:'Se anota qué remedio se usó y se evalúa en conjunto, sin descalificar a nadie.'},
+      {from:'A', said:'Nosotras sabemos quién necesita ayuda en cada casa.', heard:'Se niegan a dar datos.', who:'B oye', pr:'El caso se registra para cuidar mejor', base:'Un registro simple, que pertenece a la persona atendida, reúne lo que sabe cada lado.'}
+     ]}
+  ];
+  var ICONS={
+    drop:'<path d="M0,-18 C11,-3 15,3 15,9 A15,15 0 0 1 -15,9 C-15,3 -11,-3 0,-18Z" fill="var(--ink)"/>',
+    road:'<path d="M-13,18 L-5,-18 M13,18 L5,-18" stroke="var(--ink)" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M0,16 L0,-16" stroke="var(--ink)" stroke-width="3" stroke-dasharray="5 5" fill="none"/>',
+    cross:'<path d="M-6,-17 h12 v11 h11 v12 h-11 v11 h-12 v-11 h-11 v-12 h11z" fill="var(--ink)"/>'
+  };
+  var PRESETS=[['Sin puente',10,10],['Solo A traduce',90,10],['Puente a medias',50,50],['Puente en ambos',90,90]];
+  var $=function(s){return document.querySelector(s)};
+  var clamp=function(v,a,b){return Math.max(a,Math.min(b,v))};
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var sA=$('#sA'), sB=$('#sB');
+  var ci=0, S, running=true, speed=1, anims=[];
+  var cs=function(){return CASES[ci]};
+
+  function pFor(trust,bA,bB){var tf=0.55+0.45*trust; return 0.12+0.88*(bA*tf)*(bB*tf);}
+
+  function reset(){
+    var bA=sA.value/100, bB=sB.value/100, p=pFor(0.5,bA,bB);
+    S={t:0,trust:0.5,queue:0,pA:0.3,pB:0.3,c:[0,0,0],m:[0,0,0],n:0,hist:[],
+       real:p,perc:p+(1-p)*0.88};
+  }
+
+  function spawn(from,aligned,k){
+    if(reduce||anims.length>36) return;
+    var el=document.createElementNS(NS,'circle');
+    el.setAttribute('r','7'); el.setAttribute('class','msg '+(aligned?'ok':'bad')); el.setAttribute('visibility','hidden');
+    $('#msgs').appendChild(el);
+    anims.push({el:el,from:from,start:performance.now()+k*120/speed,dur:900/speed});
+  }
+  function animate(now){
+    for(var i=anims.length-1;i>=0;i--){
+      var a=anims[i], u=(now-a.start)/a.dur;
+      if(u<0) continue;
+      if(u>=1){a.el.remove(); anims.splice(i,1); continue;}
+      var x0=a.from==='A'?170:550, x1=a.from==='A'?550:170;
+      var y=180+(a.from==='A'?-1:1)*Math.sin(Math.PI*u)*72;
+      a.el.setAttribute('cx',x0+(x1-x0)*u); a.el.setAttribute('cy',y); a.el.setAttribute('visibility','visible');
+    }
+  }
+
+  function tick(anim){
+    var bA=sA.value/100, bB=sB.value/100, rows=cs().rows;
+    var p=pFor(S.trust,bA,bB), ok=0, d=0, dq=0;
+    for(var k=0;k<N;k++){
+      var ri=S.n++%rows.length, aligned=Math.random()<p;
+      if(aligned){ok++; d+=0.02; dq-=0.35; S.c[ri]=Math.min(THRESH,S.c[ri]+1);}
+      else{
+        if(Math.random()<0.12){dq+=0.15;} else {d-=0.014; dq+=0.5;}
+        if(S.c[ri]<THRESH) S.c[ri]=Math.max(0,S.c[ri]-1);
+        S.m[ri]++;
+      }
+      if(anim) spawn(rows[ri].from,aligned,k);
+    }
+    S.trust=clamp(S.trust+d,0,1);
+    S.queue=clamp(S.queue+dq-0.6*S.trust,0,MAXQ);
+    S.real+=((0.5*ok/N+0.5*p)-S.real)*0.3;
+    var percT=0.5*((ok+(N-ok)*0.88)/N)+0.5*(p+(1-p)*0.88);
+    S.perc+=(percT-S.perc)*0.3;
+    S.t++;
+    S.hist.push({t:S.t,perc:S.perc,real:S.real,coop:S.trust});
+    var frac=(S.c[0]+S.c[1]+S.c[2])/(THRESH*3);
+    var base=0.12+0.88*S.trust*(0.4+0.6*frac), pen=S.queue/MAXQ*0.12;
+    var tA=clamp(base*(0.8+0.2*bA)-pen,0.08,1), tB=clamp(base*(0.8+0.2*bB)-pen,0.08,1);
+    S.pA+=(tA-S.pA)*0.12; S.pB+=(tB-S.pB)*0.12;
+  }
+
+  function pct(v){return Math.round(v*100)+'%';}
+  function setBar(id,v){$(id).style.width=Math.round(clamp(v,0,1)*100)+'%';}
+
+  function drawChart(){
+    var W=560,H=220,L=46,R=14,T=12,B=34;
+    var t1=Math.max(WIN,S.t), t0=t1-WIN;
+    var x=function(t){return L+(t-t0)/(t1-t0)*(W-L-R)};
+    var y=function(v){return T+(1-v)*(H-T-B)};
+    var g='';
+    [0,0.25,0.5,0.75,1].forEach(function(v){
+      g+='<line class="gl" x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text class="ax" x="'+(L-8)+'" y="'+(y(v)+5)+'" text-anchor="end">'+Math.round(v*100)+'</text>';
+    });
+    for(var t=Math.ceil(t0/10)*10;t<=t1;t+=10){
+      g+='<text class="ax" x="'+x(t)+'" y="'+(H-10)+'" text-anchor="middle">'+t+'</text>';
+    }
+    var h=S.hist.filter(function(e){return e.t>=t0});
+    if(h.length>1){
+      var path=function(key){return h.map(function(e,i){return (i?'L':'M')+x(e.t).toFixed(1)+' '+y(e[key]).toFixed(1)}).join(' ')};
+      var fwd=h.map(function(e){return x(e.t).toFixed(1)+','+y(e.perc).toFixed(1)}).join(' ');
+      var back=h.slice().reverse().map(function(e){return x(e.t).toFixed(1)+','+y(e.real).toFixed(1)}).join(' ');
+      g+='<polygon class="gap" points="'+fwd+' '+back+'"/>';
+      g+='<path class="ln ln-perc" d="'+path('perc')+'"/><path class="ln ln-coop" d="'+path('coop')+'"/><path class="ln ln-real" d="'+path('real')+'"/>';
+      var e=h[h.length-1];
+      g+='<circle class="dot-end" cx="'+x(e.t)+'" cy="'+y(e.perc)+'" r="5" fill="var(--ink-dim)"/><circle class="dot-end" cx="'+x(e.t)+'" cy="'+y(e.coop)+'" r="5" fill="var(--ink)"/><circle class="dot-end" cx="'+x(e.t)+'" cy="'+y(e.real)+'" r="5.5" fill="var(--ok)"/>';
+    }
+    $('#chart').innerHTML=g;
+  }
+
+  function paint(){
+    var c=cs(), P=Math.round(S.perc*100), R=Math.round(S.real*100);
+    $('#week').textContent='Semana '+S.t;
+    $('#vPerc').textContent=pct(S.perc); setBar('#bPerc',S.perc);
+    $('#vReal').textContent=pct(S.real); setBar('#bReal',S.real);
+    $('#vCoop').textContent=pct(S.trust); setBar('#bCoop',S.trust);
+    var q=Math.round(S.queue);
+    $('#vQ').textContent=q+(q===1?' pedido':' pedidos'); setBar('#bQ',S.queue/MAXQ);
+    $('#vPA').textContent=pct(S.pA); setBar('#bPA',S.pA);
+    $('#vPB').textContent=pct(S.pB); setBar('#bPB',S.pB);
+
+    var rA=60+S.pA*250, rB=60+S.pB*250;
+    $('#ringA').setAttribute('r',rA); $('#lens').setAttribute('r',rA);
+    $('#ringB').setAttribute('r',rB); $('#clipBc').setAttribute('r',rB);
+
+    var qs='';
+    for(var i=0;i<q;i++){qs+='<rect class="q" x="'+(315+(i%6)*18)+'" y="'+(120-Math.floor(i/6)*18)+'" width="14" height="14" rx="3"/>';}
+    $('#queue').innerHTML=qs;
+
+    var all=S.c.every(function(v){return v>=THRESH});
+    $('#unl').setAttribute('visibility',all?'visible':'hidden');
+    $('#svcName').textContent=c.svc+(all?' · ampliado':'');
+
+    c.rows.forEach(function(r,i){
+      var el=$('#row'+i), n=S.c[i], st='idle', tx='Sin aclarar';
+      if(n>=THRESH){st='ok'; tx='Base compartida';}
+      else if(n>=2){st='prog'; tx='Se está aclarando';}
+      else if(S.m[i]>=3){st='mis'; tx='Malentendido activo';}
+      el.setAttribute('data-st',st); el.querySelector('.st').textContent=tx;
+      var dots=el.querySelectorAll('.dots i');
+      for(var j=0;j<dots.length;j++){dots[j].classList.toggle('on',j<n);}
+    });
+
+    var gap=P-R;
+    var rd=$('#read');
+    if(gap<8){rd.textContent='Creen entender '+P+'% y entienden lo mismo '+R+'%. Casi no hay brecha.'; rd.setAttribute('data-k','ok');}
+    else{rd.textContent='Creen entender '+P+'%, pero entienden lo mismo '+R+'%. Esa brecha de '+gap+' puntos es comprensión no comprendida.'; rd.setAttribute('data-k','bad');}
+
+    var p=pFor(S.trust,sA.value/100,sB.value/100);
+    var dT=N*(p*0.02-(1-p)*0.88*0.014);
+    var tr=dT>0.004?'La confianza sube':(dT<-0.004?'La confianza cae':'La confianza se sostiene');
+    $('#trend').textContent=tr+' con estos puentes. Pedidos entendidos igual: '+Math.round(p*100)+'%.';
+
+    var st=$('#state'), k='n', msg;
+    if(all&&S.trust>0.7){k='ok'; msg='Base común alcanzada. Los dos perímetros cubren el servicio y se abre '+c.unlock+'.';}
+    else if(S.trust<0.12&&S.t>=8){k='bad'; msg='Cooperación rota. Cada comunidad se repliega a su perímetro y el servicio compartido queda trabado.';}
+    else if(S.queue>=8){k='bad'; msg='Los pedidos se acumulan en el servicio compartido porque cada lado actúa sobre su propia lectura.';}
+    else if(dT>0.004){k='ok'; msg='Más pedidos llegan entendidos igual. Los perímetros empiezan a solaparse sobre el servicio.';}
+    else if(dT<-0.004){k='bad'; msg='Con estos puentes los malentendidos pesan más que los acuerdos y la cooperación se desgasta.';}
+    else{msg='La cooperación se sostiene, sin crecer. Falta un puente más firme en alguno de los dos lados.';}
+    st.setAttribute('data-k',k); $('#stateTxt').textContent=msg;
+
+    drawChart();
+  }
+
+  function renderCase(){
+    var c=cs();
+    $('#caseKind').textContent=c.kind; $('#caseTitle').textContent=c.title; $('#caseDesc').textContent=c.desc;
+    $('#nameA').textContent=c.A.name; $('#origA').textContent=c.A.origin;
+    $('#nameB').textContent=c.B.name; $('#origB').textContent=c.B.origin;
+    $('#svcIcon').innerHTML=ICONS[c.icon];
+    var dots=''; for(var d=0;d<THRESH;d++) dots+='<i></i>';
+    $('#rows').innerHTML=c.rows.map(function(r,i){
+      var who=r.from==='A'?'who-a':'who-b';
+      return '<article class="prow" id="row'+i+'" data-st="idle">'+
+        '<div class="pcell said"><span class="who '+who+'">'+r.from+' dice</span><p>“'+r.said+'”</p></div>'+
+        '<div class="pcell heard"><span class="who who-h">'+r.who+' sin puente</span><p>“'+r.heard+'”</p></div>'+
+        '<div class="pcell base"><span class="who who-base">Base común</span><h4>'+r.pr+'</h4><p>'+r.base+'</p>'+
+        '<div class="prog"><span class="dots">'+dots+'</span><span class="st">Sin aclarar</span></div></div></article>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(b,i){b.setAttribute('aria-pressed',String(i===ci));});
+  }
+
+  function clearMsgs(){anims.forEach(function(a){a.el.remove()}); anims=[];}
+  function loadCase(prerun){
+    clearMsgs(); reset(); renderCase();
+    if(prerun) for(var i=0;i<10;i++) tick(false);
+    paint();
+  }
+
+  function syncUi(){
+    $('#vA').textContent=sA.value+'%'; $('#vB').textContent=sB.value+'%';
+    Array.prototype.forEach.call(document.querySelectorAll('#presets .btn'),function(b){
+      b.setAttribute('aria-pressed',String(+b.dataset.a===+sA.value&&+b.dataset.b===+sB.value));
+    });
+  }
+
+  /* Montaje de controles */
+  $('#tabs').innerHTML=CASES.map(function(c,i){
+    return '<button type="button" class="tab" data-i="'+i+'" aria-pressed="'+(i===0)+'"><span class="t1">'+c.tab+'</span><span class="t2">'+c.short+'</span></button>';
+  }).join('');
+  $('#tabs').addEventListener('click',function(e){
+    var b=e.target.closest('.tab'); if(!b) return;
+    ci=+b.dataset.i; loadCase(false);
+  });
+  $('#presets').innerHTML=PRESETS.map(function(p){
+    return '<button type="button" class="btn" data-a="'+p[1]+'" data-b="'+p[2]+'" aria-pressed="false">'+p[0]+'</button>';
+  }).join('');
+  $('#presets').addEventListener('click',function(e){
+    var b=e.target.closest('.btn'); if(!b) return;
+    sA.value=b.dataset.a; sB.value=b.dataset.b; syncUi(); paint();
+  });
+  sA.addEventListener('input',function(){syncUi(); paint();});
+  sB.addEventListener('input',function(){syncUi(); paint();});
+  $('#bPlay').addEventListener('click',function(){
+    running=!running; this.textContent=running?'Pausar':'Reanudar'; this.setAttribute('aria-pressed',String(!running));
+  });
+  $('#bReset').addEventListener('click',function(){loadCase(false);});
+  Array.prototype.forEach.call(document.querySelectorAll('.sp'),function(b){
+    b.addEventListener('click',function(){
+      speed=+b.dataset.s;
+      Array.prototype.forEach.call(document.querySelectorAll('.sp'),function(o){o.setAttribute('aria-pressed',String(o===b));});
+    });
+  });
+
+  /* Arranque: diez semanas ya simuladas sin puente, para que se vea la brecha desde el primer cuadro */
+  syncUi(); loadCase(true);
+
+  var last=performance.now(), acc=0;
+  function frame(now){
+    var dt=Math.min(now-last,250); last=now;
+    if(running){
+      acc+=dt*speed; var g=0, moved=false;
+      while(acc>=TICK&&g++<8){acc-=TICK; tick(true); moved=true;}
+      if(moved) paint();
+    }
+    animate(now);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
