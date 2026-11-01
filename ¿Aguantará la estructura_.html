@@ -1,0 +1,872 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>¿Aguantará la estructura?</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Press+Start+2P&display=swap">
+<style>
+/* Concepto: plano de obra nocturno. La rejilla de 6x5 es el protagonista, el panel de pruebas queda al lado. */
+:root {
+  --bg: #0a1a2b;
+  --panel: #0e2339;
+  --cell: #0f2a45;
+  --line: #24527d;
+  --line-soft: #183a5a;
+  --ink: #e9f2fa;
+  --mute: #93b3cd;
+  --tape: #ffc21a;
+  --tape-ink: #1c1500;
+  --ok: #46e0a0;
+  --bad: #ff5d4f;
+  --steel-1: #bcd0e0;
+  --steel-2: #8aa3b8;
+  --steel-3: #4b6379;
+  --soil: #3a2f26;
+  --mc0: #5cc8f2;
+  --mc1: #6fe0b0;
+  --mc2: #ff9f5a;
+  --mc3: #b9a3ff;
+  --mc4: #ff86b6;
+  --font-display: 'Press Start 2P', ui-monospace, 'Courier New', monospace;
+  --font-body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--line-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: -1px -1px;
+}
+.wrap {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding-block: 20px 36px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--tape); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Cabecera */
+header { display: grid; gap: 14px; margin-bottom: 18px; }
+h1 {
+  margin: 0;
+  font: 400 clamp(14px, 4.1vw, 22px)/1.5 var(--font-display);
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+  text-transform: uppercase;
+}
+h1 span { color: var(--tape); }
+.bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.seg { display: inline-flex; border: 2px solid var(--line); border-radius: 3px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: transparent; padding: 7px 12px; font-weight: 700; font-size: 13px; color: var(--mute); }
+.seg button[aria-pressed="true"] { background: var(--tape); color: var(--tape-ink); }
+.levels { display: grid; grid-template-columns: repeat(3, minmax(0, 118px)); gap: 8px; }
+.lv {
+  display: grid; gap: 1px; text-align: left; padding: 6px 10px; min-width: 0;
+  background: var(--panel); border: 2px solid var(--line); border-radius: 3px;
+}
+.lv b { font: 400 10px/1.6 var(--font-display); color: var(--mute); }
+.lv span { font-size: 13px; font-weight: 700; }
+.lv i { font-style: normal; color: var(--tape); letter-spacing: 2px; font-size: 13px; min-height: 18px; }
+.lv[aria-pressed="true"] { border-color: var(--tape); background: #14304d; }
+.lv[aria-pressed="true"] b { color: var(--tape); }
+.steps { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; color: var(--mute); font-size: 13px; }
+.steps li { display: flex; align-items: center; gap: 6px; }
+.steps b { font: 400 9px/1 var(--font-display); color: var(--tape-ink); background: var(--tape); padding: 4px 5px; border-radius: 2px; }
+
+/* Distribución */
+.main { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); }
+#build { grid-area: build; }
+#brief { grid-area: brief; }
+#results { grid-area: results; }
+.main { grid-template-areas: "brief" "build" "results"; }
+@media (min-width: 880px) {
+  .main { grid-template-columns: minmax(0, 500px) minmax(0, 1fr); grid-template-areas: "build brief" "build results"; align-items: start; }
+}
+.card { background: var(--panel); border: 2px solid var(--line); border-radius: 3px; padding: 14px 16px; }
+h2 { margin: 0 0 8px; font: 400 11px/1.6 var(--font-display); color: var(--tape); text-transform: uppercase; letter-spacing: 0.04em; }
+.card p { margin: 0 0 8px; max-width: 62ch; }
+.card p:last-child { margin-bottom: 0; }
+.fine { color: var(--mute); font-size: 14px; }
+.fine::before { content: ""; display: inline-block; width: 18px; height: 6px; margin-right: 8px; vertical-align: middle;
+  background: repeating-linear-gradient(135deg, var(--tape) 0 3px, #1c1500 3px 6px); }
+
+/* Módulos del cliente */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; padding: 0; list-style: none; }
+.chip {
+  display: grid; grid-template-columns: auto 1fr; gap: 0 8px; align-items: center; text-align: left;
+  padding: 7px 10px 7px 8px; background: #0b1d30; border: 2px solid var(--line); border-radius: 3px; min-width: 132px;
+}
+.chip .sw { grid-row: span 2; width: 22px; height: 22px; border-radius: 2px; border: 2px solid #0b1d30; }
+.chip b { font-size: 14px; }
+.chip small { color: var(--mute); font-size: 12px; }
+.chip[aria-pressed="true"] { border-color: var(--tape); background: #14304d; }
+.chip.placed b::after { content: " \2713"; color: var(--ok); }
+.mc0 { background: var(--mc0); } .mc1 { background: var(--mc1); } .mc2 { background: var(--mc2); }
+.mc3 { background: var(--mc3); } .mc4 { background: var(--mc4); }
+
+/* Tablero */
+.board {
+  display: grid; grid-template-columns: 2.6rem repeat(6, minmax(0, 1fr)); gap: 3px;
+  padding: 10px 10px 0 6px; background: var(--panel); border: 2px solid var(--line); border-bottom: 0; border-radius: 3px 3px 0 0;
+}
+.rl { display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; color: var(--mute); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; text-align: right; line-height: 1.1; }
+.cell {
+  position: relative; aspect-ratio: 1; padding: 0; min-width: 0; display: block; overflow: hidden;
+  background: var(--cell); border: 1px solid var(--line-soft); border-radius: 2px;
+}
+.cell svg { display: block; width: 100%; height: 100%; }
+.cell:hover:not(:disabled) { border-color: var(--line); }
+.cell.can { outline: 2px dashed var(--tape); outline-offset: -3px; }
+.cell.blocked { cursor: not-allowed; background: repeating-linear-gradient(135deg, #0b1c2e 0 5px, #0e2237 5px 10px); border-color: transparent; }
+.soil { height: 14px; border: 2px solid var(--line); border-top: 0; border-radius: 0 0 3px 3px; margin-bottom: 8px;
+  background: repeating-linear-gradient(90deg, var(--soil) 0 10px, #4a3d32 10px 14px); }
+.s1 { fill: var(--steel-1); } .s2 { fill: var(--steel-2); } .s3 { fill: var(--steel-3); }
+.y { fill: var(--tape); } .yd { fill: #1c1500; } .rd { fill: var(--bad); }
+.mod { position: absolute; inset: 3px; display: grid; place-items: center; border-radius: 2px; color: #08121d; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.22); }
+.mod b { font: 400 clamp(8px, 2.3vw, 11px)/1 var(--font-display); letter-spacing: 0; }
+.mod i { position: absolute; right: 3px; bottom: 5px; font: 700 clamp(10px, 2.6vw, 12px)/1 var(--font-body); font-style: normal; }
+.mod::before { content: ""; position: absolute; left: 4px; top: 4px; width: 22%; height: 18%; background: rgba(255,255,255,0.45); }
+
+/* Estados de prueba */
+.cell.crack { outline: 3px solid var(--bad); outline-offset: -3px; animation: shake 0.4s steps(4) 2; }
+.cell.crack::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 46%, var(--bad) 46% 50%, transparent 50%) 0 0 / 100% 55% no-repeat,
+              linear-gradient(60deg, transparent 46%, var(--bad) 46% 50%, transparent 50%) 0 100% / 100% 55% no-repeat; }
+.cell.weak { outline: 3px solid var(--tape); outline-offset: -3px; }
+.cell.newslot { outline: 3px dashed var(--ok); outline-offset: -3px; }
+.cell.newslot::after { content: "+"; position: absolute; inset: 0; display: grid; place-items: center; font: 400 14px var(--font-display); color: var(--ok); }
+@keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } 100% { transform: translateX(0); } }
+
+/* Herramientas */
+.tools { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 8px; }
+.tool { display: grid; justify-items: center; gap: 3px; padding: 6px 2px 5px; background: var(--panel); border: 2px solid var(--line); border-radius: 3px; min-width: 0; }
+.tool svg { width: 30px; height: 30px; }
+.tool b { font-size: 12px; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+.tool small { color: var(--mute); font-size: 11px; }
+.tool[aria-pressed="true"] { border-color: var(--tape); background: #14304d; }
+.hint { min-height: 2.8em; margin: 0 0 10px; color: var(--mute); font-size: 14px; }
+
+/* Presupuesto y botones */
+.budget { display: grid; gap: 5px; margin-bottom: 12px; }
+.budget p { margin: 0; display: flex; justify-content: space-between; gap: 8px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.meter { height: 12px; background: #081522; border: 2px solid var(--line); border-radius: 2px; overflow: hidden; }
+.meter div { height: 100%; width: 0; background: repeating-linear-gradient(135deg, var(--tape) 0 6px, #e0a800 6px 12px); transition: width 0.2s; }
+.budget.over .meter div { background: repeating-linear-gradient(135deg, var(--bad) 0 6px, #c4382c 6px 12px); }
+.budget.over p span:last-child { color: var(--bad); font-weight: 700; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.go { flex: 1 1 160px; padding: 14px 18px; background: var(--tape); color: var(--tape-ink); border: 0; border-radius: 3px; font: 400 14px/1 var(--font-display); box-shadow: 0 5px 0 #a97f00; }
+.go:active { transform: translateY(3px); box-shadow: 0 2px 0 #a97f00; }
+.ghost { padding: 12px 16px; background: transparent; border: 2px solid var(--line); border-radius: 3px; font-weight: 700; color: var(--mute); }
+.draft { margin: 0 0 10px; padding: 8px 10px; border: 2px dashed var(--tape); border-radius: 3px; font-size: 14px; }
+
+/* Resultados */
+.stages { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.stage { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; align-items: start; padding: 10px 12px; background: #0b1d30; border: 2px solid var(--line-soft); border-radius: 3px; }
+.stage .n { grid-row: span 2; font: 400 12px/1.4 var(--font-display); color: var(--mute); padding-top: 2px; }
+.stage h3 { margin: 0; font-size: 15px; }
+.stage p { grid-column: 2 / 4; margin: 0; color: var(--mute); font-size: 13.5px; }
+.stage .st { grid-row: 1; grid-column: 3; font: 700 11px/1 var(--font-body); letter-spacing: 0.08em; padding: 4px 7px; border-radius: 2px; background: #14304d; color: var(--mute); }
+.stage ul { grid-column: 2 / 4; margin: 4px 0 0; padding-left: 18px; font-size: 14px; }
+.stage li { margin: 2px 0; }
+.stage.ok { border-color: var(--ok); }
+.stage.ok .st { background: var(--ok); color: #05281b; }
+.stage.ok .n { color: var(--ok); }
+.stage.bad { border-color: var(--bad); }
+.stage.bad .st { background: var(--bad); color: #2b0805; }
+.stage.bad .n { color: var(--bad); }
+.stage.bad p { color: var(--ink); }
+.summary { margin: 12px 0 0; font-size: 14.5px; }
+.summary:empty { display: none; }
+.win { margin-top: 12px; padding: 14px 16px; border: 2px solid var(--ok); border-radius: 3px; background: #0b2a24; }
+.win h2 { color: var(--ok); }
+.stars { font-size: 26px; letter-spacing: 6px; color: var(--tape); line-height: 1.2; }
+.win dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; margin: 8px 0 12px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.win dt { color: var(--mute); }
+.win dd { margin: 0; font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cell.crack { animation: none; }
+  .meter div { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>¿Aguantará la <span>estructura</span>?</h1>
+    <div class="bar">
+      <div class="seg" role="group" aria-label="Modo de juego">
+        <button type="button" id="mk" aria-pressed="true">Niños</button>
+        <button type="button" id="mb" aria-pressed="false">Empresarios</button>
+      </div>
+      <div class="levels" id="levels" role="group" aria-label="Nivel"></div>
+    </div>
+    <ol class="steps" aria-label="Cómo se juega">
+      <li><b>1</b> Construye</li>
+      <li><b>2</b> Prueba</li>
+      <li><b>3</b> Corrige</li>
+    </ol>
+  </header>
+
+  <div class="main">
+    <section id="brief" class="card" aria-labelledby="hb">
+      <h2 id="hb">Pedido del cliente</h2>
+      <p id="intro"></p>
+      <ul class="chips" id="chips"></ul>
+      <p id="wind" class="fine"></p>
+      <p id="fine" class="fine"></p>
+    </section>
+
+    <section id="build" aria-label="Zona de construcción">
+      <div class="board" id="board" role="group" aria-label="Estructura en construcción"></div>
+      <div class="soil" aria-hidden="true"></div>
+      <div class="tools" id="tools" role="group" aria-label="Piezas"></div>
+      <p class="hint" id="hint" aria-live="polite"></p>
+      <p class="draft" id="draft" hidden></p>
+      <div class="budget" id="budget">
+        <p><span id="bl">Presupuesto</span><span id="bv"></span></p>
+        <div class="meter" aria-hidden="true"><div id="bm"></div></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="go" id="go">PROBAR</button>
+        <button type="button" class="ghost" id="clear">Limpiar</button>
+      </div>
+    </section>
+
+    <section id="results" class="card" aria-labelledby="hr">
+      <h2 id="hr">Pruebas de estabilidad</h2>
+      <ol class="stages" id="stages"></ol>
+      <p class="summary" id="summary" aria-live="polite"></p>
+      <div id="win"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+/* Motor de ¿Aguantará la estructura?
+   Diseño liviano: sin bucle de animación, todo se calcula una sola vez por prueba.
+   La rejilla es un Uint8Array plano de 6x5 = 30 celdas (índice = fila*W + columna, fila 0 = suelo).
+   Códigos: 0 vacío, 1 Base, 2 Pilar, 3 Refuerzo, 4 Puente, 10+n módulo n. */
+var W = 6, H = 5;
+var BASE = 1, PILAR = 2, REFUERZO = 3, PUENTE = 4, MOD0 = 10;
+var COST = { 1: 3, 2: 2, 3: 3, 4: 1 };
+
+function capOf(v) { return v === 1 ? 9 : v === 2 ? 5 : v === 3 ? 6 : v >= 10 ? 3 : 0; }
+
+function costOf(g) {
+  var t = 0;
+  for (var i = 0; i < g.length; i++) if (g[i] > 0 && g[i] < 10) t += COST[g[i]];
+  return t;
+}
+
+function findCell(g, code) {
+  for (var i = 0; i < g.length; i++) if (g[i] === code) return i;
+  return -1;
+}
+
+/* Peso: baja columna por columna, de arriba hacia abajo. Una sola pasada por celda. */
+function gravity(g, loads, f, weak) {
+  var probs = [], stress = [];
+  for (var c = 0; c < W; c++) {
+    var carry = 0;
+    for (var r = H - 1; r >= 0; r--) {
+      var i = r * W + c, v = g[i];
+      if (v === 0) {
+        if (carry > 0) { probs.push({ i: i, code: r === 0 ? 'sinBase' : 'aire' }); break; }
+        continue;
+      }
+      if (v === 4) {
+        if (carry > 0) { probs.push({ i: i, code: 'viga' }); break; }
+        continue;
+      }
+      var cap = capOf(v);
+      if (i === weak) cap = cap / 2;
+      if (carry > cap + 1e-9) { probs.push({ i: i, code: 'sobrecarga', need: carry, cap: cap }); break; }
+      if (carry > 0 && v !== 3) stress.push({ i: i, util: carry / capOf(v) });
+      if (v >= 10) carry += loads[v - 10] * f;
+    }
+  }
+  return { probs: probs, stress: stress };
+}
+
+/* Viento: una torre alta necesita ataduras. Puente válido = tiene algo a ambos lados. */
+function wind(g, free) {
+  var h = [], ties = [], probs = [], r, c, d;
+  for (c = 0; c < W; c++) {
+    var n = 0;
+    while (n < H && g[n * W + c] !== 0) n++;
+    h.push(n); ties.push(0);
+  }
+  for (r = 1; r < H; r++) {
+    for (c = 0; c < W; c++) {
+      var v = g[r * W + c];
+      if (v === 3 && r < h[c]) ties[c]++;
+      if (v === 4 && c > 0 && c < W - 1 && g[r * W + c - 1] && g[r * W + c + 1]) {
+        for (d = -1; d <= 1; d++) if (r < h[c + d]) ties[c + d]++;
+      }
+    }
+  }
+  for (c = 0; c < W; c++) {
+    if (h[c] > free + ties[c]) probs.push({ i: (h[c] - 1) * W + c, code: 'viento', h: h[c], max: free + ties[c] });
+  }
+  return probs;
+}
+
+/* Comunicación entre áreas: sólo viajan por módulos y puentes, nunca por los cimientos. */
+function linked(g, a, b) {
+  var s = findCell(g, MOD0 + a), t = findCell(g, MOD0 + b);
+  if (s < 0 || t < 0) return false;
+  var seen = new Uint8Array(W * H), q = [s];
+  seen[s] = 1;
+  while (q.length) {
+    var i = q.pop();
+    if (i === t) return true;
+    var r = (i / W) | 0, c = i % W, ns = [];
+    if (r > 0) ns.push(i - W);
+    if (r < H - 1) ns.push(i + W);
+    if (c > 0) ns.push(i - 1);
+    if (c < W - 1) ns.push(i + 1);
+    for (var k = 0; k < ns.length; k++) {
+      var j = ns[k];
+      if (!seen[j] && (g[j] === 4 || g[j] >= 10)) { seen[j] = 1; q.push(j); }
+    }
+  }
+  return false;
+}
+
+function loadsOf(L) { return L.mods.map(function (m) { return m.load; }); }
+
+/* Revisión previa: se hace antes de las pruebas y no gasta nada extra. */
+function precheck(g, L) {
+  var out = { missing: [], wrong: [], over: false, links: [] }, k;
+  for (k = 0; k < L.mods.length; k++) {
+    var at = findCell(g, MOD0 + k);
+    if (at < 0) out.missing.push(k);
+    else if (((at / W) | 0) !== L.mods[k].row) out.wrong.push(k);
+  }
+  out.over = costOf(g) > L.budget;
+  for (k = 0; k < L.links.length; k++) {
+    if (out.missing.length === 0 && !linked(g, L.links[k][0], L.links[k][1])) out.links.push(L.links[k]);
+  }
+  out.ok = out.missing.length === 0 && out.wrong.length === 0 && !out.over && out.links.length === 0;
+  return out;
+}
+
+function stagePresion(g, L) {
+  var gr = gravity(g, loadsOf(L), L.fp, -1);
+  return { id: 'presion', probs: gr.probs.concat(wind(g, L.free)) };
+}
+
+/* Errores: cualquier pieza podría debilitarse a la mitad. Ninguna debe trabajar a más del 50% de su fuerza.
+   Los Refuerzos tienen respaldo y no se evalúan. Una sola pasada, sin repetir el cálculo por pieza. */
+function stageErrores(g, L) {
+  var base = gravity(g, loadsOf(L), 1, -1), probs = [], weak = -1, best = -1;
+  for (var k = 0; k < base.stress.length; k++) {
+    var s = base.stress[k];
+    if (s.util > best) { best = s.util; weak = s.i; }
+    if (s.util > 0.5 + 1e-9) probs.push({ i: s.i, code: 'margen', util: s.util });
+  }
+  return { id: 'errores', weak: weak, worst: best < 0 ? 0 : best, probs: base.probs.concat(probs) };
+}
+
+function stageCambios(g, L) {
+  var ch = L.change;
+  if (ch.kind === 'peso') {
+    var loads = loadsOf(L);
+    loads[ch.mod] += ch.extra;
+    return { id: 'cambios', probs: gravity(g, loads, 1, -1).probs };
+  }
+  if (linked(g, ch.a, ch.b)) return { id: 'cambios', probs: [] };
+  return { id: 'cambios', probs: [{ i: findCell(g, MOD0 + ch.a), code: 'enlace', a: ch.a, b: ch.b, j: findCell(g, MOD0 + ch.b) }] };
+}
+
+/* Crecimiento: llega un módulo nuevo. Se prueba sólo encima de cada torre (máximo 6 candidatos). */
+function stageCrecimiento(g, L) {
+  var loads = loadsOf(L).concat([L.grow]), code = MOD0 + L.mods.length;
+  var best = null, found = false;
+  for (var c = 0; c < W && !found; c++) {
+    var h = 0;
+    while (h < H && g[h * W + c] !== 0) h++;
+    if (h === 0 || h >= H) continue;
+    var below = g[(h - 1) * W + c];
+    if (below === 4) continue;
+    var t = new Uint8Array(g);
+    t[h * W + c] = code;
+    var probs = gravity(t, loads, 1, -1).probs.concat(wind(t, L.free));
+    if (probs.length === 0) { found = true; best = { slot: h * W + c, probs: [] }; }
+    else if (!best || probs.length < best.probs.length) best = { slot: h * W + c, probs: probs };
+  }
+  if (found) return { id: 'crecimiento', probs: [], slot: best.slot };
+  if (!best) return { id: 'crecimiento', probs: [{ i: -1, code: 'sinLugar' }] };
+  return { id: 'crecimiento', probs: best.probs, slot: best.slot };
+}
+
+var STAGES = [stagePresion, stageErrores, stageCambios, stageCrecimiento];
+
+/* Prueba por etapas: se detiene en la primera que falla, como en un arcade. */
+function runTests(g, L) {
+  var pre = precheck(g, L);
+  if (!pre.ok) return { pre: pre, stages: [], ok: false, failedAt: -1 };
+  var stages = [];
+  for (var k = 0; k < STAGES.length; k++) {
+    var s = STAGES[k](g, L);
+    s.ok = s.probs.length === 0;
+    stages.push(s);
+    if (!s.ok) return { pre: pre, stages: stages, ok: false, failedAt: k };
+  }
+  return { pre: pre, stages: stages, ok: true, failedAt: -1 };
+}
+
+/* Sólo para la búsqueda de soluciones: cuenta todos los problemas sin detenerse. */
+function penalty(g, L) {
+  var pre = precheck(g, L), p = pre.missing.length * 20 + pre.wrong.length * 20 + pre.links.length * 6;
+  if (pre.missing.length || pre.wrong.length) return p;
+  for (var k = 0; k < STAGES.length; k++) p += STAGES[k](g, L).probs.length;
+  return p;
+}
+
+/* ---------- Niveles ---------- */
+var LEVELS = [
+  {
+    name: { k: 'El kiosco', b: 'El kiosco digital' },
+    cols: [1, 2, 3, 4], budget: 21, par: 17, fp: 1.5, free: 4, grow: 2,
+    mods: [
+      { k: 'Juegos', b: 'Ventas', ab: 'JUE', abb: 'VEN', load: 2, row: 2 },
+      { k: 'Fotos', b: 'Inventario', ab: 'FOT', abb: 'INV', load: 2, row: 1 },
+      { k: 'Chat', b: 'Atención', ab: 'CHA', abb: 'ATE', load: 3, row: 3 }
+    ],
+    links: [],
+    change: { kind: 'peso', mod: 2, extra: 2 }
+  },
+  {
+    name: { k: 'La tienda', b: 'La tienda en línea' },
+    cols: [1, 2, 3, 4], budget: 29, par: 24, fp: 1.5, free: 3, grow: 2,
+    mods: [
+      { k: 'Tienda', b: 'Ventas', ab: 'TIE', abb: 'VEN', load: 3, row: 2 },
+      { k: 'Bodega', b: 'Inventario', ab: 'BOD', abb: 'INV', load: 2, row: 2 },
+      { k: 'Caja', b: 'Facturación', ab: 'CAJ', abb: 'FAC', load: 3, row: 3 },
+      { k: 'Ayuda', b: 'Atención', ab: 'AYU', abb: 'ATE', load: 2, row: 1 }
+    ],
+    links: [[0, 1]],
+    change: { kind: 'link', a: 2, b: 0 }
+  },
+  {
+    name: { k: 'El banco', b: 'El banco' },
+    cols: [0, 1, 2, 3, 4, 5], budget: 36, par: 29, fp: 1.75, free: 2, grow: 3,
+    mods: [
+      { k: 'Cajeros', b: 'Cajeros', ab: 'CAJ', abb: 'CAJ', load: 3, row: 1 },
+      { k: 'Cuentas', b: 'Cuentas', ab: 'CUE', abb: 'CUE', load: 3, row: 2 },
+      { k: 'Pagos', b: 'Pagos', ab: 'PAG', abb: 'PAG', load: 3, row: 3 },
+      { k: 'Alertas', b: 'Riesgos', ab: 'ALE', abb: 'RIE', load: 2, row: 2 },
+      { k: 'Reportes', b: 'Reportes', ab: 'REP', abb: 'REP', load: 2, row: 1 }
+    ],
+    links: [[0, 1], [1, 2]],
+    change: { kind: 'link', a: 3, b: 0 }
+  }
+];
+
+if (typeof module !== 'undefined') {
+  module.exports = { W: W, H: H, COST: COST, MOD0: MOD0, LEVELS: LEVELS, capOf: capOf, costOf: costOf, gravity: gravity, wind: wind, linked: linked, precheck: precheck, runTests: runTests, penalty: penalty, stagePresion: stagePresion, stageErrores: stageErrores, stageCambios: stageCambios, stageCrecimiento: stageCrecimiento, findCell: findCell };
+}
+
+</script>
+<script>
+(function () {
+  var $ = function (s) { return document.getElementById(s); };
+  var STORE = 'aguantara-estructura-v1';
+  var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var STAGE_IDS = ['presion', 'errores', 'cambios', 'crecimiento'];
+
+  /* ---------- Textos por modo (k = niños, b = empresarios) ---------- */
+  var PIECES = {
+    C: { code: 1, cost: 3, cap: 9, k: { n: 'Base', d: 'Base: el suelo firme. Aguanta 9. Solo va en la fila de abajo.' }, b: { n: 'Cimiento', d: 'Cimiento de datos y respaldo. Capacidad 9. Solo va en el nivel base.' } },
+    P: { code: 2, cost: 2, cap: 5, k: { n: 'Pilar', d: 'Pilar: sostiene lo de arriba. Aguanta 5.' }, b: { n: 'Servicio', d: 'Servicio: sostiene las capas de arriba. Capacidad 5.' } },
+    R: { code: 3, cost: 3, cap: 6, k: { n: 'Refuerzo', d: 'Refuerzo: aguanta 6, ata la torre y no falla por sorpresa.' }, b: { n: 'Plan B', d: 'Plan B (redundancia): capacidad 6, estabiliza la torre y tiene respaldo propio.' } },
+    V: { code: 4, cost: 1, cap: 0, k: { n: 'Puente', d: 'Puente: une dos torres o dos módulos. No sostiene peso.' }, b: { n: 'Enlace', d: 'Enlace de integración: conecta áreas y torres. No soporta carga.' } },
+    X: { code: 0, cost: 0, cap: 0, k: { n: 'Borrar', d: 'Borrar: quita la pieza que toques.' }, b: { n: 'Quitar', d: 'Quitar: elimina el componente que toques.' } }
+  };
+  var STAGE_TXT = {
+    presion: { k: ['Presión', 'Llegan {p}% más visitantes y sopla el viento.'], b: ['Presión', 'Hora pico: la demanda sube {p}% y hay tormenta de tráfico.'] },
+    errores: { k: ['Errores', 'Una pieza se debilita a la mitad. Ninguna debe trabajar a más de la mitad de su fuerza.'], b: ['Errores', 'Un componente falla al 50%. Ninguno debe operar sobre la mitad de su capacidad.'] },
+    cambios: { k: ['Cambios', ''], b: ['Cambios', ''] },
+    crecimiento: { k: ['Crecimiento', 'Llega un módulo nuevo de peso {g}. Debe caber arriba de alguna torre.'], b: ['Crecimiento', 'El negocio suma un área nueva de carga {g}. Debe haber espacio y capacidad de reserva.'] }
+  };
+  var CHANGE_TXT = {
+    peso: { k: '{a} se pone más pesado (+{x}).', b: 'La demanda de {a} crece (+{x}).' },
+    link: { k: '{a} y {b} ahora deben poder hablarse.', b: '{a} debe integrarse con {b}.' }
+  };
+  var MSG = {
+    sinBase: { k: 'Falta una Base debajo de esta columna. Sin suelo firme todo se hunde.', b: 'Falta el cimiento de datos y respaldo debajo de esta columna.' },
+    aire: { k: 'Hay un hueco: lo que está arriba flota sin nada que lo sostenga.', b: 'Hay un hueco en la cadena: la capa de arriba depende de algo que no existe.' },
+    viga: { k: 'Un Puente no puede cargar peso. Aquí va un Pilar o un Refuerzo.', b: 'Un enlace no sostiene carga. Aquí va un servicio o un Plan B.' },
+    sobrecarga: { k: 'Esta pieza aguanta {cap} y recibe {need}. Usa una más fuerte.', b: 'Este componente tiene capacidad {cap} y recibe carga {need}.' },
+    margen: { k: 'Trabaja al {pct}% de su fuerza. Si se debilita, cae. Cámbiala por un Refuerzo.', b: 'Opera al {pct}% de su capacidad. Sin margen, un error lo tumba. Usa un Plan B.' },
+    viento: { k: 'Esta torre tiene {h} niveles y sin ataduras solo aguanta {max}. Usa Puentes entre torres o Refuerzos.', b: 'Esta torre tiene {h} niveles y sin conexiones laterales tolera {max}. Añade enlaces o un Plan B.' },
+    enlace: { k: '{a} y {b} no pueden hablarse. Únelos con Puentes o ponlos pegados.', b: '{a} y {b} no están conectados. Únelos con enlaces o ponlos contiguos.' },
+    sinLugar: { k: 'No hay lugar arriba de ninguna torre para el módulo nuevo.', b: 'No hay espacio para crecer: todas las torres están al límite.' }
+  };
+  var LT = [
+    { k: { intro: 'Un kiosco con tres módulos, cada uno en su piso. Elige un módulo, toca su piso y construye debajo.', fine: 'Letra chica: Chat podría ponerse más pesado más adelante.' },
+      b: { intro: 'Tres áreas del negocio, cada una en su capa. Coloca cada área en su piso y construye lo que la sostiene.', fine: 'Letra chica: la demanda de Atención podría crecer.' } },
+    { k: { intro: 'Tienda y Bodega deben poder hablarse. Los Puentes unen módulos y mantienen firmes las torres.', fine: 'Letra chica: Caja podría necesitar hablar con Tienda.' },
+      b: { intro: 'Ventas e Inventario deben estar conectados. Los enlaces unen áreas y estabilizan las torres.', fine: 'Letra chica: Facturación podría tener que integrarse con Ventas.' } },
+    { k: { intro: 'Cajeros, Cuentas y Pagos van en cadena. Hay mucho viento y las torres altas se mueven.', fine: 'Letra chica: Alertas podría necesitar hablar con Cajeros.' },
+      b: { intro: 'Cajeros, Cuentas y Pagos forman una cadena crítica. Un área caída afecta a las demás.', fine: 'Letra chica: Riesgos podría tener que integrarse con Cajeros.' } }
+  ];
+
+  /* ---------- Estado ---------- */
+  var DRAFT = [
+    '. . . . . .', '. . 2 . . .', '. 0 P . . .', '. P P . 1 .', '. C C . C .'
+  ];
+  var state = { mode: 'k', level: 0, tool: 'P', grids: [], attempts: [0, 0, 0], stars: [0, 0, 0], timers: [], draftShown: true, lastKey: [] };
+  var i0;
+  for (i0 = 0; i0 < LEVELS.length; i0++) state.grids.push(new Uint8Array(W * H));
+  (function seedDraft() {
+    var g = state.grids[0];
+    for (var k = 0; k < DRAFT.length; k++) {
+      var r = H - 1 - k, toks = DRAFT[k].split(' ');
+      for (var c = 0; c < W; c++) {
+        var t = toks[c];
+        g[r * W + c] = t === '.' ? 0 : t === 'C' ? 1 : t === 'P' ? 2 : t === 'R' ? 3 : t === 'V' ? 4 : 10 + (+t);
+      }
+    }
+  })();
+
+  try {
+    var saved = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (saved) {
+      if (saved.mode === 'k' || saved.mode === 'b') state.mode = saved.mode;
+      if (saved.stars && saved.stars.length === 3) state.stars = saved.stars;
+    }
+  } catch (e) {}
+  function persist() { try { localStorage.setItem(STORE, JSON.stringify({ mode: state.mode, stars: state.stars })); } catch (e) {} }
+
+  function L() { return LEVELS[state.level]; }
+  function G() { return state.grids[state.level]; }
+  function tx(o) { return o[state.mode]; }
+  function fill(s, o) { return s.replace(/\{(\w+)\}/g, function (m, k) { return o[k] === undefined ? m : o[k]; }); }
+  function num(n) { return (Math.round(n * 10) / 10).toString().replace('.', ','); }
+  function modName(k) { return L().mods[k][state.mode]; }
+  function modAbbr(k) { return state.mode === 'k' ? L().mods[k].ab : L().mods[k].abb; }
+  function where(i) { var r = (i / W) | 0, c = i % W; return (r === 0 ? (state.mode === 'k' ? 'Base' : 'Nivel base') : 'Piso ' + r) + ', columna ' + (c + 1); }
+  function floorName(r) { return r === 0 ? (state.mode === 'k' ? 'Base' : 'Nivel base') : 'Piso ' + r; }
+
+  /* ---------- Arte en píxeles ---------- */
+  function R(x, y, w, h, c) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" class="' + c + '"/>'; }
+  function px(inner) { return '<svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">' + inner + '</svg>'; }
+  var ART = {};
+  ART.C = px(R(0, 2, 16, 12, 's2') + R(0, 2, 16, 2, 's1') + R(0, 7, 16, 1, 's3') + R(0, 11, 16, 1, 's3') + R(4, 5, 2, 1, 's3') + R(10, 9, 2, 1, 's3') + R(2, 13, 12, 1, 's3') + R(0, 13, 16, 1, 's3'));
+  var col = R(3, 0, 10, 16, 's2') + R(3, 0, 2, 16, 's1') + R(11, 0, 2, 16, 's3') + R(7, 1, 2, 14, 's3') + R(5, 2, 1, 1, 's1') + R(5, 13, 1, 1, 's1') + R(10, 2, 1, 1, 's3') + R(10, 13, 1, 1, 's3');
+  ART.P = px(col);
+  var diag = '', k;
+  for (k = 0; k < 12; k++) { diag += R(3 + Math.round(k * 8 / 11), 2 + k, 2, 1, 'y') + R(11 - Math.round(k * 8 / 11), 2 + k, 2, 1, 'y'); }
+  ART.R = px(col + diag);
+  var stripes = '';
+  for (k = 0; k < 4; k++) stripes += R(2 + k * 4, 5, 2, 6, 'yd');
+  ART.V = px(R(0, 5, 16, 6, 'y') + stripes + R(0, 4, 1, 8, 's3') + R(15, 4, 1, 8, 's3'));
+  var cross = '';
+  for (k = 0; k < 10; k++) cross += R(3 + k, 3 + k, 2, 1, 'rd') + R(11 - k, 3 + k, 2, 1, 'rd');
+  ART.X = px(cross);
+
+  /* ---------- Construcción de la interfaz ---------- */
+  var board = $('board'), cells = [];
+  function buildBoard() {
+    var html = '', r, c;
+    for (r = H - 1; r >= 0; r--) {
+      html += '<div class="rl" data-row="' + r + '"></div>';
+      for (c = 0; c < W; c++) html += '<button type="button" class="cell" data-i="' + (r * W + c) + '"></button>';
+    }
+    board.innerHTML = html;
+    cells = [];
+    var btns = board.querySelectorAll('.cell');
+    for (var i = 0; i < btns.length; i++) cells[+btns[i].getAttribute('data-i')] = btns[i];
+  }
+
+  function paintCell(i, force) {
+    var v = G()[i], c = i % W, allowed = L().cols.indexOf(c) >= 0;
+    var key = state.mode + '|' + v + '|' + allowed;
+    if (!force && state.lastKey[i] === key) return;
+    state.lastKey[i] = key;
+    var el = cells[i], inner = '', label;
+    if (v === 1) inner = ART.C; else if (v === 2) inner = ART.P; else if (v === 3) inner = ART.R; else if (v === 4) inner = ART.V;
+    else if (v >= 10) { var m = v - 10; inner = '<span class="mod mc' + m + '"><b>' + modAbbr(m) + '</b><i>' + L().mods[m].load + '</i></span>'; }
+    el.innerHTML = inner;
+    el.classList.toggle('blocked', !allowed);
+    el.disabled = !allowed;
+    if (!allowed) label = where(i) + ': terreno ocupado';
+    else if (v === 0) label = where(i) + ': vacío';
+    else if (v >= 10) label = where(i) + ': módulo ' + modName(v - 10) + ', peso ' + L().mods[v - 10].load;
+    else label = where(i) + ': ' + PIECES[['', 'C', 'P', 'R', 'V'][v]][state.mode].n;
+    el.setAttribute('aria-label', label);
+  }
+  function paintAll(force) { for (var i = 0; i < W * H; i++) paintCell(i, force); }
+
+  function paintLabels() {
+    var rls = board.querySelectorAll('.rl');
+    for (var i = 0; i < rls.length; i++) { var r = +rls[i].getAttribute('data-row'); rls[i].textContent = r === 0 ? 'Base' : 'Piso ' + r; }
+  }
+
+  function paintLevels() {
+    var h = '';
+    for (var i = 0; i < LEVELS.length; i++) {
+      var s = state.stars[i], st = '';
+      for (var j = 0; j < 3; j++) st += j < s ? '★' : '☆';
+      h += '<button type="button" class="lv" data-lv="' + i + '" aria-pressed="' + (i === state.level) + '"><b>NIVEL ' + (i + 1) + '</b><span>' + LEVELS[i].name[state.mode] + '</span><i aria-label="' + s + ' de 3 estrellas">' + st + '</i></button>';
+    }
+    $('levels').innerHTML = h;
+  }
+
+  function paintTools() {
+    var h = '', keys = ['C', 'P', 'R', 'V', 'X'];
+    for (var i = 0; i < keys.length; i++) {
+      var p = PIECES[keys[i]], icon = ART[keys[i]];
+      h += '<button type="button" class="tool" data-tool="' + keys[i] + '" aria-pressed="' + (state.tool === keys[i]) + '">' + icon + '<b>' + p[state.mode].n + '</b><small>' + (keys[i] === 'X' ? ' ' : '$' + p.cost) + '</small></button>';
+    }
+    $('tools').innerHTML = h;
+  }
+
+  function paintBrief() {
+    var l = L(), lt = LT[state.level][state.mode], h = '';
+    $('intro').textContent = lt.intro;
+    $('fine').textContent = lt.fine;
+    $('wind').textContent = state.mode === 'k'
+      ? 'Viento: una torre de más de ' + l.free + ' niveles, contando la Base, necesita Puentes o Refuerzos.'
+      : 'Una torre de más de ' + l.free + ' niveles, contando el cimiento, necesita enlaces o un Plan B.';
+    for (var k = 0; k < l.mods.length; k++) {
+      var placed = findCell(G(), MOD0 + k) >= 0;
+      h += '<li><button type="button" class="chip' + (placed ? ' placed' : '') + '" data-mod="' + k + '" aria-pressed="' + (state.tool === 'm' + k) + '"><span class="sw mc' + k + '"></span><b>' + modName(k) + '</b><small>peso ' + l.mods[k].load + ' · ' + floorName(l.mods[k].row).toLowerCase() + '</small></button></li>';
+    }
+    $('chips').innerHTML = h;
+  }
+
+  function paintStagesIdle() {
+    var l = L(), h = '';
+    for (var k = 0; k < 4; k++) {
+      var id = STAGE_IDS[k], t = STAGE_TXT[id][state.mode], d = t[1];
+      if (id === 'cambios') {
+        var ch = l.change;
+        d = ch.kind === 'peso' ? fill(CHANGE_TXT.peso[state.mode], { a: modName(ch.mod), x: ch.extra }) : fill(CHANGE_TXT.link[state.mode], { a: modName(ch.a), b: modName(ch.b) });
+      } else d = fill(d, { p: Math.round((l.fp - 1) * 100), g: l.grow });
+      h += '<li class="stage" id="st' + k + '"><span class="n">' + (k + 1) + '</span><h3>' + t[0] + '</h3><span class="st">SIN PROBAR</span><p>' + d + '</p></li>';
+    }
+    $('stages').innerHTML = h;
+    $('summary').textContent = '';
+    $('win').innerHTML = '';
+  }
+
+  function setHint() {
+    var t = state.tool, h;
+    if (t.charAt(0) === 'm') {
+      var k = +t.slice(1);
+      h = modName(k) + ': peso ' + L().mods[k].load + '. Va en el ' + floorName(L().mods[k].row).toLowerCase() + '. Toca una celda resaltada.';
+    } else h = PIECES[t][state.mode].d;
+    $('hint').textContent = h;
+  }
+
+  function markCan() {
+    var t = state.tool, row = -1;
+    if (t.charAt(0) === 'm') row = L().mods[+t.slice(1)].row;
+    for (var i = 0; i < cells.length; i++) {
+      var on = row >= 0 && ((i / W) | 0) === row && L().cols.indexOf(i % W) >= 0;
+      cells[i].classList.toggle('can', on);
+    }
+  }
+
+  function updateBudget() {
+    var cost = costOf(G()), tot = L().budget, over = cost > tot;
+    $('bv').textContent = '$' + cost + ' de $' + tot + (over ? ' · te pasaste $' + (cost - tot) : '');
+    $('bl').textContent = state.mode === 'k' ? 'Dinero' : 'Presupuesto';
+    $('bm').style.width = Math.min(100, (cost / tot) * 100) + '%';
+    $('budget').classList.toggle('over', over);
+  }
+
+  function clearMarks() {
+    for (var i = 0; i < cells.length; i++) cells[i].classList.remove('crack', 'weak', 'newslot');
+  }
+  function clearTimers() { while (state.timers.length) clearTimeout(state.timers.pop()); }
+  function resetResults() { clearTimers(); clearMarks(); paintStagesIdle(); }
+
+  function say(msg) { $('hint').textContent = msg; }
+
+  /* ---------- Edición ---------- */
+  function place(i) {
+    var r = (i / W) | 0, c = i % W, g = G(), t = state.tool;
+    if (L().cols.indexOf(c) < 0) { say('Ese terreno está ocupado. Usa las columnas libres.'); return; }
+    if (t === 'X') { if (g[i] === 0) return; g[i] = 0; }
+    else if (t.charAt(0) === 'm') {
+      var k = +t.slice(1), m = L().mods[k];
+      if (r !== m.row) { say(modName(k) + ' va en el ' + floorName(m.row).toLowerCase() + '. Las celdas con borde amarillo discontinuo son las válidas.'); return; }
+      if (g[i] === MOD0 + k) g[i] = 0;
+      else { var old = findCell(g, MOD0 + k); if (old >= 0) { g[old] = 0; paintCell(old); } g[i] = MOD0 + k; }
+    } else {
+      var p = PIECES[t];
+      if (p.code === 1 && r !== 0) { say(state.mode === 'k' ? 'Las Bases solo van en la fila de abajo.' : 'Los cimientos solo van en el nivel base.'); return; }
+      if (p.code !== 1 && r === 0) { say(state.mode === 'k' ? 'Abajo solo van Bases.' : 'En el nivel base solo van cimientos.'); return; }
+      g[i] = g[i] === p.code ? 0 : p.code;
+    }
+    paintCell(i);
+    afterEdit();
+  }
+
+  function afterEdit() {
+    if (state.draftShown) { state.draftShown = false; $('draft').hidden = true; }
+    resetResults();
+    updateBudget();
+    updatePress();
+    setHint();
+  }
+
+  function updatePress() {
+    var tb = $('tools').querySelectorAll('.tool'), i;
+    for (i = 0; i < tb.length; i++) tb[i].setAttribute('aria-pressed', tb[i].getAttribute('data-tool') === state.tool);
+    var cb = $('chips').querySelectorAll('.chip');
+    for (i = 0; i < cb.length; i++) {
+      var k = +cb[i].getAttribute('data-mod');
+      cb[i].setAttribute('aria-pressed', state.tool === 'm' + k);
+      cb[i].classList.toggle('placed', findCell(G(), MOD0 + k) >= 0);
+    }
+  }
+  function selectTool(t) { state.tool = t; updatePress(); setHint(); markCan(); }
+
+  /* ---------- Pruebas ---------- */
+  function fmtProb(p, stage) {
+    var o = MSG[p.code][state.mode], extra = {};
+    if (p.code === 'sobrecarga') { extra.cap = num(p.cap); extra.need = num(p.need); }
+    if (p.code === 'margen') extra.pct = Math.round(p.util * 100);
+    if (p.code === 'viento') { extra.h = p.h; extra.max = p.max; }
+    if (p.code === 'enlace') { extra.a = modName(p.a); extra.b = modName(p.b); }
+    var s = fill(o, extra), loc = p.i >= 0 && p.code !== 'enlace' ? where(p.i) + ': ' : '';
+    return (stage === 'crecimiento' && p.code !== 'sinLugar' ? 'Con el módulo nuevo, ' + loc.toLowerCase() : loc) + (stage === 'crecimiento' && p.code !== 'sinLugar' ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+  }
+
+  function revealStage(k, s, res) {
+    var el = $('st' + k), st = el.querySelector('.st'), h = '', i;
+    el.classList.remove('ok', 'bad');
+    if (s.ok) {
+      el.classList.add('ok'); st.textContent = 'OK';
+      if (s.id === 'errores' && s.worst > 0) { var wp = Math.round(s.worst * 100); el.querySelector('p').textContent += ' ' + (state.mode === 'k' ? 'La pieza más exigida trabaja al ' + wp + '%.' : 'El componente más exigido opera al ' + wp + '%.'); }
+      if (s.id === 'errores' && s.weak >= 0) cells[s.weak].classList.add('weak');
+      if (s.id === 'crecimiento' && s.slot !== undefined) cells[s.slot].classList.add('newslot');
+    } else {
+      el.classList.add('bad'); st.textContent = 'FALLA';
+      var seen = {}, lines = [];
+      for (i = 0; i < s.probs.length; i++) {
+        var p = s.probs[i], key = p.code + p.i;
+        if (seen[key]) continue;
+        seen[key] = 1; lines.push(fmtProb(p, s.id));
+        if (p.i >= 0 && s.id !== 'crecimiento') cells[p.i].classList.add('crack');
+        if (p.code === 'enlace' && p.j >= 0) cells[p.j].classList.add('crack');
+      }
+      if (s.id === 'errores' && s.weak >= 0) cells[s.weak].classList.add('weak');
+      var shown = lines.slice(0, 3);
+      h = '<ul>';
+      for (i = 0; i < shown.length; i++) h += '<li>' + shown[i] + '</li>';
+      if (lines.length > 3) h += '<li>y ' + (lines.length - 3) + ' problema' + (lines.length - 3 > 1 ? 's' : '') + ' más.</li>';
+      h += '</ul>';
+      el.insertAdjacentHTML('beforeend', h);
+    }
+  }
+
+  function stars(cost) { var par = L().par; return cost <= par + 1 ? 3 : cost <= par + 4 ? 2 : 1; }
+
+  function showWin(res) {
+    var cost = costOf(G()), tot = L().budget, st = stars(cost), att = state.attempts[state.level];
+    var score = Math.max(100, 1000 - (att - 1) * 60 + (tot - cost) * 15);
+    if (st > state.stars[state.level]) { state.stars[state.level] = st; persist(); paintLevels(); }
+    var s = ''; for (var j = 0; j < 3; j++) s += j < st ? '★' : '☆';
+    var next = state.level < LEVELS.length - 1;
+    var title = state.mode === 'k' ? '¡Tu estructura aguantó!' : 'El sistema superó las cuatro pruebas';
+    var tip = st === 3 ? (state.mode === 'k' ? 'Casi no se puede construir más barato.' : 'Costo casi óptimo para este pedido.')
+      : (state.mode === 'k' ? 'Se puede lograr con menos dinero. Prueba reemplazar piezas fuertes donde no hacen falta.' : 'Hay margen para optimizar el costo sin perder resistencia.');
+    $('win').innerHTML = '<div class="win"><h2>' + title + '</h2><div class="stars" aria-label="' + st + ' de 3 estrellas">' + s + '</div><dl><dt>Costo</dt><dd>$' + cost + ' de $' + tot + '</dd><dt>Pruebas hechas</dt><dd>' + att + '</dd><dt>Puntos</dt><dd>' + score + '</dd></dl><p>' + tip + '</p>' +
+      (next ? '<div class="actions"><button type="button" class="go" id="nextlv">SIGUIENTE NIVEL</button></div>' : '') + '</div>';
+    var nb = $('nextlv'); if (nb) nb.addEventListener('click', function () { setLevel(state.level + 1); });
+  }
+
+  function probar() {
+    resetResults();
+    var res = runTests(G(), L()), sum = $('summary'), k;
+    state.attempts[state.level]++;
+    if (!res.pre.ok) {
+      var out = [];
+      if (res.pre.missing.length) out.push((state.mode === 'k' ? 'Faltan módulos: ' : 'Faltan áreas: ') + res.pre.missing.map(modName).join(', ') + '. Elígelos arriba y colócalos en su piso.');
+      if (res.pre.over) out.push('Te pasaste del presupuesto por $' + (costOf(G()) - L().budget) + '. Quita piezas que no hagan falta.');
+      for (k = 0; k < res.pre.links.length; k++) out.push(fill(MSG.enlace[state.mode], { a: modName(res.pre.links[k][0]), b: modName(res.pre.links[k][1]) }));
+      sum.textContent = 'Todavía no se puede probar. ' + out.join(' ');
+      return;
+    }
+    var n = res.stages.length;
+    function step(k) {
+      var s = res.stages[k];
+      revealStage(k, s, res);
+      if (k === n - 1) {
+        if (res.ok) { sum.textContent = state.mode === 'k' ? 'Las cuatro pruebas salieron bien.' : 'Presión, errores, cambios y crecimiento: todo en verde.'; showWin(res); }
+        else sum.textContent = (state.mode === 'k' ? 'Se cayó en la prueba ' : 'Falló la prueba ') + (k + 1) + ' de 4. Corrige las piezas marcadas en rojo y vuelve a probar.';
+      }
+    }
+    for (k = 0; k < n; k++) {
+      (function (kk) {
+        if (RM) step(kk);
+        else state.timers.push(setTimeout(function () { step(kk); }, kk * 650));
+      })(k);
+    }
+  }
+
+  /* ---------- Niveles y modo ---------- */
+  function setLevel(n) {
+    state.level = n; state.lastKey = [];
+    state.tool = 'P';
+    resetResults();
+    paintLevels(); paintBrief(); paintTools(); paintAll(true); paintLabels(); updateBudget(); setHint(); markCan();
+    $('draft').hidden = !(n === 0 && state.draftShown);
+  }
+  function setMode(m) {
+    state.mode = m; state.lastKey = []; persist();
+    $('mk').setAttribute('aria-pressed', m === 'k'); $('mb').setAttribute('aria-pressed', m === 'b');
+    resetResults();
+    paintLevels(); paintBrief(); paintTools(); paintAll(true); paintLabels(); updateBudget(); setHint(); markCan();
+    $('draft').textContent = m === 'k' ? 'Borrador de ejemplo. Presiona PROBAR y mira qué pasa. Después corrige.' : 'Borrador de ejemplo. Ejecuta la prueba, revisa dónde falla y corrige.';
+  }
+
+  /* ---------- Eventos ---------- */
+  board.addEventListener('click', function (e) {
+    var b = e.target.closest('.cell'); if (b && !b.disabled) place(+b.getAttribute('data-i'));
+  });
+  board.addEventListener('keydown', function (e) {
+    var d = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: W, ArrowDown: -W }[e.key];
+    if (!d) return;
+    var b = e.target.closest('.cell'); if (!b) return;
+    var i = +b.getAttribute('data-i'), j = i + d;
+    while (j >= 0 && j < W * H && cells[j].disabled && Math.abs(d) === 1 && ((j / W) | 0) === ((i / W) | 0)) j += d;
+    if (j >= 0 && j < W * H && cells[j] && !cells[j].disabled && (Math.abs(d) !== 1 || ((j / W) | 0) === ((i / W) | 0))) { e.preventDefault(); cells[j].focus(); }
+  });
+  $('tools').addEventListener('click', function (e) { var b = e.target.closest('.tool'); if (b) selectTool(b.getAttribute('data-tool')); });
+  $('chips').addEventListener('click', function (e) { var b = e.target.closest('.chip'); if (b) selectTool('m' + b.getAttribute('data-mod')); });
+  $('levels').addEventListener('click', function (e) { var b = e.target.closest('.lv'); if (b) setLevel(+b.getAttribute('data-lv')); });
+  $('mk').addEventListener('click', function () { setMode('k'); });
+  $('mb').addEventListener('click', function () { setMode('b'); });
+  $('go').addEventListener('click', probar);
+  $('clear').addEventListener('click', function () {
+    var g = G(); for (var i = 0; i < g.length; i++) g[i] = 0;
+    paintAll(); afterEdit();
+  });
+
+  /* ---------- Arranque ---------- */
+  buildBoard();
+  $('mk').setAttribute('aria-pressed', state.mode === 'k'); $('mb').setAttribute('aria-pressed', state.mode === 'b');
+  setMode(state.mode);
+  setLevel(0);
+  $('draft').hidden = false;
+})();
+</script>
+
+</body></html>
