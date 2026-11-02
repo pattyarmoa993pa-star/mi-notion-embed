@@ -1,0 +1,564 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Cartografía Social</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+/* Concepto: mesa de estrategia. Cartas frías de organigrama a la vista, y debajo hilos espectrales que aparecen cuando la percepción de cada dimensión supera su umbral. */
+:root{
+  --bg:#0d1416; --surface:#131d20; --surface-2:#1a282c; --line:#2a3d42; --grid:#182529;
+  --fg:#e4edec; --muted:#8ea5a8;
+  --card:#dbe5e3; --card-2:#c2d0ce; --card-ink:#12201f; --card-line:#9fb3b1; --formal:#6f8a8d;
+  --ind:#4aa3ff; --col:#46d39a; --int:#f0c24a; --ins:#a58bff; --alert:#ff6f61;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#e9efee; --surface:#f6f9f8; --surface-2:#e0e9e8; --line:#bccbcb; --grid:#dbe5e4;
+    --fg:#12201f; --muted:#546b6d;
+    --card:#ffffff; --card-2:#e8eeed; --card-ink:#12201f; --card-line:#9db0af; --formal:#6a8083;
+    --ind:#1d6fd6; --col:#0f8a5c; --int:#a67700; --ins:#6a4bd4; --alert:#c5392c;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#e9efee; --surface:#f6f9f8; --surface-2:#e0e9e8; --line:#bccbcb; --grid:#dbe5e4;
+  --fg:#12201f; --muted:#546b6d;
+  --card:#ffffff; --card-2:#e8eeed; --card-ink:#12201f; --card-line:#9db0af; --formal:#6a8083;
+  --ind:#1d6fd6; --col:#0f8a5c; --int:#a67700; --ins:#6a4bd4; --alert:#c5392c;
+  color-scheme:light;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:400 16px/1.55 'Newsreader',Georgia,'Times New Roman',serif;
+  padding-block:22px 44px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:18px}
+.eyebrow{margin:0;font:500 11px/1.3 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{margin:6px 0 0;font:800 clamp(2.6rem,7vw,4.4rem)/.92 'Big Shoulders Display','Arial Narrow',Impact,sans-serif;text-transform:uppercase;letter-spacing:.01em;text-wrap:balance}
+.lede{margin:12px 0 0;max-width:58ch;color:var(--muted);font-size:1.12rem}
+
+button{font:inherit;color:inherit}
+button:focus-visible,.node:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+
+/* Panel de percepción */
+.hud{display:grid;grid-template-columns:minmax(0,230px) minmax(0,1fr);gap:22px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px 18px}
+.lvname{margin:4px 0 0;font:800 2.2rem/1 'Big Shoulders Display','Arial Narrow',Impact,sans-serif;text-transform:uppercase;letter-spacing:.02em}
+.lvsub{margin:8px 0 0;font:400 12px/1.5 'IBM Plex Mono',ui-monospace,monospace;color:var(--muted)}
+.bars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;align-content:center}
+.bar-head{display:flex;justify-content:space-between;gap:8px;font:500 11px/1.2 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase}
+.bv{color:var(--c);font-variant-numeric:tabular-nums}
+.track{position:relative;height:8px;margin:13px 0 9px;background:var(--surface-2);border-radius:2px}
+.fill{position:absolute;inset:0 auto 0 0;background:var(--c);border-radius:2px;transition:width .5s ease}
+.notch{position:absolute;top:-4px;width:2px;height:16px;margin-left:-1px;background:var(--muted);opacity:.5}
+.notch.on{background:var(--fg);opacity:.95}
+.cap{font:400 11.5px/1.3 'IBM Plex Mono',ui-monospace,monospace;color:var(--muted)}
+@media (max-width:900px){.hud{grid-template-columns:minmax(0,1fr)}.bars{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Tablero */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+@media (max-width:1000px){.layout{grid-template-columns:minmax(0,1fr)}}
+.stage{min-width:0;border:1px solid var(--line);border-radius:6px;background:var(--surface);overflow:hidden}
+.board{overflow-x:auto;border-bottom:1px solid var(--line);background:var(--bg)}
+.board svg{display:block;width:100%;min-width:780px;height:auto}
+.reading{padding:16px 18px 20px;min-height:170px}
+.reading h3{margin:4px 0 2px;font:800 1.9rem/1.02 'Big Shoulders Display','Arial Narrow',Impact,sans-serif;text-transform:uppercase;letter-spacing:.02em}
+.reading p{margin:8px 0 0;max-width:64ch}
+.reading .meta{color:var(--muted);margin-top:2px}
+.reading .unread{color:var(--muted);font-style:italic}
+.rels{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:2px;max-width:520px}
+.rels button{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-radius:3px;padding:6px 8px;cursor:pointer}
+.rels button:hover{background:var(--surface-2)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none}
+.rels .rc{margin-left:auto;font:400 11px 'IBM Plex Mono',ui-monospace,monospace;color:var(--muted)}
+
+/* Lateral */
+.side{display:grid;gap:14px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.panel h2{margin:0 0 12px;font:600 1.05rem/1 'Big Shoulders Display','Arial Narrow',Impact,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.note{margin:0 0 12px;font-size:.95rem;color:var(--muted)}
+.archs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.arch{display:grid;grid-template-columns:20px minmax(0,1fr);gap:2px 8px;align-items:center;text-align:left;padding:9px 10px;background:transparent;border:1px solid var(--line);border-radius:4px;cursor:pointer}
+.arch:hover{background:var(--surface-2)}
+.arch svg{grid-row:span 2;width:18px;height:18px;fill:var(--fg)}
+.arch .an{font:600 1.1rem/1 'Big Shoulders Display','Arial Narrow',Impact,sans-serif;text-transform:uppercase;letter-spacing:.06em}
+.arch .ad{font:400 10.5px/1.2 'IBM Plex Mono',ui-monospace,monospace;color:var(--muted)}
+.arch[aria-pressed="true"]{background:var(--surface-2);border-color:var(--fg)}
+.acts{display:grid;gap:6px}
+.act{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;background:transparent;border:1px solid var(--line);border-radius:4px;cursor:pointer;font-size:.98rem;line-height:1.25}
+.act:hover{background:var(--surface-2);border-color:var(--muted)}
+.act:active{transform:translateY(1px)}
+.fx{display:flex;gap:8px;flex:none;font:500 11px 'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.fx b{color:var(--c);font-weight:500}
+.legend{margin:10px 0 0;font:400 11px/1.4 'IBM Plex Mono',ui-monospace,monospace;color:var(--muted)}
+.btn{display:inline-block;padding:9px 14px;background:transparent;border:1px solid var(--fg);border-radius:4px;cursor:pointer;font:600 1.05rem/1 'Big Shoulders Display','Arial Narrow',Impact,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+.btn:hover{background:var(--surface-2)}
+.ghost{padding:7px 10px;background:transparent;border:1px solid var(--line);border-radius:4px;cursor:pointer;font:500 11px 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.04em}
+.ghost:hover{background:var(--surface-2)}
+.res{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px;font-size:.95rem}
+.res li{display:flex;gap:8px}
+.res li::before{content:"";flex:none;width:8px;height:8px;margin-top:8px;border-radius:50%;background:var(--alert)}
+.res li.ok::before{background:var(--col)}
+.verdict{margin:12px 0 0;font-weight:500}
+.log{list-style:none;margin:0;padding:0;display:grid;gap:7px;font:400 12px/1.4 'IBM Plex Mono',ui-monospace,monospace}
+.log li{display:flex;gap:8px;color:var(--muted)}
+.log li:first-child{color:var(--fg)}
+.log li i{flex:none;width:8px;height:8px;margin-top:4px;border-radius:50%;background:var(--c,var(--line))}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.foot{margin:0;max-width:70ch;font:400 11.5px/1.5 'IBM Plex Mono',ui-monospace,monospace;color:var(--muted)}
+
+/* SVG */
+svg .gl{stroke:var(--grid);stroke-width:1;fill:none}
+svg .coord{fill:var(--muted);font:400 9.5px 'IBM Plex Mono',ui-monospace,monospace;opacity:.85}
+svg .key{fill:var(--muted);font:400 9.5px 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.08em}
+svg .formal{fill:none;stroke:var(--formal);stroke-width:1.6}
+svg .formal.gone{stroke:var(--alert);stroke-dasharray:4 4}
+.node{cursor:pointer;outline:none}
+.node .cr{fill:var(--card);stroke:var(--card-line);stroke-width:1.2}
+.node .cell{fill:var(--card-2)}
+.node .gly{fill:var(--card-ink)}
+.node .nm{fill:var(--card-ink);font:800 17px 'Big Shoulders Display','Arial Narrow',Impact,sans-serif;letter-spacing:.05em}
+.node .rl{fill:var(--card-ink);opacity:.75;font:400 9px 'IBM Plex Mono',ui-monospace,monospace}
+.node .cd{fill:var(--card-ink);opacity:.45;font:400 8px 'IBM Plex Mono',ui-monospace,monospace}
+.node:hover .cr{stroke:var(--fg);stroke-width:2}
+.node.sel .cr{stroke:var(--fg);stroke-width:2.6}
+.node .abs{display:none;fill:var(--alert);font:800 10px 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.12em}
+.node.absent{opacity:.6}
+.node.absent .cr{stroke:var(--alert);stroke-dasharray:5 3}
+.node.absent .abs{display:block}
+.node.absent .cd{display:none}
+.th-ind{--c:var(--ind)} .th-col{--c:var(--col)} .th-int{--c:var(--int)} .th-ins{--c:var(--ins)}
+.th path{fill:none;stroke-linecap:round}
+.th .hit{stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
+.th .glow{stroke:var(--c);stroke-width:8;opacity:.16}
+.th .base{stroke:var(--c);stroke-width:2.2;opacity:.75}
+.th .flow{stroke:var(--c);stroke-width:3.4;stroke-dasharray:1 15;animation:flow 1.8s linear infinite}
+.th:hover .base{opacity:1;stroke-width:3}
+.th.dim,.th.off{opacity:.1}
+.th.draw .base{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.2s ease-out forwards}
+.hl{fill:none;stroke:var(--c);stroke-width:1.6;stroke-linecap:round;stroke-dasharray:2 9;opacity:.35;animation:flick 2.4s ease-in-out infinite;pointer-events:none}
+.badge.ok{fill:var(--col)} .badge.bad{fill:var(--alert)}
+.badge-t{fill:var(--bg);font:500 9px 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.08em}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes flow{to{stroke-dashoffset:-32}}
+@keyframes flick{50%{opacity:.08}}
+@media (prefers-reduced-motion:reduce){
+  .th .flow,.hl{animation:none}
+  .th.draw .base{animation:none;stroke-dasharray:none;stroke-dashoffset:0}
+  .fill{transition:none}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Castillo Utgard · Red Relacional</p>
+    <h1>Cartografía Social</h1>
+    <p class="lede">El organigrama muestra quién manda. El mapa muestra quién sostiene. Solo se deja ver a quien ya aprendió a leer las relaciones.</p>
+  </header>
+
+  <section class="hud" aria-label="Tu percepción">
+    <div>
+      <p class="eyebrow" id="lvTag"></p>
+      <p class="lvname" id="lvName"></p>
+      <p class="lvsub" id="lvSub"></p>
+    </div>
+    <div class="bars" id="bars"></div>
+  </section>
+
+  <div class="layout">
+    <section class="stage">
+      <div class="board">
+        <svg id="svg" viewBox="0 0 940 500" role="group" aria-label="Organigrama de Utgard con hilos de relación"></svg>
+      </div>
+      <div class="reading" id="reading" aria-live="polite"></div>
+    </section>
+
+    <aside class="side">
+      <section class="panel">
+        <h2>Tu arquetipo</h2>
+        <div class="archs" id="archs"></div>
+      </section>
+      <section class="panel">
+        <h2>Acciones en Utgard</h2>
+        <div class="acts" id="acts"></div>
+        <p class="legend">Los colores siguen a las barras de arriba. El arquetipo suma 50% a su dimensión.</p>
+      </section>
+      <section class="panel">
+        <h2>Prueba final</h2>
+        <div id="absence"></div>
+      </section>
+      <section class="panel">
+        <h2>Bitácora</h2>
+        <ol class="log" id="log"></ol>
+        <div class="tools">
+          <button class="ghost" id="btnMaster" type="button">Revelar todo (Máster)</button>
+          <button class="ghost" id="btnReset" type="button">Reiniciar</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <p class="foot">Cada umbral va de 0 a 1, el mismo rango que usan las barras del plugin. Tu avance se guarda en este navegador.</p>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var CW=148, CH=54;
+
+var PEOPLE=[
+ {id:'ada',n:'Ada',role:'Consejo de Utgard',a:'CONSEJERA',x:486,y:70},
+ {id:'bruno',n:'Bruno',role:'Logística y terreno',a:'ESTRATEGA',x:172,y:200},
+ {id:'cora',n:'Cora',role:'Enfermería',a:'SANADORA',x:430,y:200},
+ {id:'dario',n:'Darío',role:'Archivo y biblioteca',a:'CIUDADANO',x:610,y:200},
+ {id:'elena',n:'Elena',role:'Delegación exterior',a:'CONSEJERA',x:800,y:200},
+ {id:'fabio',n:'Fabio',role:'Guardia de ruta',a:'CIUDADANO',x:86,y:346},
+ {id:'hugo',n:'Hugo',role:'Mapas y rutas',a:'ESTRATEGA',x:258,y:346},
+ {id:'gala',n:'Gala',role:'Herbolaria',a:'SANADORA',x:430,y:346},
+ {id:'ines',n:'Inés',role:'Taller de procesos',a:'CIUDADANO',x:610,y:346},
+ {id:'jorge',n:'Jorge',role:'Mercado',a:'CIUDADANO',x:800,y:346}
+];
+var FORMAL=[['ada','bruno'],['ada','cora'],['ada','dario'],['ada','elena'],['bruno','fabio'],['bruno','hugo'],['cora','gala'],['dario','ines'],['elena','jorge']];
+
+/* Hilos ocultos. d: dimensión, req: umbral de XP (0 a 1) para poder leerlo. */
+var EDGES=[
+ {id:'b1',a:'gala',b:'ines',d:'ind',req:.15,depth:36,t:'Gala enseñó a Inés a medir y documentar dosis. Un oficio que pasa de mano en mano.'},
+ {id:'b2',a:'hugo',b:'dario',d:'ind',req:.35,t:'Hugo aprendió de Darío a leer los mapas antiguos de la Biblioteca.'},
+ {id:'b3',a:'elena',b:'dario',d:'ind',req:.50,t:'Darío formó a Elena en la lectura de crónicas. Sin archivo no hay diplomacia.'},
+ {id:'g1',a:'cora',b:'bruno',d:'col',req:.15,depth:44,t:'La Sanadora cura al Estratega herido y él le abre rutas seguras para llegar a quien la necesita.'},
+ {id:'g2',a:'gala',b:'hugo',d:'col',req:.30,depth:44,t:'Gala sabe dónde crece cada planta. Hugo sabe cómo llegar. Juntos cubren el territorio.'},
+ {id:'g3',a:'ines',b:'fabio',d:'col',req:.45,depth:96,t:'El Taller fabrica lo que la guardia de ruta necesita antes de que lo pida.'},
+ {id:'g4',a:'jorge',b:'cora',d:'col',req:.65,t:'El mercado abastece la enfermería con lo que escasea, sin que nadie lo ordene.'},
+ {id:'y1',a:'jorge',b:'gala',d:'int',req:.20,depth:70,t:'Jorge compra hierbas a comunidades del otro lado del río y le traduce su uso a Gala.'},
+ {id:'y2',a:'elena',b:'hugo',d:'int',req:.40,t:'Elena y Hugo trazan rutas hacia las tierras más allá del mar.'},
+ {id:'y3',a:'fabio',b:'elena',d:'int',req:.55,t:'La guardia aprende cortesías de frontera con Elena para cruzar sin conflicto.'},
+ {id:'y4',a:'jorge',b:'dario',d:'int',req:.75,t:'Los relatos que llegan al mercado terminan guardados en la Biblioteca.'},
+ {id:'p1',a:'dario',b:'cora',d:'ins',req:.25,depth:48,t:'Cora archiva cada tratamiento. El error de ayer queda como guía para hoy.'},
+ {id:'p2',a:'dario',b:'bruno',d:'ins',req:.45,depth:70,t:'El Estratega deposita sus rutas y decisiones en la Cámara de Acuerdos.'},
+ {id:'p3',a:'ines',b:'hugo',d:'ins',req:.60,depth:72,t:'El Taller guarda los procedimientos de Hugo. Si él falta, otras manos pueden repetirlos.'},
+ {id:'p4',a:'dario',b:'fabio',d:'ins',req:.70,t:'Darío anota los turnos de guardia. La ruta no depende de una sola persona.'}
+];
+
+var DIM_ORDER=['ind','col','int','ins'];
+var DIMS={
+ ind:{name:'Dominio',cap:'auras y mentorías'},
+ col:{name:'Complemento',cap:'hilos de apoyo'},
+ int:{name:'Mestizaje',cap:'hilos de frontera'},
+ ins:{name:'Legado',cap:'hilos de memoria'}
+};
+var ARCHS={
+ CIUDADANO:{n:'Ciudadano',aff:'ind'},
+ ESTRATEGA:{n:'Estratega',aff:'ins'},
+ SANADORA:{n:'Sanadora',aff:'col'},
+ CONSEJERA:{n:'Consejera',aff:'int'}
+};
+var ACTIONS=[
+ {id:'oficio',label:'Practicar tu oficio',fx:{ind:.08},log:'Practicaste tu oficio en el taller.'},
+ {id:'comp',label:'Complementar a otro arquetipo',fx:{col:.15,int:.05},log:'Tu trabajo se apoyó en el de otro arquetipo cercano.'},
+ {id:'mediar',label:'Mediar entre dos comunidades',fx:{int:.12},log:'Tradujiste un conflicto entre dos comunidades.'},
+ {id:'acuerdo',label:'Registrar un acuerdo en la Cámara',fx:{ins:.12},log:'Dejaste un acuerdo en la Cámara de Decisiones.'},
+ {id:'proc',label:'Dejar un procedimiento en el Taller',fx:{ins:.08,ind:.03},log:'Dejaste un procedimiento para quien venga después.'}
+];
+var LV=['Mirada común','Sensibilidad','Percepción','Lectura','Visión plena'];
+var INITIAL={ind:.18,col:.2,int:.1,ins:.12};
+var KEY='cartografia-social-v1';
+
+var P={}, EDGE={}, parentOf={}, deg={}, slot={};
+PEOPLE.forEach(function(p){P[p.id]=p;deg[p.id]=0});
+EDGES.forEach(function(e){EDGE[e.id]=e;deg[e.a]++;deg[e.b]++});
+FORMAL.forEach(function(f){parentOf[f[1]]=f[0]});
+PEOPLE.forEach(function(p){
+  var list=EDGES.filter(function(e){return e.a===p.id||e.b===p.id});
+  list.forEach(function(e,i){slot[e.id+':'+p.id]=(i-(list.length-1)/2)*13});
+});
+
+var state={
+  xp:{ind:INITIAL.ind,col:INITIAL.col,int:INITIAL.int,ins:INITIAL.ins},
+  arch:'CIUDADANO',absent:false,sel:null,hover:null,
+  log:[{t:'Te integraste a la Red Relacional de Utgard.'}]
+};
+try{
+  var saved=JSON.parse(localStorage.getItem(KEY)||'null');
+  if(saved&&saved.xp){
+    DIM_ORDER.forEach(function(k){if(typeof saved.xp[k]==='number')state.xp[k]=Math.min(1,Math.max(0,saved.xp[k]))});
+    if(ARCHS[saved.arch])state.arch=saved.arch;
+  }
+}catch(err){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({xp:state.xp,arch:state.arch}))}catch(err){}}
+
+function isRev(e){return state.xp[e.d]>=e.req-1e-9}
+function isHint(e){return !isRev(e)&&state.xp[e.d]>=e.req-.1-1e-9}
+function revCount(){return EDGES.filter(isRev).length}
+function cell(p){return 'ABCDEFGHIJ'.charAt(Math.min(9,Math.floor(p.x/94)))+(Math.floor(p.y/100)+1)}
+function levelOf(n){return n===0?0:n<=3?1:n<=8?2:n<EDGES.length?3:4}
+var seen=new Set(EDGES.filter(isRev).map(function(e){return e.id}));
+
+/* Geometría */
+function glyph(a,cx,cy){
+  if(a==='CIUDADANO')return '<circle cx="'+cx+'" cy="'+cy+'" r="6"/>';
+  if(a==='ESTRATEGA')return '<path d="M'+cx+' '+(cy-8)+'L'+(cx+8)+' '+cy+'L'+cx+' '+(cy+8)+'L'+(cx-8)+' '+cy+'Z"/>';
+  if(a==='SANADORA')return '<path d="M'+(cx-2.5)+' '+(cy-8)+'h5v5.5h5.5v5h-5.5v5.5h-5v-5.5h-5.5v-5h5.5z"/>';
+  return '<path d="M'+cx+' '+(cy-8)+'L'+(cx+8)+' '+(cy+6)+'H'+(cx-8)+'Z"/>';
+}
+function formalPath(pa,ch){
+  var a=P[pa],b=P[ch],y1=a.y+CH/2,y2=b.y-CH/2,m=(y1+y2)/2;
+  return 'M'+a.x+' '+y1+'V'+m+'H'+b.x+'V'+y2;
+}
+function threadPath(e){
+  var A=P[e.a],B=P[e.b];
+  if(Math.abs(A.y-B.y)<10){
+    var y=A.y+CH/2,x1=A.x+slot[e.id+':'+A.id],x2=B.x+slot[e.id+':'+B.id];
+    var span=Math.abs(x1-x2);
+    var depth=e.depth||Math.min(100,Math.max(30,span*.2));
+    return 'M'+x1+' '+y+'Q'+((x1+x2)/2)+' '+(y+depth*2)+' '+x2+' '+y;
+  }
+  var up=A.y<B.y?A:B, lo=up===A?B:A;
+  var ax=up.x+slot[e.id+':'+up.id], ay=up.y+CH/2;
+  var bx=lo.x+slot[e.id+':'+lo.id], by=lo.y-CH/2;
+  var dx=bx-ax, dy=by-ay, len=Math.hypot(dx,dy)||1;
+  var nx=-dy/len, ny=dx/len;
+  if(ny<0){nx=-nx;ny=-ny}
+  var off=Math.min(40,len*.12);
+  return 'M'+ax+' '+ay+'Q'+((ax+bx)/2+nx*off*2)+' '+((ay+by)/2+ny*off*2)+' '+bx+' '+by;
+}
+
+/* Estructura fija del tablero */
+var svg=$('#svg'), cols='ABCDEFGHIJ', grid='', i, j;
+for(i=1;i<10;i++)grid+='<path class="gl" d="M'+(i*94)+' 22V500"/>';
+for(j=1;j<5;j++)grid+='<path class="gl" d="M0 '+(j*100)+'H940"/>';
+for(i=0;i<10;i++)grid+='<text class="coord" x="'+(i*94+47)+'" y="14" text-anchor="middle">'+cols.charAt(i)+'</text>';
+for(j=0;j<5;j++)grid+='<text class="coord" x="4" y="'+(j*100+56)+'">'+(j+1)+'</text>';
+var nodes=PEOPLE.map(function(p){
+  var nm=p.n.toUpperCase();
+  return '<g class="node" tabindex="0" role="button" data-node="'+p.id+'" aria-label="'+p.n+', '+p.role+', '+ARCHS[p.a].n+'" transform="translate('+(p.x-CW/2)+' '+(p.y-CH/2)+')">'+
+    '<rect class="cr" width="'+CW+'" height="'+CH+'" rx="3"/>'+
+    '<rect class="cell" width="34" height="'+CH+'" rx="3"/>'+
+    '<g class="gly">'+glyph(p.a,17,27)+'</g>'+
+    '<text class="nm" x="44" y="26">'+nm+'</text>'+
+    '<text class="rl" x="44" y="42">'+p.role+'</text>'+
+    '<text class="cd" x="'+(CW-6)+'" y="12" text-anchor="end">'+cell(p)+'</text>'+
+    '<text class="abs" x="'+(CW-6)+'" y="12" text-anchor="end">AUSENTE</text>'+
+  '</g>';
+}).join('');
+svg.innerHTML=
+ '<defs><radialGradient id="aura"><stop offset="0" style="stop-color:var(--ind);stop-opacity:.5"/><stop offset="1" style="stop-color:var(--ind);stop-opacity:0"/></radialGradient></defs>'+
+ '<g>'+grid+'</g><g id="gAura"></g><g id="gFormal"></g><g id="gThreads"></g><g id="gNodes">'+nodes+'</g><g id="gBadges"></g>'+
+ '<text class="key" x="12" y="492">LÍNEA FINA: ORGANIGRAMA · HILOS DE COLOR: RELACIONES REALES</text>';
+var gAura=$('#gAura'), gFormal=$('#gFormal'), gThreads=$('#gThreads'), gBadges=$('#gBadges');
+
+/* Panel de percepción */
+function renderHud(){
+  var n=revCount(), lv=levelOf(n), left=EDGES.length-n;
+  $('#lvTag').textContent='Nivel '+lv+' de 4';
+  $('#lvName').textContent=LV[lv];
+  $('#lvSub').textContent=n+' de '+EDGES.length+' hilos visibles'+(left?'. '+left+' todavía no los sabes leer.':'.');
+  $('#bars').innerHTML=DIM_ORDER.map(function(d){
+    var pct=Math.round(state.xp[d]*100);
+    var notches=EDGES.filter(function(e){return e.d===d}).map(function(e){
+      return '<i class="notch'+(isRev(e)?' on':'')+'" style="left:'+(e.req*100)+'%"></i>';
+    }).join('');
+    return '<div class="bar" style="--c:var(--'+d+')">'+
+      '<div class="bar-head"><span>'+DIMS[d].name+'</span><span class="bv">'+pct+'%</span></div>'+
+      '<div class="track"><i class="fill" style="width:'+pct+'%"></i>'+notches+'</div>'+
+      '<div class="cap">'+DIMS[d].cap+'</div></div>';
+  }).join('');
+}
+
+/* Tablero dinámico */
+function sustain(id){
+  return EDGES.find(function(e){
+    return e.d==='ins'&&isRev(e)&&(e.a===id||e.b===id)&&e.a!=='bruno'&&e.b!=='bruno';
+  })||null;
+}
+function drawBoard(){
+  var a=Math.max(0,Math.min(1,(state.xp.ind-.08)/.3));
+  gAura.innerHTML=a<=0?'':PEOPLE.filter(function(p){return deg[p.id]>0}).map(function(p){
+    return '<ellipse cx="'+p.x+'" cy="'+p.y+'" rx="'+(90+deg[p.id]*9)+'" ry="'+(44+deg[p.id]*6)+'" fill="url(#aura)" opacity="'+(a*.9).toFixed(2)+'"/>';
+  }).join('');
+  gFormal.innerHTML=FORMAL.map(function(f){
+    return '<path class="formal'+(state.absent&&f[0]==='bruno'?' gone':'')+'" d="'+formalPath(f[0],f[1])+'"/>';
+  }).join('');
+  var fresh=[];
+  gThreads.innerHTML=EDGES.map(function(e){
+    var d=threadPath(e);
+    if(isRev(e)){
+      var isNew=!seen.has(e.id); if(isNew)fresh.push(e.id);
+      var off=state.absent&&(e.a==='bruno'||e.b==='bruno');
+      return '<g class="th th-'+e.d+(isNew?' draw':'')+(off?' off':'')+'" data-edge="'+e.id+'">'+
+        '<title>'+P[e.a].n+' ↔ '+P[e.b].n+'</title>'+
+        '<path class="hit" d="'+d+'"/><path class="glow" d="'+d+'"/>'+
+        '<path class="base" pathLength="1" d="'+d+'"/><path class="flow" d="'+d+'"/></g>';
+    }
+    return isHint(e)?'<path class="hl th-'+e.d+'" d="'+d+'"/>':'';
+  }).join('');
+  fresh.forEach(function(id){seen.add(id)});
+  EDGES.forEach(function(e){if(!isRev(e))seen.delete(e.id)});
+
+  document.querySelectorAll('.node').forEach(function(n){
+    var id=n.getAttribute('data-node');
+    n.classList.toggle('sel',!!(state.sel&&state.sel.t==='n'&&state.sel.id===id));
+    n.classList.toggle('absent',state.absent&&id==='bruno');
+  });
+  gBadges.innerHTML=state.absent?FORMAL.filter(function(f){return f[0]==='bruno'}).map(function(f){
+    var p=P[f[1]], ok=!!sustain(f[1]), w=ok?80:112;
+    return '<g transform="translate('+(p.x-CW/2)+' '+(p.y-CH/2-18)+')"><rect class="badge '+(ok?'ok':'bad')+'" width="'+w+'" height="16" rx="2"/>'+
+      '<text class="badge-t" x="8" y="11.5">'+(ok?'SOSTENIDO':'SIN COBERTURA')+'</text></g>';
+  }).join(''):'';
+  applyHover();
+}
+function applyHover(){
+  var h=state.hover||state.sel;
+  gThreads.querySelectorAll('.th').forEach(function(el){
+    var dim=false;
+    if(h){
+      if(h.t==='e')dim=el.getAttribute('data-edge')!==h.id;
+      else{var e=EDGE[el.getAttribute('data-edge')];dim=!(e.a===h.id||e.b===h.id)}
+    }
+    el.classList.toggle('dim',dim);
+  });
+}
+
+/* Lectura */
+function renderReading(){
+  var el=$('#reading'), s=state.sel, html='';
+  if(s&&s.t==='n'){
+    var p=P[s.id];
+    var inc=EDGES.filter(function(e){return e.a===p.id||e.b===p.id});
+    var vis=inc.filter(isRev), hid=inc.length-vis.length;
+    html='<p class="eyebrow">'+cell(p)+' · '+ARCHS[p.a].n+'</p><h3>'+p.n+'</h3>'+
+      '<p class="meta">'+p.role+(parentOf[p.id]?' · responde a '+P[parentOf[p.id]].n:' · cabeza del organigrama')+'</p>';
+    if(vis.length){
+      html+='<ul class="rels">'+vis.map(function(e){
+        var o=P[e.a===p.id?e.b:e.a];
+        return '<li><button type="button" data-pick="'+e.id+'" style="--c:var(--'+e.d+')"><i class="dot"></i>'+o.n+'<span class="rc">'+DIMS[e.d].cap+'</span></button></li>';
+      }).join('')+'</ul>';
+    }else{
+      html+='<p>Con tu percepción actual, aquí solo ves un cargo en el organigrama.</p>';
+    }
+    if(hid>0)html+='<p class="unread">'+(hid===1?'Hay 1 hilo que todavía no percibes':'Hay '+hid+' hilos que todavía no percibes')+' en este lugar.</p>';
+  }else if(s&&s.t==='e'){
+    var e=EDGE[s.id];
+    html='<p class="eyebrow" style="color:var(--'+e.d+')">Hilo de '+DIMS[e.d].cap.replace(/^hilos de /,'').replace(/^auras y /,'')+'</p>'+
+      '<h3>'+P[e.a].n+' ↔ '+P[e.b].n+'</h3><p>'+e.t+'</p>';
+  }else if(revCount()===EDGES.length){
+    var top=PEOPLE.slice().sort(function(x,y){return deg[y.id]-deg[x.id]})[0];
+    html='<p class="eyebrow">Mapa completo</p><h3>Quién sostiene a Utgard</h3>'+
+      '<p>'+P.ada.n+' encabeza el organigrama y no tiene ningún hilo oculto. '+top.n+', en '+top.role.toLowerCase()+', concentra '+deg[top.id]+' hilos. Lo que sostiene a Utgard no aparece en ninguna caja.</p>';
+  }else{
+    html='<p class="eyebrow">Lectura</p><h3>Toca un personaje o un hilo</h3>'+
+      '<p>Cada acción en Utgard entrena una dimensión de tu percepción. Cuando la barra pasa la marca de un hilo, el hilo aparece. Las marcas que titilan en el mapa avisan que algo está por revelarse.</p>';
+  }
+  el.innerHTML=html;
+}
+
+/* Lateral */
+function renderSide(){
+  $('#archs').innerHTML=Object.keys(ARCHS).map(function(k){
+    var a=ARCHS[k];
+    return '<button class="arch" type="button" data-arch="'+k+'" aria-pressed="'+(state.arch===k)+'">'+
+      '<svg viewBox="-10 -10 20 20" aria-hidden="true">'+glyph(k,0,0)+'</svg>'+
+      '<span class="an">'+a.n+'</span><span class="ad">+50% '+DIMS[a.aff].name+'</span></button>';
+  }).join('');
+  var aff=ARCHS[state.arch].aff;
+  $('#acts').innerHTML=ACTIONS.map(function(a){
+    var fx=Object.keys(a.fx).map(function(d){
+      var m=d===aff?1.5:1;
+      return '<b style="--c:var(--'+d+')" title="'+DIMS[d].name+'">+'+Math.round(a.fx[d]*m*100)+'</b>';
+    }).join('');
+    return '<button class="act" type="button" data-act="'+a.id+'"><span>'+a.label+'</span><span class="fx">'+fx+'</span></button>';
+  }).join('');
+
+  var ab=$('#absence'), kids=FORMAL.filter(function(f){return f[0]==='bruno'}).map(function(f){return f[1]});
+  if(!state.absent){
+    ab.innerHTML='<p class="note">Retira a Bruno, el Estratega principal, y mira qué se sostiene. Solo cuentan los hilos que ya sabes leer.</p>'+
+      '<button class="btn" type="button" data-absent="1">Retirar a Bruno</button>';
+  }else{
+    var bad=0;
+    var lines=kids.map(function(id){
+      var s=sustain(id);
+      if(!s)bad++;
+      var other=s?P[s.a===id?s.b:s.a].n:'';
+      return '<li class="'+(s?'ok':'bad')+'"><span><b>'+P[id].n+'</b> '+(s?'se apoya en '+other+' mediante un hilo de memoria.':'queda sin cobertura que tú puedas ver.')+'</span></li>';
+    }).join('');
+    var verdict=bad===0?'Utgard se mantiene. Las rutas y las defensas no dependían de una sola persona.':
+      bad+' de '+kids.length+' personajes quedan sin cobertura visible. Puede haber hilos que todavía no lees.';
+    ab.innerHTML='<ul class="res">'+lines+'</ul><p class="verdict">'+verdict+'</p>'+
+      '<div class="tools"><button class="btn" type="button" data-absent="0">Devolver a Bruno</button></div>';
+  }
+  $('#log').innerHTML=state.log.map(function(l){
+    return '<li'+(l.d?' style="--c:var(--'+l.d+')"':'')+'><i></i><span>'+l.t+'</span></li>';
+  }).join('');
+}
+
+function renderAll(){
+  if(state.sel&&state.sel.t==='e'&&!isRev(EDGE[state.sel.id]))state.sel=null;
+  renderHud();drawBoard();renderReading();renderSide();
+}
+function pushLog(t,d){state.log.unshift({t:t,d:d});state.log=state.log.slice(0,6)}
+
+function act(id){
+  var a=ACTIONS.find(function(x){return x.id===id});
+  if(!a)return;
+  var before=new Set(EDGES.filter(isRev).map(function(e){return e.id}));
+  var aff=ARCHS[state.arch].aff;
+  Object.keys(a.fx).forEach(function(d){
+    var m=d===aff?1.5:1;
+    state.xp[d]=Math.min(1,Math.round((state.xp[d]+a.fx[d]*m)*1000)/1000);
+  });
+  pushLog(a.log);
+  EDGES.filter(function(e){return isRev(e)&&!before.has(e.id)}).forEach(function(e){
+    pushLog('Un hilo se hizo visible: '+P[e.a].n+' ↔ '+P[e.b].n+'.',e.d);
+  });
+  save();renderAll();
+}
+
+/* Eventos */
+svg.addEventListener('pointerover',function(ev){
+  var t=ev.target.closest('[data-edge],[data-node]');
+  state.hover=t?(t.getAttribute('data-edge')?{t:'e',id:t.getAttribute('data-edge')}:{t:'n',id:t.getAttribute('data-node')}):null;
+  applyHover();
+});
+svg.addEventListener('pointerleave',function(){state.hover=null;applyHover()});
+svg.addEventListener('click',function(ev){
+  var t=ev.target.closest('[data-edge],[data-node]');
+  if(!t)state.sel=null;
+  else if(t.getAttribute('data-edge'))state.sel={t:'e',id:t.getAttribute('data-edge')};
+  else state.sel={t:'n',id:t.getAttribute('data-node')};
+  renderAll();
+});
+svg.addEventListener('keydown',function(ev){
+  var id=ev.target.getAttribute&&ev.target.getAttribute('data-node');
+  if(id&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();state.sel={t:'n',id:id};renderAll()}
+});
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-arch],[data-act],[data-absent],[data-pick]');
+  if(!b)return;
+  if(b.hasAttribute('data-arch')){state.arch=b.getAttribute('data-arch');save();renderAll()}
+  else if(b.hasAttribute('data-act'))act(b.getAttribute('data-act'));
+  else if(b.hasAttribute('data-absent')){state.absent=b.getAttribute('data-absent')==='1';renderAll()}
+  else if(b.hasAttribute('data-pick')){state.sel={t:'e',id:b.getAttribute('data-pick')};renderAll()}
+});
+$('#btnMaster').addEventListener('click',function(){
+  DIM_ORDER.forEach(function(d){state.xp[d]=1});
+  pushLog('Modo Máster: todos los hilos quedan a la vista.');
+  save();renderAll();
+});
+$('#btnReset').addEventListener('click',function(){
+  DIM_ORDER.forEach(function(d){state.xp[d]=INITIAL[d]});
+  state.absent=false;state.sel=null;state.hover=null;
+  state.log=[{t:'Volviste al inicio de la Red Relacional.'}];
+  seen=new Set(EDGES.filter(isRev).map(function(e){return e.id}));
+  save();renderAll();
+});
+
+renderAll();
+})();
+</script>
+
+</body></html>
