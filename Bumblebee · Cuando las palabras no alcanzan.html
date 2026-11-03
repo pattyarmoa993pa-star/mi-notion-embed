@@ -1,0 +1,541 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Bumblebee · Cuando las palabras no alcanzan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Concepto: dial de radio. A la izquierda el escáner de señal de Bumblebee y la conversación en curso; a la derecha el diccionario, que se llena como presets de frecuencia. */
+:root{
+  --bg:#E4E7E1; --panel:#F3F5F0; --panel2:#EAEDE6; --ink:#14171D; --mute:#555C66; --line:#C4C9C0;
+  --signal:#F0B400; --signal-ink:#2A2100; --focus:#1F5BFF;
+  --ok:#0E8A5F; --ok-bg:#DDF1E7; --bad:#C23B2E; --bad-bg:#F7E0DC;
+  --skin-alfa:#E8480F; --skin-beta:#5C7FCC;
+  --screen:#12151B; --screen-ink:#EEF0F4; --screen-mute:#8E97A8;
+  --f-display:'Unbounded',system-ui,sans-serif; --f-body:'DM Sans',system-ui,sans-serif; --f-mono:'JetBrains Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1117; --panel:#161B24; --panel2:#1C2230; --ink:#E9ECF1; --mute:#9AA3B2; --line:#2B3345;
+    --signal:#FFC81F; --signal-ink:#1E1600; --focus:#8FB2FF;
+    --ok:#37C98F; --ok-bg:#0F2E22; --bad:#FF6B5C; --bad-bg:#3A1B18;
+    --skin-alfa:#FF6A33; --skin-beta:#8FAEF0;
+    --screen:#06080C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1117; --panel:#161B24; --panel2:#1C2230; --ink:#E9ECF1; --mute:#9AA3B2; --line:#2B3345;
+  --signal:#FFC81F; --signal-ink:#1E1600; --focus:#8FB2FF;
+  --ok:#37C98F; --ok-bg:#0F2E22; --bad:#FF6B5C; --bad-bg:#3A1B18;
+  --skin-alfa:#FF6A33; --skin-beta:#8FAEF0;
+  --screen:#06080C; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--f-body);padding-block:22px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1060px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between}
+.brand{min-width:0}
+.eyebrow{font:600 .68rem/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+h1{font:700 clamp(1.6rem,5vw,2.5rem)/1.05 var(--f-display);margin:.5rem 0 0;text-wrap:balance;letter-spacing:-.01em}
+h1 span{display:block;font-weight:500;font-size:.46em;letter-spacing:0;margin-top:.6rem;color:var(--mute)}
+.hud{display:flex;flex-direction:column;gap:10px;align-items:flex-start;min-width:0}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.steps li{font:600 .7rem/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:.55rem .75rem;border:1px solid var(--line);border-radius:999px;color:var(--mute);background:var(--panel)}
+.steps li.on{background:var(--signal);color:var(--signal-ink);border-color:var(--signal-ink)}
+.steps li.done{color:var(--ink);border-color:var(--ink)}
+.stat{font:600 .75rem/1 var(--f-mono);color:var(--mute);letter-spacing:.04em}
+.stat b{color:var(--ink);font-size:1rem;font-variant-numeric:tabular-nums}
+.layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:860px){.layout{grid-template-columns:minmax(0,1fr)}}
+.stage,.dict{background:var(--panel);border:1px solid var(--line);border-radius:14px;min-width:0}
+.stage{overflow:hidden}
+.screen{position:relative;background:var(--screen);color:var(--screen-ink)}
+#scope{display:block;width:100%;height:210px}
+.cap{position:absolute;left:14px;bottom:10px;right:14px;font:600 .68rem/1.3 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--screen-mute)}
+#panel{padding:20px clamp(14px,3vw,24px) 24px;display:flex;flex-direction:column;gap:16px}
+h2{font:700 1.15rem/1.25 var(--f-display);margin:0;text-wrap:balance}
+h3{font:600 .72rem/1.2 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;margin:0;color:var(--mute)}
+p{margin:0;max-width:62ch}
+.lead{font-size:1.02rem}
+.mute{color:var(--mute)}
+.small{font-size:.82rem}
+.btn{font:700 .95rem/1.2 var(--f-body);min-height:44px;padding:.65rem 1.1rem;border-radius:10px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:.5rem;justify-content:center}
+.btn:hover{background:var(--panel2)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--signal);color:var(--signal-ink);border-color:var(--signal-ink)}
+.btn.primary:hover{background:var(--signal);filter:brightness(1.06)}
+.btn:focus-visible,.opt:focus-visible,.chip:focus-visible,.slot:focus-visible,.pl:focus-visible,summary:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chip{font:600 .8rem/1.1 var(--f-mono);min-height:40px;padding:.55rem .85rem;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);cursor:pointer;text-align:left}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.chip:disabled{cursor:default}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.opt{text-align:left;padding:.85rem 1rem;border-radius:12px;border:1.5px solid var(--line);background:var(--panel2);color:var(--ink);font:700 1rem/1.25 var(--f-body);cursor:pointer;min-height:58px}
+.opt small{display:block;font:400 .78rem/1.3 var(--f-body);color:var(--mute);margin-top:.2rem}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.wrong{text-decoration:line-through;opacity:.5}
+.opt.right{background:var(--ok-bg);border-color:var(--ok)}
+.channels{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.ch{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ch .k{font:600 .66rem/1.2 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.ch .v{display:flex;align-items:center;gap:10px;min-height:44px;flex-wrap:wrap}
+.ch .n{font-size:.8rem;color:var(--mute);line-height:1.35}
+.glyph{width:54px;height:54px;flex:none;color:var(--ink)}
+.glyph.alfa{stroke-linejoin:miter;stroke-linecap:square;filter:drop-shadow(0 0 3px currentColor)}
+.glyph.beta{stroke-width:2.4}
+.glyph.sm{width:34px;height:34px}
+.strip{display:inline-flex;align-items:flex-end;gap:3px;min-height:28px;max-width:100%;overflow:hidden}
+.strip i{display:block;background:var(--ink);border-radius:2px}
+.sw{display:inline-flex}
+.sw i{width:26px;height:26px;border-radius:50%;border:2px solid var(--panel2)}
+.sw i+i{margin-left:-9px}
+.fb{border-radius:10px;padding:12px 14px;background:var(--panel2);border:1px solid var(--line)}
+.fb.ok{background:var(--ok-bg);border-color:var(--ok)}
+.fb.bad{background:var(--bad-bg);border-color:var(--bad)}
+.fb ul,.ul{margin:.4rem 0 0;padding-left:1.1rem;display:grid;gap:.3rem}
+.dict{padding:16px}
+.dict h2{margin-bottom:4px}
+.cards{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:380px){.cards{grid-template-columns:minmax(0,1fr)}}
+.card{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel2);display:flex;flex-direction:column;gap:6px;min-width:0}
+.card.locked{border-style:dashed;background:transparent;color:var(--mute);justify-content:center;align-items:center;min-height:132px;text-align:center}
+.card .qm{font:700 1.8rem/1 var(--f-display)}
+.card .nm{font-weight:700;font-size:.92rem;line-height:1.2}
+.card .tp{font-size:.76rem;line-height:1.35;color:var(--mute)}
+.pl{align-self:flex-start;font:600 .7rem/1 var(--f-mono);min-height:34px;padding:.4rem .6rem;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+details{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font:600 .72rem/1.2 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;min-height:32px;display:flex;align-items:center}
+.tw{overflow-x:auto;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:.8rem}
+th,td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .66rem/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.profiles,.pairs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.prof{border:1.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--panel2);align-items:flex-start}
+.prof h3{color:var(--ink)}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.slot{min-height:88px;border:1.5px dashed var(--line);border-radius:12px;background:var(--panel2);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px;cursor:pointer;font:700 .85rem/1.2 var(--f-body);text-align:center}
+.slot.full{border-style:solid;border-color:var(--ink)}
+.slot.ok{border-color:var(--ok);background:var(--ok-bg)}
+.slot.no{border-color:var(--bad);background:var(--bad-bg)}
+.meter{height:12px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+.meter>i{display:block;height:100%;background:var(--signal);transition:width .25s}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.sr{position:absolute;left:-9999px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">Simulación social · para jóvenes</div>
+      <h1>Bumblebee<span>Cuando las palabras no alcanzan</span></h1>
+    </div>
+    <div class="hud">
+      <ol class="steps" id="steps"></ol>
+      <div class="stat">Fluidez <b id="fl">0</b> · Palabras <b id="pw">0</b>/6</div>
+    </div>
+  </header>
+  <div class="layout">
+    <section class="stage" aria-label="Conversación con Bumblebee">
+      <div class="screen">
+        <canvas id="scope" role="img" aria-label="Señal de Bumblebee: un anillo de barras que se mueve cuando transmite"></canvas>
+        <div class="cap" id="cap">Bumblebee · en espera</div>
+      </div>
+      <div id="panel"></div>
+    </section>
+    <aside class="dict" aria-label="Diccionario de Bumblebee">
+      <h2>Diccionario de Bumblebee</h2>
+      <p class="mute small">Se llena a medida que descifrás sus señales. Tocá «Escuchar» para repasar.</p>
+      <ul class="cards" id="cards"></ul>
+      <details>
+        <summary>Bajo el capó</summary>
+        <p class="mute small" style="margin-top:8px">El código original traduce una idea con una tabla de equivalencias entre arte y lógica, sin un modelo pesado. Esta simulación hace lo mismo: todo son tablas de señales y corre en tu navegador, sin conexión.</p>
+        <div class="tw">
+          <table>
+            <thead><tr><th>Lógica</th><th>Arte</th><th>En el juego</th></tr></thead>
+            <tbody>
+              <tr><td>Variable</td><td>Color</td><td>El tinte del escáner y el acento de quien habla</td></tr>
+              <tr><td>Objeto</td><td>Forma</td><td>El símbolo de cada palabra</td></tr>
+              <tr><td>Estructura</td><td>Composición</td><td>El mensaje completo: sonido, ritmo y forma</td></tr>
+              <tr><td>Bucle</td><td>Repetición</td><td>El ritmo: golpes que se repiten</td></tr>
+              <tr><td>Condición</td><td>Contraste</td><td>Lo que se mantiene cuando cambia el acento</td></tr>
+              <tr><td>Relación</td><td>Conexión</td><td>La frase que une varias señales</td></tr>
+              <tr><td>Procesamiento</td><td>Interpretación</td><td>Tu respuesta a cada mensaje</td></tr>
+              <tr><td>Salida</td><td>Obra terminada</td><td>El mensaje que suena y se ve</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </aside>
+  </div>
+</div>
+<div class="sr" id="live" aria-live="polite"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+/* Cada palabra de Bumblebee: melodía [semitonos, duración en pulsos], forma y pista. Esto es la estructura: no cambia con el acento. */
+const CONCEPTS=[
+ {id:'peligro',name:'Peligro',verb:'Hay peligro',shape:'spikes',pan:false,notes:[[0,.25],[6,.25],[0,.25],[6,.25],[0,.25],[6,.25]],tip:'Golpes rápidos entre dos notas que chocan.'},
+ {id:'cooperar',name:'Cooperar',verb:'Hagámoslo juntos',shape:'link',pan:true,notes:[[0,.4],[7,.4],[0,.4],[7,.4]],tip:'Dos voces, una en cada oído, que se turnan y se responden.'},
+ {id:'huir',name:'Huir',verb:'Salgamos de acá',shape:'chevrons',pan:false,notes:[[0,.4],[2,.34],[4,.28],[5,.22],[7,.17],[9,.13],[11,.1],[12,.4]],tip:'Una escalera que sube y se acelera.'},
+ {id:'esperar',name:'Esperar',verb:'Quedate quieto',shape:'pause',pan:false,notes:[[0,2.4]],tip:'Una sola nota larga y quieta.'},
+ {id:'ayuda',name:'Pedir ayuda',verb:'Necesito ayuda',shape:'beacon',pan:false,notes:[[7,.16],[7,.16],[7,.16],[12,1]],tip:'Tres toques cortos y uno largo hacia arriba.'},
+ {id:'hogar',name:'Volver a casa',verb:'Estamos a salvo',shape:'house',pan:false,notes:[[0,.8],[4,.8],[7,.8],[4,.5],[0,1.3]],tip:'Lenta y suave; termina donde empezó.'}
+];
+const G={
+ spikes:'<polyline points="6,42 16,16 25,42 34,16 43,42 52,16 58,42"/>',
+ link:'<circle cx="25" cy="32" r="15"/><circle cx="39" cy="32" r="15"/>',
+ chevrons:'<polyline points="10,14 25,32 10,50"/><polyline points="25,14 40,32 25,50"/><polyline points="40,14 55,32 40,50"/>',
+ pause:'<line x1="22" y1="14" x2="22" y2="50"/><line x1="42" y1="14" x2="42" y2="50"/>',
+ beacon:'<circle cx="12" cy="32" r="3.5" fill="currentColor"/><circle cx="24" cy="32" r="3.5" fill="currentColor"/><circle cx="36" cy="32" r="3.5" fill="currentColor"/><line x1="46" y1="32" x2="58" y2="32"/>',
+ house:'<polyline points="8,32 32,10 56,32"/><polyline points="15,27 15,54 49,54 49,27"/>'
+};
+/* El acento: lo que cambia según quién habla (timbre, tempo, color, referencia). */
+const PROFILES={
+ alfa:{id:'alfa',short:'Alfa',name:'Perfil Alfa',style:'enérgico',refs:['Rock de los 80','Cine de ciencia ficción','Sintetizadores'],beat:.42,base:52,color:'Brillante y cálido'},
+ beta:{id:'beta',short:'Beta',name:'Perfil Beta',style:'melancólico',refs:['Música clásica','Paisajismo','Arquitectura gótica'],beat:.62,base:60,color:'Pastel y frío'},
+ neutro:{id:'neutro',short:'Neutro',name:'Sin acento',style:'neutro',refs:['Tono simple'],beat:.5,base:57,color:'Sin color'}
+};
+const REFS={
+ 'Rock de los 80':{type:'sawtooth',stack:[0,7],atk:.01,rel:.12,vib:0,lp:2200},
+ 'Cine de ciencia ficción':{type:'sine',stack:[0,12],atk:.04,rel:.3,vib:6,lp:3000},
+ 'Sintetizadores':{type:'square',stack:[0],atk:.005,rel:.08,vib:0,lp:1800},
+ 'Música clásica':{type:'triangle',stack:[0,7],atk:.08,rel:.4,vib:0,lp:3500},
+ 'Paisajismo':{type:'sine',stack:[0],atk:.15,rel:.7,vib:0,lp:2500},
+ 'Arquitectura gótica':{type:'sine',stack:[-12,0,12],atk:.12,rel:.6,vib:0,lp:1500},
+ 'Tono simple':{type:'sine',stack:[0],atk:.02,rel:.15,vib:0,lp:3000}
+};
+const SENT=[{ids:['peligro','cooperar','huir']},{ids:['ayuda','esperar','hogar']}];
+
+const S={me:'alfa',partner:'beta',stage:'intro',known:new Set(),score:0,tint:null,speakUntil:0,skinReveals:0,structReveals:0,noAudio:false,cmp:'peligro'};
+
+/* Audio: osciladores simples del navegador. Sin archivos, sin red, casi sin cómputo. */
+let ac=null,master=null,analyser=null;
+function audio(){
+ if(!ac){
+  const C=window.AudioContext||window.webkitAudioContext;
+  if(!C){S.noAudio=true;return null}
+  try{
+   ac=new C();master=ac.createGain();master.gain.value=.5;
+   analyser=ac.createAnalyser();analyser.fftSize=512;
+   master.connect(analyser);analyser.connect(ac.destination);
+  }catch(e){S.noAudio=true;return null}
+ }
+ if(ac.state==='suspended')ac.resume();
+ return ac;
+}
+function playMsg(cid,skin,ref,delay){
+ const a=audio();if(!a)return 0;
+ const c=CONCEPTS.find(x=>x.id===cid),p=PROFILES[skin],v=REFS[ref]||REFS['Tono simple'];
+ let t=a.currentTime+.05+(delay||0);
+ c.notes.forEach((n,i)=>{
+  const dur=n[1]*p.beat,f0=440*Math.pow(2,(p.base+n[0]-69)/12);
+  const lvl=.22/v.stack.length,atk=Math.min(v.atk,dur*.4);
+  const g=a.createGain(),lp=a.createBiquadFilter();
+  lp.type='lowpass';lp.frequency.value=v.lp;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(lvl,t+atk);
+  g.gain.setValueAtTime(lvl,t+Math.max(dur-.02,atk));
+  g.gain.linearRampToValueAtTime(.0001,t+dur+v.rel);
+  v.stack.forEach(s=>{
+   const o=a.createOscillator();o.type=v.type;o.frequency.value=f0*Math.pow(2,s/12);
+   if(v.vib){const l=a.createOscillator(),lg=a.createGain();l.frequency.value=v.vib;lg.gain.value=f0*.015;l.connect(lg);lg.connect(o.frequency);l.start(t);l.stop(t+dur+v.rel+.05)}
+   o.connect(g);o.start(t);o.stop(t+dur+v.rel+.05);
+  });
+  g.connect(lp);
+  if(c.pan&&a.createStereoPanner){const pn=a.createStereoPanner();pn.pan.value=(i%2?1:-1)*.8;lp.connect(pn);pn.connect(master)}
+  else lp.connect(master);
+  t+=dur;
+ });
+ return t-a.currentTime;
+}
+
+/* Escáner: anillo de barras rayadas. Reacciona al sonido real; el color solo aparece cuando pedís esa pista. */
+const cv=$('#scope'),cx=cv.getContext('2d');
+let fdata=null;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function fit(){const r=cv.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);cv.width=Math.max(1,Math.round(r.width*d));cv.height=Math.max(1,Math.round(r.height*d));cx.setTransform(d,0,0,d,0,0)}
+const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(ts){
+ const w=cv.clientWidth,h=cv.clientHeight;cx.clearRect(0,0,w,h);
+ const sig=css('--signal'),ink=css('--screen-ink'),scr=css('--screen'),mute=css('--screen-mute');
+ const tint=S.tint?css('--skin-'+S.tint):null;
+ const speaking=performance.now()<S.speakUntil;
+ const n=72,R=Math.min(h*.27,w*.18),X=w/2,Y=h/2-6,maxLen=Math.min(w,h)*.26;
+ if(analyser){if(!fdata)fdata=new Uint8Array(analyser.frequencyBinCount);analyser.getByteFrequencyData(fdata)}
+ cx.lineCap='round';cx.lineWidth=3;
+ for(let i=0;i<n;i++){
+  const ang=i/n*Math.PI*2-Math.PI/2;let v;
+  if(speaking&&fdata){const k=1+Math.floor(Math.abs(i-n/2)/(n/2)*40);v=fdata[k]/255}
+  else v=.07+.05*Math.sin(ts/700+i*.45);
+  const len=5+v*maxLen,c=Math.cos(ang),s=Math.sin(ang);
+  cx.strokeStyle=i%2?(tint||sig):ink;cx.globalAlpha=i%2?1:.85;
+  cx.beginPath();cx.moveTo(X+c*(R+8),Y+s*(R+8));cx.lineTo(X+c*(R+8+len),Y+s*(R+8+len));cx.stroke();
+ }
+ cx.globalAlpha=.25;cx.strokeStyle=mute;cx.lineWidth=1;cx.beginPath();cx.arc(X,Y,R+maxLen+14,0,Math.PI*2);cx.stroke();cx.globalAlpha=1;
+ cx.save();cx.beginPath();cx.arc(X,Y,R,0,Math.PI*2);cx.clip();
+ cx.fillStyle=tint||sig;cx.fillRect(X-R,Y-R,R*2,R*2);
+ cx.fillStyle=scr;cx.fillRect(X-R,Y-R*.52,R*2,R*.3);cx.fillRect(X-R,Y+R*.12,R*2,R*.3);
+ cx.restore();
+ if(reduce)setTimeout(()=>frame(performance.now()),160);else requestAnimationFrame(frame);
+}
+if(window.ResizeObserver)new ResizeObserver(fit).observe(cv);
+window.addEventListener('resize',fit);
+fit();requestAnimationFrame(frame);
+function setCap(t){$('#cap').textContent=t}
+function speak(d){
+ S.speakUntil=performance.now()+d*1000;
+ if(S.noAudio){setCap('Tu navegador no reproduce sonido · usá las pistas visuales');return}
+ setCap('Bumblebee · transmitiendo');
+ setTimeout(()=>{if(performance.now()>=S.speakUntil-50)setCap('Bumblebee · en espera')},d*1000+250);
+}
+const K=id=>CONCEPTS.find(c=>c.id===id);
+const glyph=(shape,skin,cls)=>`<svg class="glyph ${skin||''} ${cls||''}" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${G[shape]}</svg>`;
+const strip=c=>'<span class="strip" role="img" aria-label="Ritmo y altura de las notas">'+c.notes.map(n=>`<i style="width:${Math.round(n[1]*20+4)}px;height:${Math.round(6+n[0]*1.6)}px"></i>`).join('')+'</span>';
+const swatch=id=>`<span class="sw" aria-hidden="true"><i style="background:var(--skin-${id})"></i><i style="background:var(--skin-${id});opacity:.55"></i></span>`;
+const opts=cid=>sh([cid,...sh(CONCEPTS.map(c=>c.id).filter(i=>i!==cid)).slice(0,2)]);
+const CHN=[['ritmo','Ritmo'],['forma','Forma'],['color','Color'],['ref','Referencia']];
+
+function renderTop(){
+ const names=['Escuchá','Otro acento','Frase','Puente'];
+ const idx={l1:0,l2:1,l2cmp:1,l3:2,l4:3}[S.stage];
+ $('#steps').innerHTML=names.map((n,i)=>`<li class="${S.stage==='end'||i<idx?'done':i===idx?'on':''}">${i+1}. ${n}</li>`).join('');
+ $('#fl').textContent=S.score;$('#pw').textContent=S.known.size;
+}
+function renderCards(){
+ $('#cards').innerHTML=CONCEPTS.map(c=>S.known.has(c.id)
+  ?`<li class="card">${glyph(c.shape,'','sm')}<div class="nm">${c.name}</div>${strip(c)}<div class="tp">${c.tip}</div><button class="pl" data-act="dictplay" data-id="${c.id}">Escuchar</button></li>`
+  :`<li class="card locked"><div class="qm" aria-hidden="true">?</div><div class="tp">Sin descifrar</div></li>`).join('');
+}
+
+function introHTML(){
+ return `<h3>Antes de empezar</h3>
+ <h2>Bumblebee no habla con palabras</h2>
+ <p class="lead">Cuando las palabras no alcanzan, te manda fragmentos de música, sonidos y referencias que cree que te van a sonar. Vos aprendés su idioma de a poco. Con auriculares se nota mejor: algunas señales usan un oído para cada voz.</p>
+ <h3>Elegí tu perfil</h3>
+ <div class="profiles">${['alfa','beta'].map(id=>{const p=PROFILES[id];return `<div class="prof"><h3>${p.name}</h3>${swatch(id)}<p><b>${p.style}</b> · color ${p.color.toLowerCase()}</p><p class="mute small">Le gusta: ${p.refs.join(', ')}.</p><button class="btn primary" data-act="pick" data-id="${id}">Jugar como ${p.short}</button></div>`}).join('')}</div>
+ <p class="mute small">Tu perfil define cómo te habla Bumblebee. El otro perfil será tu compañero o compañera de equipo.</p>`;
+}
+
+function roundHTML(){
+ const c=S.cur,p=PROFILES[c.skin],k=K(c.cid),lvl=S.stage==='l1'?1:2,total=S.queue.length;
+ const show={
+  ritmo:()=>`<div class="v">${strip(k)}</div><div class="n">Cuánto dura cada golpe y qué tan agudo suena.</div>`,
+  forma:()=>`<div class="v">${glyph(k.shape,c.skin)}</div><div class="n">Silueta inspirada en ${c.ref}.</div>`,
+  color:()=>`<div class="v">${swatch(c.skin)}</div><div class="n">${p.color}: así se ve el acento de ${p.short}.</div>`,
+  ref:()=>`<div class="v"><b>${c.ref}</b></div><div class="n">La referencia cultural que eligió para este mensaje.</div>`
+ };
+ const revealed=CHN.filter(x=>c.rev.has(x[0]));
+ const last=S.i+1>=total;
+ return `<h3>Nivel ${lvl} · ${lvl===1?'Escuchá':'Otro acento'} · mensaje ${S.i+1} de ${total}</h3>
+ <h2>${lvl===1?'¿Qué te está diciendo Bumblebee?':`Te habla con el acento de ${p.short}. ¿Qué te dice?`}</h2>
+ <div class="row"><button class="btn primary" data-act="play">Escuchar</button><span class="mute small">Habla como ${p.short} · ${p.style}</span></div>
+ <div class="row" role="group" aria-label="Prestar atención a"><h3 style="margin-right:4px">Prestar atención a</h3>${CHN.map(x=>`<button class="chip" data-act="rev" data-id="${x[0]}" aria-pressed="${c.rev.has(x[0])}" ${c.rev.has(x[0])||c.done?'disabled':''}>${x[1]}</button>`).join('')}</div>
+ ${c.done?'':'<p class="mute small">Cada pista que pedís resta un punto de fluidez. Podés intentar sin ninguna.</p>'}
+ ${revealed.length?`<div class="channels">${revealed.map(x=>`<div class="ch"><div class="k">${x[1]}</div>${show[x[0]]()}</div>`).join('')}</div>`:''}
+ <div class="opts">${c.opts.map(id=>{const o=K(id);return `<button class="opt ${c.wrong.has(id)?'wrong':''} ${c.done&&id===c.cid?'right':''}" data-act="ans" data-id="${id}" ${c.done||c.wrong.has(id)?'disabled':''}>${o.name}<small>${o.verb}</small></button>`}).join('')}</div>
+ ${c.fb?`<div class="fb ${c.fb.t}" role="status">${c.fb.h}</div>`:''}
+ ${c.done?`<div class="row"><button class="btn primary" data-act="next">${last?(lvl===1?'Seguir con otro acento':'Ver los dos acentos'):'Siguiente mensaje'}</button></div>`:''}`;
+}
+
+function cmpHTML(){
+ const k=K(S.cmp);
+ return `<h3>Nivel 2 · Lado a lado</h3>
+ <h2>Mismo mensaje, dos acentos</h2>
+ <p class="lead">Elegí una palabra y escuchala con cada perfil y cada referencia. Fijate qué cambia y qué no.</p>
+ <div class="seg" role="group" aria-label="Palabra">${CONCEPTS.map(c=>`<button class="chip" data-act="cmp" data-id="${c.id}" aria-pressed="${c.id===S.cmp}">${c.name}</button>`).join('')}</div>
+ <div class="ch"><div class="k">Lo que no cambia</div><div class="v">${glyph(k.shape)}${strip(k)}</div><div class="n">La forma, el ritmo y la melodía son los mismos para todos. ${k.tip}</div></div>
+ <div class="pairs">${['alfa','beta'].map(id=>{const p=PROFILES[id];return `<div class="ch"><div class="k">${p.name} · ${p.style}</div><div class="v">${swatch(id)}${glyph(k.shape,id)}</div><div class="n">${p.color}. Trazo ${id==='alfa'?'filoso y brillante':'fino y redondeado'}.</div><div class="seg">${p.refs.map(r=>`<button class="chip" data-act="cmpplay" data-s="${id}" data-r="${r}">Escuchar · ${r}</button>`).join('')}</div></div>`}).join('')}</div>
+ <p>Cambian el timbre, el tempo, el color y la referencia. La piel cambia y el mensaje queda. Por eso podés entenderte con alguien que no se parece a vos.</p>
+ <div class="row"><button class="btn primary" data-act="tol3">Seguir con frases</button></div>`;
+}
+
+function l3HTML(){
+ const s=S.s,sen=SENT[s.n],skin=s.n===0?S.me:S.partner,p=PROFILES[skin];
+ const lead=s.n===0?'La idea del sistema: cooperar para escapar de un peligro inminente. Bumblebee la manda en tres señales seguidas.':`Otra frase, ahora con el acento de ${p.short}. Menos pistas, más oído.`;
+ const full=s.slots.every(Boolean);
+ return `<h3>Nivel 3 · Frase ${s.n+1} de ${SENT.length}</h3>
+ <h2>Armá lo que dice la frase</h2>
+ <p class="lead">${lead}</p>
+ <div class="row"><button class="btn primary" data-act="play3">Escuchar la frase</button>${s.rev||s.done?'':'<button class="btn" data-act="hint3">Pedir las formas (−1)</button>'}</div>
+ ${s.rev?`<div class="ch"><div class="k">Formas, en orden</div><div class="v">${sen.ids.map(id=>glyph(K(id).shape,skin,'sm')).join('')}</div><div class="n">Las tres siluetas que acompañan la frase.</div></div>`:''}
+ <div class="slots">${s.slots.map((id,i)=>{const k=id&&K(id);const st=s.marks?(s.marks[i]?'ok':'no'):'';return `<button class="slot ${id?'full':''} ${st}" data-act="slot" data-id="${i}" ${s.done?'disabled':''} aria-label="Señal ${i+1}${k?': '+k.name:' vacía'}">${k?glyph(k.shape,'','sm')+k.name:'Señal '+(i+1)}</button>`}).join('')}</div>
+ <div class="seg" role="group" aria-label="Palabras">${CONCEPTS.map(c=>`<button class="chip" data-act="word" data-id="${c.id}" ${s.done?'disabled':''}>${c.name}</button>`).join('')}</div>
+ ${s.done?'':`<div class="row"><button class="btn primary" data-act="check3" ${full?'':'disabled'}>Comprobar</button></div>`}
+ ${s.fb?`<div class="fb ${s.fb.t}" role="status">${s.fb.h}</div>`:''}
+ ${s.done?`<div class="row"><button class="btn primary" data-act="next3">${s.n+1<SENT.length?'Siguiente frase':'Ir al puente'}</button></div>`:''}`;
+}
+
+function prob(){
+ const b=S.b,bonus={me:-.1,partner:.25,neutro:.12}[b.skin];
+ return Math.round(Math.max(.05,Math.min(.97,.30+(b.ritmo?.15:0)+(b.forma?.25:0)+bonus))*100);
+}
+function l4HTML(){
+ const b=S.b,p=PROFILES[S.partner],pr=prob();
+ return `<h3>Nivel 4 · Puente</h3>
+ <h2>Mandale un mensaje a ${p.short}</h2>
+ <p class="lead">${p.short} no conoce el idioma de Bumblebee. Tenés que avisarle: <b>peligro, cooperar, huir</b>. Elegí cómo se lo mandás y mirá cuánto lo ayuda a entender.</p>
+ <div><h3>Acento</h3><div class="seg" style="margin-top:8px" role="group" aria-label="Acento">
+  <button class="chip" data-act="skin4" data-id="me" aria-pressed="${b.skin==='me'}">Mi acento (${PROFILES[S.me].short})</button>
+  <button class="chip" data-act="skin4" data-id="partner" aria-pressed="${b.skin==='partner'}">Su acento (${p.short})</button>
+  <button class="chip" data-act="skin4" data-id="neutro" aria-pressed="${b.skin==='neutro'}">Sin acento</button></div></div>
+ <div><h3>Canales que acompañan al sonido</h3><div class="seg" style="margin-top:8px" role="group" aria-label="Canales">
+  <button class="chip" data-act="tog4" data-id="ritmo" aria-pressed="${b.ritmo}">Ritmo a la vista</button>
+  <button class="chip" data-act="tog4" data-id="forma" aria-pressed="${b.forma}">Forma a la vista</button></div></div>
+ <div><div class="meter" role="img" aria-label="Probabilidad de que ${p.short} entienda cada señal: ${pr}%"><i style="width:${pr}%"></i></div>
+ <p class="small mute" style="margin-top:6px"><b>${pr}%</b> de probabilidad de que ${p.short} entienda cada señal.</p></div>
+ <div class="row"><button class="btn primary" data-act="send4" ${b.done?'disabled':''}>Enviar mensaje</button><span class="mute small">Intento ${Math.min(b.attempts+(b.done?0:1),3)} de 3</span></div>
+ ${b.last?`<div class="fb ${b.last.every(x=>x.ok)?'ok':'bad'}" role="status"><b>${p.short} leyó:</b><ul>${b.last.map(x=>`<li>${x.ok?'Entendió «'+K(x.id).name+'».':'Entendió «'+K(x.got).name+'» en lugar de «'+K(x.id).name+'».'}</li>`).join('')}</ul><p style="margin-top:8px">${b.msg}</p></div>`:''}
+ ${b.done?`<div class="row"><button class="btn primary" data-act="end">Terminar</button></div>`:''}`;
+}
+
+function endHTML(){
+ return `<h3>Fin de la transmisión</h3>
+ <h2>Ya entendés a Bumblebee</h2>
+ <div class="channels">
+  <div class="ch"><div class="k">Palabras</div><div class="v"><b>${S.known.size} de 6</b></div></div>
+  <div class="ch"><div class="k">Fluidez</div><div class="v"><b>${S.score}</b></div></div>
+  <div class="ch"><div class="k">Pistas pedidas</div><div class="v"><b>${S.structReveals} de estructura · ${S.skinReveals} de acento</b></div></div>
+ </div>
+ <div><h3>Lo que aprendiste</h3><ul class="ul"><li>El significado vive en la estructura: la melodía, el ritmo y la forma.</li><li>El acento (timbre, color y referencia) cambia según quién habla, y el mensaje sigue siendo el mismo.</li><li>Para entenderte con alguien distinto, conviene hablar con su acento o ir a lo esencial.</li></ul></div>
+ <div class="fb"><p>«Tu Transformer no piensa por vos. Aprende cómo pensás para ayudarte a construir puentes entre lo que imaginás y lo que los demás pueden comprender».</p></div>
+ <div class="row"><button class="btn primary" data-act="restart">Jugar de nuevo</button></div>`;
+}
+
+function render(){
+ const a=document.activeElement;let key=null;
+ if(a&&a.dataset&&a.dataset.act&&$('#panel').contains(a))key=`[data-act="${a.dataset.act}"]`+(a.dataset.id!==undefined?`[data-id="${a.dataset.id}"]`:'')+(a.dataset.s?`[data-s="${a.dataset.s}"][data-r="${a.dataset.r}"]`:'');
+ renderTop();renderCards();
+ const h={intro:introHTML,l1:roundHTML,l2:roundHTML,l2cmp:cmpHTML,l3:l3HTML,l4:l4HTML,end:endHTML}[S.stage];
+ $('#panel').innerHTML=h();
+ if(key){const n=$('#panel '+key);if(n&&!n.disabled)n.focus({preventScroll:true})}
+}
+/* Flujo del juego */
+function startLevel(n){
+ S.stage='l'+n;
+ const ids=sh(CONCEPTS.map(c=>c.id));
+ S.queue=n===1?ids:ids.slice(0,4);S.i=0;newRound();
+}
+function newRound(){
+ const skin=S.stage==='l1'?S.me:S.partner;
+ const cid=S.queue[S.i];
+ S.cur={cid,skin,ref:pick(PROFILES[skin].refs),rev:new Set(),wrong:new Set(),done:false,fb:null,opts:opts(cid)};
+ S.tint=null;render();setTimeout(playCur,300);
+}
+function playCur(){const c=S.cur;if(!c)return;speak(playMsg(c.cid,c.skin,c.ref))}
+function reveal(id){
+ const c=S.cur;if(c.done||c.rev.has(id))return;
+ c.rev.add(id);
+ if(id==='color'){S.tint=c.skin;S.skinReveals++}else if(id==='ref')S.skinReveals++;else S.structReveals++;
+ render();
+}
+function answer(id){
+ const c=S.cur;if(c.done)return;
+ const k=K(c.cid),p=PROFILES[c.skin];
+ if(id===c.cid){
+  c.done=true;
+  const pts=Math.max(1,3-c.rev.size-c.wrong.size);
+  S.score+=pts;S.known.add(c.cid);
+  const sk=[...c.rev].filter(x=>x==='color'||x==='ref').length;
+  c.fb={t:'ok',h:`<b>Era «${k.name}».</b> ${k.verb}. Lo que lo decía fue la melodía, el ritmo y la forma. El timbre, el color y la referencia («${c.ref}») eran el acento de ${p.short}. <b>+${pts}</b> de fluidez.${sk?` Pediste ${sk} pista${sk>1?'s':''} de acento: esas no cambian el significado.`:''}`};
+ }else{
+  c.wrong.add(id);
+  c.fb={t:'bad',h:'Todavía no. Escuchá otra vez y probá prestarle atención a otro canal.'};
+ }
+ render();
+}
+function nextRound(){
+ S.i++;
+ if(S.i<S.queue.length)newRound();
+ else if(S.stage==='l1')startLevel(2);
+ else{S.stage='l2cmp';S.cur=null;render()}
+}
+function startL3(){
+ S.stage='l3';S.s={n:0,slots:[null,null,null],tries:0,rev:false,done:false,marks:null,fb:null};render();
+ setTimeout(play3,300);
+}
+function play3(){
+ const s=S.s,skin=s.n===0?S.me:S.partner,ref=PROFILES[skin].refs[0];
+ let off=0;
+ SENT[s.n].ids.forEach(id=>{off=playMsg(id,skin,ref,off+(off?.4:0))});
+ speak(off);
+}
+function check3(){
+ const s=S.s,ids=SENT[s.n].ids;
+ s.marks=s.slots.map((v,i)=>v===ids[i]);
+ if(s.marks.every(Boolean)){
+  s.done=true;
+  const pts=Math.max(1,3-(s.rev?1:0)-s.tries);S.score+=pts;
+  s.fb={t:'ok',h:`<b>${ids.map(id=>K(id).verb).join('. ')}.</b> Entendiste la frase completa. <b>+${pts}</b> de fluidez.`};
+ }else{
+  s.tries++;
+  s.fb={t:'bad',h:'Alguna señal no coincide. Las marcadas en rojo son las que hay que revisar. Escuchá la frase otra vez, o pedí las formas.'};
+ }
+ render();
+}
+function nextSentence(){
+ const s=S.s;
+ if(s.n+1<SENT.length){S.s={n:s.n+1,slots:[null,null,null],tries:0,rev:false,done:false,marks:null,fb:null};render();setTimeout(play3,300)}
+ else{S.stage='l4';S.b={skin:'me',ritmo:false,forma:false,attempts:0,last:null,done:false,msg:''};render()}
+}
+function send4(){
+ const b=S.b,pr=prob()/100,p=PROFILES[S.partner];
+ if(b.done)return;
+ b.attempts++;
+ const ids=['peligro','cooperar','huir'];
+ const skin=b.skin==='me'?S.me:b.skin==='partner'?S.partner:'neutro';
+ let off=0;
+ ids.forEach(id=>{off=playMsg(id,skin,PROFILES[skin].refs[0],off+(off?.4:0))});
+ speak(off);
+ b.last=ids.map(id=>{const ok=Math.random()<pr;return {id,ok,got:ok?id:pick(CONCEPTS.filter(c=>c.id!==id)).id}});
+ const all=b.last.every(x=>x.ok);
+ if(all){
+  b.done=true;S.score+=Math.max(2,6-b.attempts);
+  b.msg=`${p.short} entendió las tres señales. ${b.skin==='me'?'Incluso con tu acento llegó, porque sumaste lo que se ve y se oye igual para todos.':'Hablar con su acento o sin acento, y sumar lo que se ve igual para todos, hizo que llegara.'}`;
+ }else{
+  const t=[];
+  if(b.skin==='me')t.push(`Hablaste con tu acento, que ${p.short} no conoce.`);
+  if(!b.forma)t.push('Sumá la forma: se ve igual para todos.');
+  if(!b.ritmo)t.push('Sumá el ritmo: se oye y se ve igual en cualquier acento.');
+  if(!t.length)t.push('Con esta configuración casi siempre llega, pero a veces falla igual: ninguna comunicación es perfecta.');
+  if(b.attempts>=3){b.done=true;t.push('Se acabaron los intentos. Lo que importa es lo que probaste.')}
+  b.msg=t.join(' ');
+ }
+ render();
+}
+function restart(){
+ S.known.clear();S.score=0;S.tint=null;S.skinReveals=0;S.structReveals=0;S.stage='intro';S.cur=null;render();
+}
+
+function act(a,d){
+ const id=d.id;
+ switch(a){
+  case 'pick':S.me=id;S.partner=id==='alfa'?'beta':'alfa';startLevel(1);break;
+  case 'play':playCur();break;
+  case 'rev':reveal(id);break;
+  case 'ans':answer(id);break;
+  case 'next':nextRound();break;
+  case 'cmp':S.cmp=id;render();break;
+  case 'cmpplay':speak(playMsg(S.cmp,d.s,d.r));break;
+  case 'tol3':startL3();break;
+  case 'play3':play3();break;
+  case 'hint3':S.s.rev=true;render();break;
+  case 'slot':{const s=S.s;if(!s.done){s.slots[+id]=null;s.marks=null;s.fb=null;render()}break}
+  case 'word':{const s=S.s,i=s.slots.indexOf(null);if(i>-1&&!s.done){s.slots[i]=id;s.marks=null;s.fb=null;render()}break}
+  case 'check3':check3();break;
+  case 'next3':nextSentence();break;
+  case 'skin4':S.b.skin=id;render();break;
+  case 'tog4':S.b[id]=!S.b[id];render();break;
+  case 'send4':send4();break;
+  case 'end':S.stage='end';render();break;
+  case 'restart':restart();break;
+ }
+}
+$('#panel').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled)act(b.dataset.act,b.dataset)});
+$('#cards').addEventListener('click',e=>{const b=e.target.closest('[data-act="dictplay"]');if(b)speak(playMsg(b.dataset.id,S.me,PROFILES[S.me].refs[0]))});
+render();
+</script>
+
+</body></html>
