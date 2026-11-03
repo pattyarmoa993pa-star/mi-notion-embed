@@ -1,0 +1,441 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>CAPTCHA Cable o Gomita</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Layout: one arcade-cabinet column. Marquee, then a CAPTCHA tile (header question, photo, timer), a speech bubble from another generation, and two answer pads. */
+:root{
+  --bg:#15101f; --panel:#221a33; --panel2:#2c2142; --line:#43375f;
+  --ink:#f1e8d0; --dim:#a99dc4;
+  --cable:#f2b632; --gomita:#ff5fa2; --ok:#5be3a0; --bad:#ff6a5c;
+  --f-d:'Press Start 2P',ui-monospace,Menlo,monospace;
+  --f-b:'VT323',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  background:var(--bg) radial-gradient(circle at 1px 1px,#2a2040 1px,transparent 1.5px) 0 0/18px 18px;
+  color:var(--ink); font-family:var(--f-b); font-size:22px; line-height:1.25;
+  padding-block:20px 32px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.cab{max-width:520px;margin:0 auto;display:grid;gap:14px}
+.cab>*{min-width:0}
+h1,h2,h3,p{margin:0}
+.marquee{text-align:center;display:grid;gap:8px;padding-top:4px}
+.marquee h1{font:400 clamp(26px,9vw,40px)/1 var(--f-d);letter-spacing:.04em;text-shadow:3px 0 var(--gomita),-3px 0 var(--cable)}
+.marquee p{color:var(--dim);font-size:23px}
+.panel{background:var(--panel);border:2px solid var(--line);border-radius:6px;padding:14px}
+.label{font:400 8px/1.4 var(--f-d);letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+
+/* start */
+.widget{background:#f1e8d0;color:#241a33;border:2px solid #000;border-radius:4px;box-shadow:4px 4px 0 #000;padding:14px;display:flex;align-items:center;gap:14px}
+.check{flex:none;width:36px;height:36px;border:3px solid #241a33;background:#fff;border-radius:3px;cursor:pointer;position:relative;padding:0}
+.check:focus-visible,.pad:focus-visible,.btn:focus-visible,.lupa:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.check.busy::after{content:"";position:absolute;inset:5px;border:4px solid #c9bfa6;border-top-color:#241a33;border-radius:50%;animation:spin .8s linear infinite}
+.check.done::after{content:"";position:absolute;left:10px;top:2px;width:10px;height:20px;border:solid #1d8a5a;border-width:0 5px 5px 0;transform:rotate(45deg)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.widget strong{font-size:27px;font-weight:400;line-height:1}
+.widget small{display:block;font-size:18px;color:#5a4d73}
+.rules{display:grid;gap:10px;margin:0}
+.rules div{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:start}
+.rules dt{font:400 9px/1.5 var(--f-d);color:#1a1224;background:var(--cable);padding:6px 6px;border-radius:3px;text-align:center}
+.rules div:nth-child(even) dt{background:var(--gomita)}
+.rules dd{margin:0}
+.keys{color:var(--dim);font-size:20px}
+
+/* hud */
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat{background:var(--panel);border:2px solid var(--line);border-radius:5px;padding:8px 8px 6px;display:grid;gap:4px;min-width:0}
+.stat output{font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.lives{display:flex;gap:5px;height:30px;align-items:center}
+.life{width:16px;height:16px;background:var(--bad);clip-path:polygon(0 25%,25% 0,50% 20%,75% 0,100% 25%,100% 55%,50% 100%,0 55%)}
+.life.lost{background:var(--line)}
+.era{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.era li{font-size:16px;text-align:center;color:var(--dim);border-bottom:4px solid var(--line);padding-bottom:3px;letter-spacing:.03em;transition:color .2s,border-color .2s}
+.era li.on{color:var(--ink);border-color:var(--ink)}
+
+/* tile */
+.tile{background:var(--panel);border:2px solid var(--line);border-radius:6px;overflow:hidden}
+.tile-h{background:var(--cable);color:#241a33;padding:10px 12px 12px;display:grid;gap:6px}
+.tile-h .label{color:#4a3a14}
+.tile-h p{font-size:29px;line-height:1.05}
+.tile-h b{font-weight:400;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:3px}
+.photo{position:relative;aspect-ratio:400/260;max-width:100%;background:#000;overflow:hidden}
+.photo svg{display:block;width:100%;height:100%}
+.photo::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px)}
+.stamp{position:absolute;right:8px;top:8px;z-index:2;font-size:24px;line-height:1;padding:3px 7px;border-radius:3px}
+.stamp.old{color:#ff9a2e;text-shadow:0 0 6px #ff7a00;background:rgba(0,0,0,.35)}
+.stamp.new{color:#fff;background:rgba(20,16,31,.7)}
+.place{position:absolute;left:8px;top:8px;z-index:2;font-size:20px;background:rgba(20,16,31,.75);padding:2px 8px;border-radius:3px}
+.lens{position:absolute;left:8px;right:8px;bottom:8px;z-index:2;background:rgba(10,8,16,.88);border:2px solid var(--ink);border-radius:4px;padding:6px 10px;font-size:23px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ring{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.timer{height:12px;background:#120d1c;border-top:2px solid var(--line)}
+.timer i{display:block;height:100%;width:100%;background:var(--ok)}
+.timer.low i{background:var(--bad)}
+
+/* bubble */
+.bubble{position:relative;background:var(--panel2);border:2px solid var(--line);border-radius:6px;padding:10px 12px;display:grid;gap:4px;margin-top:4px}
+.bubble::before{content:"";position:absolute;left:22px;top:-10px;width:16px;height:16px;background:var(--panel2);border-left:2px solid var(--line);border-top:2px solid var(--line);transform:rotate(45deg)}
+.bubble b{font:400 9px/1.5 var(--f-d);color:var(--gomita)}
+.bubble span{font-size:25px;line-height:1.1}
+
+/* pads */
+.pads{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pad{font:400 10px/1.7 var(--f-d);padding:14px 8px 12px;border:3px solid #000;border-radius:4px;cursor:pointer;color:#1a1224;box-shadow:0 5px 0 #000;display:grid;gap:6px;text-align:center;transition:transform .05s,box-shadow .05s}
+.pad small{font:400 18px/1 var(--f-b);opacity:.7}
+.pad.cable{background:var(--cable)}
+.pad.gomita{background:var(--gomita)}
+.pad:active:not(:disabled){transform:translateY(3px);box-shadow:0 2px 0 #000}
+.pad:disabled{opacity:.45;cursor:default}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.lupa,.btn{font:400 10px/1.6 var(--f-d);color:var(--ink);background:transparent;border:2px solid var(--ink);border-radius:4px;padding:10px 12px;cursor:pointer}
+.lupa:disabled{opacity:.4;cursor:default}
+.btn.main{background:var(--ink);color:#1a1224;border-color:var(--ink);box-shadow:0 4px 0 #000}
+
+/* feedback / end */
+.fb{border:3px solid var(--line);border-radius:6px;background:var(--panel);padding:14px;display:grid;gap:10px}
+.fb.ok{border-color:var(--ok)}
+.fb.bad{border-color:var(--bad)}
+.fb h3{font:400 12px/1.5 var(--f-d)}
+.fb.ok h3{color:var(--ok)}
+.fb.bad h3{color:var(--bad)}
+.chip{display:inline-block;font:400 9px/1 var(--f-d);padding:6px 8px;border-radius:3px;background:var(--ink);color:#1a1224;justify-self:start}
+.fb .gap{color:var(--dim)}
+.end{text-align:center;display:grid;gap:14px;justify-items:center}
+.end h2{font:400 15px/1.6 var(--f-d)}
+.end .big{font-size:56px;line-height:1;font-variant-numeric:tabular-nums}
+.end .row{display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
+
+@media (max-width:420px){
+  .rules div{grid-template-columns:1fr}
+  .rules dt{justify-self:start;padding:6px 10px}
+  .pad{font-size:9px}
+}
+@media (prefers-reduced-motion:reduce){
+  .check.busy::after,.ring{animation:none}
+}
+</style>
+
+<main class="cab">
+  <header class="marquee">
+    <h1>CAPTCHA</h1>
+    <p>Demostrá que sos humano en cualquier época.</p>
+  </header>
+
+  <section id="start" class="cab">
+    <div class="widget">
+      <button class="check" id="chk" role="checkbox" aria-checked="false" aria-labelledby="chkl"></button>
+      <div id="chkl"><strong>No soy un robot</strong><small id="chks">Tocá la casilla para empezar</small></div>
+    </div>
+    <div class="panel" style="display:grid;gap:12px">
+      <p>Cada foto muestra una espiral. ¿Es un <b style="color:var(--cable);font-weight:400">cable telefónico</b> o una <b style="color:var(--gomita);font-weight:400">gomita para el pelo</b>? Cuatro pistas te ayudan:</p>
+      <dl class="rules">
+        <div><dt>CONTEXTO</dt><dd>Dónde está y qué hay alrededor.</dd></div>
+        <div><dt>ESCALA</dt><dd>Cuánto mide. La espiral de un cable ronda 1 cm y estirada llega a 2 metros. La de una gomita ronda 5 cm.</dd></div>
+        <div><dt>TEXTURA</dt><dd>PVC mate o acero contra plástico brillante, translúcido o con glitter.</dd></div>
+        <div><dt>FUNCIÓN</dt><dd>Une un tubo con una base, o sujeta el pelo.</dd></div>
+      </dl>
+      <p class="keys">12 fotos, 3 vidas, 3 lupas. Cuidado con lo que dice cada generación: no siempre le pone el mismo nombre al mismo objeto. Teclas: ← cable, → gomita, espacio lupa.</p>
+    </div>
+  </section>
+
+  <section id="play" class="cab" hidden>
+    <div class="hud">
+      <div class="stat"><span class="label">Puntos</span><output id="hScore">0</output></div>
+      <div class="stat"><span class="label">Vidas</span><div class="lives" id="hLives"></div></div>
+      <div class="stat"><span class="label">Racha</span><output id="hStreak">x1</output></div>
+      <div class="stat"><span class="label">Lupas</span><output id="hLupa">3</output></div>
+    </div>
+    <ol class="era" id="era" aria-label="Generación de quien habla"></ol>
+
+    <div class="tile">
+      <div class="tile-h">
+        <span class="label" id="tNum">Foto 1 de 12</span>
+        <p>¿Es un <b>cable telefónico</b> o una <b>gomita para el pelo</b>?</p>
+      </div>
+      <div class="photo" id="photo">
+        <svg id="art" viewBox="0 0 400 260" role="img" aria-label="Escena con una espiral"></svg>
+        <span class="place" id="place"></span>
+        <span class="stamp" id="stamp"></span>
+        <div class="lens" id="lens" hidden></div>
+      </div>
+      <div class="timer" id="timer"><i id="tbar"></i></div>
+    </div>
+
+    <div class="bubble"><b id="who"></b><span id="say"></span></div>
+
+    <div class="pads" id="pads">
+      <button class="pad cable" id="bC">CABLE TELEFÓNICO<small>← o A</small></button>
+      <button class="pad gomita" id="bG">GOMITA PARA EL PELO<small>→ o D</small></button>
+    </div>
+    <div class="tools" id="tools">
+      <button class="lupa" id="bL">LUPA (ESPACIO)</button>
+      <span class="keys">La lupa mide la espiral y cuesta puntos.</span>
+    </div>
+
+    <div class="fb" id="fb" hidden>
+      <h3 id="fbT"></h3>
+      <span class="chip" id="fbK"></span>
+      <p id="fbW"></p>
+      <p class="gap" id="fbG"></p>
+      <button class="btn main" id="bN">SIGUIENTE FOTO</button>
+    </div>
+  </section>
+
+  <section id="end" class="panel end" hidden>
+    <h2 id="eT"></h2>
+    <p id="eS"></p>
+    <div class="row">
+      <div><span class="label">Puntos</span><div class="big" id="ePts">0</div></div>
+      <div><span class="label">Aciertos</span><div class="big" id="eOk">0</div></div>
+      <div><span class="label">Récord</span><div class="big" id="eHi">0</div></div>
+    </div>
+    <button class="btn main" id="bR">JUGAR OTRA VEZ</button>
+  </section>
+</main>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const R=(x,y,w,h,f,rx=0,x2='')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${f}" ${x2}/>`;
+const C=(x,y,r,f,x2='')=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${f}" ${x2}/>`;
+const E=(x,y,rx,ry,f,x2='')=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${f}" ${x2}/>`;
+const L=(x1,y1,x2,y2,s,w=1)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${s}" stroke-width="${w}" stroke-linecap="round"/>`;
+const P=(d,f,x2='')=>`<path d="${d}" fill="${f}" ${x2}/>`;
+const bez=(a,b,c,d)=>t=>{const u=1-t;return[u*u*u*a[0]+3*u*u*t*b[0]+3*u*t*t*c[0]+t*t*t*d[0],u*u*u*a[1]+3*u*u*t*b[1]+3*u*t*t*c[1]+t*t*t*d[1]]};
+function coil(fn,n,rx,ry,sw,col,hi,slant){
+  hi=hi||'#fff'; slant=(slant===undefined)?-20:slant;
+  let s='',h='';
+  for(let i=0;i<=n;i++){
+    const t=i/n,p=fn(t),a=fn(Math.max(0,t-.02)),b=fn(Math.min(1,t+.02));
+    const ang=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI+slant;
+    const at=`cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" rx="${rx}" ry="${ry}" transform="rotate(${ang.toFixed(1)} ${p[0].toFixed(1)} ${p[1].toFixed(1)})" fill="none"`;
+    s+=`<ellipse ${at} stroke="${col}" stroke-width="${sw}"/>`;
+    h+=`<ellipse ${at} stroke="${hi}" stroke-opacity=".45" stroke-width="${Math.max(1,sw*.3)}" stroke-dasharray="${(ry*.9).toFixed(1)} 1000"/>`;
+  }
+  return s+h;
+}
+const dots=(cx,cy,r,n,rad,col,a0,span)=>[...Array(n)].map((_,i)=>{const a=a0+(i/n)*span;return C(cx+Math.cos(a)*r,cy+Math.sin(a)*r,rad,col)}).join('');
+
+const GEN=['BOOMER','GEN X','MILLENNIAL','GEN Z','ALPHA'];
+
+const S=[
+{ y:1987, place:'Cocina', gen:0, who:'Abuela Nilda', say:'No tires del cable que se corta la llamada, mi vida.', ans:'cable', kind:'FUNCIÓN',
+  why:'Sale del tubo y llega a la base del teléfono. Su función es llevar la voz, y por eso termina en el aparato.',
+  gap:'Para Nilda es "el cable". Su nieta lo ve como un resorte raro.', diam:'Ø 1 cm', len:'2 m estirado', focus:[170,150,70],
+  art:()=>R(0,0,400,260,'#b9b46a')+[40,80,120,160].map(y=>L(0,y,400,y,'#a39f55',2)).join('')+R(0,200,400,60,'#7a5a3a')+R(30,160,38,44,'#cfd2cf',5)+R(44,146,10,14,'#555',2)+R(250,44,84,128,'#d8c9a3',12)+C(292,122,28,'#2b2733')+C(292,122,21,'#e9ddb9')+dots(292,122,15,10,2.4,'#2b2733',.6,5.3)+R(236,28,110,28,'#e8dbb4',14)+R(236,28,24,38,'#e8dbb4',10)+R(322,28,24,38,'#e8dbb4',10)+coil(bez([244,62],[150,80],[170,240],[292,176]),38,5,8,3,'#2e2a2f')
+},
+{ y:2023, place:'Café', gen:3, who:'Mica', say:'Prestame un cable que se me va la batería.', ans:'gomita', kind:'CONTEXTO',
+  why:'Está en la muñeca de Mica, junto a un celular. Ella pidió un cable de carga, que es otra cosa, y esta espiral rosa solo sujeta el pelo.',
+  gap:'La palabra "cable" ya no significa lo mismo para todas las generaciones.', diam:'Ø 5 cm', len:'no se estira', focus:[142,131,44],
+  art:()=>R(0,0,400,260,'#3b2c24')+R(0,172,400,88,'#6b4a33')+R(10,108,180,46,'#dba58a',23)+E(206,131,34,26,'#dba58a')+coil(bez([128,131],[136,131],[146,131],[156,131]),4,8,29,6,'#ff5fa2')+R(268,66,72,122,'#14121a',10)+R(274,74,60,106,'#3a6bd8',4)+C(290,92,6,'#fff','opacity=".8"')+R(300,88,24,6,'#fff',2,'opacity=".6"')+R(60,196,52,44,'#efe6d6',8)+E(86,196,26,6,'#a8734a')
+},
+{ y:2009, place:'Tocador', gen:2, who:'Lu', say:'Dejé el cable beige del teléfono ahí, junto al espejo.', ans:'gomita', kind:'CONTEXTO',
+  why:'Es beige como un cable viejo, pero está suelta y sus puntas son redondas, sin enchufe. Alrededor hay cepillo, broches y espejo.',
+  gap:'Lu llama "cable" a una gomita. Los colores no alcanzan, hay que mirar las puntas.', diam:'Ø 5 cm', len:'no se estira', focus:[195,170,70],
+  art:()=>R(0,0,400,260,'#4b3a52')+R(0,196,400,64,'#7a5233')+E(110,92,56,72,'#cfe3ea','stroke="#d1a85a" stroke-width="6"')+R(262,176,86,16,'#8a5a33',8)+R(346,172,26,24,'#2b2733',4)+R(226,158,26,40,'#e8a6c8',5)+R(234,146,10,14,'#d1a85a',2)+L(168,222,190,214,'#222',3)+L(172,230,196,226,'#222',3)+coil(bez([130,224],[130,150],[262,150],[262,224]),26,5,10,4,'#d9c9a0')+C(130,224,5,'#d9c9a0')+C(262,224,5,'#d9c9a0')
+},
+{ y:2005, place:'Call center', gen:1, who:'Tío Rubén', say:'Se me enredó la gomita del auricular otra vez.', ans:'cable', kind:'FUNCIÓN',
+  why:'Termina en un conector modular con trabita transparente y entra en una ficha de pared. Lleva la señal del auricular.',
+  gap:'Rubén llama gomita a un cable. El vocabulario se mezcla con la edad.', diam:'Ø 1 cm', len:'2 m estirado', focus:[290,190,70],
+  art:()=>R(0,0,400,260,'#8b9aa8')+R(0,0,400,150,'#a9b6c2')+R(0,194,400,66,'#cdd2d6')+R(40,56,112,92,'#d8d5c8',8)+R(50,66,92,66,'#1d3b2e',4)+[0,1,2,3].map(i=>L(58,78+i*12,58+40+i*9,78+i*12,'#5be3a0',2)).join('')+R(40,168,112,16,'#c0bdb0',3)+P('M204 156 Q172 96 142 150','none','stroke="#2b2b33" stroke-width="5"')+C(214,164,16,'#2b2b33')+R(352,188,34,28,'#e9e6dc',3)+R(358,194,22,14,'#333',2)+coil(bez([226,178],[246,252],[300,150],[326,203]),32,5,8,3,'#1a1820')+R(324,196,28,14,'#d4dde2',2)+L(330,196,330,210,'#d9b43a',2)+L(336,196,336,210,'#d9b43a',2)+L(342,196,342,210,'#d9b43a',2)
+},
+{ y:2024, place:'Recreo', gen:4, who:'Sofi', say:'¡Dame tu gomita, que la mía se perdió!', ans:'gomita', kind:'TEXTURA',
+  why:'Es translúcida, brillante y con glitter, plástico de bijouterie. Además rodea un mechón, que es lo que hace una gomita.',
+  gap:'Para Sofi es obvio. Su abuelo podría pensar que es un cable roto.', diam:'Ø 5 cm', len:'no se estira', focus:[226,108,44],
+  art:()=>R(0,0,400,260,'#9fd4e8')+R(0,204,400,56,'#8bbf6a')+R(250,26,64,180,'#3f6fb5',2)+R(316,26,64,180,'#3b66a8',2)+C(300,112,3,'#dfe5ea')+C(330,112,3,'#dfe5ea')+[0,1,2,3].map(i=>L(256,50+i*8,308,50+i*8,'#2f568f',1.5)).join('')+P('M200 96 Q290 70 262 200 Q252 146 204 124 Z','#2a1e1e')+C(150,132,56,'#e0a98a')+P('M92 134 Q88 66 152 70 Q214 72 208 130 Q200 100 150 98 Q108 100 92 134 Z','#2a1e1e')+C(172,130,3.2,'#2a1e1e')+C(130,130,3.2,'#2a1e1e')+P('M148 156 Q158 164 168 156','none','stroke="#7a3b3b" stroke-width="3" stroke-linecap="round"')+coil(bez([212,100],[220,104],[228,108],[238,112]),3,4,17,5,'#b388ff')+[[222,90],[236,96],[244,126],[230,128],[216,120]].map(p=>C(p[0],p[1],2,'#fff')).join('')
+},
+{ y:2019, place:'Mudanza', gen:0, who:'Don Aníbal', say:'Acá siempre estuvo el teléfono. Esa gomita colgada quedó de recuerdo.', ans:'cable', kind:'CONTEXTO',
+  why:'Hay una ficha modular en la pared y un rectángulo más claro donde colgaba el aparato. Las dos puntas tienen enchufe.',
+  gap:'Una casa sin teléfono fijo: el contexto cuenta lo que ya no está.', diam:'Ø 1 cm', len:'2 m estirado', focus:[132,176,70],
+  art:()=>R(0,0,400,260,'#d8d0bf')+[0,1,2,3,4,5,6,7].map(i=>L(i*54,0,i*54,260,'#cbc2ae',2)).join('')+R(206,44,92,130,'#e8e1d2',4)+C(218,56,3,'#9a927e')+C(286,56,3,'#9a927e')+R(130,54,46,62,'#efe9dc',4)+R(142,70,22,16,'#444',2)+R(142,100,22,20,'#d4dde2',2)+coil(bez([153,120],[153,210],[108,196],[100,236]),20,4,7,3,'#34303a')+R(92,236,18,18,'#d4dde2',2)+R(250,190,120,62,'#b98d54',3)+R(250,208,120,8,'#d9b27a')+R(300,190,20,62,'#e8d3a8')
+},
+{ y:2008, place:'Cartuchera', gen:2, who:'Vero', say:'Guardé el cable en la cartuchera para que no se pierda.', ans:'gomita', kind:'ESCALA',
+  why:'La regla de la foto sirve de vara: la espiral mide unos 5 cm. Un cable telefónico tiene una espiral de 1 cm.',
+  gap:'Vero llama cable a todo lo que tenga forma de resorte.', diam:'Ø 5 cm', len:'no se estira', focus:[110,140,66],
+  art:()=>R(0,0,400,260,'#c7a77a')+R(30,24,200,190,'#f6f2e6',4)+[0,1,2,3,4,5,6,7].map(i=>L(36,48+i*22,224,48+i*22,'#b9d3ea',1.5)).join('')+R(170,118,210,96,'#5b7fd6',16)+L(180,140,370,140,'#3c5aa8',3)+R(196,66,10,60,'#f2b632',2)+R(240,60,10,66,'#e0524a',2)+R(286,70,10,56,'#5be3a0',2)+R(34,226,190,24,'#e6d089',2)+[...Array(16)].map((_,i)=>L(40+i*12,226,40+i*12,i%5===0?242:236,'#333',1.2)).join('')+coil(bez([64,190],[38,96],[168,96],[148,190]),22,6,12,4,'#b6ff3b')
+},
+{ y:1996, place:'Cabina', gen:1, who:'Chino', say:'Tiré de la gomita de acero y quedó el tubo colgando.', ans:'cable', kind:'TEXTURA',
+  why:'Es una espiral metálica blindada, hecha para resistir tirones y vandalismo. Su textura es de acero, no de plástico de colores.',
+  gap:'Los teléfonos públicos tenían una espiral a prueba de todo.', diam:'Ø 1 cm', len:'1 m estirado', focus:[180,150,70],
+  art:()=>R(0,0,400,260,'#10163a')+C(330,50,26,'#f2b632','opacity=".25"')+R(100,12,200,236,'#c62f2f',6)+R(116,34,168,196,'#a8d0ea',3,'opacity=".28"')+R(150,14,100,22,'#f2b632',2)+'<text x="200" y="30" text-anchor="middle" font-family="monospace" font-size="13" fill="#241a33">TELÉFONO</text>'+R(176,74,76,122,'#2b2b33',6)+R(172,56,84,22,'#2b2b33',11)+R(188,100,52,10,'#9aa3ad',2)+dots(214,150,16,6,3,'#9aa3ad',0,6.2)+coil(bez([178,68],[110,120],[150,236],[226,196]),30,5,8,4,'#b9c2cb')
+},
+{ y:2022, place:'Baño', gen:0, who:'Abuela Nilda', say:'¿Quién dejó el cable del teléfono en la bacha?', ans:'gomita', kind:'ESCALA',
+  why:'Con el cepillo de dientes como vara, la espiral mide unos 5 cm. No hay teléfono a la vista, solo cepillo y agua.',
+  gap:'Para Nilda toda espiral es "el cable".', diam:'Ø 5 cm', len:'no se estira', focus:[270,158,50],
+  art:()=>R(0,0,400,260,'#bfe3df')+[0,1,2,3,4,5,6,7].map(i=>L(i*54,0,i*54,260,'#a9cfcb',2)).join('')+[0,1,2,3,4].map(i=>L(0,i*54,400,i*54,'#a9cfcb',2)).join('')+R(250,20,120,86,'#dfeff2',6,'stroke="#9fb7bd" stroke-width="4"')+R(30,172,340,80,'#f6f6f4',10)+E(200,178,150,10,'#d7dcdc')+R(194,122,14,52,'#b5bcc2',3)+R(172,114,42,12,'#b5bcc2',5)+R(66,134,36,56,'#cfe9f2',4,'opacity=".85"')+R(78,62,10,126,'#ff6b6b',4)+R(74,52,18,24,'#f1e8d0',3)+coil(bez([252,176],[248,144],[294,144],[290,176]),14,5,12,5,'#ff8a5c')
+},
+{ y:1990, place:'Living', gen:0, who:'Abuela Nilda', say:'Hablo desde el sillón. El cable llega hasta acá.', ans:'cable', kind:'ESCALA',
+  why:'Estirada cruza la sala entera, más de 2 metros. Una gomita no llega a medio metro sin cortarse.',
+  gap:'La espiral se inventó para esto: moverse mientras se habla.', diam:'Ø 1 cm', len:'2 m estirado', focus:[180,110,100],
+  art:()=>R(0,0,400,260,'#a8825a')+[0,1,2,3,4,5,6,7].map(i=>L(i*52,0,i*52,215,'#946f49',2)).join('')+R(0,215,400,45,'#5b3b26')+R(16,56,44,74,'#e0c26a',8)+C(38,100,12,'#2b2733')+R(180,170,24,44,'#a5522f',3)+E(192,162,30,24,'#3e7a3a')+R(250,126,140,90,'#9a4b2e',14)+R(262,92,116,50,'#8a4026',12)+C(322,100,22,'#e8c4a0')+P('M298 98 Q300 70 322 72 Q346 72 346 98 Q330 84 298 98 Z','#f2f2f0')+R(290,92,12,34,'#e0c26a',6)+coil(bez([62,70],[130,240],[210,30],[292,104]),34,5,7,2.5,'#2b2733')
+},
+{ y:2024, place:'Merienda', gen:3, who:'Cami', say:'Abu, ¿ese cable que tenés en la mano es del teléfono?', ans:'gomita', kind:'CONTEXTO',
+  why:'Está en la muñeca, sin conectores en las puntas. El teléfono de disco está al lado, pero no se conectan.',
+  gap:'Un objeto nuevo en una mano antigua: las épocas se cruzan en la misma mesa.', diam:'Ø 5 cm', len:'no se estira', focus:[160,134,44],
+  art:()=>R(0,0,400,260,'#d9d2c3')+R(0,196,400,64,'#8b6a4a')+E(130,198,64,8,'#f1ead8')+R(222,134,140,64,'#1d1b22',18)+R(228,108,128,26,'#1d1b22',13)+C(292,166,24,'#d9d2c3')+C(292,166,8,'#1d1b22')+dots(292,166,16,10,2.2,'#1d1b22',.5,5.2)+R(8,104,148,58,'#a1453b',26)+[0,1,2].map(i=>L(40+i*30,112,40+i*30,154,'#8a352c',2)).join('')+E(172,134,28,22,'#e0b9a0')+coil(bez([148,134],[156,134],[164,134],[172,134]),3,6,27,6,'#ffe14d')
+},
+{ y:2025, place:'Escritorio', gen:4, who:'Tomi', say:'Mi teléfono retro tiene una gomita larga que va al celular, ¿no?', ans:'cable', kind:'FUNCIÓN',
+  why:'Termina en una ficha de 3,5 mm y pasa el audio del celular al tubo. Hace lo mismo que el cable de 1987.',
+  gap:'La brecha se cierra: una generación nueva reinventa el cable.', diam:'Ø 1 cm', len:'2 m estirado', focus:[170,200,80],
+  art:()=>R(0,0,400,260,'#241a3a')+C(60,50,60,'#7a4cff','opacity=".18"')+R(0,196,400,64,'#3a2d57')+R(250,58,82,134,'#0e0c14',10)+R(256,66,70,118,'#7a4cff',5)+C(291,108,18,'#ff5fa2','opacity=".7"')+R(280,192,22,6,'#0e0c14',2)+R(56,112,112,26,'#e8dbb4',13)+R(56,112,24,38,'#e8dbb4',10)+R(144,112,24,38,'#e8dbb4',10)+coil(bez([100,150],[110,252],[200,232],[236,152]),30,5,8,3,'#e8dbb4')+R(236,147,16,10,'#aab3bb',2)+R(228,149,10,6,'#dfe5ea',1)
+}
+];
+
+const el={start:$('#start'),play:$('#play'),end:$('#end')};
+function show(k){for(const n in el)el[n].hidden=(n!==k)}
+const chk=$('#chk'),chks=$('#chks');
+let st=null,hiddenAt=0,busy=false;
+
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function getHi(){try{return +localStorage.getItem('captcha-cable-gomita')||0}catch(e){return 0}}
+function setHi(v){try{localStorage.setItem('captcha-cable-gomita',String(v))}catch(e){}}
+
+const eraEl=$('#era');
+eraEl.innerHTML=GEN.map(g=>`<li>${g}</li>`).join('');
+
+chk.addEventListener('click',()=>{
+  if(busy)return; busy=true;
+  chk.classList.add('busy'); chks.textContent='Verificando…';
+  setTimeout(()=>{
+    chk.classList.remove('busy'); chk.classList.add('done'); chk.setAttribute('aria-checked','true');
+    chks.textContent='Verificado. Falta saber de qué época sos.';
+    setTimeout(()=>{newGame();busy=false;chk.classList.remove('done');chk.setAttribute('aria-checked','false');chks.textContent='Tocá la casilla para empezar'},1100);
+  },900);
+});
+
+function newGame(){
+  st={order:[S[0]].concat(shuffle(S.slice(1))),i:0,score:0,lives:3,streak:0,lupa:3,correct:0,answered:false,lens:false,tMax:14,tLeft:14,t0:0,raf:0};
+  show('play'); load();
+}
+
+function paintHud(){
+  $('#hScore').textContent=st.score;
+  $('#hStreak').textContent='x'+(1+Math.min(st.streak,4)*.5).toString().replace('.',',');
+  $('#hLupa').textContent=st.lupa;
+  $('#hLives').innerHTML=[0,1,2].map(i=>`<i class="life${i>=st.lives?' lost':''}"></i>`).join('');
+  $('#bL').disabled=st.lupa<=0||st.answered||st.lens;
+}
+function paintTimer(){
+  const f=Math.max(0,st.tLeft/st.tMax);
+  $('#tbar').style.width=(f*100)+'%';
+  $('#timer').classList.toggle('low',f<.3);
+}
+
+function load(){
+  const sc=st.order[st.i];
+  st.answered=false; st.lens=false;
+  st.tMax=Math.max(6,14-st.i*.7); st.tLeft=st.tMax;
+  $('#art').innerHTML=sc.art();
+  const ph=$('#photo');
+  ph.style.filter=sc.y<2000?'sepia(.55) contrast(.95) saturate(.9)':sc.y<2015?'sepia(.15)':'none';
+  $('#tNum').textContent=`Foto ${st.i+1} de ${st.order.length}`;
+  $('#place').textContent=sc.place;
+  const sp=$('#stamp'); sp.textContent=sc.y; sp.className='stamp '+(sc.y<2000?'old':'new');
+  $('#who').textContent=sc.who+' · '+GEN[sc.gen];
+  $('#say').textContent='“'+sc.say+'”';
+  [...eraEl.children].forEach((li,i)=>li.classList.toggle('on',i===sc.gen));
+  $('#lens').hidden=true;
+  $('#fb').hidden=true;
+  $('#pads').hidden=false; $('#tools').hidden=false;
+  $('#bC').disabled=false; $('#bG').disabled=false;
+  paintHud(); paintTimer();
+  st.t0=performance.now();
+  cancelAnimationFrame(st.raf); st.raf=requestAnimationFrame(tick);
+}
+
+function tick(now){
+  if(st.answered)return;
+  st.tLeft=st.tMax-(now-st.t0)/1000;
+  if(st.tLeft<=0){st.tLeft=0;paintTimer();resolve(null);return}
+  paintTimer();
+  st.raf=requestAnimationFrame(tick);
+}
+
+function useLupa(){
+  if(!st||st.answered||st.lens||st.lupa<=0)return;
+  st.lupa--; st.lens=true;
+  const sc=st.order[st.i];
+  const f=sc.focus;
+  $('#art').insertAdjacentHTML('beforeend',`<circle class="ring" cx="${f[0]}" cy="${f[1]}" r="${f[2]}" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="7 6"/>`);
+  const ln=$('#lens'); ln.innerHTML=`<span>Espiral ${sc.diam}</span><span>${sc.len}</span>`; ln.hidden=false;
+  paintHud();
+}
+
+function resolve(choice){
+  if(!st||st.answered)return;
+  st.answered=true; cancelAnimationFrame(st.raf);
+  const sc=st.order[st.i], ok=choice===sc.ans;
+  let gain=0;
+  if(ok){
+    const mult=1+Math.min(st.streak,4)*.5;
+    gain=Math.round((100+Math.ceil(st.tLeft)*10)*mult);
+    if(st.lens)gain=Math.max(20,gain-40);
+    st.streak++; st.correct++; st.score+=gain;
+  }else{st.lives--;st.streak=0}
+  const name=sc.ans==='cable'?'CABLE TELEFÓNICO':'GOMITA PARA EL PELO';
+  const fb=$('#fb');
+  fb.className='fb '+(ok?'ok':'bad');
+  $('#fbT').textContent=ok?`¡HUMANO! +${gain} PUNTOS`:(choice===null?`SE ACABÓ EL TIEMPO. ERA: ${name}`:`ERROR DE ÉPOCA. ERA: ${name}`);
+  $('#fbK').textContent='PISTA CLAVE: '+sc.kind;
+  $('#fbW').textContent=sc.why;
+  $('#fbG').textContent=sc.gap;
+  const last=st.lives<=0||st.i>=st.order.length-1;
+  $('#bN').textContent=last?'VER RESULTADO':'SIGUIENTE FOTO';
+  fb.hidden=false;
+  $('#pads').hidden=true; $('#tools').hidden=true;
+  $('#lens').hidden=true;
+  paintHud();
+  setTimeout(()=>{try{$('#bN').focus({preventScroll:true})}catch(e){}},30);
+}
+
+function next(){
+  if(!st||!st.answered)return;
+  if(st.lives<=0||st.i>=st.order.length-1){finish();return}
+  st.i++; load();
+}
+
+function finish(){
+  const c=st.correct,n=st.order.length;
+  let t,s;
+  if(c===n){t='PUENTE ENTRE GENERACIONES';s='Hablás el idioma de la espiral en todas las épocas.'}
+  else if(c>=9){t='HUMANO DE TODAS LAS ÉPOCAS';s='Leíste bien las pistas. Quedan pocos errores por pulir.'}
+  else if(c>=5){t='HUMANO DE UNA ÉPOCA';s='Conocés bien un lado de la brecha. Jugá otra vez para cruzarla.'}
+  else{t='ROBOT SOSPECHOSO';s='Todavía se te escapa el contexto. Probá con la lupa y mirá las puntas.'}
+  if(st.lives<=0)s='Te quedaste sin vidas en la foto '+(st.i+1)+'. '+s;
+  $('#eT').textContent=t; $('#eS').textContent=s;
+  const hi=Math.max(getHi(),st.score); setHi(hi);
+  $('#ePts').textContent=st.score; $('#eOk').textContent=c+'/'+n; $('#eHi').textContent=hi;
+  show('end');
+  setTimeout(()=>{try{$('#bR').focus({preventScroll:true})}catch(e){}},30);
+}
+
+$('#bC').addEventListener('click',()=>resolve('cable'));
+$('#bG').addEventListener('click',()=>resolve('gomita'));
+$('#bL').addEventListener('click',useLupa);
+$('#bN').addEventListener('click',next);
+$('#bR').addEventListener('click',()=>{show('start')});
+
+document.addEventListener('keydown',e=>{
+  if(!st||el.play.hidden||e.metaKey||e.ctrlKey||e.altKey)return;
+  const onBtn=e.target&&e.target.tagName==='BUTTON';
+  if(!st.answered){
+    if(e.code==='ArrowLeft'||e.code==='KeyA'){e.preventDefault();resolve('cable')}
+    else if(e.code==='ArrowRight'||e.code==='KeyD'){e.preventDefault();resolve('gomita')}
+    else if(e.code==='Space'||e.code==='ArrowUp'||e.code==='KeyL'){e.preventDefault();useLupa()}
+  }else if(!onBtn&&(e.code==='Enter'||e.code==='Space')){e.preventDefault();next()}
+});
+
+document.addEventListener('visibilitychange',()=>{
+  if(!st||st.answered||el.play.hidden)return;
+  if(document.hidden)hiddenAt=performance.now();
+  else if(hiddenAt){st.t0+=performance.now()-hiddenAt;hiddenAt=0}
+});
+})();
+</script>
+
+</body></html>
