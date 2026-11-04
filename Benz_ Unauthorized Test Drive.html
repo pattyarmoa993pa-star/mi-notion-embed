@@ -1,0 +1,470 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Benz: Unauthorized Test Drive</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap">
+<style>
+/* Concepto: una sola pantalla de arcade, terreno marciano de rocas oxidadas; la bitácora de telemetría va debajo del juego. */
+:root {
+  --bg: #160b09;
+  --panel: #231210;
+  --line: #4a2a22;
+  --fg: #f4e6dc;
+  --muted: #b89c8e;
+  --accent: #ff7a33;
+  --cyan: #6ee7ee;
+  --warn: #ffd24a;
+  --bad: #ff4d5a;
+  --good: #7be495;
+  --ground: #3a1a12;
+  --ground-dark: #27110c;
+  --rock: #7a5546;
+  --rock-edge: #a47a67;
+  --font-display: 'Press Start 2P', 'Courier New', monospace;
+  --font-body: 'Space Mono', ui-monospace, 'Courier New', monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--bg); }
+body {
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+h1 { font-family: var(--font-display); font-size: 13px; line-height: 1.5; margin: 0; color: var(--accent); text-wrap: balance; letter-spacing: .02em; }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.hud { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; background: var(--panel); border: 1px solid var(--line); padding: 10px 12px; }
+.hud .full { grid-column: 1 / -1; }
+.lab { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
+.lab b { color: var(--fg); font-weight: 700; }
+.bar { position: relative; height: 10px; background: var(--ground-dark); border: 1px solid var(--line); margin-top: 4px; }
+.bar i { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--good); }
+.bar.speed i { background: var(--cyan); }
+.bar.dist i { background: var(--accent); }
+.bar.low i { background: var(--bad); }
+.bar.risk i { background: var(--warn); }
+.bar .mark { position: absolute; left: 70%; top: -3px; bottom: -3px; width: 2px; background: var(--fg); opacity: .55; }
+#levelName { font-family: var(--font-display); font-size: 10px; line-height: 1.6; color: var(--fg); }
+.stage { position: relative; width: 100%; aspect-ratio: 9 / 14; border: 2px solid var(--line); background: var(--ground); }
+canvas { display: block; width: 100%; height: 100%; }
+.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; padding: 20px; text-align: center; background: rgba(22, 11, 9, .9); }
+.overlay[hidden] { display: none !important; }
+.overlay h2 { font-family: var(--font-display); font-size: 14px; line-height: 1.6; margin: 0; color: var(--accent); text-wrap: balance; }
+.overlay p { margin: 0; max-width: 32ch; }
+.overlay .eyebrow { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); }
+.overlay .small { font-size: 12px; color: var(--muted); }
+.overlay ul { list-style: none; margin: 0; padding: 0; text-align: left; font-size: 12px; display: flex; flex-direction: column; gap: 6px; max-width: 34ch; }
+.overlay li b { color: var(--warn); }
+button { font-family: var(--font-display); font-size: 11px; color: var(--bg); background: var(--accent); border: 0; padding: 12px 16px; cursor: pointer; box-shadow: 0 4px 0 #a8450f; }
+button:active { transform: translateY(3px); box-shadow: 0 1px 0 #a8450f; }
+button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+.touch { display: grid; grid-template-columns: 1fr 1.6fr 1fr; gap: 10px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.touch button { background: var(--panel); color: var(--fg); border: 2px solid var(--line); box-shadow: none; padding: 16px 6px; touch-action: none; }
+.touch button.go { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.touch button.on { outline: 3px solid var(--cyan); }
+.keys { color: var(--muted); font-size: 12px; margin: 0; }
+.log { background: var(--panel); border: 1px solid var(--line); padding: 10px 12px; }
+.log h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.log ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 12px; min-height: 3.6em; }
+.log li { overflow-wrap: anywhere; }
+.log li.fail { color: var(--warn); }
+.log li.hit { color: var(--bad); }
+.log li.ok { color: var(--good); }
+.tip { margin: 8px 0 0; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 12px; color: var(--cyan); }
+</style>
+
+<main class="wrap">
+  <header>
+    <h1>Benz: Unauthorized Test Drive</h1>
+    <p class="sub">Un prototipo sin autorización, un terreno para el que no fue diseñado.</p>
+  </header>
+
+  <section class="hud" aria-label="Estado del vehículo">
+    <div class="full lab"><span id="levelName">Nivel 1</span><span>Meta <b id="goalTxt">0 m</b></span></div>
+    <div>
+      <div class="lab"><span>Integridad</span><b id="intTxt">100%</b></div>
+      <div class="bar" id="intBar"><i id="intFill"></i></div>
+    </div>
+    <div>
+      <div class="lab"><span>Velocidad</span><b id="spdTxt">0%</b></div>
+      <div class="bar speed" id="spdBar"><i id="spdFill"></i><span class="mark" title="Zona de fallas"></span></div>
+    </div>
+    <div class="full">
+      <div class="lab"><span>Recorrido</span><b id="distTxt">0 m</b></div>
+      <div class="bar dist"><i id="distFill"></i></div>
+    </div>
+  </section>
+
+  <div class="stage">
+    <canvas id="cv" aria-label="Recorrido del vehículo en terreno marciano"></canvas>
+    <div class="overlay" id="overlay"></div>
+  </div>
+
+  <div class="touch" id="touch">
+    <button type="button" data-key="left" aria-label="Girar a la izquierda">IZQ</button>
+    <button type="button" class="go" data-key="up" aria-label="Acelerar">ACELERAR</button>
+    <button type="button" data-key="right" aria-label="Girar a la derecha">DER</button>
+  </div>
+  <p class="keys">Teclado: flechas o A / D para girar, Arriba, W o Espacio para acelerar.</p>
+
+  <section class="log" aria-live="polite">
+    <h3>Bitácora de telemetría</h3>
+    <ul id="log"></ul>
+    <p class="tip" id="tip" hidden>Información recogida: las fallas aparecen por encima del 70% de velocidad (la marca blanca). Ajusta el ritmo.</p>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  /* Datos exportados de benz.db (SQLite): tablas levels y vehicle_status */
+  var DATA = {"levels": [{"id": 1, "name": "Nivel 1: Prototipo", "principle": "Innovación", "lesson": "El vehículo funciona, pero nadie sabe cuáles son sus límites.", "goal_distance": 2500, "friction": 1.2, "rock_rate": 0.9, "fail_per_sec": 0.15, "unlocking_part": "Filtro de Radiación"}, {"id": 2, "name": "Nivel 2: Adaptación", "principle": "Experimentación y adaptabilidad", "lesson": "Cada falla es información: aparecen problemas que nadie había previsto.", "goal_distance": 3200, "friction": 1.5, "rock_rate": 1.4, "fail_per_sec": 0.3, "unlocking_part": "Suspensión de Gravedad"}, {"id": 3, "name": "Nivel 3: Validación", "principle": "Validación", "lesson": "Pruebas que antes parecían imposibles. Funcionar una vez no alcanza.", "goal_distance": 4000, "friction": 1.8, "rock_rate": 2.0, "fail_per_sec": 0.45, "unlocking_part": "Chasis de Titanio"}, {"id": 4, "name": "Nivel 4: Producción", "principle": "Producción", "lesson": "La tecnología sale del laboratorio y sirve para nuevas expediciones.", "goal_distance": 4500, "friction": 1.0, "rock_rate": 2.4, "fail_per_sec": 0.1, "unlocking_part": "Ninguno (listo para nuevas expediciones)"}], "vehicle": {"max_speed": 12.0, "integrity": 100.0, "current_level": 1.0}};
+
+  var W = 360, H = 560, PY = 470, PX_PER_M = 3;
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.scale(dpr, dpr);
+
+  var css = getComputedStyle(document.documentElement);
+  function tok(n) { return css.getPropertyValue(n).trim(); }
+  var COL = {
+    ground: tok('--ground'), dark: tok('--ground-dark'), rock: tok('--rock'), edge: tok('--rock-edge'),
+    accent: tok('--accent'), cyan: tok('--cyan'), warn: tok('--warn'), fg: tok('--fg'), bad: tok('--bad')
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    overlay: $('overlay'), level: $('levelName'), goal: $('goalTxt'),
+    intTxt: $('intTxt'), intBar: $('intBar'), intFill: $('intFill'),
+    spdTxt: $('spdTxt'), spdBar: $('spdBar'), spdFill: $('spdFill'),
+    distTxt: $('distTxt'), distFill: $('distFill'), log: $('log'), tip: $('tip')
+  };
+
+  var FAILS = [
+    "Vibración fuerte en el eje delantero.",
+    "Sobrecalentamiento del motor a régimen alto.",
+    "Una junta de la suspensión cedió con el terreno marciano.",
+    "Polvo en los sensores: se pierde la lectura del terreno."
+  ];
+
+  /* ---------- Object pooling: se reservan una vez y se reutilizan ---------- */
+  var rocks = [], dust = [], i;
+  for (i = 0; i < 40; i++) rocks.push({ a: false, x: 0, y: 0, r: 14, f: [1, 1, 1, 1, 1, 1, 1] });
+  for (i = 0; i < 120; i++) dust.push({ a: false, x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1 });
+
+  function spawnRock(x, y, r) {
+    for (var k = 0; k < rocks.length; k++) {
+      var o = rocks[k];
+      if (!o.a) {
+        o.a = true; o.x = x; o.y = y; o.r = r;
+        for (var j = 0; j < 7; j++) o.f[j] = 0.78 + Math.random() * 0.4;
+        return o;
+      }
+    }
+    return null;
+  }
+  function spawnDust(x, y, vx, vy, life) {
+    for (var k = 0; k < dust.length; k++) {
+      var p = dust[k];
+      if (!p.a) { p.a = true; p.x = x; p.y = y; p.vx = vx; p.vy = vy; p.life = life; p.max = life; return; }
+    }
+  }
+  function clearPools() {
+    for (var k = 0; k < rocks.length; k++) rocks[k].a = false;
+    for (var m = 0; m < dust.length; m++) dust[m].a = false;
+  }
+
+  /* ---------- Estado ---------- */
+  var mode = 'menu';
+  var levelIdx = 0, L = DATA.levels[0];
+  var MAXSPD = DATA.vehicle.max_speed;
+  var speed = 0, px = W / 2, integrity = 100, distance = 0;
+  var failures = 0, hits = 0, spawnAcc = 0, dustAcc = 0, shake = 0, scrollY = 0, lastFail = '';
+  var keys = { left: false, right: false, up: false };
+  var pebbles = [];
+  for (i = 0; i < 36; i++) pebbles.push({ x: 14 + Math.random() * (W - 28), y: Math.random() * H, s: 1 + Math.random() * 2 });
+
+  /* ---------- Bitácora ---------- */
+  var logItems = [];
+  function addLog(text, cls) {
+    logItems.unshift({ t: text, c: cls });
+    if (logItems.length > 3) logItems.pop();
+    el.log.innerHTML = '';
+    logItems.forEach(function (it) {
+      var li = document.createElement('li');
+      li.className = it.c; li.textContent = it.t;
+      el.log.appendChild(li);
+    });
+  }
+
+  /* ---------- Pantallas ---------- */
+  function show(html, label, handler) {
+    el.overlay.innerHTML = html + '<button type="button" id="ovBtn">' + label + '</button>';
+    el.overlay.hidden = false;
+    var b = $('ovBtn');
+    b.addEventListener('click', function () { b.blur(); el.overlay.hidden = true; handler(); });
+    b.focus({ preventScroll: true });
+  }
+  function resetKeys() {
+    keys.left = keys.right = keys.up = false;
+    document.querySelectorAll('#touch button').forEach(function (b) { b.classList.remove('on'); });
+  }
+
+  function menu() {
+    mode = 'menu'; levelIdx = 0; L = DATA.levels[0]; resetKeys();
+    syncHud();
+    show('<h2>Benz: Unauthorized Test Drive</h2>' +
+      '<p>Un científico terrestre construyó este vehículo espacial por su cuenta. Nadie lo autorizó y no fue diseñado para el terreno marciano.</p>' +
+      '<p class="small">Demuestra que el prototipo puede convertirse en tecnología funcional.</p>',
+      'Iniciar prueba', intro);
+  }
+  function intro() {
+    mode = 'intro'; resetKeys();
+    L = DATA.levels[levelIdx];
+    clearPools(); logItems = []; el.log.innerHTML = ''; el.tip.hidden = true;
+    speed = 0; px = W / 2; integrity = DATA.vehicle.integrity; distance = 0;
+    failures = 0; hits = 0; spawnAcc = 0; dustAcc = 0; shake = 0;
+    addLog('Sistema listo. Esperando la prueba.', 'ok');
+    syncHud();
+    show('<p class="eyebrow">Nivel ' + L.id + ' de ' + DATA.levels.length + ' · ' + L.principle + '</p>' +
+      '<h2>' + L.name.replace(/^Nivel \d+:\s*/, '') + '</h2>' +
+      '<p>' + L.lesson + '</p>' +
+      '<p class="small">Meta: ' + L.goal_distance + ' m</p>',
+      'Comenzar', function () { mode = 'play'; });
+  }
+  function win() {
+    mode = 'win'; resetKeys();
+    var last = levelIdx === DATA.levels.length - 1;
+    var part = /^Ninguno/.test(L.unlocking_part)
+      ? 'Ya no hace falta nada nuevo: el diseño está validado.'
+      : 'Pieza desbloqueada para el taller: <b>' + L.unlocking_part + '</b>.';
+    show('<p class="eyebrow">' + L.name + '</p><h2>Prueba superada</h2>' +
+      '<p>Integridad ' + Math.round(integrity) + '% · fallas registradas: ' + failures + ' · impactos: ' + hits + '</p>' +
+      '<p>' + part + '</p>',
+      last ? 'Ver resultado' : 'Siguiente nivel',
+      function () { if (last) final(); else { levelIdx++; intro(); } });
+  }
+  function final() {
+    mode = 'final';
+    show('<h2>Listo para producción</h2>' +
+      '<p>La tecnología salió del laboratorio y ya sirve para nuevas expediciones.</p>' +
+      '<ul><li><b>Innovación:</b> una tecnología necesita salir del laboratorio.</li>' +
+      '<li><b>Experimentación:</b> probar descubre problemas que no eran evidentes.</li>' +
+      '<li><b>Adaptabilidad:</b> los errores se vuelven información para mejorar.</li>' +
+      '<li><b>Validación:</b> que algo funcione una vez no significa que esté listo para producción.</li></ul>',
+      'Jugar de nuevo', menu);
+  }
+  function dead() {
+    mode = 'dead'; resetKeys();
+    show('<h2>Prototipo destruido</h2>' +
+      '<p>Cada falla es información para mejorar.</p>' +
+      '<p class="small">' + (lastFail || 'Impacto contra las rocas del terreno.') + '</p>',
+      'Reintentar nivel', intro);
+  }
+
+  /* ---------- Eventos de juego ---------- */
+  function fail() {
+    integrity -= 3; failures++; shake = 0.4;
+    lastFail = 'Último registro: ' + FAILS[Math.floor(Math.random() * FAILS.length)];
+    addLog('FALLA a ' + Math.round(distance) + ' m: ' + lastFail.replace('Último registro: ', ''), 'fail');
+    el.tip.hidden = false;
+  }
+  function burst(x, y, n) {
+    for (var k = 0; k < n; k++) {
+      var a = Math.random() * 6.283, v = 40 + Math.random() * 120;
+      spawnDust(x, y, Math.cos(a) * v, Math.sin(a) * v, 0.5 + Math.random() * 0.4);
+    }
+  }
+
+  /* ---------- Simulación ---------- */
+  function update(dt) {
+    if (keys.up) speed += (16 / L.friction) * dt;
+    else speed *= Math.exp(-0.45 * L.friction * dt);
+    if (speed > MAXSPD) speed = MAXSPD;
+
+    var dir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+    px += dir * 230 * dt;
+    if (px < 24) px = 24;
+    if (px > W - 24) px = W - 24;
+
+    var ratio = speed / MAXSPD;
+    var world = speed * 24;
+    scrollY = (scrollY + world * dt) % H;
+    distance += speed * 8 * dt;
+    shake = Math.max(0, shake - dt);
+
+    if (distance < L.goal_distance - 60) {
+      spawnAcc += L.rock_rate * 2 * (0.25 + ratio) * dt;
+      while (spawnAcc >= 1) {
+        spawnAcc -= 1;
+        spawnRock(24 + Math.random() * (W - 48), -30, 11 + Math.random() * 11);
+      }
+    }
+
+    for (var k = 0; k < rocks.length; k++) {
+      var o = rocks[k];
+      if (!o.a) continue;
+      o.y += world * dt;
+      if (o.y > H + 40) { o.a = false; continue; }
+      var dx = px - o.x, dy = PY - o.y, rr = o.r + 12;
+      if (dx * dx + dy * dy < rr * rr) {
+        o.a = false; integrity -= 10; hits++; shake = 0.6;
+        burst(o.x, o.y, 10);
+        lastFail = 'Último registro: impacto con una roca a ' + Math.round(distance) + ' m.';
+        addLog('IMPACTO a ' + Math.round(distance) + ' m: daño al casco.', 'hit');
+      }
+    }
+
+    if (ratio > 0.7 && Math.random() < L.fail_per_sec * dt) fail();
+
+    dustAcc += ratio * 60 * dt;
+    while (dustAcc >= 1) {
+      dustAcc -= 1;
+      spawnDust(px + (Math.random() - 0.5) * 16, PY + 18, (Math.random() - 0.5) * 30, 40 + world * 0.5, 0.4 + Math.random() * 0.3);
+    }
+    for (var m = 0; m < dust.length; m++) {
+      var p = dust[m];
+      if (!p.a) continue;
+      p.life -= dt;
+      if (p.life <= 0) { p.a = false; continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+    }
+
+    if (integrity <= 0) { integrity = 0; syncHud(); dead(); return; }
+    if (distance >= L.goal_distance) { distance = L.goal_distance; syncHud(); win(); return; }
+  }
+
+  /* ---------- Dibujo ---------- */
+  function render() {
+    ctx.fillStyle = COL.ground;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = COL.dark;
+    ctx.fillRect(0, 0, 12, H); ctx.fillRect(W - 12, 0, 12, H);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    for (var s = 0; s < 14; s++) {
+      var ly = (s * 40 + scrollY) % H;
+      ctx.fillRect(18, ly, W - 36, 2);
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    for (var q = 0; q < pebbles.length; q++) {
+      var pb = pebbles[q];
+      ctx.fillRect(pb.x, (pb.y + scrollY * 1.3) % H, pb.s, pb.s);
+    }
+
+    var ly2 = PY - (L.goal_distance - distance) * PX_PER_M;
+    if (ly2 > -20 && ly2 < H) {
+      for (var cx = 12, n = 0; cx < W - 12; cx += 12, n++) {
+        ctx.fillStyle = n % 2 ? COL.fg : COL.dark;
+        ctx.fillRect(cx, ly2, 12, 6);
+        ctx.fillStyle = n % 2 ? COL.dark : COL.fg;
+        ctx.fillRect(cx, ly2 + 6, 12, 6);
+      }
+    }
+
+    for (var k = 0; k < rocks.length; k++) {
+      var o = rocks[k];
+      if (!o.a) continue;
+      ctx.beginPath();
+      for (var j = 0; j < 7; j++) {
+        var ang = j / 7 * 6.283, rr = o.r * o.f[j];
+        var X = o.x + Math.cos(ang) * rr, Y = o.y + Math.sin(ang) * rr;
+        if (j === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = COL.rock; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = COL.edge; ctx.stroke();
+    }
+
+    for (var m = 0; m < dust.length; m++) {
+      var d = dust[m];
+      if (!d.a) continue;
+      ctx.globalAlpha = Math.max(0, d.life / d.max) * 0.6;
+      ctx.fillStyle = '#d9a58a';
+      ctx.fillRect(d.x, d.y, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+
+    var jx = shake > 0 ? (Math.random() - 0.5) * 6 : 0;
+    var jy = shake > 0 ? (Math.random() - 0.5) * 4 : 0;
+    var x = px + jx, y = PY + jy;
+    if (keys.up && mode === 'play' && speed < MAXSPD) {
+      ctx.fillStyle = COL.warn;
+      ctx.beginPath(); ctx.moveTo(x - 6, y + 16); ctx.lineTo(x + 6, y + 16); ctx.lineTo(x, y + 28 + Math.random() * 6); ctx.fill();
+    }
+    ctx.fillStyle = '#111';
+    ctx.fillRect(x - 17, y - 14, 6, 10); ctx.fillRect(x + 11, y - 14, 6, 10);
+    ctx.fillRect(x - 17, y + 6, 6, 10); ctx.fillRect(x + 11, y + 6, 6, 10);
+    ctx.fillStyle = integrity < 35 ? COL.bad : COL.accent;
+    ctx.fillRect(x - 12, y - 18, 24, 36);
+    ctx.fillStyle = COL.cyan;
+    ctx.fillRect(x - 7, y - 12, 14, 10);
+    ctx.fillStyle = COL.fg;
+    ctx.fillRect(x - 1, y - 26, 2, 8);
+    ctx.fillRect(x - 3, y - 28, 6, 3);
+  }
+
+  function syncHud() {
+    el.level.textContent = L.name;
+    el.goal.textContent = L.goal_distance + ' m';
+    var ip = Math.max(0, Math.round(integrity));
+    el.intTxt.textContent = ip + '%';
+    el.intFill.style.width = ip + '%';
+    el.intBar.classList.toggle('low', ip < 35);
+    var sp = Math.round(speed / MAXSPD * 100);
+    el.spdTxt.textContent = sp + '%';
+    el.spdFill.style.width = sp + '%';
+    el.spdBar.classList.toggle('risk', sp > 70);
+    el.distTxt.textContent = Math.round(distance) + ' m';
+    el.distFill.style.width = Math.min(100, distance / L.goal_distance * 100) + '%';
+  }
+
+  var last = performance.now();
+  function loop(ts) {
+    var dt = Math.min((ts - last) / 1000, 0.05);
+    last = ts;
+    if (mode === 'play') update(dt);
+    else if (mode !== 'menu') speed *= Math.exp(-2 * dt);
+    render();
+    syncHud();
+    requestAnimationFrame(loop);
+  }
+
+  /* ---------- Controles ---------- */
+  var MAP = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right',
+              ArrowUp: 'up', w: 'up', W: 'up', ' ': 'up' };
+  window.addEventListener('keydown', function (e) {
+    var k = MAP[e.key];
+    if (!k || mode !== 'play') return;
+    keys[k] = true; e.preventDefault();
+  });
+  window.addEventListener('keyup', function (e) {
+    var k = MAP[e.key];
+    if (k) keys[k] = false;
+  });
+  window.addEventListener('blur', resetKeys);
+  document.querySelectorAll('#touch button').forEach(function (b) {
+    var k = b.getAttribute('data-key');
+    function on(e) { e.preventDefault(); keys[k] = true; b.classList.add('on'); }
+    function off() { keys[k] = false; b.classList.remove('on'); }
+    b.addEventListener('pointerdown', on);
+    b.addEventListener('pointerup', off);
+    b.addEventListener('pointerleave', off);
+    b.addEventListener('pointercancel', off);
+    b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  });
+
+  menu();
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body></html>
