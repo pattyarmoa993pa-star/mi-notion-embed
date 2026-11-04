@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Tejido Social: Arcade</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0d0b1e; --panel:#1b1740; --y:#ffd93d; --g:#6bff95; --r:#ff5d73; --b:#4dd2ff; --p:#c77dff; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; height:100%; }
+  body { background:var(--bg); color:#fff; font-family:'Press Start 2P','Courier New',monospace; font-size:10px; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
+  button { font-family:inherit; }
+
+  #hud { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; padding:8px 12px; background:var(--panel); border-bottom:4px solid #000; font-size:10px; }
+  #hud b { color:var(--y); }
+  #h-en { color:var(--y); letter-spacing:1px; }
+  #h-combo { color:var(--p); }
+  .mini { margin-left:auto; background:#000; color:#fff; border:2px solid #fff; border-radius:4px; padding:4px 8px; cursor:pointer; }
+  #cohrow { display:flex; align-items:center; gap:12px; padding:6px 12px; background:#14113a; border-bottom:4px solid #000; font-size:9px; }
+  #cohbar { flex:1; height:16px; background:#000; border:3px solid #fff; position:relative; }
+  #cohfill { height:100%; width:0; background:repeating-linear-gradient(90deg,var(--g) 0 8px,#3bd66b 8px 10px); transition:width .4s; }
+  #cohmark { position:absolute; top:-6px; bottom:-6px; width:4px; background:var(--y); }
+
+  #stage { flex:1; position:relative; min-height:200px; background:
+      linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px) 0 0/32px 32px,
+      linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px) 0 0/32px 32px, #0a0820; overflow:hidden; }
+  #stage::after { content:''; position:absolute; inset:0; pointer-events:none; background:repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,.18) 2px 3px); }
+  #c { position:absolute; inset:0; touch-action:none; cursor:pointer; }
+  #legend { position:absolute; left:8px; bottom:6px; font-size:8px; color:#bbb; pointer-events:none; z-index:2; text-shadow:2px 2px #000; line-height:1.6; }
+
+  #guide { display:flex; gap:10px; align-items:center; padding:8px 12px; background:#fff; color:#111; border-top:4px solid #000; min-height:58px; font-size:9px; line-height:1.7; }
+  #gicon { font-size:26px; }
+
+  #actions { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; padding:8px; background:var(--panel); }
+  .abtn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:3px solid #000; border-radius:6px; padding:8px 2px; color:#fff; cursor:pointer; box-shadow:0 4px 0 #000; font-size:7px; line-height:1.4; text-align:center; min-height:70px; }
+  .abtn .ic { font-size:22px; }
+  .abtn .tag { font-size:6px; opacity:.85; }
+  .abtn:active:not(:disabled) { transform:translateY(3px); box-shadow:0 1px 0 #000; }
+  .abtn:disabled { opacity:.35; cursor:not-allowed; }
+  .k-r { background:#e8445a; } .k-b { background:#2a8fd6; } .k-p { background:#8e4ad6; } .k-g { background:#27b45a; }
+
+  #screen { position:fixed; inset:0; background:rgba(5,3,20,.92); display:none; align-items:center; justify-content:center; z-index:20; padding:12px; overflow:auto; }
+  .card { background:var(--panel); border:6px solid #fff; box-shadow:0 0 0 4px #000, 8px 8px 0 4px #000; padding:22px; max-width:580px; width:100%; text-align:center; line-height:1.9; font-size:10px; }
+  .card h1 { color:var(--y); font-size:22px; margin:0 0 10px; text-shadow:4px 4px #e8445a; line-height:1.4; }
+  .card h2 { color:var(--g); font-size:15px; margin:0 0 10px; line-height:1.5; }
+  .card .row { display:flex; gap:8px; justify-content:center; margin:6px 0; text-align:left; }
+  .card .learn { background:#000; border:3px solid var(--b); padding:10px; margin:12px 0; color:var(--b); text-align:left; }
+  .big { background:var(--g); color:#000; border:4px solid #000; box-shadow:0 5px 0 #000; padding:12px 22px; font-size:12px; cursor:pointer; border-radius:6px; margin-top:10px; }
+  .big:active { transform:translateY(4px); box-shadow:0 1px 0 #000; }
+  .blink { animation:blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity:0; } }
+  .stars { font-size:28px; letter-spacing:6px; }
+
+  @media (max-width:700px) {
+    #actions { grid-template-columns:repeat(3,1fr); }
+    body { font-size:9px; } #hud { font-size:8px; gap:4px 10px; } #cohrow { font-size:7px; }
+    .card h1 { font-size:16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div>NIVEL <b id="h-lvl">1</b></div>
+  <div>⭐ <b id="h-score">0</b></div>
+  <div>📅 <b id="h-day">1/10</b></div>
+  <div>🔋 <span id="h-en"></span></div>
+  <div>CONFIANZA <span id="h-hearts"></span></div>
+  <div id="h-combo">COMBO x1</div>
+  <button class="mini" id="mute">🔊</button>
+</div>
+<div id="cohrow">
+  <span>COHESIÓN <b id="h-coh" style="color:var(--g)">0</b>% · META <b id="h-tgt" style="color:var(--y)">60</b>%</span>
+  <div id="cohbar"><div id="cohfill"></div><div id="cohmark"></div></div>
+</div>
+
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div id="legend">··· intercambio &nbsp; ⚡ conflicto &nbsp; 🤝 acuerdo &nbsp; 💍 boda</div>
+</div>
+
+<div id="guide"><span id="gicon">🧶</span><span id="gtext">¡Hola! Soy Hilo. Toca dos familias para empezar.</span></div>
+
+<div id="actions">
+  <button class="abtn k-r" data-k="directa"><span class="ic">💍</span>BODA FORZADA<span class="tag">DIRECTA · ⚡2</span></button>
+  <button class="abtn k-b" data-k="comercio"><span class="ic">🛒</span>MERCADITO<span class="tag">INDIRECTA · ⚡1</span></button>
+  <button class="abtn k-b" data-k="mediacion"><span class="ic">🕊️</span>MEDIADOR<span class="tag">INDIRECTA · ⚡1</span></button>
+  <button class="abtn k-p" data-k="cooperacion"><span class="ic">📜</span>LEY: ¡COOPEREN!<span class="tag">ESTRUCTURAL · ⚡3</span></button>
+  <button class="abtn k-p" data-k="integracion"><span class="ic">🎉</span>FERIA CULTURAL<span class="tag">ESTRUCTURAL · ⚡3</span></button>
+  <button class="abtn k-g" id="btn-next"><span class="ic">⏭️</span>SIGUIENTE DÍA<span class="tag">+3 ⚡ · ESPACIO</span></button>
+</div>
+
+<div id="screen"></div>
+
+<script>
+// ============ DATOS ============
+const GROUPS = [
+  { n: 'Valle', c: '#ffd93d', e: '🌾' },
+  { n: 'Monte', c: '#6bff95', e: '🌳' },
+  { n: 'Río',   c: '#4dd2ff', e: '🐟' }
+];
+const FAMS = [
+  { name: 'Benítez', g: 0 }, { name: 'Giménez', g: 1 }, { name: 'Ortiz', g: 2 },
+  { name: 'Duarte', g: 0 }, { name: 'Villalba', g: 1 }, { name: 'Kaufmann', g: 2 },
+  { name: 'Ayala', g: 0 }, { name: 'Franco', g: 1 }, { name: 'Báez', g: 2 }, { name: 'Cabral', g: 0 }
+];
+const LEVELS = [
+  { name: 'EL PUEBLO', n: 6, target: 50, turns: 10, tens: 0.8,
+    intro: 'Pocas familias, pocos hilos. ¡Ayúdalas a conectarse!',
+    learn: '🧵 Cada intercambio es un HILO. Cuando muchos hilos se vuelven ACUERDOS, nace el CAPITAL SOCIAL: la fuerza de una comunidad unida.' },
+  { name: 'LA REGIÓN', n: 8, target: 58, turns: 12, tens: 1,
+    intro: 'Más familias y más conflictos. Cuidado: obligar sale caro.',
+    learn: '🕊️ Obligar genera RESISTENCIA. Un mediador y buenos incentivos construyen CONFIANZA, y con confianza los conflictos se resuelven.' },
+  { name: 'LA NACIÓN', n: 10, target: 64, turns: 14, tens: 1.3,
+    intro: 'Tres grupos distintos. ¡Hay que tejer puentes entre ellos!',
+    learn: '📜 Las reglas para todos y las ferias culturales INTEGRAN a grupos distintos. Las ALIANZAS entre grupos hacen fuerte a toda la comunidad.' }
+];
+const REST = { casamiento: 80, union: 120, hilo: 160, tension: 230 };
+const COST = { directa: 2, comercio: 1, mediacion: 1, cooperacion: 3, integracion: 3 };
+const CD = { cooperacion: 3, integracion: 3 };
+const ENERGY_MAX = 8;
+
+const $ = id => document.getElementById(id);
+const rand = Math.random;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const pick = a => a[Math.floor(rand() * a.length)];
+
+let G = { level: 0, score: 0, levelStart: 0, combo: 0, best: 0 };
+try { G.best = +localStorage.getItem('tejido_best') || 0; } catch (e) {}
+let S = null, W = 800, H = 500, drag = null, dragMoved = false, muted = false;
+
+// ============ SONIDO ============
+let AC = null;
+function beep(f, d, type = 'square', vol = 0.05, slide = 0) {
+  if (muted) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime;
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (slide) o.frequency.linearRampToValueAtTime(f + slide, t + d);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d);
+  } catch (e) {}
+}
+const SFX = {
+  select: () => beep(440, .06),
+  good: () => { beep(520, .1); setTimeout(() => beep(780, .15), 90); },
+  wed: () => { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .12), i * 80)); },
+  bad: () => beep(180, .35, 'sawtooth', .07, -100),
+  next: () => beep(300, .08, 'square', .04, 100),
+  win: () => { [523, 659, 784, 659, 784, 1046].forEach((f, i) => setTimeout(() => beep(f, .15), i * 110)); },
+  lose: () => { [400, 300, 220, 150].forEach((f, i) => setTimeout(() => beep(f, .2, 'sawtooth', .06), i * 160)); }
+};
+
+// ============ NIVEL ============
+function startLevel(i) {
+  const L = LEVELS[i];
+  G.level = i; G.combo = 0; G.levelStart = G.score;
+  S = { n: L.n, target: L.target, turns: L.turns, tens: L.tens, trust: 100, turn: 1, energy: 5, over: false,
+        cd: { cooperacion: 0, integracion: 0 }, sel: [], edges: [], nodes: [], pops: [], parts: [], shake: 0 };
+  for (let k = 0; k < S.n; k++) {
+    const a = (k / S.n) * Math.PI * 2;
+    S.nodes.push({ id: k, x: W / 2 + Math.cos(a) * 120, y: H / 2 + Math.sin(a) * 120, vx: 0, vy: 0 });
+  }
+  genEdges();
+  hideScreen();
+  say('¡Toca dos familias y usa tus poderes! Llega a la meta de cohesión antes de que se acaben los días.', '🧶');
+  updateUI();
+}
+
+function genEdges() {
+  const n = S.n;
+  for (let i = 0; i < n; i++) {
+    const t = rand() < 0.3 * S.tens ? 'tension' : 'hilo';
+    setEdge(i, (i + 1) % n, t, 1 + Math.floor(rand() * 2));
+  }
+  for (let k = 0; k < Math.floor(n / 2); k++) {
+    const a = Math.floor(rand() * n), b = Math.floor(rand() * n);
+    if (a !== b && !getEdge(a, b)) setEdge(a, b, rand() < 0.25 * S.tens ? 'tension' : 'hilo', 1);
+  }
+  while (S.edges.filter(e => e.type === 'tension').length < 2) {
+    const e = pick(S.edges); e.type = 'tension'; e.w = 1;
+  }
+}
+
+const getEdge = (a, b) => S.edges.find(e => (e.a === a && e.b === b) || (e.a === b && e.b === a));
+function setEdge(a, b, type, w = 1) { const e = getEdge(a, b); if (e) { e.type = type; e.w = w; } else S.edges.push({ a, b, type, w }); }
+const same = (a, b) => FAMS[a].g === FAMS[b].g;
+const fname = i => 'Fam. ' + FAMS[i].name;
+const mid = (a, b) => ({ x: (S.nodes[a].x + S.nodes[b].x) / 2, y: (S.nodes[a].y + S.nodes[b].y) / 2 });
+
+// ============ MÉTRICAS ============
+function cohesion() {
+  const n = S.n, val = { hilo: 1, union: 2, casamiento: 3 };
+  let sc = 0;
+  for (const e of S.edges) sc += e.type === 'tension' ? -e.w * 0.8 : val[e.type] * (same(e.a, e.b) ? 1 : 1.5);
+  const par = [...Array(n).keys()];
+  const find = x => par[x] === x ? x : (par[x] = find(par[x]));
+  S.edges.forEach(e => { if (e.type !== 'tension') par[find(e.a)] = find(e.b); });
+  const sizes = {}; for (let i = 0; i < n; i++) { const r = find(i); sizes[r] = (sizes[r] || 0) + 1; }
+  const conn = Math.max(...Object.values(sizes)) / n;
+  return Math.round(clamp(0.65 * (sc / (5 * n)) * 100 + 0.35 * conn * 100, 0, 100));
+}
+
+function say(t, icon = '🧶') { $('gtext').textContent = t; $('gicon').textContent = icon; }
+
+function updateUI() {
+  const coh = cohesion();
+  $('h-lvl').textContent = G.level + 1;
+  $('h-score').textContent = G.score;
+  $('h-day').textContent = Math.min(S.turn, S.turns) + '/' + S.turns;
+  $('h-en').textContent = '▮'.repeat(S.energy) + '▯'.repeat(ENERGY_MAX - S.energy);
+  const hearts = Math.ceil(clamp(S.trust, 0, 100) / 20);
+  $('h-hearts').textContent = '❤️'.repeat(hearts) + '🖤'.repeat(5 - hearts);
+  $('h-combo').textContent = 'COMBO x' + Math.min(5, 1 + G.combo);
+  $('h-coh').textContent = coh; $('h-tgt').textContent = S.target;
+  $('cohfill').style.width = coh + '%'; $('cohmark').style.left = S.target + '%';
+
+  const pair = S.sel.length === 2, off = S.over;
+  document.querySelectorAll('.abtn[data-k]').forEach(b => {
+    const k = b.dataset.k;
+    let dis = off || S.energy < COST[k];
+    if (k === 'directa' || k === 'comercio') dis = dis || !pair;
+    if (CD[k] && S.cd[k] > 0) dis = true;
+    b.disabled = dis;
+  });
+  $('btn-next').disabled = off;
+}
+
+// ============ EFECTOS ============
+function pop(x, y, text, color = '#fff') { S.pops.push({ x, y, text, color, life: 70 }); }
+function burst(x, y, color, n = 14) {
+  for (let i = 0; i < n; i++) { const a = rand() * 7, s = 1 + rand() * 3.5; S.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 30 + rand() * 20, color }); }
+}
+function addScore(base, x, y, label, color) {
+  const mult = Math.min(5, 1 + G.combo), pts = base * mult;
+  G.score += pts; G.combo++;
+  pop(x, y, `${label} +${pts}`, color);
+}
+function breakCombo() { G.combo = 0; }
+function hurt(x, y, text) { S.shake = 12; breakCombo(); pop(x, y, text, '#ff5d73'); burst(x, y, '#ff5d73'); SFX.bad(); }
+
+// ============ ACCIONES ============
+function act(kind, fn) {
+  if (!S || S.over) return;
+  if (S.cd[kind] > 0) return say('¡Esa ley todavía se está enfriando!', '⏳');
+  if (S.energy < COST[kind]) return say('¡Te falta energía! Pasa al siguiente día para recargar.', '🔋');
+  if (fn() === false) return;
+  S.energy -= COST[kind];
+  if (CD[kind]) S.cd[kind] = CD[kind];
+  S.trust = clamp(S.trust, 0, 100);
+  updateUI();
+  checkEnd();
+}
+
+function directa() {
+  const [a, b] = S.sel, e = getEdge(a, b), m = mid(a, b);
+  if (e && e.type === 'casamiento') { say('Esas familias ya están casadas. ¡Elige otras!', '💍'); return false; }
+  let r = !e ? 0.3 : e.type === 'tension' ? 0.35 + 0.15 * e.w : e.type === 'hilo' ? 0.15 : 0.05;
+  r = Math.min(0.9, r + (100 - S.trust) / 250);
+  if (rand() < r) {
+    S.trust -= 14;
+    setEdge(a, b, 'tension', clamp((e && e.type === 'tension' ? e.w : 0) + 1, 1, 3));
+    hurt(m.x, m.y, '¡RESISTENCIA!');
+    say('¡Ouch! Obligar a alguien genera resistencia y baja la confianza. Mejor usa incentivos.', '😠');
+  } else {
+    S.trust -= 6;
+    setEdge(a, b, 'casamiento', 3);
+    SFX.wed(); burst(m.x, m.y, '#c77dff', 24);
+    addScore(same(a, b) ? 50 : 80, m.x, m.y, '💍 BODA', '#c77dff');
+    say(same(a, b) ? 'La boda une dos familias, pero forzarla deja resentimiento (-6 confianza).' : '¡Un puente entre dos grupos! Pero forzarlo deja resentimiento (-6 confianza).', '💍');
+    const vec = S.edges.filter(x => x.type === 'hilo' && [a, b].some(i => x.a === i || x.b === i));
+    if (vec.length && rand() < 0.2) {
+      const v = pick(vec); v.type = 'tension'; v.w = 1;
+      say(`¡Cuidado! ${fname(v.a)} y ${fname(v.b)} se enojaron por la boda forzada.`, '⚡');
+    }
+  }
+}
+
+function comercio() {
+  const [a, b] = S.sel, e = getEdge(a, b), m = mid(a, b);
+  if (!e) { setEdge(a, b, 'hilo', 1); SFX.good(); burst(m.x, m.y, '#4dd2ff'); addScore(10, m.x, m.y, '🧵 HILO', '#4dd2ff'); say('¡Nuevo intercambio! Cuando dos familias comercian, se necesitan: eso es INTERDEPENDENCIA.', '🛒'); }
+  else if (e.type === 'hilo') { setEdge(a, b, 'union', 1); SFX.good(); burst(m.x, m.y, '#6bff95', 20); addScore(25, m.x, m.y, '🤝 ACUERDO', '#6bff95'); say('¡El comercio se volvió un ACUERDO! Un nuevo punto de unión en la red.', '🤝'); }
+  else if (e.type === 'tension') {
+    if (rand() < 0.45) { e.w--; if (e.w <= 0) { e.type = 'hilo'; e.w = 1; } SFX.good(); addScore(15, m.x, m.y, '😌 CALMA', '#6bff95'); say('Compartir negocios baja la tensión. ¡Pero con mucha desconfianza cuesta más!', '🛒'); }
+    else { S.trust -= 2; hurt(m.x, m.y, 'NO FUNCIONÓ'); say('Había demasiada desconfianza. Prueba con un mediador primero.', '🤔'); }
+  }
+  else if (e.type === 'union') { if (e.w >= 3) { say('Ese acuerdo ya es súper sólido.', '💪'); return false; } e.w++; SFX.good(); addScore(10, m.x, m.y, '💪 MÁS FUERTE', '#6bff95'); say('¡El acuerdo se hizo más fuerte!', '💪'); }
+  else { say('Esas familias ya están unidas por una boda.', '💍'); return false; }
+}
+
+function mediacion() {
+  let e = S.sel.length === 2 ? getEdge(S.sel[0], S.sel[1]) : null;
+  if (S.sel.length === 2 && (!e || e.type !== 'tension')) { say('Entre esas familias no hay conflicto. ¡Busca los rayos ⚡!', '🕊️'); return false; }
+  if (!e) {
+    const ts = S.edges.filter(x => x.type === 'tension').sort((x, y) => y.w - x.w);
+    if (!ts.length) { say('¡No hay conflictos! Todos se llevan bien.', '🎈'); return false; }
+    e = ts[0];
+  }
+  const m = mid(e.a, e.b);
+  e.w--; S.trust += 4;
+  if (e.w <= 0) { e.type = 'union'; e.w = 1; SFX.wed(); burst(m.x, m.y, '#6bff95', 24); addScore(40, m.x, m.y, '🤝 PAZ', '#6bff95'); say(`¡El mediador logró un ACUERDO entre ${fname(e.a)} y ${fname(e.b)}! Escuchar a las dos partes funciona.`, '🕊️'); }
+  else { SFX.good(); addScore(30, m.x, m.y, '🕊️ MEDIACIÓN', '#6bff95'); say('El mediador escuchó a las dos familias y bajó la tensión. +4 confianza.', '🕊️'); }
+}
+
+function cooperacion() {
+  let up = 0, worse = 0;
+  S.edges.forEach(e => {
+    if (e.type === 'hilo' && rand() < 0.5) { e.type = 'union'; e.w = 1; up++; }
+    else if (e.type === 'tension' && rand() < 0.25) { e.w = Math.min(3, e.w + 1); worse++; }
+  });
+  S.trust -= 8;
+  const c = { x: W / 2, y: H / 2 };
+  if (up) { SFX.good(); burst(c.x, c.y, '#c77dff', 30); addScore(up * 8, c.x, c.y, '📜 LEY', '#c77dff'); } else hurt(c.x, c.y, 'SIN EFECTO');
+  say(`La ley afecta a TODOS: ${up} intercambios pasaron a acuerdo, pero ${worse} conflictos empeoraron porque se impuso. (-8 confianza)`, '📜');
+}
+
+function integracion() {
+  let made = 0, healed = 0;
+  for (let i = 0; i < S.n; i++) for (let j = i + 1; j < S.n; j++) {
+    const e = getEdge(i, j);
+    if (!e && rand() < (same(i, j) ? 0.15 : 0.35)) { setEdge(i, j, 'hilo', 1); made++; }
+    else if (e && e.type === 'tension' && !same(i, j) && rand() < 0.4) { e.type = 'hilo'; e.w = 1; healed++; }
+  }
+  S.trust += 6;
+  const c = { x: W / 2, y: H / 2 };
+  SFX.wed(); burst(c.x, c.y, '#ffd93d', 40);
+  addScore(made * 10 + healed * 20, c.x, c.y, '🎉 FERIA', '#ffd93d');
+  say(`¡Fiesta! ${made} nuevos intercambios y ${healed} conflictos disueltos. Conocer otras culturas derriba prejuicios. (+6 confianza)`, '🎉');
+}
+const ACTIONS = { directa, comercio, mediacion, cooperacion, integracion };
+
+// ============ TIEMPO ============
+function nextTurn() {
+  if (!S || S.over) return;
+  SFX.next();
+  S.turn++;
+  S.energy = Math.min(ENERGY_MAX, S.energy + 3);
+  Object.keys(S.cd).forEach(k => S.cd[k] = Math.max(0, S.cd[k] - 1));
+  const low = 1 + (100 - S.trust) / 80;
+  let nh = 0, nt = 0, nu = 0;
+  for (let i = 0; i < S.n; i++) for (let j = i + 1; j < S.n; j++) {
+    const e = getEdge(i, j), sg = same(i, j);
+    if (!e) {
+      if (rand() < (sg ? 0.07 : 0.035)) { setEdge(i, j, 'hilo', 1); nh++; }
+      else if (!sg && rand() < 0.04 * low * S.tens) { setEdge(i, j, 'tension', 1); nt++; }
+    } else if (e.type === 'hilo') {
+      if (S.trust > 50 && rand() < 0.1) { e.type = 'union'; nu++; }
+      else if (!sg && rand() < 0.03 * low * S.tens) { e.type = 'tension'; e.w = 1; nt++; }
+    } else if (e.type === 'tension') {
+      if (S.trust < 40 && rand() < 0.2) e.w = Math.min(3, e.w + 1);
+      else if (S.trust > 70 && rand() < 0.1) { e.w--; if (e.w <= 0) { e.type = 'hilo'; e.w = 1; } }
+    }
+  }
+  const ev = randomEvent();
+  if (!ev) {
+    if (nt > nh + nu) say(`Nuevo día: aparecieron ${nt} conflictos. Los conflictos nacen cuando falta confianza.`, '⚡');
+    else say(`Nuevo día: la comunidad creó ${nh} hilos y ${nu} acuerdos por sí sola. ¡Recargaste energía!`, '🌅');
+  }
+  const coh = cohesion();
+  S.trust = clamp(S.trust + (coh >= 50 ? 2 : coh < 25 ? -2 : -1), 0, 100);
+  updateUI();
+  checkEnd();
+}
+
+function randomEvent() {
+  if (rand() > 0.3) return false;
+  const c = { x: W / 2, y: H / 2 }, k = Math.floor(rand() * 4);
+  if (k === 0) {
+    S.edges.filter(e => e.type === 'hilo').sort(() => rand() - .5).slice(0, 2).forEach(e => { e.type = 'tension'; e.w = 1; });
+    pop(c.x, c.y, '☀️ SEQUÍA', '#ff5d73'); S.shake = 8; SFX.bad(); say('¡SEQUÍA! La escasez tensa los intercambios entre familias.', '☀️');
+  } else if (k === 1) {
+    S.trust = clamp(S.trust + 5, 0, 100);
+    const h = pick(S.edges.filter(e => e.type === 'hilo').concat([null])); if (h) { h.type = 'union'; h.w = 1; }
+    pop(c.x, c.y, '🌽 BUENA COSECHA', '#6bff95'); SFX.good(); say('¡BUENA COSECHA! La abundancia refuerza la confianza. +5', '🌽');
+  } else if (k === 2) {
+    S.trust = clamp(S.trust - 5, 0, 100);
+    pop(c.x, c.y, '🗣️ RUMOR', '#ff5d73'); S.shake = 8; SFX.bad(); say('¡Un RUMOR falso corre por la comunidad! La desinformación baja la confianza. -5', '🗣️');
+  } else {
+    let m = 0;
+    for (let i = 0; i < 8 && m < 2; i++) { const a = Math.floor(rand() * S.n), b = Math.floor(rand() * S.n); if (a !== b && !getEdge(a, b)) { setEdge(a, b, 'hilo', 1); m++; } }
+    pop(c.x, c.y, '🎶 FIESTA', '#ffd93d'); SFX.good(); say('¡FIESTA PATRONAL! Familias lejanas se conocen y empiezan a comerciar.', '🎶');
+  }
+  return true;
+}
+
+// ============ FIN DE NIVEL ============
+function checkEnd() {
+  if (S.over) return;
+  if (cohesion() >= S.target) return win();
+  if (S.trust <= 0) return lose('¡La confianza llegó a cero! La comunidad ya no cree en nadie. Recuerda: la presión directa destruye confianza.');
+  if (S.turn > S.turns) return lose('¡Se acabaron los días! Prueba hacer más acuerdos y usar la mediación.');
+}
+const stars = n => '⭐'.repeat(n) + '☆'.repeat(3 - n);
+
+function win() {
+  S.over = true; updateUI();
+  const left = Math.max(0, S.turns - S.turn), bonus = left * 100 + Math.round(S.trust) * 5;
+  G.score += bonus;
+  const st = 1 + (S.trust >= 50 ? 1 : 0) + (left >= 3 ? 1 : 0);
+  if (G.score > G.best) { G.best = G.score; try { localStorage.setItem('tejido_best', G.best); } catch (e) {} }
+  SFX.win(); burst(W / 2, H / 2, '#ffd93d', 60); updateUI();
+  const last = G.level >= LEVELS.length - 1;
+  setTimeout(() => showScreen(`
+    <h2>¡NIVEL COMPLETO!</h2>
+    <div class="stars">${stars(st)}</div>
+    <p>Días sobrantes: ${left} · Bonus: <b style="color:var(--y)">+${bonus}</b><br>Puntaje: <b style="color:var(--y)">${G.score}</b> · Récord: ${G.best}</p>
+    <div class="learn"><b>¿QUÉ APRENDIMOS?</b><br>${LEVELS[G.level].learn}</div>
+    <button class="big" id="primary" onclick="${last ? 'finalScreen()' : 'levelIntro(' + (G.level + 1) + ')'}">${last ? 'VER FINAL ▶' : 'SIGUIENTE NIVEL ▶'}</button>`), 900);
+}
+
+function lose(msg) {
+  S.over = true; updateUI(); SFX.lose();
+  setTimeout(() => showScreen(`
+    <h1 style="font-size:20px">GAME OVER</h1>
+    <p>${msg}</p>
+    <p>Puntaje: <b style="color:var(--y)">${G.score}</b></p>
+    <button class="big" id="primary" onclick="G.score=G.levelStart;startLevel(G.level)">REINTENTAR ↻</button>
+    <br><button class="big" style="background:#ddd" onclick="titleScreen()">MENÚ</button>`), 900);
+}
+
+function finalScreen() {
+  showScreen(`
+    <h1>¡TEJISTE LA RED!</h1>
+    <p>Completaste los 3 niveles.<br>Puntaje final: <b style="color:var(--y)">${G.score}</b><br>Récord: ${G.best}</p>
+    <div class="learn">Una comunidad fuerte no se obliga: se TEJE. Con confianza, incentivos, mediación y reglas justas, los grupos distintos se vuelven una sola red.</div>
+    <button class="big" id="primary" onclick="titleScreen()">JUGAR OTRA VEZ ▶</button>`);
+}
+
+// ============ PANTALLAS ============
+function showScreen(html) { const s = $('screen'); s.innerHTML = `<div class="card">${html}</div>`; s.style.display = 'flex'; }
+function hideScreen() { $('screen').style.display = 'none'; }
+
+function titleScreen() {
+  G.level = 0; G.score = 0; G.combo = 0;
+  showScreen(`
+    <h1>🕸️ TEJIDO<br>SOCIAL</h1>
+    <p>Teje una comunidad fuerte conectando familias.</p>
+    <div class="row"><span>👆</span><span>Toca 2 familias para elegirlas.</span></div>
+    <div class="row"><span>⚡</span><span>Usa tus poderes: obligar, incentivar o cambiar las reglas.</span></div>
+    <div class="row"><span>🎯</span><span>Llega a la meta de cohesión antes de que se acaben los días.</span></div>
+    <div class="row"><span>···</span><span>Intercambio &nbsp; ⚡ Conflicto &nbsp; 🤝 Acuerdo &nbsp; 💍 Boda</span></div>
+    <p>RÉCORD: <b style="color:var(--y)">${G.best}</b></p>
+    <button class="big blink" id="primary" onclick="levelIntro(0)">▶ START</button>`);
+}
+
+function levelIntro(i) {
+  const L = LEVELS[i]; G.level = i;
+  showScreen(`
+    <h2>NIVEL ${i + 1}<br>${L.name}</h2>
+    <p>${L.intro}</p>
+    <div class="learn">🎯 META: <b>${L.target}%</b> de cohesión<br>📅 DÍAS: <b>${L.turns}</b><br>🏘️ FAMILIAS: <b>${L.n}</b></div>
+    <button class="big" id="primary" onclick="startLevel(${i})">¡JUGAR!</button>`);
+}
+
+// ============ FÍSICA Y DIBUJO ============
+const canvas = $('c'), ctx = canvas.getContext('2d');
+function resize() {
+  const r = $('stage').getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  W = r.width; H = r.height;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function physics() {
+  const ns = S.nodes, sc = clamp(Math.min(W, H) / 520, 0.6, 1.4);
+  for (let i = 0; i < ns.length; i++) for (let j = i + 1; j < ns.length; j++) {
+    const dx = ns[i].x - ns[j].x, dy = ns[i].y - ns[j].y, d2 = Math.max(dx * dx + dy * dy, 100), d = Math.sqrt(d2), f = 9000 * sc * sc / d2;
+    ns[i].vx += dx / d * f; ns[i].vy += dy / d * f; ns[j].vx -= dx / d * f; ns[j].vy -= dy / d * f;
+  }
+  for (const e of S.edges) {
+    const a = ns[e.a], b = ns[e.b], dx = b.x - a.x, dy = b.y - a.y, d = Math.max(Math.hypot(dx, dy), 1);
+    const f = (d - REST[e.type] * sc) * 0.012;
+    a.vx += dx / d * f; a.vy += dy / d * f; b.vx -= dx / d * f; b.vy -= dy / d * f;
+  }
+  for (const n of ns) {
+    n.vx += (W / 2 - n.x) * 0.0015; n.vy += (H / 2 - n.y) * 0.0015;
+    n.vx = clamp(n.vx, -8, 8); n.vy = clamp(n.vy, -8, 8);
+    if (n !== drag) { n.x += n.vx; n.y += n.vy; }
+    n.vx *= 0.82; n.vy *= 0.82;
+    n.x = clamp(n.x, 40, W - 40); n.y = clamp(n.y, 40, H - 55);
+  }
+}
+
+function drawEdge(e, t) {
+  const A = S.nodes[e.a], B = S.nodes[e.b], dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len, ny = dx / len, mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+  ctx.save(); ctx.lineCap = 'round'; ctx.beginPath();
+  if (e.type === 'tension') {
+    const segs = Math.max(4, Math.floor(len / 16)), amp = 4 + e.w * 2;
+    ctx.moveTo(A.x, A.y);
+    for (let s = 1; s < segs; s++) { const p = s / segs, off = (s % 2 ? 1 : -1) * amp * (1 + 0.3 * Math.sin(t / 100 + s)); ctx.lineTo(A.x + dx * p + nx * off, A.y + dy * p + ny * off); }
+    ctx.lineTo(B.x, B.y); ctx.strokeStyle = '#ff5d73'; ctx.lineWidth = 2 + e.w; ctx.stroke();
+    ctx.font = (14 + e.w * 4) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('⚡', mx, my);
+  } else {
+    ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y);
+    if (e.type === 'hilo') { ctx.setLineDash([8, 6]); ctx.lineDashOffset = -t / 35; ctx.strokeStyle = '#4dd2ff'; ctx.lineWidth = 3; ctx.stroke(); }
+    else if (e.type === 'union') { ctx.strokeStyle = '#6bff95'; ctx.lineWidth = 3 + e.w * 1.5; ctx.stroke(); }
+    else { ctx.strokeStyle = '#c77dff'; ctx.lineWidth = 9; ctx.stroke(); ctx.strokeStyle = '#f0d4ff'; ctx.lineWidth = 3; ctx.stroke(); }
+    ctx.setLineDash([]);
+    if (e.type !== 'hilo') { ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(e.type === 'union' ? '🤝' : '💍', mx, my); }
+    const parts = e.type === 'hilo' ? 1 : 2;
+    for (let k = 0; k < parts; k++) {
+      const p = ((t / 2200) + (e.a * 7 + e.b * 3 + k * 0.5) * 0.137) % 1;
+      ctx.fillStyle = '#fff'; ctx.fillRect(A.x + dx * p - 3, A.y + dy * p - 3, 6, 6);
+    }
+  }
+  ctx.restore();
+}
+
+function drawNode(n, t) {
+  const f = FAMS[n.id], g = GROUPS[f.g], sel = S.sel.includes(n.id), r = 26;
+  ctx.save();
+  ctx.fillStyle = '#000'; ctx.fillRect(n.x - r - 4, n.y - r - 4, r * 2 + 8, r * 2 + 8);
+  ctx.fillStyle = g.c; ctx.fillRect(n.x - r, n.y - r, r * 2, r * 2);
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(n.x - r, n.y - r, r * 2, 6);
+  ctx.font = '26px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(g.e, n.x, n.y + 2);
+  if (sel) {
+    ctx.strokeStyle = (Math.floor(t / 250) % 2) ? '#fff' : '#ffd93d'; ctx.lineWidth = 4; ctx.setLineDash([6, 4]);
+    ctx.strokeRect(n.x - r - 8, n.y - r - 8, r * 2 + 16, r * 2 + 16); ctx.setLineDash([]);
+    ctx.fillStyle = '#ffd93d'; ctx.font = '14px "Press Start 2P", monospace'; ctx.fillText('▼', n.x, n.y - r - 20 + Math.sin(t / 120) * 3);
+  }
+  ctx.font = '9px "Press Start 2P", "Courier New", monospace'; ctx.fillStyle = '#000';
+  ctx.fillText(f.name, n.x + 1, n.y + r + 17); ctx.fillStyle = '#fff'; ctx.fillText(f.name, n.x, n.y + r + 16);
+  ctx.restore();
+}
+
+function frame(t) {
+  requestAnimationFrame(frame);
+  if (!S) return;
+  physics();
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  if (S.shake > 0) { ctx.translate((rand() - .5) * S.shake, (rand() - .5) * S.shake); S.shake *= 0.85; if (S.shake < .5) S.shake = 0; }
+  S.edges.forEach(e => drawEdge(e, t));
+  S.nodes.forEach(n => drawNode(n, t));
+  S.parts = S.parts.filter(p => p.life > 0);
+  S.parts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.life--; ctx.fillStyle = p.color; ctx.globalAlpha = clamp(p.life / 30, 0, 1); ctx.fillRect(p.x, p.y, 5, 5); });
+  ctx.globalAlpha = 1;
+  S.pops = S.pops.filter(p => p.life > 0);
+  S.pops.forEach(p => {
+    p.y -= 0.6; p.life--; ctx.globalAlpha = clamp(p.life / 30, 0, 1);
+    ctx.font = '12px "Press Start 2P", "Courier New", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000'; ctx.fillText(p.text, p.x + 2, p.y + 2); ctx.fillStyle = p.color; ctx.fillText(p.text, p.x, p.y);
+  });
+  ctx.restore();
+}
+
+// ============ ENTRADA ============
+const nodeAt = (x, y) => S && S.nodes.find(n => Math.abs(n.x - x) < 34 && Math.abs(n.y - y) < 34);
+function pos(ev) { const r = canvas.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
+
+canvas.addEventListener('pointerdown', ev => {
+  if (!S || S.over) return;
+  const p = pos(ev), n = nodeAt(p.x, p.y);
+  if (n) { drag = n; dragMoved = false; canvas.setPointerCapture(ev.pointerId); }
+  else { S.sel = []; updateUI(); }
+});
+canvas.addEventListener('pointermove', ev => {
+  if (!drag) return;
+  const p = pos(ev);
+  if (Math.hypot(p.x - drag.x, p.y - drag.y) > 5) dragMoved = true;
+  drag.x = p.x; drag.y = p.y; drag.vx = drag.vy = 0;
+});
+canvas.addEventListener('pointerup', () => {
+  if (drag && !dragMoved) {
+    const i = S.sel.indexOf(drag.id);
+    if (i >= 0) S.sel.splice(i, 1); else { S.sel.push(drag.id); if (S.sel.length > 2) S.sel.shift(); }
+    SFX.select();
+    const id = drag.id, es = S.edges.filter(e => e.a === id || e.b === id), c = t => es.filter(e => e.type === t).length;
+    if (S.sel.length === 2) {
+      const e = getEdge(S.sel[0], S.sel[1]);
+      const nm = { hilo: 'intercambian cosas (hilo)', tension: 'están en CONFLICTO ⚡', union: 'tienen un ACUERDO 🤝', casamiento: 'están unidas por una BODA 💍' };
+      say(`${fname(S.sel[0])} y ${fname(S.sel[1])}: ${e ? nm[e.type] : 'no se conocen todavía'}. ¿Qué poder usas?`, '🤔');
+    } else if (i < 0) say(`${fname(id)} (${GROUPS[FAMS[id].g].n}): ${c('hilo') + c('union') + c('casamiento')} amigos y ${c('tension')} conflictos. Elige otra familia.`, GROUPS[FAMS[id].g].e);
+    updateUI();
+  }
+  drag = null;
+});
+
+document.querySelectorAll('.abtn[data-k]').forEach(b => b.onclick = () => act(b.dataset.k, ACTIONS[b.dataset.k]));
+$('btn-next').onclick = nextTurn;
+$('mute').onclick = () => { muted = !muted; $('mute').textContent = muted ? '🔇' : '🔊'; };
+document.addEventListener('keydown', ev => {
+  const scr = $('screen').style.display === 'flex';
+  if (ev.code === 'Enter' || (scr && ev.code === 'Space')) { const p = $('primary'); if (scr && p) { ev.preventDefault(); p.click(); } return; }
+  if (scr || !S) return;
+  if (ev.code === 'Space') { ev.preventDefault(); nextTurn(); }
+  const keys = ['directa', 'comercio', 'mediacion', 'cooperacion', 'integracion'], i = '12345'.indexOf(ev.key);
+  if (i >= 0) act(keys[i], ACTIONS[keys[i]]);
+});
+window.addEventListener('resize', resize);
+
+// ============ ARRANQUE ============
+resize();
+requestAnimationFrame(frame);
+S = { n: 0, nodes: [], edges: [], sel: [], pops: [], parts: [], shake: 0, over: true, energy: 0, trust: 100, turn: 1, turns: 10, target: 60, cd: { cooperacion: 0, integracion: 0 } };
+updateUI();
+titleScreen();
+</script>
+</body>
+</html>
