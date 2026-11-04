@@ -1,0 +1,848 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>¡Tambo liberado para todos mis compis!</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Layout: gabinete arcade centrado. Título con banda tricolor, HUD, pantalla 4:3 (canvas), caja de diálogo, cruceta táctil. Una sola apariencia (noche de monte). */
+:root{
+  --suelo:#0f1f17;
+  --panel:#1a2a20;
+  --linea:#3d5a45;
+  --tierra:#9a3f26;
+  --tierra-osc:#5f2616;
+  --paja:#e3c15a;
+  --papel:#eef0e4;
+  --tenue:#9fb39a;
+  --rojo:#c8452b;
+  --azul:#2f5fae;
+  --tinta:#0b1510;
+  --f-disp:'Press Start 2P', ui-monospace, 'Courier New', monospace;
+  --f-txt:'VT323', ui-monospace, 'Courier New', monospace;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--suelo)}
+body{
+  margin:0;
+  background:var(--suelo);
+  color:var(--papel);
+  font-family:var(--f-txt);
+  font-size:21px;
+  line-height:1.2;
+  padding-block:16px 28px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+.gab{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.bandera{display:flex;flex-direction:column;height:12px;border:2px solid var(--tinta)}
+.bandera i{flex:1;display:block}
+.bandera i:nth-child(1){background:var(--rojo)}
+.bandera i:nth-child(2){background:var(--papel)}
+.bandera i:nth-child(3){background:var(--azul)}
+h1{
+  font-family:var(--f-disp);
+  font-weight:400;
+  font-size:clamp(13px,3.6vw,21px);
+  line-height:1.55;
+  margin:10px 0 0;
+  color:var(--paja);
+  text-shadow:3px 3px 0 var(--tierra-osc);
+  text-wrap:balance;
+}
+.sub{margin:4px 0 0;color:var(--tenue);font-size:22px}
+.hud{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.hud div{border:2px solid var(--linea);background:var(--panel);padding:6px 10px;min-width:0}
+.hud b{display:block;font-family:var(--f-disp);font-weight:400;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--tenue);margin-bottom:5px}
+.hud span{font-size:26px;display:flex;align-items:center;gap:4px;min-height:26px;font-variant-numeric:tabular-nums}
+.hud svg{width:21px;height:18px;fill:var(--rojo)}
+.hud svg.off{fill:#3a4a40}
+.pantalla{border:6px solid var(--tierra);box-shadow:0 0 0 3px var(--tierra-osc), 0 8px 0 3px var(--tinta);background:#000;line-height:0}
+canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;image-rendering:pixelated;image-rendering:crisp-edges;image-rendering:pixelated}
+.rumbos{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:21px}
+.rumbos li{display:flex;align-items:center;gap:6px;min-width:0}
+.rumbos i{display:inline-block;width:12px;height:12px;border:2px solid var(--tinta);flex:none}
+.obj{margin:0;border-left:6px solid var(--paja);padding:4px 0 4px 12px;font-size:23px}
+.dlg{border:4px solid var(--papel);background:var(--panel);box-shadow:6px 6px 0 var(--tinta);padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px}
+.dlg[hidden]{display:none}
+.dquien{font-family:var(--f-disp);font-size:10px;line-height:1.5;color:var(--paja);margin:0}
+.dtexto{margin:0;font-size:25px;line-height:1.15}
+.dpistas{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px}
+.dpistas li{padding-left:22px;position:relative;font-size:24px;color:var(--papel)}
+.dpistas li::before{content:"";position:absolute;left:4px;top:.42em;width:8px;height:8px;background:var(--paja)}
+.dopc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.dopc button,.dform button{
+  font-family:var(--f-disp);font-size:10px;line-height:1.5;
+  min-height:46px;padding:10px 12px;
+  background:var(--papel);color:var(--tinta);
+  border:0;border-bottom:4px solid #8d9480;cursor:pointer;text-align:center;
+}
+.dopc button:hover,.dform button:hover{background:#fff}
+.dopc button:active,.dform button:active{transform:translateY(2px);border-bottom-width:2px}
+.dopc button.sec{background:transparent;color:var(--papel);border:2px solid var(--linea)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--paja);outline-offset:2px}
+.dform{display:flex;flex-direction:column;gap:8px}
+.dform label{font-size:22px;color:var(--tenue)}
+.dform .fila{display:flex;gap:8px;flex-wrap:wrap}
+.dform input{flex:1 1 180px;min-width:0;min-height:46px;font-family:var(--f-txt);font-size:26px;background:var(--tinta);color:var(--papel);border:3px solid var(--linea);padding:4px 10px}
+.mando{display:flex;justify-content:space-between;align-items:center;gap:16px;user-select:none;-webkit-user-select:none;touch-action:none}
+.cruz{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,58px);gap:4px}
+.cruz button,.boton-a{
+  font-family:var(--f-disp);font-size:14px;color:var(--papel);
+  background:var(--panel);border:3px solid var(--linea);border-bottom-width:6px;cursor:pointer;
+  touch-action:none;-webkit-tap-highlight-color:transparent;
+}
+.cruz button:active,.cruz button.on{background:var(--linea)}
+.cruz .u{grid-column:2;grid-row:1}.cruz .l{grid-column:1;grid-row:2}.cruz .r{grid-column:3;grid-row:2}.cruz .d{grid-column:2;grid-row:3}
+.boton-a{width:84px;height:84px;background:var(--rojo);border-color:var(--tierra-osc);font-size:20px;color:#fff}
+.boton-a:active{transform:translateY(3px)}
+.ayuda{margin:0;color:var(--tenue);font-size:20px}
+@media (pointer:fine){.mando{display:none}}
+@media (pointer:coarse){.ayuda{display:none}}
+</style>
+
+<main class="gab">
+  <header>
+    <div class="bandera" aria-hidden="true"><i></i><i></i><i></i></div>
+    <h1>¡Tambo liberado para todos mis compis!</h1>
+    <p class="sub">Comandante de Arraigo · recorré el territorio, reconocé a los descendientes y reuníos en el Tambo</p>
+  </header>
+
+  <section class="hud" aria-label="Estado de la partida">
+    <div><b>Ánimo</b><span id="hAnimo"></span></div>
+    <div><b>Liberados</b><span id="hLib">0/6</span></div>
+    <div><b>Vínculos</b><span id="hLazos">0/3</span></div>
+    <div><b>Estrellas</b><span id="hEst">0</span></div>
+  </section>
+
+  <div class="pantalla"><canvas id="cv" width="256" height="192" role="img" aria-label="Mapa del juego visto desde arriba: el Comandante de Arraigo recorre el territorio."></canvas></div>
+
+  <ul class="rumbos" id="rumbos" aria-label="Puertas del Tambo"></ul>
+
+  <section class="dlg" id="dlg" hidden role="dialog" aria-live="polite" aria-label="Conversación">
+    <p class="dquien" id="dQuien"></p>
+    <p class="dtexto" id="dTexto"></p>
+    <ul class="dpistas" id="dPistas" hidden></ul>
+    <div id="dExtra" hidden></div>
+    <div class="dopc" id="dOpc"></div>
+  </section>
+
+  <p class="obj" id="obj"></p>
+
+  <div class="mando" aria-label="Controles táctiles">
+    <div class="cruz">
+      <button type="button" class="u" data-dir="up" aria-label="Arriba">▲</button>
+      <button type="button" class="l" data-dir="left" aria-label="Izquierda">◀</button>
+      <button type="button" class="r" data-dir="right" aria-label="Derecha">▶</button>
+      <button type="button" class="d" data-dir="down" aria-label="Abajo">▼</button>
+    </div>
+    <button type="button" class="boton-a" id="btnA" aria-label="Hablar o usar">A</button>
+  </div>
+  <p class="ayuda">Mover: flechas o W A S D · Hablar o usar lo que tenés enfrente: E, Espacio o Enter · En las conversaciones, las teclas 1 a 3 eligen una opción.</p>
+</main>
+
+<script id="logica">
+/* ============ BASE DE DATOS LIMITADA ============ */
+const TERR = {
+  centro: { nombre: 'Itauguá', puerta: '1', color: '#e8e4d0', flecha: '←', spawn: [8, 10], vuelta: [1, 5] },
+  guaira: { nombre: 'Yataity', puerta: '2', color: '#3a64b0', flecha: '↑', spawn: [7, 10], vuelta: [7, 1] },
+  itapua: { nombre: 'Itapúa',  puerta: '3', color: '#c8452b', flecha: '→', spawn: [7, 10], vuelta: [14, 5] }
+};
+
+const PERS = [
+  { id: 'nanduti', terr: 'centro', nombre: 'Doña Ñandutí', pos: [3, 4], simbolo: 'Ñandutí (encaje)',
+    pistas: ['Con aguja e hilo tejo flores diminutas.', 'Mi labor parece una tela de araña y nace en Itauguá.', 'Mi nombre, en guaraní, quiere decir «tela de araña».'],
+    aporta: 'bordar con paciencia', recuerdo: 'Mi familia bordó el primer mantel del pueblo.',
+    ropa: '#f2efe0', pelo: '#2a1a12', bordado: '#c8452b' },
+  { id: 'arpista', terr: 'centro', nombre: 'Don Arpista', pos: [12, 3], simbolo: 'Arpa paraguaya',
+    pistas: ['Mis dedos corren por muchas cuerdas.', 'Toco polcas y guaranias para la rueda de amigos.', 'Mi instrumento tiene forma de triángulo y se apoya en el hombro.'],
+    aporta: 'música para reunir a todos', recuerdo: 'Mi abuelo tocaba en las fiestas patronales.',
+    ropa: '#2f5fae', pelo: '#3a2a1a', sombrero: '#eef0e4' },
+  { id: 'aopoi', terr: 'guaira', nombre: 'Doña Ao po’i', pos: [2, 3], simbolo: 'Ao po’i (tela fina)',
+    pistas: ['Mi tela es fresquita y liviana, ideal para el calor.', 'Se teje a mano y se borda a colores; viene de Yataity.', '«Ao po’i» quiere decir «tela fina» en guaraní.'],
+    aporta: 'tejer y bordar en telar', recuerdo: 'Mi familia vistió a todo el pueblo en las fiestas.',
+    ropa: '#e7b3c4', pelo: '#1a1a1a', bordado: '#2f5fae' },
+  { id: 'chipera', terr: 'guaira', nombre: 'Doña Chipera', pos: [13, 6], simbolo: 'Chipa',
+    pistas: ['Huelo a anís y a horno de barro.', 'Mi masa lleva almidón de mandioca y queso.', 'Me comen calentita, con mate cocido, y en Semana Santa nadie me olvida.'],
+    aporta: 'hornear en horno de barro', recuerdo: 'Mi abuela horneaba para todos los vecinos.',
+    ropa: '#d98c3a', pelo: '#6b3a1d' },
+  { id: 'yerbatero', terr: 'itapua', nombre: 'Don Yerbatero', pos: [4, 4], simbolo: 'Yerba y guampa',
+    pistas: ['Cuido plantas de hojas verdes que luego se secan y se muelen.', 'Mi bebida va en guampa con bombilla y se comparte en rueda.', 'Con agua bien fría la llamamos tereré.'],
+    aporta: 'cultivar y compartir la rueda', recuerdo: 'Mi familia plantó los primeros yerbales.',
+    ropa: '#8f5b2c', pelo: '#2a1a12', sombrero: '#c9a24a' },
+  { id: 'avati', terr: 'itapua', nombre: 'Doña Avati', pos: [12, 9], simbolo: 'Sopa paraguaya (maíz)',
+    pistas: ['Mis granos amarillos se muelen en el pilón.', 'Con mi harina, queso y cebolla se hornea una torta salada.', 'Aunque me dicen «sopa», ¡me comen con tenedor!'],
+    aporta: 'cocinar para todos', recuerdo: 'Mi familia sembró el primer maizal.',
+    ropa: '#e3c15a', pelo: '#2a1a12' }
+];
+
+const LAZOS = [
+  { id: 'telar', a: 'nanduti', b: 'aopoi', titulo: 'Telar compartido', texto: 'El bordado ñandutí se luce sobre la tela ao po’i. Nace el telar del Tambo.' },
+  { id: 'fiesta', a: 'arpista', b: 'avati', titulo: 'Fiesta del Tambo', texto: 'Suena la polca mientras se parte la sopa paraguaya. Nace la fiesta del Tambo.' },
+  { id: 'rueda', a: 'yerbatero', b: 'chipera', titulo: 'Rueda de tereré', texto: 'Tereré en rueda con chipa calentita. Nace la merienda del Tambo.' }
+];
+
+const SLOTS_PERS = [[3, 3], [12, 3], [3, 8], [12, 8], [5, 10], [10, 10]];
+const SLOTS_COMPI = [[2, 1], [4, 1], [11, 1], [13, 1], [1, 8]];
+const MAX_COMPIS = SLOTS_COMPI.length;
+const ANIMO_MAX = 3;
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+
+const MAPAS = {
+  tambo: [
+    '#######22#######',
+    '#..............#',
+    '#...hhhhhhhh...#',
+    '#...hhhhhhhh...#',
+    '#....pppppp....#',
+    '1....pppppp....3',
+    '1....pmppfp....3',
+    '#....pppppp....#',
+    '#..............#',
+    '#..............#',
+    '#..............#',
+    '################'
+  ],
+  centro: [
+    '################',
+    '#....#....F....#',
+    '#.hhh#..hhh....#',
+    '#.hhh...hhh.F..#',
+    '#...........#..#',
+    '#.F..pppp...#..#',
+    '#....p..p......#',
+    '#..#.p..pppp...#',
+    '#..#....p......#',
+    '#...F...p..#...#',
+    '#.......p......#',
+    '#######xx#######'
+  ],
+  guaira: [
+    '################',
+    '#..F.......#...#',
+    '#...hhh....#.F.#',
+    '#...hhh........#',
+    '#.#.........hhh#',
+    '#.#...ww.......#',
+    '#.....ww..F....#',
+    '#..pppbbpppp...#',
+    '#.....ww.......#',
+    '#...F..........#',
+    '#..............#',
+    '#######xx#######'
+  ],
+  itapua: [
+    '################',
+    '#...........F..#',
+    '#.yy..yy....yy.#',
+    '#.yy..yy....yy.#',
+    '#..............#',
+    '#..F...hhhh....#',
+    '#......hhhh..y.#',
+    '#.yy.......yy..#',
+    '#.yy...pp..yy..#',
+    '#......pp......#',
+    '#......pp......#',
+    '#######xx#######'
+  ]
+};
+const BLOQUEA = '#hwymf';
+
+/* ============ MECÁNICA (sin pantalla) ============ */
+function nuevoEstado() {
+  return { mapa: 'tambo', x: 7, y: 8, dir: 'up', animo: ANIMO_MAX, libres: {}, seguidores: [], enTambo: [], lazos: {}, compis: [], fin: false };
+}
+function persona(id) { return PERS.find(function (p) { return p.id === id; }); }
+function mezclar(arr, azar) {
+  azar = azar || Math.random;
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(azar() * (i + 1));
+    const t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+/* Tres símbolos: el correcto, uno del mismo territorio y uno de otro. */
+function opcionesPara(p, azar) {
+  const otros = PERS.filter(function (q) { return q.id !== p.id; });
+  const cerca = mezclar(otros.filter(function (q) { return q.terr === p.terr; }), azar);
+  const lejos = mezclar(otros.filter(function (q) { return q.terr !== p.terr; }), azar);
+  return mezclar([p, cerca[0], lejos[0]], azar).map(function (q) { return { id: q.id, label: q.simbolo }; });
+}
+function acierta(p, idElegido) { return p.id === idElegido; }
+function estrellasPorErrores(errores) { return Math.max(1, 3 - errores); }
+function liberar(E, id, errores) {
+  if (E.libres[id]) return false;
+  E.libres[id] = { estrellas: estrellasPorErrores(errores) };
+  E.seguidores.push(id);
+  return true;
+}
+function perderAnimo(E) { E.animo = Math.max(0, E.animo - 1); return E.animo; }
+function descansar(E) { E.animo = ANIMO_MAX; }
+function llegarAlTambo(E) {
+  const llegan = E.seguidores.slice();
+  llegan.forEach(function (id) { if (E.enTambo.indexOf(id) < 0) E.enTambo.push(id); });
+  E.seguidores.length = 0;
+  return llegan;
+}
+function lazosDisponibles(E) {
+  return LAZOS.filter(function (z) { return !E.lazos[z.id] && E.enTambo.indexOf(z.a) >= 0 && E.enTambo.indexOf(z.b) >= 0; });
+}
+function hacerLazo(E, id) {
+  const z = lazosDisponibles(E).find(function (x) { return x.id === id; });
+  if (!z) return null;
+  E.lazos[id] = true;
+  return z;
+}
+function progreso(E) {
+  const libres = Object.keys(E.libres).length;
+  const lazos = Object.keys(E.lazos).length;
+  const estrellas = Object.keys(E.libres).reduce(function (s, k) { return s + E.libres[k].estrellas; }, 0);
+  return { libres: libres, total: PERS.length, lazos: lazos, totalLazos: LAZOS.length, estrellas: estrellas,
+    reunidos: E.enTambo.length, completo: E.enTambo.length === PERS.length && lazos === LAZOS.length };
+}
+function terrProgreso(E, t) {
+  const l = PERS.filter(function (p) { return p.terr === t; });
+  return { hechos: l.filter(function (p) { return E.libres[p.id]; }).length, total: l.length };
+}
+function terrCompleta(E, t) { const r = terrProgreso(E, t); return r.hechos === r.total; }
+function limpiarNombre(s) {
+  return String(s || '').normalize('NFC').replace(/<[^>]*>/g, '').replace(/[^\p{L}\p{N} '.\-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 14);
+}
+function agregarCompi(E, texto) {
+  if (!progreso(E).completo) return { ok: false, msg: 'Todavía no se reunieron todos en el Tambo.' };
+  const n = limpiarNombre(texto);
+  if (!n) return { ok: false, msg: 'Escribí un nombre con letras o números.' };
+  if (E.compis.length >= MAX_COMPIS) return { ok: false, msg: 'Ya hay ' + MAX_COMPIS + ' compis en el Tambo. ¡Que se turnen el lugar!' };
+  if (E.compis.some(function (c) { return c.toLowerCase() === n.toLowerCase(); })) return { ok: false, msg: n + ' ya tiene su lugar en el Tambo.' };
+  E.compis.push(n);
+  E.fin = true;
+  return { ok: true, nombre: n };
+}
+function parDe(id) {
+  const z = LAZOS.find(function (x) { return x.a === id || x.b === id; });
+  return { lazo: z, otro: persona(z.a === id ? z.b : z.a) };
+}
+function dichoSentado(E, p) {
+  const par = parDe(p.id);
+  let t = 'Aguyje por el lugar. Yo aporto: ' + p.aporta + '.';
+  if (E.lazos[par.lazo.id]) t += ' Con ' + par.otro.nombre + ' armamos «' + par.lazo.titulo + '».';
+  else if (E.enTambo.indexOf(par.otro.id) >= 0) t += ' ' + par.otro.nombre + ' también está acá: ¡vamos a la mesa a intercambiar!';
+  else t += ' Mi saber se completa con alguien de ' + TERR[par.otro.terr].nombre + '.';
+  return t;
+}
+function objetivo(E) {
+  const pr = progreso(E);
+  if (E.fin) return '¡Tambo liberado para todos mis compis! Podés seguir sumando gente en el fogón.';
+  if (pr.completo) return 'Todos están en el Tambo y compartieron sus saberes. Acercate al fogón y sumá a la nueva generación.';
+  if (E.seguidores.length) return 'Llevá a tus acompañantes de vuelta al Tambo.';
+  if (pr.libres < pr.total) {
+    const pend = Object.keys(TERR).filter(function (t) { return !terrCompleta(E, t); }).map(function (t) { return TERR[t].nombre; });
+    return 'Reconocé a los descendientes olvidados: faltan ' + (pr.total - pr.libres) + ', en ' + pend.join(', ') + '.';
+  }
+  return 'Ya están todos en el Tambo. Usá la mesa para que descubran sus vínculos.';
+}
+function faltantesTexto(E) {
+  const t = Object.keys(TERR).filter(function (k) { return !terrCompleta(E, k); }).map(function (k) { return TERR[k].nombre; });
+  return t.length ? 'Todavía faltan descendientes en ' + t.join(', ') + '.' : '';
+}
+</script>
+
+<script id="pantalla">
+/* ============ PANTALLA Y CONTROL ============ */
+const $ = function (id) { return document.getElementById(id); };
+const cv = $('cv'), ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let E = nuevoEstado();
+let modo = 'explorar';
+let tick = 0, fade = 1;
+const P = { px: E.x * 16, py: E.y * 16, moving: false };
+const hist = [];
+const seg = [];
+const held = [];
+let confeti = [];
+
+/* ---- utilidades de dibujo ---- */
+function hash(x, y) {
+  let h = Math.imul(x + 1, 374761393) ^ Math.imul(y + 7, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return (h ^ (h >>> 16)) >>> 0;
+}
+function tileEn(m, x, y) { const f = MAPAS[m][y]; return f ? f.charAt(x) : '#'; }
+function rect(c, x, y, w, h) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+function terrDePuerta(ch) { return Object.keys(TERR).find(function (k) { return TERR[k].puerta === ch; }); }
+
+function pasto(X, Y, x, y) {
+  rect('#5a9a3c', X, Y, 16, 16);
+  const h = hash(x, y);
+  if (h % 3 === 0) rect('#4c8a33', X + (h >>> 4) % 11 + 2, Y + (h >>> 8) % 11 + 2, 2, 1);
+  if (h % 5 === 1) rect('#4c8a33', X + (h >>> 5) % 11 + 2, Y + (h >>> 9) % 11 + 3, 1, 2);
+}
+function tierra(X, Y, x, y) {
+  rect('#b5502f', X, Y, 16, 16);
+  const h = hash(x, y);
+  if (h % 2 === 0) rect('#9c4326', X + (h >>> 3) % 12 + 1, Y + (h >>> 7) % 12 + 1, 2, 2);
+  if (h % 3 === 0) rect('#c9633b', X + (h >>> 5) % 12 + 1, Y + (h >>> 9) % 12 + 2, 1, 1);
+}
+function dibujarTile(x, y, t) {
+  const X = x * 16, Y = y * 16, ta = reduce ? 0 : tick;
+  switch (t) {
+    case '#':
+      pasto(X, Y, x, y);
+      rect('#5b3a1f', X + 6, Y + 10, 4, 6);
+      rect('#1f4d2a', X + 1, Y + 1, 14, 11);
+      rect('#2f6e3a', X + 3, Y + 2, 8, 5);
+      rect('#173b20', X + 1, Y + 10, 14, 2);
+      break;
+    case 'p': tierra(X, Y, x, y); break;
+    case 'F': {
+      pasto(X, Y, x, y);
+      const cols = ['#e8c3d4', '#f2d54a', '#eef0e4'], h = hash(x, y);
+      rect(cols[h % 3], X + 3, Y + 4, 2, 2);
+      rect(cols[(h >>> 3) % 3], X + 10, Y + 3, 2, 2);
+      rect(cols[(h >>> 6) % 3], X + 7, Y + 10, 2, 2);
+      break;
+    }
+    case 'h': {
+      rect('#d6b55a', X, Y, 16, 16);
+      [3, 7, 11, 15].forEach(function (o) { rect('#b8923a', X, Y + o, 16, 1); });
+      const h = hash(x, y);
+      rect('#c4a246', X + h % 14, Y, 1, 16);
+      if (tileEn(E.mapa, x, y + 1) !== 'h') rect('#7a5a22', X, Y + 13, 16, 3);
+      if (tileEn(E.mapa, x - 1, y) !== 'h') rect('#8f6d28', X, Y, 1, 16);
+      if (tileEn(E.mapa, x + 1, y) !== 'h') rect('#8f6d28', X + 15, Y, 1, 16);
+      break;
+    }
+    case 'w': case 'b': {
+      rect('#3b78c4', X, Y, 16, 16);
+      const o = ((ta >> 5) + x) % 4;
+      rect('#7fb3ea', X + o * 4, Y + 5, 3, 1);
+      rect('#7fb3ea', X + ((o + 2) % 4) * 4, Y + 11, 3, 1);
+      if (t === 'b') {
+        rect('#8a5a2b', X, Y + 1, 16, 14);
+        [4, 8, 12].forEach(function (o2) { rect('#5f3b1b', X + o2, Y + 1, 1, 14); });
+        rect('#5f3b1b', X, Y + 1, 16, 1);
+        rect('#5f3b1b', X, Y + 14, 16, 1);
+      }
+      break;
+    }
+    case 'y':
+      pasto(X, Y, x, y);
+      rect('#2f7a3a', X + 1, Y + 3, 14, 10);
+      rect('#4aa04b', X + 3, Y + 5, 2, 2); rect('#4aa04b', X + 8, Y + 4, 2, 2);
+      rect('#4aa04b', X + 11, Y + 8, 2, 2); rect('#4aa04b', X + 5, Y + 9, 2, 2);
+      rect('#1f5a2a', X + 1, Y + 11, 14, 2);
+      break;
+    case 'm':
+      tierra(X, Y, x, y);
+      rect('#6b431f', X + 2, Y + 11, 2, 4); rect('#6b431f', X + 12, Y + 11, 2, 4);
+      rect('#8a5a2b', X + 1, Y + 5, 14, 7); rect('#a8703a', X + 1, Y + 5, 14, 2);
+      rect('#c8452b', X + 3, Y + 2, 3, 4); rect('#eef0e4', X + 8, Y + 4, 4, 2); rect('#2f5fae', X + 12, Y + 3, 2, 3);
+      break;
+    case 'f': {
+      tierra(X, Y, x, y);
+      rect('#8a8f8a', X + 2, Y + 9, 12, 5); rect('#3a3330', X + 4, Y + 10, 8, 3);
+      const fh = 3 + ((ta >> 3) + x) % 3;
+      rect('#c8452b', X + 5, Y + 9 - fh * 2, 6, fh * 2);
+      rect('#e8a33a', X + 6, Y + 9 - fh * 2 + 2, 4, fh * 2 - 2);
+      rect('#ffd45a', X + 7, Y + 9 - fh, 2, fh);
+      break;
+    }
+    case 'x':
+      tierra(X, Y, x, y);
+      rect('#eef0e4', X + 7, Y + 4, 2, 5); rect('#eef0e4', X + 5, Y + 8, 6, 1);
+      rect('#eef0e4', X + 6, Y + 9, 4, 1); rect('#eef0e4', X + 7, Y + 10, 2, 1);
+      break;
+    case '1': case '2': case '3': {
+      tierra(X, Y, x, y);
+      const k = terrDePuerta(t);
+      rect('#2a1a12', X + 1, Y + 1, 14, 14);
+      rect(TERR[k].color, X + 2, Y + 2, 12, 12);
+      rect('rgba(0,0,0,.22)', X + 2, Y + 11, 12, 3);
+      if (terrCompleta(E, k)) { rect('#f2d54a', X + 7, Y + 4, 2, 7); rect('#f2d54a', X + 4, Y + 7, 8, 2); }
+      break;
+    }
+    default: pasto(X, Y, x, y);
+  }
+}
+
+/* ---- personajes ---- */
+function sprite(px, py, o) {
+  const g = o.gris, bob = o.bob || 0, y0 = py + bob;
+  const piel = g ? '#9a9a94' : '#e0a77a', ropa = g ? '#7d817c' : o.ropa;
+  const pelo = g ? '#4d4f4c' : o.pelo, pierna = g ? '#55584f' : '#3b2a1e';
+  const paso = o.paso ? 1 : 0, dir = o.dir || 'down';
+  rect('rgba(0,0,0,.28)', px + 3, py + 14, 10, 2);
+  rect(pierna, px + 5, y0 + 13, 2, 3 - paso); rect(pierna, px + 9, y0 + 13, 2, 2 + paso);
+  rect(ropa, px + 4, y0 + 8, 8, 5);
+  if (o.rayas && !g) { rect('#eef0e4', px + 4, y0 + 10, 8, 1); rect('#2f5fae', px + 4, y0 + 11, 8, 1); }
+  if (o.bordado && !g) rect(o.bordado, px + 4, y0 + 12, 8, 1);
+  rect(piel, px + 3, y0 + 9, 1, 3); rect(piel, px + 12, y0 + 9, 1, 3);
+  rect(piel, px + 5, y0 + 3, 6, 5);
+  rect(pelo, px + 5, y0 + 3, 6, dir === 'up' ? 5 : 2);
+  if (dir === 'down') { rect('#1b1b1b', px + 6, y0 + 6, 1, 1); rect('#1b1b1b', px + 9, y0 + 6, 1, 1); }
+  else if (dir === 'left') rect('#1b1b1b', px + 6, y0 + 6, 1, 1);
+  else if (dir === 'right') rect('#1b1b1b', px + 9, y0 + 6, 1, 1);
+  if (o.sombrero) { const c = g ? '#6a6d68' : o.sombrero; rect(c, px + 2, y0 + 2, 12, 1); rect(c, px + 4, y0 + 0, 8, 2); }
+  if (g) {
+    rect('#aaa', px + 11, py + 8, 2, 2); rect('#d6c36a', px + 10, py + 10, 4, 3);
+    rect('#eef0e4', px + 9, py - 7 + bob, 7, 8);
+    ctx.fillStyle = '#1b1b1b'; ctx.font = 'bold 7px monospace'; ctx.textBaseline = 'top'; ctx.fillText('?', px + 11, py - 6 + bob);
+  }
+}
+const ROPAS_COMPI = ['#c8452b', '#2f5fae', '#d98c3a', '#3f9a5a', '#a05ab0'];
+function entidades() {
+  const lista = [];
+  const bobDe = function (i) { return reduce ? 0 : (Math.sin((tick + i * 17) / 22) > 0.75 ? -1 : 0); };
+  if (E.mapa === 'tambo') {
+    E.enTambo.forEach(function (id, i) {
+      const p = persona(id), s = SLOTS_PERS[i];
+      lista.push({ y: s[1] * 16, f: function () { sprite(s[0] * 16, s[1] * 16, Object.assign({ bob: bobDe(i), dir: 'down' }, p)); } });
+    });
+    E.compis.forEach(function (n, i) {
+      const s = SLOTS_COMPI[i];
+      lista.push({ y: s[1] * 16, f: function () { sprite(s[0] * 16, s[1] * 16, { ropa: ROPAS_COMPI[i % 5], pelo: '#2a1a12', sombrero: i % 2 ? '#eef0e4' : null, bob: bobDe(i + 5), dir: 'down' }); } });
+    });
+  } else {
+    PERS.forEach(function (p, i) {
+      if (p.terr === E.mapa && !E.libres[p.id]) {
+        lista.push({ y: p.pos[1] * 16, f: function () { sprite(p.pos[0] * 16, p.pos[1] * 16, Object.assign({ bob: bobDe(i), dir: 'down', gris: true }, p)); } });
+      }
+    });
+  }
+  seg.forEach(function (s) {
+    const p = persona(s.id);
+    lista.push({ y: s.py, f: function () { sprite(Math.round(s.px), Math.round(s.py), Object.assign({ dir: s.dir || 'down', paso: s.mov && (((s.px + s.py) >> 2) & 1) }, p)); } });
+  });
+  lista.push({ y: P.py + 0.5, f: function () {
+    sprite(Math.round(P.px), Math.round(P.py), { ropa: '#c8452b', rayas: true, pelo: '#2a1a12', sombrero: '#e3c15a', dir: E.dir, paso: P.moving && (((P.px + P.py) >> 2) & 1) });
+  } });
+  return lista;
+}
+
+function dibujar() {
+  const m = MAPAS[E.mapa];
+  for (let y = 0; y < 12; y++) for (let x = 0; x < 16; x++) dibujarTile(x, y, m[y].charAt(x));
+  entidades().sort(function (a, b) { return a.y - b.y; }).forEach(function (e) { e.f(); });
+  if (E.fin && !reduce) {
+    if (confeti.length < 40 && tick % 3 === 0) confeti.push({ x: Math.random() * 256, y: -4, v: 0.6 + Math.random() * 0.9, c: ['#c8452b', '#eef0e4', '#2f5fae', '#e3c15a'][Math.floor(Math.random() * 4)] });
+    confeti.forEach(function (c) { c.y += c.v; c.x += Math.sin((c.y + c.x) / 12) * 0.4; rect(c.c, Math.round(c.x), Math.round(c.y), 2, 2); });
+    confeti = confeti.filter(function (c) { return c.y < 196; });
+  }
+  if (fade > 0) { ctx.globalAlpha = fade; rect('#0b1510', 0, 0, 256, 192); ctx.globalAlpha = 1; }
+}
+
+/* ---- movimiento ---- */
+function npcsMapa() {
+  const out = [];
+  if (E.mapa === 'tambo') {
+    E.enTambo.forEach(function (id, i) { out.push({ x: SLOTS_PERS[i][0], y: SLOTS_PERS[i][1], tipo: 'sent', id: id }); });
+    E.compis.forEach(function (n, i) { out.push({ x: SLOTS_COMPI[i][0], y: SLOTS_COMPI[i][1], tipo: 'compi', nombre: n }); });
+  } else {
+    PERS.forEach(function (p) { if (p.terr === E.mapa && !E.libres[p.id]) out.push({ x: p.pos[0], y: p.pos[1], tipo: 'cautivo', id: p.id }); });
+  }
+  return out;
+}
+function transitable(x, y) {
+  if (x < 0 || y < 0 || x > 15 || y > 11) return false;
+  if (BLOQUEA.indexOf(tileEn(E.mapa, x, y)) >= 0) return false;
+  return !npcsMapa().some(function (n) { return n.x === x && n.y === y; });
+}
+function intentar(dir) {
+  E.dir = dir;
+  const d = DIRS[dir], nx = E.x + d[0], ny = E.y + d[1];
+  if (!transitable(nx, ny)) return;
+  hist.unshift([E.x, E.y]); if (hist.length > 8) hist.pop();
+  E.x = nx; E.y = ny; P.moving = true;
+}
+function acercar(o, tx, ty, v) {
+  const dx = tx - o.px, dy = ty - o.py;
+  if (dx === 0 && dy === 0) return false;
+  o.px += Math.sign(dx) * Math.min(Math.abs(dx), v);
+  o.py += Math.sign(dy) * Math.min(Math.abs(dy), v);
+  return true;
+}
+function actualizar() {
+  tick++;
+  if (fade > 0) fade = Math.max(0, fade - 0.06);
+  if (P.moving) {
+    if (!acercar(P, E.x * 16, E.y * 16, 2)) { P.moving = false; llegada(); }
+  } else if (modo === 'explorar' && held.length) {
+    intentar(held[held.length - 1]);
+  }
+  seg.forEach(function (s, i) {
+    const t = hist[i] || [E.x, E.y];
+    const px0 = s.px, py0 = s.py;
+    s.mov = acercar(s, t[0] * 16, t[1] * 16, 2);
+    if (s.mov) s.dir = Math.abs(s.px - px0) > Math.abs(s.py - py0) ? (s.px > px0 ? 'right' : 'left') : (s.py > py0 ? 'down' : 'up');
+  });
+}
+function llegada() {
+  const t = tileEn(E.mapa, E.x, E.y);
+  if (E.mapa === 'tambo' && '123'.indexOf(t) >= 0) {
+    const k = terrDePuerta(t);
+    cambiarMapa(k, TERR[k].spawn[0], TERR[k].spawn[1]);
+  } else if (E.mapa !== 'tambo' && t === 'x') {
+    const v = TERR[E.mapa].vuelta;
+    cambiarMapa('tambo', v[0], v[1]);
+  }
+}
+function cambiarMapa(m, x, y, msg) {
+  E.mapa = m; E.x = x; E.y = y;
+  P.px = x * 16; P.py = y * 16; P.moving = false;
+  hist.length = 0; held.length = 0;
+  seg.forEach(function (s) { s.px = P.px; s.py = P.py; s.mov = false; });
+  fade = 1;
+  if (m === 'tambo') llegadaTambo(msg);
+  actualizarHUD();
+}
+
+/* ---- HUD ---- */
+const CORAZON = '<svg viewBox="0 0 7 6" shape-rendering="crispEdges" aria-hidden="true"><path d="M1 0h2v1H1zM4 0h2v1H4zM0 1h7v2H0zM1 3h5v1H1zM2 4h3v1H2zM3 5h1v1H3z"/></svg>';
+function actualizarHUD() {
+  const pr = progreso(E);
+  let h = '';
+  for (let i = 0; i < ANIMO_MAX; i++) h += i < E.animo ? CORAZON : CORAZON.replace('<svg ', '<svg class="off" ');
+  $('hAnimo').innerHTML = h;
+  $('hAnimo').setAttribute('aria-label', 'Ánimo ' + E.animo + ' de ' + ANIMO_MAX);
+  $('hLib').textContent = pr.libres + '/' + pr.total;
+  $('hLazos').textContent = pr.lazos + '/' + pr.totalLazos;
+  $('hEst').textContent = pr.estrellas + '/' + (pr.total * 3);
+  Object.keys(TERR).forEach(function (k) {
+    const r = terrProgreso(E, k), el = $('rb-' + k);
+    if (el) el.textContent = TERR[k].flecha + ' ' + TERR[k].nombre + ' ' + r.hechos + '/' + r.total + (r.hechos === r.total ? ' ✓' : '');
+  });
+  $('obj').textContent = objetivo(E);
+}
+(function () {
+  const ul = $('rumbos');
+  Object.keys(TERR).forEach(function (k) {
+    const li = document.createElement('li'), i = document.createElement('i'), s = document.createElement('span');
+    i.style.background = TERR[k].color; s.id = 'rb-' + k;
+    li.append(i, s); ul.append(li);
+  });
+})();
+
+/* ---- diálogos ---- */
+const dlg = $('dlg'), dQuien = $('dQuien'), dTexto = $('dTexto'), dPistas = $('dPistas'), dOpc = $('dOpc'), dExtra = $('dExtra');
+function boton(o) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.textContent = o.t; if (o.cls) b.className = o.cls;
+  b.addEventListener('click', o.f);
+  return b;
+}
+function dialogo(d) {
+  modo = 'dialogo'; held.length = 0;
+  dlg.hidden = false;
+  dQuien.textContent = d.quien;
+  dTexto.textContent = d.texto;
+  const pistas = d.pistas || [];
+  dPistas.replaceChildren.apply(dPistas, pistas.map(function (t) { const li = document.createElement('li'); li.textContent = t; return li; }));
+  dPistas.hidden = !pistas.length;
+  if (d.extra) { dExtra.replaceChildren(d.extra); dExtra.hidden = false; } else { dExtra.replaceChildren(); dExtra.hidden = true; }
+  dOpc.replaceChildren.apply(dOpc, (d.opciones || []).map(boton));
+  dOpc.hidden = !(d.opciones || []).length;
+  if (d.extra) setTimeout(function () { const i = dExtra.querySelector('input'); if (i) i.focus({ preventScroll: true }); }, 120);
+  else setTimeout(function () { const b = dOpc.querySelector('button'); if (b && modo === 'dialogo') b.focus({ preventScroll: true }); }, 140);
+  dlg.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+}
+function cerrar() {
+  modo = 'explorar'; dlg.hidden = true;
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  actualizarHUD();
+}
+
+/* ---- escenas ---- */
+function hablarCautivo(p) {
+  let errores = 0, pistas = p.pistas.slice(0, 2), opc = opcionesPara(p);
+  const t = TERR[p.terr];
+  function render(texto) {
+    dialogo({
+      quien: 'Descendiente olvidado',
+      texto: texto || ('Mba’éichapa, Comandante. Mi abuelo plantó el primer rancho en ' + t.nombre + ', pero ya no recuerdo quién soy. ¿Qué me identifica?'),
+      pistas: pistas,
+      opciones: opc.map(function (o) { return { t: o.label, f: function () { elegir(o); } }; }).concat([{ t: 'Volver después', cls: 'sec', f: cerrar }])
+    });
+  }
+  function elegir(o) {
+    if (acierta(p, o.id)) {
+      liberar(E, p.id, errores);
+      seg.push({ id: p.id, px: p.pos[0] * 16, py: p.pos[1] * 16, mov: false, dir: 'down' });
+      const est = E.libres[p.id].estrellas;
+      actualizarHUD();
+      dialogo({
+        quien: p.nombre,
+        texto: '¡Iporã, me reconociste! Soy ' + p.nombre + ', de ' + t.nombre + '. ' + p.recuerdo + ' Voy con vos al Tambo. ' + '★'.repeat(est) + '☆'.repeat(3 - est),
+        opciones: [{ t: 'Seguir', f: cerrar }]
+      });
+      return;
+    }
+    errores++; perderAnimo(E);
+    opc = opc.filter(function (x) { return x.id !== o.id; });
+    pistas = p.pistas.slice(0, Math.min(3, 2 + errores));
+    actualizarHUD();
+    if (E.animo <= 0) {
+      descansar(E);
+      cerrar();
+      cambiarMapa('tambo', 7, 8, 'Te quedaste sin ánimo. Un mate en el Tambo y volvés con fuerzas.');
+      return;
+    }
+    render(opc.length === 1 ? 'Ese no es mi rasgo. Perdés 1 de ánimo. Ya queda un solo símbolo posible.' : 'Ese no es mi rasgo. Perdés 1 de ánimo. Te doy otra pista.');
+  }
+  render();
+}
+function hablarSentado(p) {
+  dialogo({ quien: p.nombre, texto: dichoSentado(E, p), opciones: [{ t: 'Seguir', f: cerrar }] });
+}
+function hablarCompi(nombre) {
+  dialogo({ quien: nombre, texto: '¡Llegué al Tambo gracias a vos! Acá siempre hay lugar para uno más.', opciones: [{ t: 'Seguir', f: cerrar }] });
+}
+function llegadaTambo(msg) {
+  const llegan = llegarAlTambo(E);
+  seg.length = 0;
+  if (llegan.length) {
+    const nombres = llegan.map(function (id) { return persona(id).nombre; });
+    dialogo({
+      quien: 'El Tambo',
+      texto: (msg ? msg + ' ' : '') + 'Llegaron ' + nombres.join(' y ') + '. En el Tambo todos tienen un lugar donde llegar.',
+      pistas: llegan.map(function (id) { const p = persona(id); return p.nombre + ' aporta: ' + p.aporta + '.'; }),
+      opciones: [{ t: 'Seguir', f: cerrar }]
+    });
+  } else if (msg) {
+    dialogo({ quien: 'El Tambo', texto: msg, opciones: [{ t: 'Seguir', f: cerrar }] });
+  }
+}
+function usarMesa() {
+  const disp = lazosDisponibles(E), pr = progreso(E);
+  if (!disp.length) {
+    let t;
+    if (pr.lazos === pr.totalLazos) t = 'Todos ya compartieron sus saberes. Falta sumar a la nueva generación en el fogón.';
+    else if (E.enTambo.length < 2) t = 'La mesa está vacía. Traé descendientes desde los territorios.';
+    else t = 'Todavía no hay una pareja lista para intercambiar. ' + faltantesTexto(E);
+    dialogo({ quien: 'La mesa del Tambo', texto: t, opciones: [{ t: 'Seguir', f: cerrar }] });
+    return;
+  }
+  dialogo({
+    quien: 'La mesa del Tambo',
+    texto: 'Dos saberes pueden encontrarse acá. ¿Qué intercambio querés hacer?',
+    opciones: disp.map(function (z) { return { t: z.titulo, f: function () { hacerIntercambio(z.id); } }; }).concat([{ t: 'Después', cls: 'sec', f: cerrar }])
+  });
+}
+function hacerIntercambio(id) {
+  const z = hacerLazo(E, id);
+  if (!z) { cerrar(); return; }
+  actualizarHUD();
+  const a = persona(z.a), b = persona(z.b);
+  dialogo({
+    quien: '¡Vínculo descubierto!',
+    texto: a.nombre + ' y ' + b.nombre + ' se reconocen. ' + z.texto,
+    pistas: [a.nombre + ' aporta: ' + a.aporta + '.', b.nombre + ' aporta: ' + b.aporta + '.'],
+    opciones: [{ t: 'Seguir', f: cerrar }]
+  });
+}
+function usarFogon() {
+  if (!progreso(E).completo) {
+    dialogo({ quien: 'El fogón', texto: 'Este fuego espera a la nueva generación. Cuando todos los descendientes estén en el Tambo y hayan compartido sus saberes, acá sumás a tus compis.', opciones: [{ t: 'Seguir', f: cerrar }] });
+    return;
+  }
+  if (E.compis.length >= MAX_COMPIS) {
+    dialogo({ quien: 'El fogón', texto: '¡Tambo liberado para todos mis compis! Ya hay ' + MAX_COMPIS + ' compis y el fuego sigue encendido.', opciones: [{ t: 'Seguir', f: cerrar }] });
+    return;
+  }
+  formularioCompi();
+}
+function formularioCompi(aviso) {
+  const f = document.createElement('form'); f.className = 'dform';
+  const l = document.createElement('label'); l.htmlFor = 'nombreCompi'; l.textContent = 'Nombre de tu compi';
+  const fila = document.createElement('div'); fila.className = 'fila';
+  const inp = document.createElement('input'); inp.id = 'nombreCompi'; inp.type = 'text'; inp.maxLength = 14; inp.autocomplete = 'off';
+  const ok = document.createElement('button'); ok.type = 'submit'; ok.textContent = 'Sumar al Tambo';
+  fila.append(inp, ok); f.append(l, fila);
+  f.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    const r = agregarCompi(E, inp.value);
+    if (!r.ok) { formularioCompi(r.msg); return; }
+    actualizarHUD();
+    const opciones = E.compis.length < MAX_COMPIS ? [{ t: 'Sumar otro compi', f: formularioCompi }, { t: 'Cerrar', cls: 'sec', f: cerrar }] : [{ t: 'Cerrar', f: cerrar }];
+    dialogo({ quien: 'El fogón', texto: 'Aguyje: ' + r.nombre + ' ya tiene su lugar en el Tambo. ¡Tambo liberado para todos mis compis!', opciones: opciones });
+  });
+  dialogo({
+    quien: 'El fogón',
+    texto: aviso || 'Las nuevas generaciones también tienen su lugar. Escribí el nombre de un compi y sumalo al Tambo.',
+    extra: f,
+    opciones: [{ t: 'Después', cls: 'sec', f: cerrar }]
+  });
+}
+
+/* ---- interacción ---- */
+function accionEn(x, y) {
+  const n = npcsMapa().find(function (o) { return o.x === x && o.y === y; });
+  if (n) {
+    if (n.tipo === 'cautivo') return function () { hablarCautivo(persona(n.id)); };
+    if (n.tipo === 'sent') return function () { hablarSentado(persona(n.id)); };
+    return function () { hablarCompi(n.nombre); };
+  }
+  if (E.mapa === 'tambo') {
+    const t = tileEn('tambo', x, y);
+    if (t === 'm') return usarMesa;
+    if (t === 'f') return usarFogon;
+  }
+  return null;
+}
+function interactuar() {
+  if (modo !== 'explorar' || P.moving) return;
+  const orden = [E.dir].concat(['up', 'down', 'left', 'right'].filter(function (d) { return d !== E.dir; }));
+  for (let i = 0; i < orden.length; i++) {
+    const d = DIRS[orden[i]], a = accionEn(E.x + d[0], E.y + d[1]);
+    if (a) { E.dir = orden[i]; a(); return; }
+  }
+}
+
+/* ---- entrada ---- */
+const TECLAS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right' };
+function soltar(dir) { const i = held.indexOf(dir); if (i >= 0) held.splice(i, 1); }
+document.addEventListener('keydown', function (e) {
+  if (e.target && e.target.tagName === 'INPUT') return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const dir = TECLAS[e.key];
+  if (dir) {
+    e.preventDefault();
+    if (modo === 'explorar' && held.indexOf(dir) < 0) held.push(dir);
+    return;
+  }
+  if (modo === 'explorar' && (e.key === 'e' || e.key === 'E' || e.key === ' ' || e.key === 'Enter')) {
+    e.preventDefault();
+    if (!e.repeat) interactuar();
+    return;
+  }
+  if (modo === 'dialogo') {
+    const n = parseInt(e.key, 10), bs = dOpc.querySelectorAll('button');
+    if (n >= 1 && n <= bs.length) { bs[n - 1].click(); return; }
+    if ((e.key === 'Enter' || e.key === ' ') && document.activeElement === document.body && bs.length === 1) { e.preventDefault(); bs[0].click(); }
+    if (e.key === 'Escape') { const sec = dOpc.querySelector('button.sec') || (bs.length === 1 ? bs[0] : null); if (sec) sec.click(); }
+  }
+});
+document.addEventListener('keyup', function (e) { const dir = TECLAS[e.key]; if (dir) soltar(dir); });
+window.addEventListener('blur', function () { held.length = 0; });
+document.querySelectorAll('.cruz button').forEach(function (b) {
+  const dir = b.dataset.dir;
+  b.addEventListener('pointerdown', function (e) { e.preventDefault(); if (modo === 'explorar' && held.indexOf(dir) < 0) held.push(dir); b.classList.add('on'); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { b.addEventListener(ev, function () { soltar(dir); b.classList.remove('on'); }); });
+  b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+});
+$('btnA').addEventListener('pointerdown', function (e) { e.preventDefault(); interactuar(); });
+
+/* ---- arranque ---- */
+function bucle() { actualizar(); dibujar(); requestAnimationFrame(bucle); }
+actualizarHUD();
+dibujar();
+dialogo({
+  quien: 'Comandante de Arraigo',
+  texto: 'Mba’éichapa. Este es el Tambo: refugio, punto de reunión y centro de intercambio. Afuera hay descendientes que olvidaron quiénes son. Reconocelos por sus rasgos y traelos acá. Las puertas llevan a Itauguá (izquierda), Yataity (arriba) e Itapúa (derecha).',
+  opciones: [{ t: '¡Vamos!', f: cerrar }]
+});
+requestAnimationFrame(bucle);
+</script>
+
+</body></html>
