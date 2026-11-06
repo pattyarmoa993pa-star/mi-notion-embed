@@ -1,0 +1,329 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Los caminos de Feynman</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Layout: cuaderno de cuadrícula. Riel de 5 puntos de inflexión arriba, un panel de lectura por etapa,
+   laboratorio de caminos al final. El naranja (--signal) marca solo el camino de acción mínima. */
+:root{
+  --paper:#EEF1F4; --panel:#F8FAFB; --ink:#1B2330; --muted:#566274; --line:#C7D0DB;
+  --grid:rgba(36,71,184,.07); --blue:#2447B8; --blue-soft:rgba(36,71,184,.09); --signal:#C73E08;
+  --f-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --f-body:'Source Serif 4',Georgia,serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1620; --panel:#151E2B; --ink:#E4E9F0; --muted:#93A0B2; --line:#2B3748;
+    --grid:rgba(150,180,220,.07); --blue:#8FA8FF; --blue-soft:rgba(143,168,255,.10); --signal:#FF8A4C;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0F1620; --panel:#151E2B; --ink:#E4E9F0; --muted:#93A0B2; --line:#2B3748;
+  --grid:rgba(150,180,220,.07); --blue:#8FA8FF; --blue-soft:rgba(143,168,255,.10); --signal:#FF8A4C;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+  color:var(--ink); font-family:var(--f-body); font-size:17px; line-height:1.6;
+  padding-block:28px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.12}
+p{margin:0}
+.mono{font-family:var(--f-mono)}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+header{display:flex;flex-direction:column;gap:14px;max-width:760px}
+h1{font-size:clamp(2.2rem,6vw,3.6rem);font-weight:700;letter-spacing:-.02em}
+.lede{font-size:1.08rem;color:var(--muted);max-width:62ch}
+
+.controls{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.seg button{font:500 13px var(--f-mono);padding:9px 14px;border:0;background:transparent;color:var(--muted);cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--blue);color:var(--paper)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.hint{font-size:.9rem;color:var(--muted)}
+
+.rail{display:flex;overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.rail button{flex:1 0 150px;text-align:left;border:0;border-right:1px solid var(--line);background:transparent;padding:12px 14px;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;gap:3px;border-bottom:3px solid transparent}
+.rail button:last-child{border-right:0}
+.rail .yr{font:500 11px var(--f-mono);color:var(--muted);letter-spacing:.06em}
+.rail .lb{font:700 .95rem var(--f-display);line-height:1.2}
+.rail button[aria-current="true"]{background:var(--blue-soft);border-bottom-color:var(--signal)}
+
+.panel{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:clamp(18px,3vw,32px);display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px 36px}
+.col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.chip{font:500 12px var(--f-mono);color:var(--blue);letter-spacing:.04em}
+.panel h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:700}
+.question{font:500 1.2rem/1.35 var(--f-display);color:var(--blue);text-wrap:balance}
+.explain{display:flex;flex-direction:column;gap:12px}
+.decision{border-top:1px solid var(--line);padding-top:14px}
+.decision .eyebrow{display:block;margin-bottom:4px}
+.formula{border:1px solid var(--line);border-radius:6px;background:var(--paper);padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.formula .row{font:400 1.02rem var(--f-mono);overflow-x:auto;padding-block:4px}
+.formula .row.after{color:var(--blue);font-weight:500}
+.formula .arrow{font:400 14px var(--f-mono);color:var(--muted)}
+.formula .note{font-size:.88rem;color:var(--muted);line-height:1.5;border-top:1px dashed var(--line);padding-top:8px;margin-top:4px}
+.shift{font-size:.95rem}
+svg.fig{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:6px;background:var(--paper)}
+.fig .t{fill:var(--muted);font:11px var(--f-mono)}
+.fig .p{fill:none;stroke:var(--muted);stroke-width:1.4;opacity:.7}
+.fig .hl{fill:none;stroke:var(--signal);stroke-width:3}
+.fig .bl{fill:none;stroke:var(--blue);stroke-width:2.6}
+.fig .dash{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:4 4}
+.fig .dot{fill:var(--ink)}
+.fig .dots{fill:var(--signal)}
+.nav{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;border-top:1px solid var(--line);padding-top:16px}
+.btn{font:500 13px var(--f-mono);padding:9px 14px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--blue);color:var(--paper);border-color:var(--blue)}
+.btn[disabled]{opacity:.4;cursor:default}
+
+section.lab{display:flex;flex-direction:column;gap:16px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:clamp(18px,3vw,32px)}
+section.lab h2{font-size:clamp(1.4rem,3vw,1.9rem)}
+.sliderbox{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.sliderbox label{font:500 13px var(--f-mono)}
+input[type=range]{flex:1 1 260px;min-width:0;accent-color:var(--blue)}
+.val{font:500 14px var(--f-mono);color:var(--blue)}
+.cv{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.cv figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.cv figcaption{font:500 12px var(--f-mono);color:var(--muted)}
+canvas{width:100%;height:270px;display:block;border:1px solid var(--line);border-radius:6px;background:var(--paper)}
+.readout{font-size:.98rem}
+.readout b{font-family:var(--f-mono);font-weight:500;color:var(--blue)}
+
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+.three div{border-left:3px solid var(--blue);padding:2px 0 2px 14px;display:flex;flex-direction:column;gap:4px}
+.three h3{font-size:1.1rem}
+.three p{font-size:.95rem;color:var(--muted)}
+.closing{max-width:70ch;display:flex;flex-direction:column;gap:14px}
+.closing h2{font-size:clamp(1.4rem,3vw,1.9rem)}
+.src{font-size:.85rem;color:var(--muted);max-width:70ch}
+@media (max-width:780px){.panel{grid-template-columns:minmax(0,1fr)}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Richard Feynman · 1918–1949</div>
+    <h1>Los caminos de Feynman</h1>
+    <p class="lede">Un recorrido por los cinco momentos en que Feynman cambió la forma de escribir la naturaleza con matemáticas. En cada uno se ve qué problema tenía, qué decidió y cómo se transformó la fórmula. Se puede leer en tres niveles, de la intuición a la ecuación.</p>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Nivel de lectura" id="levels">
+        <button type="button" data-l="simple" aria-pressed="true">En simple</button>
+        <button type="button" data-l="filo" aria-pressed="false">Filosófico</button>
+        <button type="button" data-l="mat" aria-pressed="false">Matemático</button>
+      </div>
+      <span class="hint">El nivel elegido se mantiene al cambiar de etapa.</span>
+    </div>
+  </header>
+
+  <nav class="rail" id="rail" aria-label="Puntos de inflexión"></nav>
+  <article class="panel" id="panel" aria-live="polite"></article>
+
+  <section class="lab" id="lab">
+    <div class="eyebrow">Laboratorio · etapa 4</div>
+    <h2>De electrón a pelota: por qué sólo se ve un camino</h2>
+    <p>Entre A y B hay infinitos recorridos posibles. Cada uno aporta una flecha cuyo ángulo depende de su acción dividida por ħ. A la izquierda se ven los caminos, pintados según ese ángulo. A la derecha se suman las flechas una tras otra. Mueva el control para agrandar el objeto.</p>
+    <div class="sliderbox">
+      <label for="size">Tamaño del objeto</label>
+      <input id="size" type="range" min="0" max="100" value="12">
+      <span class="val" id="sizeVal"></span>
+    </div>
+    <div class="cv">
+      <figure><canvas id="cPaths" aria-label="Caminos posibles entre A y B, coloreados por fase"></canvas><figcaption>Caminos entre A y B (naranja: el de acción mínima)</figcaption></figure>
+      <figure><canvas id="cSpiral" aria-label="Suma de flechas de todos los caminos"></canvas><figcaption>Suma de flechas (naranja: caminos cercanos al mínimo)</figcaption></figure>
+    </div>
+    <p class="readout" id="readout"></p>
+  </section>
+
+  <section class="closing">
+    <h2>Tres decisiones que se repiten</h2>
+    <div class="three">
+      <div><h3>Mecanismo antes que nombre</h3><p>Desde el pájaro de su infancia hasta los diagramas, exigió poder reconstruir lo que decía saber.</p></div>
+      <div><h3>El recorrido entero antes que el instante</h3><p>Pasó de «qué empuja ahora» a «qué recorrido completo es compatible con las reglas».</p></div>
+      <div><h3>Aceptar lo raro si el cálculo cierra</h3><p>Tiempo hacia atrás, todos los caminos a la vez, infinitos absorbidos: lo aceptó, pero siempre pidió que se pudiera dibujar y calcular.</p></div>
+    </div>
+    <p>Visto en conjunto, su juventud intelectual es un cambio de pregunta. La física clásica preguntaba qué hace la naturaleza en cada instante. Feynman terminó preguntando qué posibilidades tiene la naturaleza y cuáles sobreviven a la interferencia. Lo que vemos como un único camino resulta ser lo que queda cuando casi todo lo demás se cancela.</p>
+    <p class="src">Cronología basada en la conferencia Nobel de Feynman (1965) y en biografías habituales. Algunas anécdotas varían según la fuente, y las explicaciones simples sacrifican precisión a propósito.</p>
+  </section>
+</div>
+
+<script>
+const F={
+  fig1:`<svg class="fig" viewBox="0 0 280 190" role="img" aria-label="Varios caminos entre dos puntos, uno recto resaltado">
+    <path class="p" d="M30 100 Q155 10 250 100"/><path class="p" d="M30 100 Q155 45 250 100"/><path class="p" d="M30 100 Q155 155 250 100"/><path class="p" d="M30 100 Q155 190 250 100"/>
+    <path class="hl" d="M30 100 L250 100"/>
+    <circle class="dot" cx="30" cy="100" r="4"/><circle class="dot" cx="250" cy="100" r="4"/>
+    <text class="t" x="24" y="124">A</text><text class="t" x="246" y="124">B</text>
+    <text class="t" x="82" y="92">camino de acción mínima</text></svg>`,
+  fig2:`<svg class="fig" viewBox="0 0 280 190" role="img" aria-label="Línea de universo en zigzag cortada por un instante">
+    <path class="bl" d="M50 170 L130 70 L190 130 L250 20"/>
+    <line class="dash" x1="14" y1="100" x2="270" y2="100"/>
+    <circle class="dots" cx="106" cy="100" r="4.5"/><circle class="dots" cx="160" cy="100" r="4.5"/><circle class="dots" cx="206.4" cy="100" r="4.5"/>
+    <text class="t" x="14" y="92">un instante</text>
+    <text class="t" x="14" y="16">tiempo ↑</text>
+    <text class="t" x="132" y="182">un solo electrón</text>
+    <text class="t" x="134" y="64">hacia atrás</text></svg>`,
+  fig4:`<svg class="fig" viewBox="0 0 280 190" role="img" aria-label="Diagrama de Feynman: dos electrones intercambian un fotón">
+    <path class="bl" d="M40 170 L105 100 L40 30"/><path class="bl" d="M240 170 L175 100 L240 30"/>
+    <path class="hl" d="M105 100 q8.75 -14 17.5 0 t17.5 0 t17.5 0 t17.5 0"/>
+    <circle class="dot" cx="105" cy="100" r="4"/><circle class="dot" cx="175" cy="100" r="4"/>
+    <text class="t" x="14" y="16">tiempo ↑</text><text class="t" x="18" y="184">e⁻</text><text class="t" x="250" y="184">e⁻</text>
+    <text class="t" x="132" y="86">γ</text><text class="t" x="82" y="126">vértice</text></svg>`
+};
+const STAGES=[
+ {yr:'1918–1935',lb:'Mecanismo, no nombre',place:'Far Rockaway, Nueva York',title:'El pájaro sin nombre',
+  q:'¿Entiendo algo si sólo sé cómo se llama?',
+  simple:['De chico, su padre Melville le enseñaba a mirar la naturaleza con una idea: saber cómo se llama un pájaro en cinco idiomas no dice nada de lo que el pájaro hace.','Feynman lo aplicó a todo. Arreglaba radios de los vecinos pensando en qué podía estar fallando por dentro, no en qué marca era.'],
+  filo:['Aquí nace su criterio de conocimiento: entender es poder reconstruir. Un nombre es una etiqueta puesta desde afuera. Un mecanismo se puede desarmar, predecir y equivocar.','Toda su física posterior desconfía de las palabras que suenan a explicación pero no permiten calcular nada.'],
+  mat:['Dicho de forma operativa, entender es poder derivar. Una fórmula que sólo se memoriza (F = m·a) funciona como etiqueta. Una que se deduce de algo más básico funciona como mecanismo.','La pregunta «¿de dónde sale esto?» lo lleva directo a la siguiente etapa: ¿de dónde sale F = m·a?'],
+  dec:'Preferir siempre el «qué hace y por qué» al «cómo se llama», y desarmar cada problema hasta poder rehacerlo.',
+  fa:'etiqueta(pájaro) = «nombre»',fb:'mecanismo(pájaro) = qué hace y por qué',
+  fn:'No es una fórmula física, es el criterio que decide cuáles fórmulas aceptará más adelante.',
+  shift:'La naturaleza como cosas con causas que se pueden reconstruir.',fig:''},
+ {yr:'1930s',lb:'Un solo camino',place:'Escuela secundaria y MIT',title:'La partícula que parece saber adónde va',
+  q:'¿Cómo sabe una piedra cuál es el mejor camino antes de recorrerlo?',
+  simple:['Su profesor de física del colegio le contó algo que le quedó para siempre. Una piedra lanzada no sólo obedece empujones instante a instante: entre todos los caminos posibles sigue el que hace mínima una cantidad llamada acción.','Las dos descripciones dan lo mismo, pero una mira el instante y la otra mira el viaje completo. En el MIT (1935–39) estudió fuerzas dentro de moléculas, y su resultado de 1939 trata a la nube de electrones como carga eléctrica común y corriente.'],
+  filo:['Aparece una pregunta de fondo: ¿la naturaleza avanza paso a paso, de causa a efecto, o elige un recorrido mirando el conjunto?','Feynman decidió tomarse en serio la segunda versión. Si dos descripciones coinciden, la menos obvia suele esconder la pista de por qué coinciden.'],
+  mat:['Newton: m·ẍ = −dV/dx. Principio variacional: δS = 0 con S = ∫(T − V)dt. Las ecuaciones de Euler–Lagrange devuelven Newton, así que en física clásica son equivalentes.','La diferencia es de estructura: S es un número asociado a cada trayectoria completa. Eso permitirá, más tarde, asignar algo también a los caminos que no son el clásico.'],
+  dec:'Tratar la acción de cada camino completo como el objeto fundamental, y no la fuerza en cada instante.',
+  fa:'m · d²x/dt² = F(x)',fb:'δS = 0 ,  S = ∫ ( T − V ) dt',
+  fn:'T es la energía de movimiento y V la energía almacenada. La acción S suma su diferencia a lo largo de todo el recorrido.',
+  shift:'De empujones instante a instante a un número por cada recorrido completo.',fig:'fig1'},
+ {yr:'1939–1942',lb:'Partículas que se hablan',place:'Princeton, con John Wheeler',title:'Un electrón no puede empujarse a sí mismo',
+  q:'Si el campo de un electrón actúa sobre el propio electrón, ¿por qué su energía no se vuelve infinita?',
+  simple:['En la física de entonces, una carga crea un campo y ese campo vuelve a actuar sobre ella, lo que da energía infinita. Con Wheeler probó otra forma: quitar el campo como cosa aparte y dejar que las partículas interactúen directamente, mitad con efecto que llega después y mitad con efecto que llega antes.','Wheeler además le sugirió imaginar al positrón como un electrón que viaja hacia atrás en el tiempo. En el dibujo, un solo hilo cruza un mismo instante tres veces.'],
+  filo:['Feynman acepta algo incómodo: que la diferencia entre «antes» y «después» puede ser parte de la contabilidad y no de la realidad.','Lo decisivo no es si el tiempo corre de verdad hacia atrás, sino que una representación más rara elimina un absurdo, el infinito.'],
+  mat:['Se reemplaza el campo propio por una interacción simétrica entre partículas distintas, con función de Green ½(G_ret + G_adv). Así desaparece la autoenergía.','El costo es que esa teoría no tiene un hamiltoniano que permita cuantizarla de la forma habitual. Ese obstáculo lo empuja a buscar otra manera de hacer mecánica cuántica.'],
+  dec:'Aceptar influencias simétricas en el tiempo si eso elimina el infinito, y buscar una forma de cuantizar que no necesite hamiltoniano.',
+  fa:'energía propia del campo → ∞',fb:'interacción = ½ ( G<sub>ret</sub> + G<sub>adv</sub> )',
+  fn:'G<sub>ret</sub> propaga efectos hacia el futuro y G<sub>adv</sub> hacia el pasado. Se promedian a partes iguales.',
+  shift:'De un campo que actúa sobre sí mismo a partículas que se influyen directamente.',fig:'fig2'},
+ {yr:'1941–1942',lb:'Todos los caminos',place:'Princeton · tesis doctoral',title:'La partícula que prueba todos los caminos',
+  q:'¿Y si la naturaleza no elige un camino, sino que los prueba todos?',
+  simple:['Para cuantizar su teoría sin hamiltoniano necesitaba otra receta. En 1941 Herbert Jehle le mostró un artículo de Dirac de 1933 donde cierta cantidad cuántica «corresponde» a una expresión con la acción.','Feynman comprobó que, con la normalización correcta, esa correspondencia era una proporcionalidad exacta. De ahí salió la idea: la partícula recorre todos los caminos posibles, cada uno aporta una flecha y se suman las flechas.'],
+  filo:['Es el cambio de representación más profundo de su juventud. La naturaleza deja de ser una historia única y pasa a ser un conjunto de posibilidades que se interfieren.','Lo que llamamos «el camino real» sería lo que queda cuando las demás posibilidades se cancelan. En un objeto grande la cancelación es casi total. En un electrón no.'],
+  mat:['K(b,a) = ∫ D[x(t)] e<sup>iS[x]/ħ</sup>. Cada camino aporta una fase S/ħ.','Cuando S ≫ ħ la fase cambia muy rápido entre caminos vecinos y se cancela, salvo cerca de los puntos con δS = 0 (fase estacionaria). El principio de acción mínima reaparece como el límite ħ → 0, y así se unen las dos etapas anteriores.'],
+  dec:'Sumar sobre todos los caminos con peso e<sup>iS/ħ</sup> y dejar que la interferencia decida cuál se ve.',
+  fa:'δS = 0   (un solo camino)',fb:'K(b,a) = Σ<sub>caminos</sub> e<sup>iS/ħ</sup>',
+  fn:'ħ es la constante de Planck reducida. Mide cuánta acción hace falta para que la fase de un camino dé una vuelta.',
+  shift:'De una historia única a un conjunto de posibilidades que se suman.',fig:'lab'},
+ {yr:'1947–1949',lb:'Dibujos de procesos',place:'Shelter Island, Pocono, Cornell',title:'Cada término de la cuenta, un dibujo',
+  q:'¿Se puede ordenar un cálculo lleno de infinitos con una imagen que cualquiera pueda leer?',
+  simple:['En 1947 una medición (el corrimiento de Lamb) mostró una pequeña diferencia que la teoría debía explicar, pero los cálculos daban infinitos. Feynman organizó la cuenta dibujando cada proceso como líneas y puntos de encuentro, y a cada dibujo le asoció una regla de cálculo.','En 1948, en la conferencia de Pocono, Bohr cuestionó que se hablara de trayectorias. En 1949 Dyson mostró que su método equivalía al de Schwinger y Tomonaga.'],
+  filo:['Vuelve el criterio de la infancia: un dibujo que se puede leer y calcular le gana a una ecuación que sólo se sabe manipular.','También aparece una decisión práctica sobre los infinitos: no desaparecen, se absorben en la masa y la carga que ya se miden. Entender no exigió eliminar todo lo raro, sólo ordenarlo.'],
+  mat:['Las amplitudes se expanden en serie en la constante de acoplamiento. Cada término es un diagrama: las líneas son propagadores, los vértices son acoplamientos y las líneas internas se integran.','Los infinitos se absorben redefiniendo masa y carga (renormalización) y las cantidades medibles quedan finitas. Feynman, Schwinger y Tomonaga compartieron el Nobel de 1965.'],
+  dec:'Representar cada contribución como un diagrama con reglas fijas, y aceptar la renormalización mientras los resultados medibles cierren.',
+  fa:'Σ de integrales largas con divergencias',fb:'amplitud = Π propagadores × Π vértices',
+  fn:'El dibujo de la derecha es el proceso más simple entre dos electrones: se repelen intercambiando un fotón (γ).',
+  shift:'De sumas ilegibles a procesos dibujados con reglas de lectura.',fig:'fig4'}
+];
+let level='simple', idx=0;
+const $=s=>document.querySelector(s);
+const rail=$('#rail'), panel=$('#panel');
+rail.innerHTML=STAGES.map((s,i)=>`<button type="button" data-i="${i}"><span class="yr">${s.yr}</span><span class="lb">${s.lb}</span></button>`).join('');
+
+function render(){
+  const s=STAGES[idx];
+  rail.querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-current',i===idx?'true':'false'));
+  const fig=s.fig==='lab'
+    ? `<button type="button" class="btn primary" id="goLab">Probarlo en el laboratorio ↓</button>`
+    : (s.fig?F[s.fig]:'');
+  panel.innerHTML=`
+    <div class="col">
+      <div class="chip">${s.yr} · ${s.place}</div>
+      <h2>${s.title}</h2>
+      <p class="question">${s.q}</p>
+      <div class="explain">${s[level].map(t=>`<p>${t}</p>`).join('')}</div>
+      <div class="decision"><span class="eyebrow">La decisión</span><p>${s.dec}</p></div>
+    </div>
+    <div class="col">
+      <div class="formula">
+        <span class="eyebrow">Antes</span><div class="row">${s.fa}</div>
+        <span class="arrow">↓</span>
+        <span class="eyebrow">Después</span><div class="row after">${s.fb}</div>
+        <p class="note">${s.fn}</p>
+      </div>
+      <p class="shift"><span class="eyebrow">Cómo se representa la naturaleza</span><br>${s.shift}</p>
+      ${fig}
+    </div>
+    <div class="nav">
+      <button type="button" class="btn" id="prev" ${idx===0?'disabled':''}>← Etapa anterior</button>
+      <button type="button" class="btn primary" id="next" ${idx===STAGES.length-1?'disabled':''}>Etapa siguiente →</button>
+    </div>`;
+  $('#prev').onclick=()=>{idx--;render()};
+  $('#next').onclick=()=>{idx++;render()};
+  const g=$('#goLab'); if(g) g.onclick=()=>$('#lab').scrollIntoView({behavior:'smooth',block:'start'});
+}
+rail.addEventListener('click',e=>{const b=e.target.closest('button[data-i]'); if(b){idx=+b.dataset.i;render();}});
+$('#levels').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-l]'); if(!b) return;
+  level=b.dataset.l;
+  document.querySelectorAll('#levels button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+  render();
+});
+
+/* Laboratorio: caminos x(t)=a·sin(πt) entre A y B. Su acción es S = Sclásica + (mπ²/4T)·a².
+   La fase relativa es k·a², con k proporcional a (acción / ħ). */
+const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function fit(c,h){const d=window.devicePixelRatio||1,w=c.clientWidth;c.width=Math.max(1,Math.round(w*d));c.height=Math.round(h*d);const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);return[x,w,h];}
+function lab(){
+  const sl=$('#size'), ratio=Math.pow(10,sl.value/100*2.6), k=ratio*6;
+  $('#sizeVal').textContent='acción ≈ '+(ratio<10?ratio.toFixed(1):Math.round(ratio))+' × ħ';
+  const ink=cssVar('--ink'), muted=cssVar('--muted'), blue=cssVar('--blue'), sig=cssVar('--signal');
+  const dark=getComputedStyle(document.documentElement).colorScheme.indexOf('dark')>=0;
+  const L=dark?'66%':'42%';
+  // Panel 1: caminos
+  let [x,W,H]=fit($('#cPaths'),270);
+  x.clearRect(0,0,W,H);
+  const m=34, amp=H/2-22, y0=H/2, N=40;
+  for(let i=0;i<=N;i++){
+    const a=-1+2*i/N, ph=((k*a*a)%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
+    x.beginPath();
+    for(let j=0;j<=60;j++){const t=j/60,px=m+t*(W-2*m),py=y0-a*amp*Math.sin(Math.PI*t); j?x.lineTo(px,py):x.moveTo(px,py);}
+    x.strokeStyle=`hsl(${Math.round(ph/(2*Math.PI)*360)},70%,${L})`;x.globalAlpha=.8;x.lineWidth=1.5;x.stroke();
+  }
+  x.globalAlpha=1;
+  x.beginPath();x.moveTo(m,y0);x.lineTo(W-m,y0);x.strokeStyle=sig;x.lineWidth=3.2;x.stroke();
+  x.fillStyle=ink;[[m,y0],[W-m,y0]].forEach(p=>{x.beginPath();x.arc(p[0],p[1],4,0,7);x.fill();});
+  x.font='12px '+cssVar('--f-mono');x.fillStyle=muted;
+  x.fillText('A',m-4,y0+22);x.fillText('B',W-m-4,y0+22);x.fillText('espacio ↑',8,16);x.fillText('tiempo →',W-78,H-8);
+  // Panel 2: suma de flechas (espiral de Cornu)
+  [x,W,H]=fit($('#cSpiral'),270);
+  x.clearRect(0,0,W,H);
+  const n=1500, da=2/n, X=[0],Y=[0]; let sx=0,sy=0;
+  for(let i=0;i<n;i++){const a=-1+(i+.5)*da,ph=k*a*a;sx+=Math.cos(ph)*da;sy+=Math.sin(ph)*da;X.push(sx);Y.push(sy);}
+  let x0=Math.min(...X),x1=Math.max(...X),y1=Math.max(...Y),yy0=Math.min(...Y);
+  const pad=30,sc=Math.min((W-2*pad)/Math.max(x1-x0,1e-6),(H-2*pad)/Math.max(y1-yy0,1e-6));
+  const cx=W/2-sc*(x0+x1)/2, cy=H/2+sc*(yy0+y1)/2;
+  const P=i=>[cx+X[i]*sc,cy-Y[i]*sc];
+  const w=Math.min(1,1/Math.sqrt(k)), iA=Math.round((1-w)/2*n), iB=Math.round((1+w)/2*n);
+  x.beginPath();for(let i=0;i<=n;i++){const p=P(i);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]);}
+  x.strokeStyle=blue;x.lineWidth=1.4;x.stroke();
+  x.beginPath();for(let i=iA;i<=iB;i++){const p=P(i);i===iA?x.moveTo(p[0],p[1]):x.lineTo(p[0],p[1]);}
+  x.strokeStyle=sig;x.lineWidth=3.4;x.stroke();
+  const o=P(0),e=P(n);
+  x.setLineDash([5,4]);x.beginPath();x.moveTo(o[0],o[1]);x.lineTo(e[0],e[1]);x.strokeStyle=ink;x.lineWidth=1.4;x.stroke();x.setLineDash([]);
+  x.fillStyle=ink;[o,e].forEach(p=>{x.beginPath();x.arc(p[0],p[1],3.5,0,7);x.fill();});
+  x.font='12px '+cssVar('--f-mono');x.fillStyle=muted;x.fillText('flecha total',Math.min(Math.max((o[0]+e[0])/2+6,6),W-84),Math.min(Math.max((o[1]+e[1])/2-8,14),H-6));
+  const amplitude=Math.hypot(sx,sy);
+  const desc=ratio<8?'Régimen cuántico: casi todos los caminos aportan y ninguno domina.':ratio<60?'Zona intermedia: los caminos lejanos empiezan a anularse entre sí.':'Régimen clásico: sólo los caminos muy cercanos al mínimo sobreviven.';
+  $('#readout').innerHTML=`${desc} Aportan los caminos con desvío menor a <b>${w.toFixed(2)}</b> (sobre un máximo de 1,00). Largo de la flecha total: <b>${amplitude.toFixed(2)}</b>.`;
+}
+$('#size').addEventListener('input',lab);
+window.addEventListener('resize',lab);
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',lab);}catch(e){}
+new MutationObserver(lab).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','style','class']});
+render();
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(lab);
+lab();
+</script>
+
+</body></html>
