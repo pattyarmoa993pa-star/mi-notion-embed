@@ -1,0 +1,556 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>El río bajo la ciudad</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IM+Fell+English:ital@0;1&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: mapa de dos capas a la izquierda, panel de inspección a la derecha; debajo el crecimiento de la comunidad y el esquema liviano. */
+:root {
+  --bg: #EDF1EF;
+  --surface: #F9FBFA;
+  --ink: #1B2828;
+  --muted: #566867;
+  --line: #C7D2CF;
+  --land: #E2E9E4;
+  --river: #A5C8CF;
+  --vis: #7B5B2E;
+  --vis-soft: #C2AA7E;
+  --inv: #0B7F89;
+  --warn: #B3452B;
+  --f-display: 'IM Fell English', Georgia, 'Times New Roman', serif;
+  --f-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1718; --surface: #162122; --ink: #E5EDEA; --muted: #92A5A2; --line: #2A3B3C;
+    --land: #121D1E; --river: #1E4852; --vis: #D6AE6B; --vis-soft: #6E5A38; --inv: #4FD1C5; --warn: #F28B6D;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1718; --surface: #162122; --ink: #E5EDEA; --muted: #92A5A2; --line: #2A3B3C;
+  --land: #121D1E; --river: #1E4852; --vis: #D6AE6B; --vis-soft: #6E5A38; --inv: #4FD1C5; --warn: #F28B6D;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.55 var(--f-body); }
+.wrap {
+  max-width: 1120px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+  display: flex; flex-direction: column; gap: 44px;
+}
+h1, h2, h3, p, ul, dl, dd { margin: 0; }
+h1, h2 { font-family: var(--f-display); font-weight: 400; text-wrap: balance; }
+h1 { font-size: clamp(2.3rem, 6.5vw, 3.8rem); line-height: 1.05; }
+h2 { font-size: clamp(1.5rem, 3.4vw, 2rem); line-height: 1.15; }
+.eyebrow, .mono, .tag, .ev, .kicker, dt {
+  font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.eyebrow { color: var(--inv); }
+header { display: flex; flex-direction: column; gap: 14px; max-width: 760px; }
+.lede { font-size: 1.1rem; color: var(--muted); max-width: 62ch; }
+
+/* Escenario */
+.stage { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.mapcol { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--ink); border-radius: 3px; overflow: hidden; }
+.seg button { font: 600 0.88rem var(--f-body); color: var(--ink); background: transparent; border: 0; padding: 9px 14px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+button:focus-visible, .hit-node:focus-visible { outline: 2px solid var(--inv); outline-offset: 2px; }
+
+.map { margin: 0; background: var(--land); border: 1px solid var(--line); border-radius: 4px; }
+.map svg { display: block; width: 100%; height: auto; max-width: 640px; margin: 0 auto; }
+.river-bed { fill: none; stroke: var(--river); stroke-width: 20; stroke-linecap: round; opacity: 0.85; }
+.river-name { font-family: var(--f-display); font-style: italic; fill: var(--muted); font-size: 15px; letter-spacing: 0.18em; }
+
+#layer1, #layer2 { transition: opacity 0.35s ease; }
+svg[data-mode="l1"] #layer2, svg[data-mode="l2"] #layer1 { opacity: 0; pointer-events: none; }
+
+.edge .halo { fill: none; stroke: var(--inv); stroke-width: 11; opacity: 0.14; stroke-linecap: round; }
+.edge .core { fill: none; stroke: var(--inv); stroke-width: 3; stroke-linecap: round; }
+.edge.inf .core { stroke-dasharray: 9 8; }
+.edge.unk .core { stroke-width: 1.6; opacity: 0.4; stroke-dasharray: 2 6; }
+.edge.hl .halo { opacity: 0.32; }
+.edge.hl .core { stroke-width: 4.5; }
+.edge .xmark { display: none; stroke: var(--warn); stroke-width: 2.6; stroke-linecap: round; }
+.edge.cut .halo { opacity: 0; }
+.edge.cut .core { stroke: var(--warn); opacity: 0.5; stroke-dasharray: 1 7; }
+.edge.cut .xmark { display: block; }
+.has-sel .edge:not(.hl):not(.cut) { opacity: 0.45; }
+
+.ring { fill: none; stroke: var(--inv); stroke-width: 1.5; opacity: 0.55; }
+.dot { fill: var(--inv); }
+.plate { fill: var(--surface); stroke: var(--vis-soft); stroke-width: 1.6; }
+.node.inf .plate { stroke-dasharray: 4 3; }
+.ico { fill: var(--surface); stroke: var(--vis); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; }
+.offx { display: none; fill: none; stroke: var(--warn); stroke-width: 3.4; stroke-linecap: round; }
+.node.off .offx { display: block; }
+.node.off .plate, .node.off .ico { opacity: 0.5; }
+.node.off .dot { fill: var(--warn); }
+.node.off .ring { stroke: var(--warn); }
+
+.hit { fill: transparent; stroke: transparent; stroke-width: 1.6; cursor: pointer; }
+.hit-node.sel .hit { stroke: var(--ink); stroke-dasharray: 3 4; }
+.hit-node:focus-visible { outline: none; }
+.hit-node:focus-visible .hit { stroke: var(--inv); stroke-dasharray: none; stroke-width: 2.5; }
+
+.lbl { font-family: var(--f-body); font-weight: 700; fill: var(--ink); font-size: var(--fs, 13px);
+  paint-order: stroke; stroke: var(--land); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+.lbl .sub { font-family: var(--f-mono); font-weight: 400; fill: var(--muted); font-size: calc(var(--fs, 13px) * 0.76); }
+
+.legend { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 0.88rem; }
+.legend li { display: flex; align-items: center; gap: 8px; }
+.legend svg { width: 40px; height: 10px; flex: none; }
+.legend small { color: var(--muted); }
+.fine { font-size: 0.84rem; color: var(--muted); max-width: 70ch; }
+
+/* Panel */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 20px; display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.sel-block { display: flex; flex-direction: column; gap: 14px; }
+.kicker { color: var(--muted); }
+.panel h2 { font-size: 1.6rem; }
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag, .ev { border: 1px solid var(--line); padding: 3px 8px; border-radius: 2px; color: var(--ink); }
+.ev { border-color: var(--inv); color: var(--inv); }
+.ev.inf { border-style: dashed; }
+.ev.unk { border-style: dotted; opacity: 0.7; }
+dl { display: flex; flex-direction: column; gap: 12px; }
+dt { color: var(--muted); margin-bottom: 2px; }
+dd { overflow-wrap: anywhere; }
+.links { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.links button { font: 600 0.95rem var(--f-body); background: none; border: 0; padding: 0; color: var(--inv); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.links small { color: var(--muted); font-family: var(--f-mono); font-size: 0.72rem; margin-left: 6px; }
+.cta { font: 700 0.95rem var(--f-body); background: var(--ink); color: var(--bg); border: 0; border-radius: 3px; padding: 12px 16px; cursor: pointer; text-align: left; }
+.cta.restore { background: transparent; color: var(--ink); border: 1px solid var(--ink); }
+.ghost { font: 600 0.88rem var(--f-body); background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 3px; padding: 8px 12px; cursor: pointer; }
+.ghost:disabled { opacity: 0.45; cursor: default; }
+.state { border-top: 1px solid var(--line); padding-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+.state h3 { font: 500 0.72rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.row b { font-variant-numeric: tabular-nums; }
+.crisis { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.crisis li { border-left: 3px solid var(--warn); padding-left: 10px; font-size: 0.92rem; }
+.crisis strong { display: block; }
+.alert { color: var(--warn); font-weight: 600; font-size: 0.92rem; }
+
+/* Crecimiento */
+.section-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; max-width: 70ch; }
+.badge { align-self: flex-start; font: 500 0.72rem var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; border: 1px dashed var(--muted); color: var(--muted); padding: 3px 8px; border-radius: 2px; }
+.stages { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.stages button { font: 600 0.9rem var(--f-body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 3px; padding: 8px 12px; cursor: pointer; }
+.stages button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.growth-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+.growth-text { display: flex; flex-direction: column; gap: 12px; }
+.growth-text h3 { font: 400 1.4rem var(--f-display); }
+.principle { font-family: var(--f-display); font-style: italic; font-size: 1.15rem; color: var(--vis); }
+.dilemma { border: 1px solid var(--warn); border-radius: 3px; padding: 12px 14px; font-size: 0.95rem; }
+.dilemma[hidden] { display: none; }
+.bars { display: flex; flex-direction: column; gap: 18px; }
+.bar { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: end; }
+.bar span { font-weight: 600; }
+.bar b { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.track { grid-column: 1 / -1; height: 14px; background: var(--land); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.track i { display: block; height: 100%; width: 0; transition: width 0.45s ease; }
+.track .s { background: var(--vis); }
+.track .d { background: var(--inv); }
+.gap { font-family: var(--f-mono); font-size: 0.82rem; color: var(--muted); }
+
+/* Esquema */
+.scheme-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+.scheme-grid > div { padding: 18px; display: flex; flex-direction: column; gap: 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-right: -1px; margin-bottom: -1px; min-width: 0; }
+.scheme-grid .mono { color: var(--inv); }
+.scheme-grid p { font-size: 0.95rem; }
+.compare { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: baseline; margin-top: 18px; }
+.compare b { font: 500 1.5rem var(--f-mono); font-variant-numeric: tabular-nums; }
+.compare .arrow { color: var(--muted); }
+
+footer { font-size: 0.86rem; color: var(--muted); max-width: 78ch; display: flex; flex-direction: column; gap: 8px; }
+
+@media (max-width: 860px) {
+  .stage, .growth-body { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #layer1, #layer2, .track i { transition: none; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Paraguay colonial, 1737 a 1740 · prototipo visual</p>
+    <h1>El río bajo la ciudad</h1>
+    <p class="lede">Una ciudad colonial no era solo el conjunto de sus construcciones. También era una red de relaciones, obligaciones, recursos y comunicaciones. La capa visible muestra dónde estaban las cosas. La capa invisible muestra por qué estaban conectadas.</p>
+  </header>
+
+  <section class="stage" aria-label="Mapa de dos capas">
+    <div class="mapcol">
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Capas visibles">
+          <button type="button" data-mode="l1" aria-pressed="false">Capa visible</button>
+          <button type="button" data-mode="both" aria-pressed="true">Ambas</button>
+          <button type="button" data-mode="l2" aria-pressed="false">Capa invisible</button>
+        </div>
+      </div>
+
+      <figure class="map">
+        <svg id="map" viewBox="0 0 480 560" data-mode="both" role="group" aria-label="Mapa esquemático con cinco puntos y cuatro vínculos documentados">
+          <path id="riverPath" class="river-bed" d="M92 -10 C72 80 80 140 70 200 C60 260 40 330 58 400 C72 460 90 520 78 580"/>
+          <text class="river-name"><textPath href="#riverPath" startOffset="46%">RÍO PARAGUAY</textPath></text>
+          <g id="layer2"></g>
+          <g id="layer1"></g>
+          <g id="labels"></g>
+          <g id="hits"></g>
+        </svg>
+      </figure>
+
+      <ul class="legend" aria-label="Tipos de evidencia">
+        <li><svg viewBox="0 0 40 10" aria-hidden="true"><line x1="2" y1="5" x2="38" y2="5" stroke="var(--inv)" stroke-width="3" stroke-linecap="round"/></svg>Documentado <small>aparece en una fuente</small></li>
+        <li><svg viewBox="0 0 40 10" aria-hidden="true"><line x1="2" y1="5" x2="38" y2="5" stroke="var(--inv)" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 6"/></svg>Inferido <small>interpretación fundamentada</small></li>
+        <li><svg viewBox="0 0 40 10" aria-hidden="true"><line x1="2" y1="5" x2="38" y2="5" stroke="var(--inv)" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="2 5" opacity="0.5"/></svg>Desconocido <small>pendiente, ningún vínculo cargado aún</small></li>
+      </ul>
+      <p class="fine">Las posiciones son esquemáticas y vienen del código de Minecraft; no son cartografía. Cada vínculo toma la evidencia del más débil de sus dos extremos.</p>
+    </div>
+
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </section>
+
+  <section aria-label="Crecimiento de la comunidad">
+    <div class="section-head">
+      <h2>Un campamento que nunca deja de ser campamento</h2>
+      <p class="fine">Elige una etapa para ver cómo se mueven los dos indicadores. La capacidad de sobrevivir no garantiza la capacidad de desarrollarse. No toda la sociedad paraguaya desarrolló una mentalidad defensiva homogénea: indígenas, pobladores rurales, comerciantes y autoridades tenían experiencias distintas.</p>
+      <span class="badge">Ejemplo conceptual, no datos históricos</span>
+    </div>
+    <div class="stages" id="stages" role="group" aria-label="Etapas"></div>
+    <div class="growth-body">
+      <div class="growth-text" aria-live="polite">
+        <h3 id="gTitle"></h3>
+        <p id="gDesc"></p>
+        <p class="principle" id="gPrinciple"></p>
+        <p class="dilemma" id="gDilemma" hidden></p>
+      </div>
+      <div class="bars">
+        <div class="bar"><span>Capacidad de sobrevivir</span><b id="vS">0</b><div class="track"><i class="s" id="bS"></i></div></div>
+        <div class="bar"><span>Capacidad de desarrollarse</span><b id="vD">0</b><div class="track"><i class="d" id="bD"></i></div></div>
+        <p class="gap" id="gGap"></p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="Esquema liviano">
+    <div class="section-head">
+      <h2>Esquema liviano</h2>
+      <p class="fine">Cómo se usa menos cómputo, tanto en esta página como en el código de Minecraft.</p>
+    </div>
+    <div class="scheme-grid">
+      <div>
+        <span class="mono">Al cargar</span>
+        <p>Un solo objeto de datos con cinco puntos y sus vínculos. Los vínculos duplicados (Arecutacuá y la flota aparecen en ambos sentidos) se dibujan una vez, y los vecinos de cada punto se calculan una sola vez.</p>
+      </div>
+      <div>
+        <span class="mono">Al dibujar</span>
+        <p>Cada capa es un grupo de formas que se crea una vez. Cambiar de capa solo cambia la opacidad del grupo. No hay temporizadores ni animación continua.</p>
+      </div>
+      <div>
+        <span class="mono">Al hacer clic</span>
+        <p>Solo se recalcula lo que cambió: el estado del punto, sus vínculos y los grupos que siguen conectados. El resto del mapa no se toca.</p>
+      </div>
+      <div>
+        <span class="mono">En Minecraft</span>
+        <p>Lo más caro es el bucle que lanza partículas cada segundo. Conviene dibujar el tejido solo si hay un jugador a menos de 64 bloques o al inspeccionar un punto, guardar al iniciar los puntos de cada línea, usar menos pasos por línea y pedir la dimensión una vez fuera del bucle.</p>
+      </div>
+    </div>
+    <div class="compare" aria-label="Estimación de partículas por segundo">
+      <span class="fine">Partículas por segundo, estimadas según el código:</span>
+      <span><b>80</b> <span class="fine">original</span></span>
+      <span class="arrow" aria-hidden="true">→</span>
+      <span><b>13</b> <span class="fine">liviano, y 0 sin jugadores cerca</span></span>
+    </div>
+  </section>
+
+  <footer>
+    <p>Fuente de los documentos: Archivo Nacional de Asunción, Sección Historia, legajo 119.</p>
+    <p>El río es una metáfora para descubrir la continuidad de una organización que no se ve cuando solo se observan los edificios. No es una táctica militar documentada.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var EVL = { doc: 'Documentado', inf: 'Inferido', unk: 'Desconocido' };
+  var EVR = { doc: 2, inf: 1, unk: 0 };
+  var TIPO = { estancia: 'Estancia', fortificacion: 'Fortificación', vivienda: 'Viviendas', institucional: 'Centro administrativo', embarcacion: 'Embarcaciones' };
+  var ICON = {
+    estancia: 'M-13 4 L0 -11 L13 4 M-10 2 V13 H10 V2 M-3 13 V5 H3 V13',
+    fortificacion: 'M-13 13 V-9 H-8 V-4 H-3 V-9 H3 V-4 H8 V-9 H13 V13 Z M-3 13 V4 H3 V13',
+    vivienda: 'M-17 3 L-9 -6 L-1 3 M-14 2 V13 H-4 V2 M1 3 L9 -6 L17 3 M4 2 V13 H14 V2',
+    institucional: 'M-14 -3 L0 -12 L14 -3 Z M-10 0 V11 M-3.5 0 V11 M3.5 0 V11 M10 0 V11 M-15 13 H15',
+    embarcacion: 'M-15 4 H15 L10 13 H-10 Z M0 4 V-12 L11 1 H0'
+  };
+
+  /* Datos: se cargan una vez. Posiciones esquemáticas derivadas del código. */
+  var NODES = [
+    { id: 'tebicuary_estancia_1', nombre: 'Estancia Tebicuary (Sector Norte)', lines: ['Estancia', 'Tebicuary'], fecha: '14–20/07/1738', tipo: 'estancia', ev: 'doc',
+      documento: 'Instrucciones a vecinos, 14–20/07/1738', funcion: 'Unidad de defensa distribuida en hogares y estancias rurales.',
+      impacto: 'Las familias rurales pierden el nodo de alerta temprana y refugio de ganado.', con: ['arecutacua_castillo', 'villeta_cabildo'], x: 280, y: 340, pos: 'r' },
+    { id: 'arecutacua_castillo', nombre: 'Castillo de Arecutacuá', lines: ['Castillo de', 'Arecutacuá'], fecha: '28/06–18/09/1738', tipo: 'fortificacion', ev: 'doc',
+      documento: 'Consultas sobre fortificaciones, 28/06–18/09/1738', funcion: 'Nodo territorial y control de circulación fluvial.',
+      impacto: 'El control fluvial queda desprotegido ante incursiones de la frontera.', con: ['flota_rio_paraguay'], x: 160, y: 200, pos: 'b' },
+    { id: 'cordillera_casas', nombre: 'Viviendas de la Cordillera', lines: ['Viviendas de', 'la Cordillera'], fecha: '30/08/1737', tipo: 'vivienda', ev: 'doc',
+      documento: 'Prohibición de abandonar las casas, 30/08/1737', funcion: 'Obligación de permanencia para mantener el tejido social estable.',
+      impacto: 'Si los habitantes abandonan las casas, se desmorona la producción y la milicia local.', con: ['villeta_cabildo'], x: 370, y: 480, pos: 'b' },
+    { id: 'villeta_cabildo', nombre: 'Centro administrativo Villeta', lines: ['Centro administrativo', 'Villeta'], fecha: '06/09/1737', tipo: 'institucional', ev: 'inf',
+      documento: 'Consulta sobre construcciones, 06/09/1737', funcion: 'Coordinación institucional y militar de la provincia.',
+      impacto: 'La defensa pierde coordinación centralizada. Las capacidades distribuidas permanecen.', con: [], x: 220, y: 60, pos: 'r' },
+    { id: 'flota_rio_paraguay', nombre: 'Flota fluvial armada', lines: ['Flota fluvial', 'armada'], fecha: '06/09/1740', tipo: 'embarcacion', ev: 'doc',
+      documento: 'Embarcaciones en grupos de dos o tres, bien armadas, 06/09/1740', funcion: 'Protección de la circulación de información y bastimentos por agua.',
+      impacto: 'Si se interrumpe la circulación, los puntos quedan aislados sin mensajes ni suministros.', con: ['arecutacua_castillo'], x: 70, y: 200, pos: 'a' }
+  ];
+
+  var byId = {}, adj = {}, edges = [], seen = {};
+  NODES.forEach(function (n) { byId[n.id] = n; adj[n.id] = []; });
+  NODES.forEach(function (n) {
+    n.con.forEach(function (t) {
+      var k = [n.id, t].sort().join('|');
+      if (seen[k]) return;
+      seen[k] = 1;
+      adj[n.id].push(t); adj[t].push(n.id);
+      edges.push({ id: k, a: n.id, b: t, ev: EVR[n.ev] <= EVR[byId[t].ev] ? n.ev : byId[t].ev });
+    });
+  });
+
+  /* Dibujo único de las dos capas */
+  var svg = document.getElementById('map');
+  var gL1 = document.getElementById('layer1'), gL2 = document.getElementById('layer2');
+  var gLab = document.getElementById('labels'), gHit = document.getElementById('hits');
+  function mk(tag, attrs, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  var edgeEls = [];
+  edges.forEach(function (ed, i) {
+    var A = byId[ed.a], B = byId[ed.b];
+    var mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+    var dx = B.x - A.x, dy = B.y - A.y, len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var off = (i % 2 ? -1 : 1) * 16;
+    var cx = mx + (-dy / len) * off, cy = my + (dx / len) * off;
+    var d = 'M' + A.x + ' ' + A.y + ' Q' + cx + ' ' + cy + ' ' + B.x + ' ' + B.y;
+    var g = mk('g', { 'class': 'edge ' + ed.ev }, gL2);
+    mk('path', { 'class': 'halo', d: d }, g);
+    mk('path', { 'class': 'core', d: d }, g);
+    var qx = 0.25 * A.x + 0.5 * cx + 0.25 * B.x, qy = 0.25 * A.y + 0.5 * cy + 0.25 * B.y;
+    var xm = mk('g', { transform: 'translate(' + qx + ' ' + qy + ')' }, g);
+    mk('path', { 'class': 'xmark', d: 'M-6 -6 L6 6 M6 -6 L-6 6' }, xm);
+    edgeEls.push({ g: g, a: ed.a, b: ed.b });
+  });
+
+  var nodeEls = {}, labelEls = [];
+  NODES.forEach(function (n) {
+    var t = 'translate(' + n.x + ' ' + n.y + ')';
+    var cls = 'node ' + n.ev;
+    var g2 = mk('g', { 'class': cls, transform: t }, gL2);
+    mk('circle', { 'class': 'ring', r: 17 }, g2);
+    mk('circle', { 'class': 'dot', r: 5 }, g2);
+    var g1 = mk('g', { 'class': cls, transform: t }, gL1);
+    mk('circle', { 'class': 'plate', r: 23 }, g1);
+    mk('path', { 'class': 'ico', d: ICON[n.tipo] }, g1);
+    mk('path', { 'class': 'offx', d: 'M-14 -14 L14 14 M14 -14 L-14 14' }, g1);
+
+    var text = mk('text', { 'class': 'lbl' }, gLab);
+    var spans = [];
+    n.lines.concat([n.fecha]).forEach(function (ln, i, arr) {
+      var s = mk('tspan', i === arr.length - 1 ? { 'class': 'sub' } : {}, text);
+      s.textContent = ln;
+      spans.push(s);
+    });
+    labelEls.push({ n: n, text: text, spans: spans });
+
+    var hit = mk('g', { 'class': 'hit-node', tabindex: '0', role: 'button', 'aria-label': n.nombre + ', ' + EVL[n.ev], transform: t }, gHit);
+    mk('circle', { 'class': 'hit', r: 31 }, hit);
+    hit.addEventListener('click', function () { select(n.id); });
+    hit.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(n.id); }
+    });
+    nodeEls[n.id] = { g1: g1, g2: g2, hit: hit };
+  });
+
+  /* Rotulado: se recalcula solo al cambiar el ancho */
+  function layoutLabels() {
+    var w = svg.getBoundingClientRect().width || 560;
+    var k = w / 480;
+    var fs = Math.min(17, Math.max(11, 12.5 / k));
+    svg.style.setProperty('--fs', fs + 'px');
+    var lh = fs * 1.2;
+    labelEls.forEach(function (L) {
+      var n = L.n, cnt = L.spans.length, anchor = 'middle', x = n.x, y0;
+      if (n.pos === 'b') { y0 = n.y + 36 + fs * 0.8; }
+      else if (n.pos === 'a') { y0 = n.y - 32 - (cnt - 1) * lh; }
+      else { anchor = 'start'; x = n.x + 34; y0 = n.y - ((cnt - 1) * lh) / 2 + fs * 0.35; }
+      L.text.setAttribute('text-anchor', anchor);
+      L.text.setAttribute('x', x);
+      L.text.setAttribute('y', y0);
+      L.spans.forEach(function (s, i) {
+        s.setAttribute('x', x);
+        s.setAttribute('dy', i === 0 ? 0 : lh);
+      });
+    });
+  }
+  layoutLabels();
+  if (window.ResizeObserver) { new ResizeObserver(layoutLabels).observe(svg); }
+  else { window.addEventListener('resize', layoutLabels); }
+
+  /* Estado y cálculo por evento */
+  var off = [];
+  var sel = 'tebicuary_estancia_1';
+  function isOff(id) { return off.indexOf(id) !== -1; }
+
+  function netState() {
+    var active = NODES.filter(function (n) { return !isOff(n.id); });
+    var visited = {}, groups = [];
+    active.forEach(function (n) {
+      if (visited[n.id]) return;
+      var q = [n.id], c = 0;
+      visited[n.id] = 1;
+      while (q.length) {
+        var u = q.pop(); c++;
+        adj[u].forEach(function (v) { if (!isOff(v) && !visited[v]) { visited[v] = 1; q.push(v); } });
+      }
+      groups.push(c);
+    });
+    groups.sort(function (a, b) { return b - a; });
+    var isolated = active.filter(function (n) {
+      return adj[n.id].length > 0 && adj[n.id].every(isOff);
+    });
+    var links = edges.filter(function (e) { return !isOff(e.a) && !isOff(e.b); }).length;
+    return { active: active.length, groups: groups, isolated: isolated, links: links };
+  }
+
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  function panelHTML() {
+    var n = byId[sel], st = netState(), gone = isOff(n.id);
+    var links = adj[n.id].map(function (id) {
+      var e = edges.filter(function (x) { return (x.a === n.id && x.b === id) || (x.b === n.id && x.a === id); })[0];
+      return '<li><button type="button" data-key="go-' + id + '" data-go="' + id + '">' + esc(byId[id].nombre) + '</button><small>' + EVL[e.ev] + '</small></li>';
+    }).join('');
+    var groupsTxt = st.groups.length === 0 ? 'ningún grupo conectado'
+      : st.groups.length === 1 ? '1 grupo de ' + st.groups[0] + (st.groups[0] === 1 ? ' punto' : ' puntos')
+      : st.groups.length + ' grupos (' + st.groups.join(', ') + ' puntos)';
+    var crisis = off.length ? '<ul class="crisis">' + off.map(function (id) {
+      return '<li><strong>' + esc(byId[id].nombre) + '</strong>' + esc(byId[id].impacto) + '</li>';
+    }).join('') + '</ul>' : '<p class="fine">Todos los puntos están en pie. Elige uno y pregunta qué sucede si desaparece.</p>';
+    var iso = st.isolated.length ? '<p class="alert">Aislados: ' + st.isolated.map(function (x) { return esc(x.nombre); }).join(', ') + '</p>' : '';
+
+    return '' +
+      '<div class="sel-block">' +
+        '<p class="kicker">Punto seleccionado</p>' +
+        '<h2>' + esc(n.nombre) + '</h2>' +
+        '<div class="tags"><span class="tag">' + TIPO[n.tipo] + '</span><span class="ev ' + n.ev + '">' + EVL[n.ev] + '</span>' + (gone ? '<span class="tag" style="color:var(--warn);border-color:var(--warn)">Desaparecido</span>' : '') + '</div>' +
+        '<dl>' +
+          '<div><dt>Documento</dt><dd>' + esc(n.documento) + '</dd></div>' +
+          '<div><dt>Función</dt><dd>' + esc(n.funcion) + '</dd></div>' +
+          '<div><dt>Vínculos</dt><dd>' + (links ? '<ul class="links">' + links + '</ul>' : 'Ninguno cargado.') + '</dd></div>' +
+        '</dl>' +
+        '<button type="button" class="cta' + (gone ? ' restore' : '') + '" data-key="toggle" data-toggle="' + n.id + '">' + (gone ? 'Restituir este punto' : '¿Qué sucede si desaparece este punto?') + '</button>' +
+      '</div>' +
+      '<div class="state">' +
+        '<h3>Estado de la red</h3>' +
+        '<div class="row"><span>Infraestructura física</span><b>' + st.active + ' de ' + NODES.length + ' en pie</b></div>' +
+        '<div class="row"><span>Capacidad organizativa</span><b>' + groupsTxt + '</b></div>' +
+        '<div class="row"><span>Vínculos activos</span><b>' + st.links + ' de ' + edges.length + '</b></div>' +
+        iso + crisis +
+        '<button type="button" class="ghost" data-key="reset" data-reset="1"' + (off.length ? '' : ' disabled') + '>Restituir todo</button>' +
+      '</div>';
+  }
+
+  var panel = document.getElementById('panel');
+  function render() {
+    var focusKey = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.key : null;
+    NODES.forEach(function (n) {
+      var o = isOff(n.id), els = nodeEls[n.id];
+      els.g1.classList.toggle('off', o);
+      els.g2.classList.toggle('off', o);
+      els.hit.classList.toggle('sel', n.id === sel);
+    });
+    edgeEls.forEach(function (e) {
+      e.g.classList.toggle('cut', isOff(e.a) || isOff(e.b));
+      e.g.classList.toggle('hl', e.a === sel || e.b === sel);
+    });
+    svg.classList.toggle('has-sel', !!sel);
+    panel.innerHTML = panelHTML();
+    if (focusKey) {
+      var again = panel.querySelector('[data-key="' + focusKey + '"]');
+      if (again && !again.disabled) again.focus();
+    }
+  }
+
+  function select(id) { sel = id; render(); }
+
+  panel.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.go) { select(b.dataset.go); return; }
+    if (b.dataset.toggle) {
+      var id = b.dataset.toggle, i = off.indexOf(id);
+      if (i === -1) off.push(id); else off.splice(i, 1);
+      render(); return;
+    }
+    if (b.dataset.reset) { off = []; render(); }
+  });
+
+  document.querySelectorAll('.seg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      svg.setAttribute('data-mode', b.dataset.mode);
+      document.querySelectorAll('.seg button').forEach(function (x) {
+        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      });
+    });
+  });
+
+  render();
+
+  /* Crecimiento de la comunidad (valores de ejemplo, índice 0 a 100) */
+  var STAGES = [
+    { n: 'Supervivencia', d: 'La prioridad es permanecer. Se buscan agua, alimentos, protección y lugares adecuados para asentarse.', p: 'Primero conservar la vida.', s: 25, v: 5 },
+    { n: 'Funciones', d: 'Aparecen viviendas, depósitos, lugares de reunión y personas responsables de determinadas actividades.', p: 'Cada unidad debe aportar algo al conjunto.', s: 50, v: 12 },
+    { n: 'Dependencia', d: 'Las familias comienzan a intercambiar productos, conocimientos, protección y trabajo. Ninguna unidad puede resolverlo todo por sí sola.', p: 'La supervivencia individual depende de relaciones colectivas.', s: 70, v: 25 },
+    { n: 'Institucionalización', d: 'Las responsabilidades se convierten en reglas, autoridades, acuerdos, obligaciones y mecanismos de coordinación.', p: 'Organizar la cooperación más allá de las personas individuales.', s: 85, v: 35,
+      dil: 'El dilema de la comunidad: la sociedad aprendió a conservar sus recursos, proteger sus viviendas y organizar a sus habitantes. Sin embargo, todavía dedica la mayor parte de sus esfuerzos a mantener su seguridad. ¿Cuándo una estructura útil para sobrevivir empieza a limitar el crecimiento?' },
+    { n: 'Continuidad', d: 'Las generaciones siguientes heredan una organización que ya no necesita estar en estado de guerra para seguir funcionando.', p: 'Convertir la supervivencia en capacidad de desarrollo.', s: 90, v: 60 }
+  ];
+  var stagesEl = document.getElementById('stages');
+  STAGES.forEach(function (st, i) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = 'Etapa ' + (i + 1) + ' · ' + st.n;
+    b.addEventListener('click', function () { showStage(i); });
+    stagesEl.appendChild(b);
+  });
+  function showStage(i) {
+    var st = STAGES[i];
+    Array.prototype.forEach.call(stagesEl.children, function (b, j) { b.setAttribute('aria-pressed', j === i ? 'true' : 'false'); });
+    document.getElementById('gTitle').textContent = 'Etapa ' + (i + 1) + '. ' + st.n;
+    document.getElementById('gDesc').textContent = st.d;
+    document.getElementById('gPrinciple').textContent = 'Principio: ' + st.p.charAt(0).toLowerCase() + st.p.slice(1);
+    var dil = document.getElementById('gDilemma');
+    dil.hidden = !st.dil;
+    dil.textContent = st.dil || '';
+    document.getElementById('bS').style.width = st.s + '%';
+    document.getElementById('bD').style.width = st.v + '%';
+    document.getElementById('vS').textContent = st.s;
+    document.getElementById('vD').textContent = st.v;
+    document.getElementById('gGap').textContent = 'Brecha entre sobrevivir y desarrollarse: ' + (st.s - st.v) + ' puntos';
+  }
+  showStage(3);
+})();
+</script>
+
+</body></html>
