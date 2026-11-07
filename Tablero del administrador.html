@@ -1,0 +1,694 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tablero del administrador</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+/* Concepto: plano de una red de agua leído como tablero de control.
+   Arriba la consola de decisiones, al centro la red (planta, 6 tramos, 6 sectores), abajo informe y registro. */
+:root{
+  /* Color: papel de plano, tinta marina, el agua como único acento; verde/ámbar/rojo solo para estado */
+  --paper:#EEF3F5; --surface:#F8FBFC; --surface-2:#E3ECF1;
+  --ink:#0F2433; --ink-2:#496070; --line:#C6D4DC; --line-2:#9DB1BE;
+  --water:#1B78A8; --water-2:#3A9AC9; --water-soft:#D6EAF4; --water-ink:#0E4F73; --on-water:#FFFFFF;
+  --good:#176645; --good-bg:#DCF0E6; --warn:#8A5600; --warn-bg:#F7E8C6; --crit:#A5311D; --crit-bg:#F8DCD4;
+  --dry:#A3B4BF; --soil:#8B6B47;
+  /* Tipografía: Barlow Condensed (rótulos de planta), Public Sans (texto), IBM Plex Mono (cifras) */
+  --f-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --f-body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+  --pl:112px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0A1720; --surface:#102230; --surface-2:#18303F;
+    --ink:#E5EEF3; --ink-2:#9AB0BE; --line:#27404F; --line-2:#3C5A6C;
+    --water:#4DB4E3; --water-2:#2F94C6; --water-soft:#15384A; --water-ink:#A9DDF5; --on-water:#06222F;
+    --good:#58C994; --good-bg:#12372A; --warn:#E6B04A; --warn-bg:#3A2D10; --crit:#F27F68; --crit-bg:#45201A;
+    --dry:#4A5E6B; --soil:#B08A5E;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0A1720; --surface:#102230; --surface-2:#18303F;
+  --ink:#E5EEF3; --ink-2:#9AB0BE; --line:#27404F; --line-2:#3C5A6C;
+  --water:#4DB4E3; --water-2:#2F94C6; --water-soft:#15384A; --water-ink:#A9DDF5; --on-water:#06222F;
+  --good:#58C994; --good-bg:#12372A; --warn:#E6B04A; --warn-bg:#3A2D10; --crit:#F27F68; --crit-bg:#45201A;
+  --dry:#4A5E6B; --soil:#B08A5E;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper);color:var(--ink);
+  font:15px/1.5 var(--f-body);
+  padding-block:22px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1160px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3,p,ul,ol,dl,dd{margin:0}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--water);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Cabecera */
+.cabecera{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-end;justify-content:space-between}
+.kicker{font:600 13px/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--water-ink);margin-bottom:8px}
+h1{font:700 clamp(32px,6vw,48px)/1 var(--f-display);letter-spacing:.005em;text-wrap:balance}
+.fases{display:flex;flex-wrap:wrap;gap:6px 18px;list-style:none;padding:0}
+.fases li{
+  font:600 15px/1 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);
+  padding:8px 0;border-bottom:3px solid var(--line);display:flex;gap:8px;align-items:baseline;
+}
+.fases li i{font:500 12px var(--f-mono);font-style:normal;letter-spacing:0}
+.fases li.hecha{color:var(--ink);border-color:var(--water)}
+.fases li.actual{color:var(--ink);border-color:var(--ink)}
+
+.premisa{display:grid;gap:6px}
+.rotulo{font:600 13px/1.2 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.premisa .texto{font:500 clamp(18px,2.4vw,23px)/1.3 var(--f-body);max-width:64ch;text-wrap:pretty}
+
+/* Consola */
+.consola{
+  background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px;
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:22px 36px;align-items:start;
+}
+.consola h2{font:600 13px/1.2 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);margin-bottom:10px}
+.lectura{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+.lectura .num{font:700 40px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.lectura small{font:400 13px var(--f-body);color:var(--ink-2)}
+.celdas{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.celdas span{height:20px;border:1.5px solid var(--line-2);border-radius:2px;transition:background .2s,border-color .2s}
+.celdas span.lleno{background:var(--water);border-color:var(--water)}
+.nota-costos{font:400 12.5px var(--f-mono);color:var(--ink-2);margin-top:10px}
+.inventario{list-style:none;padding:0;display:grid;gap:6px}
+.inventario li{display:grid;grid-template-columns:24px 1fr auto auto;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.inventario li:last-child{border-bottom:0}
+.inventario svg{width:22px;height:22px;stroke:var(--water-ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.inventario .nom{font-weight:500}
+.inventario .costo{font:400 12.5px var(--f-mono);color:var(--ink-2)}
+.inventario .cuenta{font:600 15px var(--f-mono);min-width:44px;text-align:right}
+.inventario .cuenta.tope{color:var(--warn)}
+.acciones{display:grid;gap:12px}
+.campo{display:grid;gap:4px}
+.campo label{font:600 13px var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+select{min-height:44px;border:1.5px solid var(--line-2);background:var(--surface);border-radius:4px;padding:0 10px;width:100%}
+select:disabled{opacity:.6}
+.fila-btn{display:flex;flex-wrap:wrap;gap:8px}
+.btn{
+  min-height:46px;padding:0 20px;border-radius:4px;border:1.5px solid var(--line-2);background:transparent;cursor:pointer;
+  font:600 17px/1 var(--f-display);letter-spacing:.07em;text-transform:uppercase;
+}
+.btn.primario{background:var(--water);border-color:var(--water);color:var(--on-water);flex:1 1 200px}
+.btn:hover:not(:disabled){filter:brightness(1.06);border-color:var(--water)}
+.btn:disabled{opacity:.5;cursor:default}
+.cmd{font:400 12.5px var(--f-mono);color:var(--ink-2)}
+.cmd code{font:inherit;color:var(--ink)}
+.ejemplos{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;font-size:13.5px;color:var(--ink-2)}
+.enlace{background:none;border:0;padding:6px 2px;color:var(--water-ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.enlace:disabled{color:var(--ink-2);cursor:default;text-decoration:none;opacity:.6}
+.aviso{min-height:22px;font-size:14px;color:var(--ink);margin-top:-8px}
+.aviso:empty{min-height:0}
+.aviso.mal{color:var(--crit);font-weight:500}
+
+/* Red */
+.red{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 16px 14px}
+.red-cab{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 24px;align-items:baseline;margin:0 4px 6px}
+.red-cab h2{font:700 24px/1.1 var(--f-display)}
+.red-cab p{font-size:13.5px;color:var(--ink-2);max-width:60ch}
+.red-grid{display:grid;grid-template-columns:var(--pl) repeat(6,minmax(0,1fr));align-items:start}
+.linea{position:relative;height:84px}
+.tubo{position:absolute;left:0;right:0;top:56px;height:12px;background:var(--line);overflow:hidden}
+.agua{position:absolute;inset:0;background:linear-gradient(90deg,var(--water) 50%,var(--water-2) 50%) 0 0/32px 100%;animation:fluir 1.1s linear infinite}
+@keyframes fluir{to{background-position:32px 0}}
+@keyframes fluirV{to{background-position:0 32px}}
+.tramo{position:relative;min-width:0}
+.tramo.seco .agua{animation:none;background:repeating-linear-gradient(90deg,var(--dry) 0 5px,transparent 5px 11px)}
+.ramal{position:absolute;left:80%;top:62px;width:10px;height:44px;transform:translateX(-50%);background:var(--line);overflow:hidden;z-index:0}
+.ramal .agua{background:linear-gradient(180deg,var(--water) 50%,var(--water-2) 50%) 0 0/100% 32px;animation-name:fluirV}
+.tramo.seco .ramal .agua{animation:none;background:repeating-linear-gradient(180deg,var(--dry) 0 5px,transparent 5px 11px)}
+
+.planta .linea .tubo{left:50%}
+.nodo{position:absolute;left:6px;top:38px;width:48px;height:48px;border-radius:6px;background:var(--water);color:var(--on-water);display:grid;place-items:center;transition:background .2s}
+.nodo svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.nodo.corte{background:var(--crit);color:#fff}
+.nodo.parcial{background:var(--warn);color:#fff}
+.planta .info{display:grid;gap:2px;margin:20px 8px 0 0}
+.planta .info b{font:700 18px/1.1 var(--f-display);letter-spacing:.02em}
+.planta .pe{font-size:13px;color:var(--ink-2)}
+.planta .x{font:400 12px var(--f-mono);color:var(--ink-2)}
+
+.ctl{
+  position:absolute;z-index:2;display:grid;place-items:center;width:42px;height:42px;top:41px;padding:0;cursor:pointer;
+  color:var(--ink-2);background:var(--surface);border:2px dashed var(--line-2);
+  transition:background .15s,border-color .15s,color .15s,box-shadow .15s;
+}
+.ctl svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ctl:hover:not(:disabled){border-color:var(--water);color:var(--water-ink)}
+.ctl[aria-pressed="true"]{background:var(--water);border:2px solid var(--water);color:var(--on-water)}
+.ctl:disabled{cursor:default}
+.valvula{left:8px;border-radius:50%}
+.valvula.cerrada{box-shadow:0 0 0 3px var(--crit-bg),0 0 0 5px var(--crit)}
+.sensor{left:calc(50% - 21px);border-radius:8px;transform:rotate(45deg) scale(.82)}
+.sensor svg{transform:rotate(-45deg)}
+
+.ruptura{position:absolute;top:0;left:calc(var(--f,.5)*100%);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:0;z-index:3;color:var(--crit);pointer-events:none}
+.ruptura svg{width:28px;height:28px;fill:var(--crit-bg);stroke:var(--crit);stroke-width:1.6;stroke-linejoin:round;animation:pulso 1.2s ease-in-out infinite}
+.ruptura .rup-x{font:600 12px/1 var(--f-mono);background:var(--surface);padding:1px 4px;border-radius:2px}
+@keyframes pulso{50%{transform:scale(1.22)}}
+
+.sector{
+  margin:20px 5px 0;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 10px 12px;
+  display:flex;flex-direction:column;gap:8px;min-width:0;position:relative;z-index:1;transition:border-color .2s;
+}
+.sector.est-afectado{border-color:var(--warn)}
+.sector.est-sinagua{border-color:var(--crit)}
+.sector header{display:flex;justify-content:space-between;align-items:baseline;gap:4px 8px;flex-wrap:wrap}
+.sector h3{font:700 20px/1 var(--f-display);letter-spacing:.02em}
+.fam{font:500 12px var(--f-mono);color:var(--ink-2)}
+.rango{font:400 11.5px/1.3 var(--f-mono);color:var(--ink-2)}
+.ilu{width:100%;height:auto;max-width:170px}
+.ilu .muro{fill:var(--surface-2);stroke:var(--ink-2);stroke-width:1.5}
+.ilu .techo{fill:var(--water-soft);stroke:var(--ink-2);stroke-width:1.5;stroke-linejoin:round}
+.ilu .vent{fill:var(--water)}
+.ilu .tierra{fill:var(--soil);opacity:.35}
+.ilu .suelo{fill:none;stroke:var(--line-2);stroke-width:1.5}
+.ilu .planta-c{fill:none;stroke:var(--good);stroke-width:2.2;stroke-linecap:round;transform-box:fill-box;transform-origin:50% 100%;transition:transform .4s,stroke .4s}
+.sector.seco-s .vent{fill:var(--dry)}
+.sector.cult-seco .planta-c{stroke:var(--soil);transform:scaleY(.55) rotate(10deg)}
+.deposito{
+  display:flex;align-items:center;gap:8px;min-height:42px;padding:0 10px;cursor:pointer;
+  border:2px dashed var(--line-2);border-radius:4px;background:transparent;color:var(--ink-2);
+  font:600 14px/1 var(--f-display);letter-spacing:.08em;text-transform:uppercase;
+}
+.deposito svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.deposito .c{margin-left:auto;font:500 12px var(--f-mono);letter-spacing:0;text-transform:none}
+.deposito:hover:not(:disabled){border-color:var(--water);color:var(--water-ink)}
+.deposito[aria-pressed="true"]{background:var(--water);border:2px solid var(--water);color:var(--on-water)}
+.deposito:disabled{cursor:default}
+.estado{display:flex;justify-content:space-between;align-items:center;gap:4px 8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--line)}
+.horas{font:500 12px/1.3 var(--f-mono);color:var(--ink-2)}
+.pill{font:600 13px/1 var(--f-display);letter-spacing:.08em;text-transform:uppercase;padding:5px 8px 4px;border-radius:2px}
+.pill.agua{background:var(--water-soft);color:var(--water-ink)}
+.pill.resiste{background:var(--good-bg);color:var(--good)}
+.pill.afectado{background:var(--warn-bg);color:var(--warn)}
+.pill.sinagua{background:var(--crit-bg);color:var(--crit)}
+.ind{list-style:none;padding:0;display:grid;gap:3px;font-size:13px}
+.ind li{display:flex;justify-content:space-between;gap:6px}
+.ind b{font:600 12.5px var(--f-mono)}
+.ind .ok b{color:var(--good)}
+.ind .falla b{color:var(--crit)}
+
+.regla{margin-left:var(--pl);position:relative;height:50px;border-top:1.5px solid var(--ink-2);margin-top:14px}
+.regla .zona{position:absolute;left:25%;width:50%;top:0;height:22px;background:repeating-linear-gradient(135deg,var(--water-soft) 0 6px,transparent 6px 12px);border-inline:1.5px solid var(--water)}
+.regla .zona span{position:absolute;top:24px;left:0;right:0;text-align:center;font:500 12px var(--f-mono);color:var(--water-ink)}
+.regla i{position:absolute;top:0;width:1.5px;height:9px;background:var(--ink-2)}
+.regla i b{position:absolute;top:10px;left:50%;transform:translateX(-50%);font:500 11.5px var(--f-mono);color:var(--ink-2)}
+.regla .marca{position:absolute;top:-2px;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:12px solid var(--crit)}
+.regla .marca-x{position:absolute;top:14px;transform:translateX(-50%);font:600 12px var(--f-mono);color:var(--crit);background:var(--surface);padding:0 3px}
+
+/* Panel inferior */
+.inferior{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+.panel,.registro{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px;min-width:0}
+.panel h2,.registro h2{font:700 26px/1.1 var(--f-display);margin:2px 0 10px;letter-spacing:.01em}
+.panel h2.crit{color:var(--crit)}.panel h2.warn{color:var(--warn)}.panel h2.ok{color:var(--good)}
+.lectura-plan{max-width:60ch;margin-bottom:14px}
+.cobertura{list-style:none;padding:0;display:grid;gap:12px}
+.cobertura li{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:baseline}
+.cobertura b{font:600 14px var(--f-mono)}
+.med{grid-column:1/-1;display:block;height:8px;background:var(--line);border-radius:1px;overflow:hidden}
+.med i{display:block;height:100%;background:var(--water);transition:width .25s}
+.nota{font-size:13.5px;color:var(--ink-2);margin-top:14px;max-width:60ch}
+.metricas{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:14px 22px;margin:12px 0 16px}
+.metricas div{border-top:1.5px solid var(--ink);padding-top:8px}
+.metricas dt{font:600 12.5px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.metricas dd{font:700 38px/1.05 var(--f-display);font-variant-numeric:tabular-nums}
+.metricas dd small{font:400 13px var(--f-mono);color:var(--ink-2);margin-left:4px}
+.costos{margin:6px 0 16px}
+.costos .barra{display:flex;height:16px;background:var(--line);border-radius:2px;overflow:hidden}
+.costos .barra i{display:block;height:100%}
+.costos .b-prev{background:var(--water)}.costos .b-dano{background:var(--crit)}
+.costos p{font:400 13px var(--f-mono);margin-top:8px;color:var(--ink-2)}
+.costos p b{color:var(--ink);font-weight:600}
+.mensajes{list-style:none;padding:0;display:grid;gap:9px;margin:4px 0 14px}
+.mensajes li{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start}
+.mensajes .b{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:700 12px/1 var(--f-mono)}
+.mensajes .crit .b{background:var(--crit-bg);color:var(--crit)}
+.mensajes .warn .b{background:var(--warn-bg);color:var(--warn)}
+.mensajes .ok .b{background:var(--good-bg);color:var(--good)}
+.reflexion{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line-2);display:grid;gap:8px;max-width:64ch}
+.reflexion p b{font-weight:600}
+.compara{margin-top:12px;padding:10px 12px;background:var(--surface-2);border-radius:4px;font-size:14px;max-width:64ch}
+.vacio{color:var(--ink-2);font-size:14px;max-width:44ch}
+.tabla-scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:480px;font-size:13.5px}
+th{font:600 12px/1.2 var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);text-align:left;padding:6px 8px 6px 0;border-bottom:1.5px solid var(--ink)}
+td{padding:8px 8px 8px 0;border-bottom:1px solid var(--line);font-family:var(--f-mono);font-size:13px;vertical-align:top}
+td.n,th.n{text-align:right;padding-right:0;padding-left:8px}
+tr.ultima td{background:var(--surface-2)}
+.reglas{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 20px}
+.reglas summary{cursor:pointer;min-height:46px;display:flex;align-items:center;font:600 16px var(--f-display);letter-spacing:.1em;text-transform:uppercase}
+.reglas ul{padding:0 0 14px 18px;display:grid;gap:7px;max-width:76ch;font-size:14px}
+.reglas code{font:500 12.5px var(--f-mono)}
+
+@media (max-width:979px){
+  .red{padding:14px 12px 8px}
+  .red-grid{grid-template-columns:minmax(0,1fr)}
+  .regla{display:none}
+  .planta{display:grid;grid-template-columns:84px minmax(0,1fr);align-items:center}
+  .planta .linea{height:58px}
+  .planta .tubo{display:none}
+  .nodo{left:6px;top:5px}
+  .planta .info{margin:0}
+  .tramo{display:grid;grid-template-columns:84px minmax(0,1fr);align-items:stretch}
+  .tramo .linea{grid-column:1;grid-row:1;height:auto}
+  .tubo{left:24px;right:auto;width:12px;top:0;bottom:0;height:auto}
+  .agua{background:linear-gradient(180deg,var(--water) 50%,var(--water-2) 50%) 0 0/100% 32px;animation-name:fluirV}
+  .tramo.seco .agua{background:repeating-linear-gradient(180deg,var(--dry) 0 5px,transparent 5px 11px);animation:none}
+  .ctl{left:9px;top:10px}
+  .sensor{left:9px;top:58%}
+  .ruptura{left:44px;top:calc(var(--f,.5)*100%);transform:translateY(-50%)}
+  .sector{grid-column:2;grid-row:1;margin:5px 0}
+  .ramal{display:none}
+  .inferior{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+
+<div class="wrap">
+  <header class="cabecera">
+    <div>
+      <p class="kicker">Un día sin agua · Falta de planificación</p>
+      <h1>Tablero del administrador</h1>
+    </div>
+    <ol class="fases" aria-label="Fase de la lección">
+      <li data-f="PLANIFICACION"><i>1</i>Planificación</li>
+      <li data-f="CRISIS"><i>2</i>Crisis</li>
+      <li data-f="RECONSTRUCCION"><i>3</i>Reconstrucción</li>
+    </ol>
+  </header>
+
+  <section class="premisa" aria-live="polite">
+    <p class="rotulo" id="rotulo"></p>
+    <p class="texto" id="premisa"></p>
+  </section>
+
+  <section class="consola" aria-label="Decisiones de la ronda">
+    <div>
+      <h2>Presupuesto de la ronda</h2>
+      <div class="lectura"><span class="num" id="disp">10</span><small>de 10 u disponibles</small></div>
+      <div class="celdas" id="celdas" aria-hidden="true"></div>
+      <p class="nota-costos">Llave 1 u · Sensor 1 u · Depósito 2 u</p>
+    </div>
+    <div>
+      <h2>Piezas instaladas</h2>
+      <ul class="inventario">
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8v8l8-4zM20 8v8l-8-4z"/><path d="M12 12V5M9 5h6"/></svg><span class="nom">Llaves de paso</span><span class="costo">1 u</span><span class="cuenta" id="c-llave">0/5</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v11.5c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6"/><path d="M5 11.8c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></svg><span class="nom">Depósitos de reserva</span><span class="costo">2 u</span><span class="cuenta" id="c-deposito">0/4</span></li>
+        <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="16" r="1.6"/><path d="M8 12.2a5.6 5.6 0 0 1 8 0M5 9.2a9.8 9.8 0 0 1 14 0"/></svg><span class="nom">Sensores de fuga</span><span class="costo">1 u</span><span class="cuenta" id="c-sensor">0/4</span></li>
+      </ul>
+    </div>
+    <div class="acciones">
+      <div class="campo">
+        <label for="prueba">Dónde ocurre la avería</label>
+        <select id="prueba">
+          <option value="azar">Al azar (bloques 5 a 15)</option>
+          <option value="2">Tramo 2 (bloque 6)</option>
+          <option value="3">Tramo 3 (bloque 8)</option>
+          <option value="4">Tramo 4 (bloque 12)</option>
+          <option value="5">Tramo 5 (bloque 14)</option>
+        </select>
+      </div>
+      <div class="fila-btn">
+        <button type="button" class="btn primario" id="principal">Simular avería</button>
+        <button type="button" class="btn" id="reiniciar">Vaciar plan</button>
+      </div>
+      <p class="cmd">Comando en el aula: <code id="cmd">simular_averia</code></p>
+      <div class="ejemplos">
+        <span>Cargar ejemplo:</span>
+        <button type="button" class="enlace" data-ej="nada">Sin prevención</button>
+        <button type="button" class="enlace" data-ej="equilibrado">Plan equilibrado</button>
+        <button type="button" class="enlace" data-ej="depositos">Solo depósitos</button>
+      </div>
+    </div>
+  </section>
+  <p class="aviso" id="aviso" role="status"></p>
+
+  <section class="red" aria-label="Red de distribución">
+    <div class="red-cab">
+      <h2>Red de distribución</h2>
+      <p>Toca una llave, un sensor o un depósito para instalarlo o quitarlo. La red mide 20 bloques y se divide en 6 tramos de 3,3 bloques.</p>
+    </div>
+    <div class="red-grid" id="grid"></div>
+    <div class="regla" aria-hidden="true">
+      <div class="zona"><span>zona de riesgo: bloques 5 a 15</span></div>
+      <i style="left:0"><b>0</b></i><i style="left:25%"><b>5</b></i><i style="left:50%"><b>10</b></i><i style="left:75%"><b>15</b></i><i style="left:calc(100% - 1.5px)"><b>20</b></i>
+      <span class="marca" id="marca" hidden></span><span class="marca-x" id="marcaX" hidden></span>
+    </div>
+  </section>
+
+  <div class="inferior">
+    <section class="panel" id="panel" aria-live="polite"></section>
+    <section class="registro">
+      <h2>Registro de rondas</h2>
+      <div id="registro"></div>
+    </section>
+  </div>
+
+  <details class="reglas">
+    <summary>Cómo calcula el tablero</summary>
+    <ul>
+      <li>La avería cae entre los bloques 5 y 15 de la red, así que solo puede romperse uno de los tramos 2 a 5.</li>
+      <li>Con menos de 2 llaves de paso, o sin una llave en o antes del tramo roto, hay que cortar el agua general. La llave del tramo 1 queda a la salida de la planta y equivale a cortar todo. El corte general suma 2 horas de reparación.</li>
+      <li>Con una llave en o antes de la rotura, los sectores anteriores a esa llave siguen con agua. Los demás quedan sin flujo hasta terminar la reparación.</li>
+      <li>Reparar toma 8 horas. Con un sensor en el tramo roto, la fuga se localiza y toma 2 horas.</li>
+      <li>Un depósito sostiene 6 horas de uso en las viviendas del sector. No alcanza para el riego.</li>
+      <li>Tolerancia sin agua: alimentos 1 hora, higiene 4 horas, cultivos 3 horas.</li>
+      <li>El daño suma 2 u por cada parcela seca y 1 u por cada 50 horas-familia sin agua básica. El total de la ronda es la prevención más el daño.</li>
+      <li>En el aula, los depósitos (bloques de hierro) y los sensores (ganchos) llegan recién en la reconstrucción. Aquí están disponibles desde la ronda 1 para poder comparar planes. Las llaves de paso equivalen a las palancas. Los comandos <code>iniciar_leccion</code>, <code>simular_averia</code> y <code>fase_reconstruccion</code> corresponden a los botones de la consola.</li>
+    </ul>
+  </details>
+</div>
+
+<script>
+/* ---------- Lógica (sin DOM) ---------- */
+const LARGO=20, N=6, PRESUP=10;
+const FAM=[14,22,18,25,16,20];
+const TOTAL_FAM=FAM.reduce(function(a,b){return a+b;},0);
+const COSTO={llave:1,deposito:2,sensor:1};
+const TOPE={llave:5,deposito:4,sensor:4};
+const RIESGO=[2,3,4,5];
+const RESERVA_H=6, REP_SENSOR=2, REP_SIN=8, EXTRA_GENERAL=2;
+const TOL={alimentos:1,higiene:4,cultivo:3};
+const FIJO={2:6,3:8,4:12,5:14};
+
+function tramoDe(x){var t=x*N/LARGO,k=Math.floor(t);return {tramo:k+1,frac:t-k};}
+function costoPlan(p){return p.llave.size*COSTO.llave+p.deposito.size*COSTO.deposito+p.sensor.size*COSTO.sensor;}
+function llaveAntes(p,b){for(var j=b;j>=2;j--){if(p.llave.has(j))return j;}return null;}
+function evaluar(p,x){
+  var td=tramoDe(x),b=td.tramo;
+  var V=p.llave.size,u=llaveAntes(p,b);
+  var general=V<2||u===null;
+  var tRep=p.sensor.has(b)?REP_SENSOR:REP_SIN;
+  var tCorte=general?tRep+EXTRA_GENERAL:tRep;
+  var sec=[],famAf=0,cult=0,famHoras=0;
+  for(var s=1;s<=N;s++){
+    var seco=general||s>=u;
+    var horas=seco?tCorte:0;
+    var reserva=p.deposito.has(s)?RESERVA_H:0;
+    var brecha=seco?Math.max(0,horas-reserva):0;
+    var alimentos=brecha<=TOL.alimentos,higiene=brecha<=TOL.higiene,cultivo=horas<=TOL.cultivo;
+    var fallas=(alimentos?0:1)+(higiene?0:1)+(cultivo?0:1);
+    var estado=horas===0?'agua':(fallas===0?'resiste':(fallas<3?'afectado':'sinagua'));
+    if(!alimentos||!higiene)famAf+=FAM[s-1];
+    if(!cultivo)cult++;
+    famHoras+=FAM[s-1]*brecha;
+    sec.push({s:s,seco:seco,horas:horas,brecha:brecha,alimentos:alimentos,higiene:higiene,cultivo:cultivo,estado:estado,tanque:p.deposito.has(s)});
+  }
+  var gasto=costoPlan(p);
+  var dano=Math.round((cult*2+famHoras/50)*10)/10;
+  var share=famAf/TOTAL_FAM;
+  return {x:x,b:b,frac:td.frac,u:u,general:general,V:V,tRep:tRep,tCorte:tCorte,sec:sec,famAf:famAf,cult:cult,famHoras:famHoras,
+    gasto:gasto,dano:dano,total:Math.round((gasto+dano)*10)/10,dep:share>=0.6?'Alta':(share>=0.25?'Media':'Baja'),
+    sensor:p.sensor.has(b),valvula1:p.llave.has(1),plan:{L:p.llave.size,D:p.deposito.size,S:p.sensor.size}};
+}
+/* --- UI --- */
+var $=function(s,r){return (r||document).querySelector(s);};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+var nf=new Intl.NumberFormat('es',{maximumFractionDigits:1});
+var fmt=function(n){return nf.format(n);};
+var plural=function(n,a,b){return n===1?a:b;};
+var estado={modo:'PLANIFICACION',ronda:1,plan:{llave:new Set(),deposito:new Set(),sensor:new Set()},res:null,hist:[],prueba:'azar'};
+
+var IC={
+  llave:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8v8l8-4zM20 8v8l-8-4z"/><path d="M12 12V5M9 5h6"/></svg>',
+  sensor:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="16" r="1.6"/><path d="M8 12.2a5.6 5.6 0 0 1 8 0M5 9.2a9.8 9.8 0 0 1 14 0"/></svg>',
+  deposito:'<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6v11.5c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6"/><path d="M5 11.8c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/></svg>',
+  planta:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M5 20v-9l7-5 7 5v9"/><path d="M12 11.5c1.6 2 2.4 3 2.4 4.1a2.4 2.4 0 0 1-4.8 0c0-1.1.8-2.1 2.4-4.1z"/></svg>',
+  ruptura:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.4 6 6.6-1.2-4.3 5 4.6 4.4-6.6-.8L12 22l-2.7-6.4-6.6.8 4.6-4.4L3 6.8 9.6 8z"/></svg>'
+};
+function ilustracion(k){
+  var pl='';
+  [86,98,110,122,134].forEach(function(x){pl+='<path class="planta-c" d="M'+x+' 48v-11m0 5l-4.500-4.500m4.500 4.500l4.500-4.500"/>';});
+  return '<svg class="ilu" viewBox="0 0 150 56" role="img" aria-label="Viviendas y parcela del sector '+k+'">'+
+    '<path class="muro" d="M8 50V30h26v20z"/><path class="techo" d="M5 31l16-14 16 14z"/><rect class="vent" x="16" y="36" width="8" height="8"/>'+
+    '<path class="muro" d="M42 50V34h22v16z"/><path class="techo" d="M39 35l14-12 14 12z"/><rect class="vent" x="50" y="39" width="7" height="7"/>'+
+    '<rect class="tierra" x="78" y="38" width="64" height="12" rx="2"/>'+pl+'<path class="suelo" d="M2 51h146"/></svg>';
+}
+var T=[];
+function construir(){
+  var h='<div class="planta"><div class="linea"><div class="tubo"><i class="agua"></i></div><div class="nodo" id="nodo">'+IC.planta+'</div></div>'+
+    '<div class="info"><b>Planta de agua</b><span class="pe" id="plantaEstado">Suministro activo</span><span class="x">bloque 0</span></div></div>';
+  for(var k=1;k<=N;k++){
+    var a=Math.round((k-1)*LARGO/N),b=Math.round(k*LARGO/N);
+    h+='<article class="tramo" id="t'+k+'" data-k="'+k+'">'+
+      '<div class="linea"><div class="tubo"><i class="agua"></i></div>'+
+      '<button type="button" class="ctl valvula" data-tipo="llave" data-k="'+k+'" aria-pressed="false">'+IC.llave+'</button>'+
+      '<button type="button" class="ctl sensor" data-tipo="sensor" data-k="'+k+'" aria-pressed="false">'+IC.sensor+'</button>'+
+      '<div class="ruptura" hidden>'+IC.ruptura+'<span class="rup-x"></span></div></div>'+
+      '<div class="ramal"><i class="agua"></i></div>'+
+      '<section class="sector est-agua" id="s'+k+'" aria-label="Sector '+k+'">'+
+      '<header><h3>Sector '+k+'</h3><span class="fam">'+FAM[k-1]+' familias</span></header>'+
+      '<p class="rango">Tramo '+k+' · bloques '+a+' a '+b+'</p>'+ilustracion(k)+
+      '<button type="button" class="deposito" data-tipo="deposito" data-k="'+k+'" aria-pressed="false">'+IC.deposito+'<span>Depósito</span><span class="c">2 u</span></button>'+
+      '<div class="estado"><span class="pill agua">Con agua</span><span class="horas">Flujo normal</span></div>'+
+      '<ul class="ind"><li class="ok" data-i="alimentos"><span>Alimentos</span><b>ok</b></li><li class="ok" data-i="higiene"><span>Higiene</span><b>ok</b></li><li class="ok" data-i="cultivo"><span>Cultivo</span><b>verde</b></li></ul>'+
+      '</section></article>';
+  }
+  $('#grid').innerHTML=h;
+  for(var i=1;i<=N;i++){
+    var el=$('#t'+i);
+    T.push({el:el,valv:$('.valvula',el),sens:$('.sensor',el),tank:$('.deposito',el),sec:$('.sector',el),pill:$('.pill',el),horas:$('.horas',el),
+      rup:$('.ruptura',el),rupx:$('.rup-x',el),ind:{alimentos:$('[data-i=alimentos]',el),higiene:$('[data-i=higiene]',el),cultivo:$('[data-i=cultivo]',el)}});
+  }
+  var c='';for(var j=0;j<PRESUP;j++)c+='<span></span>';
+  $('#celdas').innerHTML=c;
+}
+
+var avisoT=null;
+function aviso(txt,mal){
+  var a=$('#aviso');a.textContent=txt;a.className='aviso'+(mal?' mal':'');
+  clearTimeout(avisoT);avisoT=setTimeout(function(){a.textContent='';a.className='aviso';},6000);
+}
+var NOMBRE={llave:'una llave de paso',deposito:'un depósito',sensor:'un sensor'};
+var TOPE_TXT={llave:'Ya usaste las 5 llaves de paso disponibles.',deposito:'Ya construiste los 4 depósitos disponibles.',sensor:'Ya colocaste los 4 sensores disponibles.'};
+function alternar(tipo,k){
+  var e=estado;if(e.modo==='CRISIS')return;
+  var s=e.plan[tipo];
+  if(s.has(k)){s.delete(k);}
+  else{
+    if(s.size>=TOPE[tipo]){aviso(TOPE_TXT[tipo],true);return;}
+    var disp=PRESUP-costoPlan(e.plan);
+    if(COSTO[tipo]>disp){aviso('Presupuesto insuficiente: '+NOMBRE[tipo]+' cuesta '+COSTO[tipo]+' u y quedan '+disp+' u. Quita otra pieza para liberar presupuesto.',true);return;}
+    s.add(k);
+  }
+  render();
+}
+
+var EJ={nada:{llave:[],deposito:[],sensor:[]},equilibrado:{llave:[2,3,4,5],deposito:[6],sensor:[2,3,4,5]},depositos:{llave:[2,3,4,5],deposito:[4,5,6],sensor:[]}};
+var EJ_TXT={nada:'Plan sin prevención: solo la tubería, nada más.',equilibrado:'Plan equilibrado: llaves y sensores en los tramos de riesgo y un depósito al final de la red.',depositos:'Plan con depósitos: llaves en los tramos de riesgo y tres depósitos al final de la red, sin sensores.'};
+function cargar(n){
+  if(estado.modo==='CRISIS')return;
+  var d=EJ[n];
+  estado.plan={llave:new Set(d.llave),deposito:new Set(d.deposito),sensor:new Set(d.sensor)};
+  aviso(EJ_TXT[n]+' Gasto: '+costoPlan(estado.plan)+' u.');
+  render();
+}
+function vaciar(){
+  if(estado.modo==='CRISIS')return;
+  estado.plan={llave:new Set(),deposito:new Set(),sensor:new Set()};
+  render();
+}
+function simular(){
+  var e=estado;if(e.modo==='CRISIS')return;
+  var x=e.prueba==='azar'?5+Math.floor(Math.random()*11):FIJO[e.prueba];
+  var r=evaluar(e.plan,x);r.ronda=e.ronda;
+  e.res=r;e.modo='CRISIS';e.hist.push(r);
+  render();
+  var pn=$('#panel');
+  if(pn&&pn.scrollIntoView)pn.scrollIntoView({block:'nearest',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+}
+function reconstruir(){
+  var e=estado;if(e.modo!=='CRISIS')return;
+  e.ronda++;e.modo='RECONSTRUCCION';e.res=null;
+  e.plan={llave:new Set(),deposito:new Set(),sensor:new Set()};
+  aviso('Nueva ronda. El plan se reinició: mismo presupuesto, nueva decisión.');
+  render();
+  window.scrollTo&&$('.consola').scrollIntoView({block:'start',behavior:'auto'});
+}
+
+function lista(arr,sing,plur){
+  if(arr.length===1)return sing+' '+arr[0];
+  return plur+' '+arr.slice(0,-1).join(', ')+' y '+arr[arr.length-1];
+}
+function lecturaPlan(){
+  var p=estado.plan,V=p.llave.size;
+  var sin=RIESGO.filter(function(k){return V<2||llaveAntes(p,k)===null;});
+  if(sin.length===RIESGO.length)return 'Hoy, una avería en cualquier tramo obliga a cortar el agua general.';
+  if(sin.length>0)return 'Una avería en '+lista(sin,'el tramo','los tramos')+' obligaría a cortar el agua general.';
+  var lejos=RIESGO.filter(function(k){return !p.llave.has(k);});
+  if(lejos.length===0)return 'Cada tramo de riesgo tiene su propia llave: la avería quedaría aislada con el menor corte posible.';
+  return 'Toda avería tendría una llave en o antes de la rotura. En '+lista(lejos,'el tramo','los tramos')+' la llave más cercana queda antes y también cortaría sectores sanos.';
+}
+function fila(txt,n,m){
+  return '<li><span>'+txt+'</span><b>'+n+' de '+m+'</b><i class="med" aria-hidden="true"><i style="width:'+(n/m*100)+'%"></i></i></li>';
+}
+function mensajes(r){
+  var m=[],b=r.b;
+  if(r.V<2)m.push(['crit','Deficiencia de diseño: no hay suficientes llaves de paso. Se debe cortar el agua general.']);
+  else if(r.u===null){
+    m.push(['crit','Deficiencia de diseño: ninguna llave de paso está en o antes del tramo '+b+'. Se debe cortar el agua general.']);
+    if(r.valvula1)m.push(['warn','La llave del tramo 1 queda a la salida de la planta: cortarla equivale a cortar todo.']);
+  }
+  else{
+    var n=r.u-1;
+    m.push(['ok',n+' '+plural(n,'sector sigue','sectores siguen')+' con agua gracias a la llave del tramo '+r.u+'.']);
+    if(r.u<b)m.push(['warn','La llave más cercana está en el tramo '+r.u+', antes de la rotura. También se cortan los sectores '+r.u+' a '+(b-1)+', que estaban sanos.']);
+    else m.push(['ok','La llave del tramo '+b+' aísla la avería justo donde ocurrió.']);
+  }
+  if(r.sensor)m.push(['ok','El sensor del tramo '+b+' localizó la fuga y la reparación tomó '+r.tRep+' horas.']);
+  else m.push(['warn','Sin sensor en el tramo '+b+', encontrar la fuga y repararla tomó '+r.tRep+' horas.']);
+  var sost=[],agot=[];
+  r.sec.forEach(function(s){if(s.seco&&s.tanque){(s.brecha===0?sost:agot).push(s.s);}});
+  if(sost.length)m.push(['ok','Los depósitos de reserva mantienen las actividades básicas en '+lista(sost,'el sector','los sectores')+'.']);
+  if(agot.length)m.push(['warn','La reserva de '+lista(agot,'el sector','los sectores')+' se agotó a las '+RESERVA_H+' horas.']);
+  if(r.cult>0)m.push(['crit','Cultivos secos: '+r.cult+' de '+N+' parcelas. El depósito no alcanza para el riego.']);
+  else m.push(['ok','Los cultivos resistieron el corte.']);
+  return m;
+}
+var MARC={crit:'✕',warn:'!',ok:'✓'};
+
+function renderPanel(){
+  var e=estado,r=e.res,el=$('#panel');
+  if(!r){
+    var p=e.plan;
+    var prec=RIESGO.filter(function(k){return p.llave.has(k);}).length;
+    var sens=RIESGO.filter(function(k){return p.sensor.has(k);}).length;
+    el.innerHTML='<p class="rotulo">Antes de simular · Ronda '+e.ronda+'</p><h2>Cobertura del plan</h2>'+
+      '<p class="lectura-plan">'+lecturaPlan()+'</p>'+
+      '<ul class="cobertura">'+fila('Tramos de riesgo con llave propia',prec,RIESGO.length)+fila('Tramos de riesgo con sensor',sens,RIESGO.length)+fila('Sectores con depósito',p.deposito.size,N)+'</ul>'+
+      '<p class="nota">La avería puede aparecer entre los bloques 5 y 15, es decir, en los tramos 2 a 5. Nadie sabe dónde ni cuándo. Decide con lo que tienes y luego simula.</p>';
+    return;
+  }
+  var cls=r.general?'crit':((r.famAf===0&&r.cult===0)?'ok':'warn');
+  var tit=r.general?'Corte general':((r.famAf===0&&r.cult===0)?'Avería absorbida':'Avería aislada, con daños');
+  var secos=r.sec.filter(function(s){return s.seco;}).map(function(s){return s.s;});
+  var escala=Math.max(40,Math.max.apply(null,e.hist.map(function(h){return h.total;})));
+  var ms=mensajes(r).map(function(x){return '<li class="'+x[0]+'"><span class="b" aria-hidden="true">'+MARC[x[0]]+'</span><span>'+x[1]+'</span></li>';}).join('');
+  var q1=r.general?'Sin una llave en o antes de la rotura hubo que cortar todo el suministro, también a los sectores que quedaban antes de la avería.':
+    ('La avería rompió el tramo '+r.b+' y el agua llega por una sola línea: '+lista(secos,'el sector','los sectores')+' quedaron aguas abajo, sin flujo hasta terminar la reparación.');
+  var html='<p class="rotulo">Informe · Ronda '+r.ronda+' · avería en el bloque '+r.x+' (tramo '+r.b+')</p>'+
+    '<h2 class="'+cls+'">'+tit+'</h2>'+
+    '<dl class="metricas">'+
+    '<div><dt>Familias sin agua básica</dt><dd>'+r.famAf+'<small>de '+TOTAL_FAM+'</small></dd></div>'+
+    '<div><dt>Cultivos secos</dt><dd>'+r.cult+'<small>de '+N+'</small></dd></div>'+
+    '<div><dt>Reparación</dt><dd>'+r.tCorte+'<small>horas</small></dd></div>'+
+    '<div><dt>Dependencia colectiva</dt><dd>'+r.dep+'</dd></div></dl>'+
+    '<div class="costos"><div class="barra" role="img" aria-label="Prevención '+fmt(r.gasto)+' u y daño '+fmt(r.dano)+' u"><i class="b-prev" style="width:'+(r.gasto/escala*100)+'%"></i><i class="b-dano" style="width:'+(r.dano/escala*100)+'%"></i></div>'+
+    '<p>Prevención <b>'+fmt(r.gasto)+' u</b> + daño <b>'+fmt(r.dano)+' u</b> = total <b>'+fmt(r.total)+' u</b></p></div>'+
+    '<ul class="mensajes">'+ms+'</ul>'+
+    '<div class="reflexion"><p class="rotulo">Para conversar en el aula</p>'+
+    '<p><b>¿Por qué quedaron sin agua los del final de la red si la avería fue antes?</b> '+q1+'</p>'+
+    '<p><b>¿Cuánto costó limpiar el desastre?</b> '+fmt(r.dano)+' u de daño frente a '+fmt(r.gasto)+' u invertidas en prevención.</p></div>';
+  if(e.hist.length>1){
+    var a=e.hist[e.hist.length-2];
+    var dif=Math.round((a.total-r.total)*10)/10;
+    var cmp='Ronda '+a.ronda+': '+fmt(a.total)+' u. Ronda '+r.ronda+': '+fmt(r.total)+' u. ';
+    cmp+=dif>0?'Con el mismo presupuesto de '+PRESUP+' u, la nueva decisión ahorró '+fmt(dif)+' u.':(dif<0?'Esta vez el total subió '+fmt(-dif)+' u: revisa dónde quedó la protección.':'El total no cambió.');
+    if(a.b!==r.b)cmp+=' Las averías fueron en tramos distintos; fija el tramo para comparar en igualdad.';
+    html+='<p class="compara">'+cmp+'</p>';
+  }
+  el.innerHTML=html;
+}
+function renderRegistro(){
+  var h=estado.hist,el=$('#registro');
+  if(!h.length){el.innerHTML='<p class="vacio">Todavía no hay rondas. La primera queda anotada aquí cuando simules la avería, con el plan, el daño y el total.</p>';return;}
+  var rows=h.map(function(r,i){
+    return '<tr'+(i===h.length-1?' class="ultima"':'')+'><td>'+r.ronda+'</td><td>'+r.plan.L+' · '+r.plan.D+' · '+r.plan.S+'</td><td>x '+r.x+' · T'+r.b+'</td><td class="n">'+r.famAf+'</td><td class="n">'+r.cult+'</td><td class="n">'+fmt(r.gasto)+'</td><td class="n">'+fmt(r.dano)+'</td><td class="n"><b>'+fmt(r.total)+'</b></td></tr>';
+  }).join('');
+  el.innerHTML='<div class="tabla-scroll"><table><thead><tr><th>Ronda</th><th>Plan L · D · S</th><th>Avería</th><th class="n">Familias</th><th class="n">Cultivos</th><th class="n">Gasto</th><th class="n">Daño</th><th class="n">Total</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<p class="nota">L llaves, D depósitos, S sensores. Familias sin agua básica y cultivos secos. Gasto, daño y total en unidades (u).</p>';
+}
+
+var PREMISA={
+  PLANIFICACION:'Fase 1: agua garantizada. Todos creen que el agua está garantizada. Decide en qué invertir antes de que algo falle.',
+  CRISIS:'Emergencia: se detectó una avería grave en la tubería principal.',
+  RECONSTRUCCION:'El problema empezó antes del corte: la vulnerabilidad se construyó al principio. Vuelve a construir la red, pero anticipándote. Tienes recursos limitados.'
+};
+var ROT={PLANIFICACION:'Planificación',CRISIS:'Crisis',RECONSTRUCCION:'Reconstrucción'};
+var EST_TXT={agua:'Con agua',resiste:'Resiste',afectado:'Afectado',sinagua:'Sin agua'};
+
+function render(){
+  var e=estado,p=e.plan,r=e.res,crisis=e.modo==='CRISIS';
+  var gasto=costoPlan(p),disp=PRESUP-gasto;
+  var orden=['PLANIFICACION','CRISIS','RECONSTRUCCION'],ix=orden.indexOf(e.modo);
+  $$('.fases li').forEach(function(li,i){
+    var hecha=i<ix||(e.ronda>1&&crisis&&orden[i]==='RECONSTRUCCION');
+    li.classList.toggle('actual',i===ix);li.classList.toggle('hecha',hecha&&i!==ix);
+    if(i===ix)li.setAttribute('aria-current','step');else li.removeAttribute('aria-current');
+  });
+  $('#rotulo').textContent='Ronda '+e.ronda+' · '+ROT[e.modo];
+  $('#premisa').textContent=PREMISA[e.modo]+(r?' Ruptura en el bloque '+r.x+' de '+LARGO+'.':'');
+  $('#disp').textContent=disp;
+  $$('#celdas span').forEach(function(c,i){c.classList.toggle('lleno',i<gasto);});
+  ['llave','deposito','sensor'].forEach(function(t){
+    var c=$('#c-'+t);c.textContent=p[t].size+'/'+TOPE[t];c.classList.toggle('tope',p[t].size>=TOPE[t]);
+  });
+  $('#principal').textContent=crisis?'Pasar a la reconstrucción':'Simular avería';
+  $('#cmd').textContent=crisis?'fase_reconstruccion':'simular_averia';
+  $('#prueba').disabled=crisis;$('#reiniciar').disabled=crisis;
+  $$('.enlace').forEach(function(b){b.disabled=crisis;});
+
+  for(var k=1;k<=N;k++){
+    var t=T[k-1],seco=!!r&&(r.general||k>=r.u);
+    t.el.classList.toggle('seco',seco);
+    var hv=p.llave.has(k),hs=p.sensor.has(k),hd=p.deposito.has(k);
+    t.valv.setAttribute('aria-pressed',hv);t.valv.disabled=crisis;
+    var cerrada=!!r&&!r.general&&r.u===k;
+    t.valv.classList.toggle('cerrada',cerrada);
+    t.valv.setAttribute('aria-label','Llave de paso del tramo '+k+': '+(hv?'instalada':'sin instalar')+(cerrada?', cerrada durante la avería':''));
+    t.valv.title='Llave de paso, tramo '+k+' (1 u)';
+    t.sens.setAttribute('aria-pressed',hs);t.sens.disabled=crisis;
+    t.sens.setAttribute('aria-label','Sensor de fuga del tramo '+k+': '+(hs?'instalado':'sin instalar'));
+    t.sens.title='Sensor de fuga, tramo '+k+' (1 u)';
+    t.tank.setAttribute('aria-pressed',hd);t.tank.disabled=crisis;
+    t.tank.setAttribute('aria-label','Depósito de reserva del sector '+k+': '+(hd?'construido':'sin construir'));
+    var s=r?r.sec[k-1]:null,es=s?s.estado:'agua';
+    t.pill.className='pill '+es;t.pill.textContent=EST_TXT[es];
+    t.sec.className='sector est-'+es+(s&&!s.cultivo?' cult-seco':'')+(s&&s.seco?' seco-s':'');
+    t.horas.textContent=s&&s.seco?(s.horas+' h sin flujo'+(s.tanque?' · reserva '+Math.min(RESERVA_H,s.horas)+' h':'')):'Flujo normal';
+    var ok=s?{alimentos:s.alimentos,higiene:s.higiene,cultivo:s.cultivo}:{alimentos:true,higiene:true,cultivo:true};
+    ['alimentos','higiene','cultivo'].forEach(function(n){
+      var li=t.ind[n];li.className=ok[n]?'ok':'falla';
+      $('b',li).textContent=ok[n]?(n==='cultivo'?'verde':'ok'):(n==='cultivo'?'seco':'falla');
+    });
+    var aqui=!!r&&r.b===k;
+    t.rup.hidden=!aqui;
+    if(aqui){t.rup.style.setProperty('--f',Math.min(.92,Math.max(.08,r.frac)));t.rupx.textContent='x '+r.x;}
+  }
+  var nodo=$('#nodo');
+  nodo.className='nodo'+(r?(r.general?' corte':' parcial'):'');
+  $('#plantaEstado').textContent=r?(r.general?'Cortada por completo':'Cortada desde el tramo '+r.u):'Suministro activo';
+  var mk=$('#marca'),mx=$('#marcaX');
+  mk.hidden=mx.hidden=!r;
+  if(r){var l=(r.x/LARGO*100)+'%';mk.style.left=l;mx.style.left=l;mx.textContent='x '+r.x;}
+  renderPanel();renderRegistro();
+}
+
+construir();
+$('#grid').addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-tipo]');if(!b||b.disabled)return;
+  alternar(b.dataset.tipo,parseInt(b.dataset.k,10));
+});
+$('#principal').addEventListener('click',function(){if(estado.modo==='CRISIS')reconstruir();else simular();});
+$('#reiniciar').addEventListener('click',vaciar);
+$('#prueba').addEventListener('change',function(ev){estado.prueba=ev.target.value;});
+$$('.enlace').forEach(function(b){b.addEventListener('click',function(){cargar(b.dataset.ej);});});
+render();
+</script>
+
+</body></html>
