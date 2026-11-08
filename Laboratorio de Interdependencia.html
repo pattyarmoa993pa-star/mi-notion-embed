@@ -1,0 +1,614 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Laboratorio de Interdependencia</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  /* Layout: corte transversal de la comunidad. Ocho estratos apilados con un riel a la izquierda por donde baja la corriente; controles, variables y balance a la derecha. */
+  --bg:#EEF2F5;
+  --surface:#FFFFFF;
+  --surface-2:#E4EAEF;
+  --ink:#12212D;
+  --muted:#566775;
+  --line:#C9D3DB;
+  --private:#4338CA;
+  --social:#0E7C86;
+  --on-accent:#FFFFFF;
+  --good:#2E7D32;
+  --warn:#8F5F00;
+  --bad:#B3261E;
+  --font-display:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+  --step:1700ms;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E161D;--surface:#151F28;--surface-2:#1D2934;--ink:#E4ECF2;--muted:#94A6B4;--line:#2C3B48;
+    --private:#9AA5FF;--social:#4CC9D3;--on-accent:#0B1217;--good:#7BD389;--warn:#F0B84A;--bad:#FF9188;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E161D;--surface:#151F28;--surface-2:#1D2934;--ink:#E4ECF2;--muted:#94A6B4;--line:#2C3B48;
+  --private:#9AA5FF;--social:#4CC9D3;--on-accent:#0B1217;--good:#7BD389;--warn:#F0B84A;--bad:#FF9188;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px 56px;
+  background:var(--bg);color:var(--ink);
+  font-family:var(--font-display);font-size:15px;line-height:1.5;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.app{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.app[data-sel="privada"]{--sel:var(--private)}
+.app[data-sel="social"]{--sel:var(--social)}
+.app[data-run="privada"]{--cur:var(--private)}
+.app[data-run="social"]{--cur:var(--social)}
+
+.head h1{margin:0 0 6px;font-size:clamp(1.55rem,4.2vw,2.4rem);line-height:1.1;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+.lede{margin:0;max-width:62ch;color:var(--muted);font-size:1.02rem}
+
+.main{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.label{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* Controles */
+.controls{display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+.segs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg-btn{
+  text-align:left;display:flex;flex-direction:column;gap:2px;
+  padding:9px 11px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;min-width:0;
+}
+.seg-btn strong{font-size:.95rem;font-weight:700;line-height:1.2}
+.seg-btn span{font-size:12px;color:var(--muted);line-height:1.3}
+.seg-btn .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:var(--c);vertical-align:baseline}
+.seg-btn[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 9%,var(--surface))}
+.seg-btn:disabled{opacity:.55;cursor:not-allowed}
+.c-comm{--c:var(--ink)}
+.c-privada{--c:var(--private)}
+.c-social{--c:var(--social)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{padding:10px 14px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-weight:600}
+.btn.primary{background:var(--sel);border-color:var(--sel);color:var(--on-accent);flex:1 1 180px}
+.btn.small{padding:7px 12px;font-size:.9rem}
+
+/* Variables */
+.meters{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding:12px 16px 10px;
+}
+.m{display:flex;flex-direction:column;gap:4px;min-width:0}
+.val{font-family:var(--font-mono);font-size:1.5rem;font-weight:500;line-height:1.1;display:flex;align-items:baseline;gap:2px;flex-wrap:wrap}
+.val small{font-size:.8rem;color:var(--muted)}
+.delta{font-size:.85rem;margin-left:8px;opacity:0;transition:opacity .4s}
+.delta.show{opacity:1}
+.delta[data-dir="up"]{color:var(--good)}
+.delta[data-dir="down"]{color:var(--bad)}
+.bar{position:relative;height:10px;border-radius:5px;background:var(--surface-2);margin:4px 0 16px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--good);transition:width .6s ease,background .3s}
+.bar i.low{background:var(--bad)}
+.bar i.mid{background:var(--warn)}
+.tick{position:absolute;top:-3px;height:16px;width:0;border-left:1.5px solid var(--ink)}
+.tick span{position:absolute;top:17px;left:0;transform:translateX(-50%);font-family:var(--font-mono);font-size:10.5px;color:var(--muted)}
+
+/* Capas */
+.stage{min-width:0}
+.strata-wrap{position:relative}
+.strata{list-style:none;margin:0 26px 0 0;padding:0;border:1px solid var(--line);background:var(--surface)}
+.slab{display:grid;grid-template-columns:48px minmax(0,1fr);border-top:1px solid var(--line);transition:background .3s}
+.slab:first-child{border-top:0}
+.rail{position:relative}
+.chip{
+  position:absolute;left:50%;top:16px;transform:translateX(-50%);z-index:1;
+  width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--font-mono);font-size:13px;font-weight:500;
+  background:var(--surface);color:var(--muted);border:2px solid var(--line);
+  transition:background .3s,border-color .3s,color .3s;
+}
+.seg{position:absolute;left:50%;width:3px;transform:translateX(-50%);background:var(--line);overflow:hidden}
+.seg.top{top:-1px;height:31px}
+.seg.bot{top:30px;bottom:0}
+.seg b{position:absolute;inset:0;background:var(--cur);transform:scaleY(0);transform-origin:top}
+.slab:first-child .seg.top,.slab:last-child .seg.bot{display:none}
+.slab.reached .seg.top b{transform:scaleY(1);transition:transform .25s}
+.slab.done .seg.bot b{transform:scaleY(1)}
+.slab.active .seg.bot b{animation:flow var(--step) linear forwards}
+.app.paused .slab.active .seg.bot b{animation-play-state:paused}
+@keyframes flow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.slab.reached .chip{background:var(--cur);border-color:var(--cur);color:var(--on-accent)}
+.slab.active .chip{animation:ring 1.4s ease-out infinite}
+.app.paused .slab.active .chip{animation:none;box-shadow:0 0 0 5px color-mix(in srgb,var(--cur) 30%,transparent)}
+@keyframes ring{
+  0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--cur) 45%,transparent)}
+  100%{box-shadow:0 0 0 12px color-mix(in srgb,var(--cur) 0%,transparent)}
+}
+.slab.done{background:color-mix(in srgb,var(--cur) 3%,var(--surface))}
+.slab.active{background:color-mix(in srgb,var(--cur) 10%,var(--surface))}
+.body{padding:14px 16px 16px 4px;min-width:0}
+.head2{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.head2 h3{margin:0;font-size:1.06rem;font-weight:700;letter-spacing:-.005em}
+.head2 .sub{color:var(--muted);font-size:.9rem}
+.tag{font-family:var(--font-mono);font-size:11px;color:var(--muted);border:1px dashed var(--muted);padding:0 6px;border-radius:4px}
+.desc{margin:3px 0 0;color:var(--muted)}
+.detail{margin-top:8px;display:grid;gap:8px}
+.every{margin:0}
+.every .k{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.every.quiet{color:var(--muted)}
+.note{margin:0;display:flex;gap:8px;align-items:flex-start;font-size:.93rem}
+.note.good{color:var(--good)}
+.note.warn{color:var(--warn)}
+.note.bad{color:var(--bad)}
+.note .ico svg{width:16px;height:16px;display:block;margin-top:3px}
+.note code{font-family:var(--font-mono);font-size:12px;background:var(--surface-2);color:var(--ink);padding:1px 6px;border-radius:4px;white-space:nowrap}
+.fx{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.fx span{font-family:var(--font-mono);font-size:12.5px;padding:2px 8px;border:1px solid currentColor;border-radius:4px}
+.fx .up{color:var(--good)}
+.fx .down{color:var(--bad)}
+
+.audit{margin-top:12px;border:1.5px solid var(--cur);border-radius:8px;padding:12px;background:var(--surface);display:grid;gap:10px}
+.audit-t{margin:0;display:flex;align-items:center;gap:8px;font-weight:700}
+.audit-t svg{width:16px;height:16px}
+.audit dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:.9rem}
+.audit dt{color:var(--muted)}
+.audit dd{margin:0;font-family:var(--font-mono);font-size:.85rem}
+.audit .q{margin:0;font-size:.93rem}
+.audit .q .k{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+.dep{position:absolute;right:0;top:0;width:26px;pointer-events:none}
+.dep .rail{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 3}
+.dep .arr{fill:var(--muted)}
+.dep circle{fill:var(--muted)}
+.dep.hot .rail{stroke:var(--cur);stroke-width:2.5;stroke-dasharray:none}
+.dep.hot .arr,.dep.hot circle{fill:var(--cur)}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend svg{width:26px;height:8px;flex:none}
+.legend .l-cur{stroke:var(--cur);stroke-width:3}
+.legend .l-dep{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 3}
+
+/* Resultado */
+.result h2{margin:0 0 4px;font-size:1.15rem;font-weight:800;letter-spacing:-.01em}
+.result h3{margin:16px 0 6px}
+.result .sub{margin:0 0 10px;color:var(--muted)}
+.look{margin:0;padding-left:18px;display:grid;gap:6px}
+.bal{margin:0 0 12px;display:grid;gap:8px}
+.bal div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.bal dt{color:var(--muted)}
+.bal dd{margin:0;font-family:var(--font-mono);font-weight:500}
+.verdict{margin:0 0 8px;font-weight:600}
+.next{margin:0;color:var(--muted)}
+.hist{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-family:var(--font-mono);font-size:12.5px}
+.hist li{display:grid;gap:0}
+.hist b{font-weight:500;color:var(--muted)}
+
+.rules{border-top:1px solid var(--line);padding-top:14px}
+.rules summary{cursor:pointer;font-weight:700}
+.rules p{color:var(--muted);max-width:70ch;margin:10px 0}
+.tbl{overflow-x:auto;margin-top:10px}
+.tbl table{border-collapse:collapse;width:100%;min-width:560px;font-size:.9rem}
+.tbl th,.tbl td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tbl td.m{font-family:var(--font-mono);font-size:.85rem}
+
+@media (min-width:900px){
+  .main{
+    display:grid;grid-template-columns:minmax(0,1fr) 360px;
+    grid-template-areas:"stage controls" "stage meters" "stage result" "stage .";
+    grid-template-rows:auto auto auto 1fr;column-gap:28px;row-gap:16px;align-items:start;
+  }
+  .controls{grid-area:controls}
+  .meters{grid-area:meters;position:static}
+  .stage{grid-area:stage}
+  .result{grid-area:result}
+}
+@media (prefers-reduced-motion: reduce){
+  .slab.active .chip{animation:none}
+  .slab.active .seg.bot b{animation-duration:.01ms}
+  .bar i{transition:none}
+}
+</style>
+
+<div class="app" id="app" data-sel="privada" data-run="privada">
+  <header class="head">
+    <h1>Laboratorio de Interdependencia</h1>
+    <p class="lede">Una misma medida atraviesa ocho capas de la comunidad. Lo que ocurre en cada una depende del estado en que encuentra a las demás.</p>
+  </header>
+
+  <div class="main">
+    <section class="controls card" aria-label="Controles de la simulación">
+      <div class="field">
+        <span class="label">Comunidad</span>
+        <div class="segs" id="commSegs">
+          <button type="button" class="seg-btn c-comm" data-k="micro" aria-pressed="true"><strong>Microempresas</strong><span>Infraestructura 20 · capital 50</span></button>
+          <button type="button" class="seg-btn c-comm" data-k="industrial" aria-pressed="false"><strong>Distrito industrial</strong><span>Infraestructura 80 · capital 200</span></button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="label">Corriente</span>
+        <div class="segs" id="curSegs">
+          <button type="button" class="seg-btn c-privada" data-k="privada" aria-pressed="true"><strong><i class="dot"></i>Iniciativa privada</strong><span>Talleres, créditos, trámites</span></button>
+          <button type="button" class="seg-btn c-social" data-k="social" aria-pressed="false"><strong><i class="dot"></i>Bienestar social</strong><span>Subsidios y redes de energía</span></button>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn primary" id="go">Iniciar corriente</button>
+        <button type="button" class="btn" id="reset">Reiniciar comunidad</button>
+      </div>
+    </section>
+
+    <section class="meters card" aria-label="Variables de la comunidad">
+      <div class="m">
+        <span class="label">Infraestructura</span>
+        <span class="val"><span id="infraVal">20</span><small>/100</small><span class="delta" id="infraDelta"></span></span>
+        <div class="bar" role="meter" aria-label="Infraestructura" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20" id="infraBar">
+          <i id="infraFill" class="low" style="width:20%"></i>
+          <span class="tick" style="left:30%"><span>30</span></span>
+          <span class="tick" style="left:50%"><span>50</span></span>
+        </div>
+      </div>
+      <div class="m">
+        <span class="label">Capital circulante</span>
+        <span class="val"><span id="capVal">50</span><small>&nbsp;MC</small><span class="delta" id="capDelta"></span></span>
+      </div>
+    </section>
+
+    <section class="stage" aria-label="Las ocho capas">
+      <div class="strata-wrap" id="wrap">
+        <ol class="strata" id="strata"></ol>
+        <svg class="dep" id="dep" aria-hidden="true"></svg>
+      </div>
+      <div class="legend">
+        <span><svg viewBox="0 0 26 8" aria-hidden="true"><path class="l-cur" d="M0 4H26" fill="none"/></svg>La corriente baja capa por capa</span>
+        <span><svg viewBox="0 0 26 8" aria-hidden="true"><path class="l-dep" d="M0 4H26" fill="none"/></svg>La infraestructura (8) condiciona producción (3) y crédito (5). Las marcas 30 y 50 de la barra son esos umbrales.</span>
+      </div>
+    </section>
+
+    <section class="result card" id="result" aria-label="Balance"></section>
+  </div>
+
+  <details class="rules">
+    <summary>Reglas de esta demo</summary>
+    <p>La demo reduce el laboratorio a dos comunidades, dos corrientes y ocho capas. Los valores son ilustrativos. Las reglas leen el nivel de infraestructura y no el tipo de comunidad, así el orden en que se aplican las medidas cambia el resultado.</p>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Corriente</th><th>Capa</th><th>Condición</th><th>Efecto</th></tr></thead>
+        <tbody>
+          <tr><td>Iniciativa privada</td><td>3 Productiva</td><td class="m">infraestructura &lt; 50</td><td class="m">+10 MC (producción limitada)</td></tr>
+          <tr><td>Iniciativa privada</td><td>3 Productiva</td><td class="m">infraestructura ≥ 50</td><td class="m">+25 MC</td></tr>
+          <tr><td>Iniciativa privada</td><td>5 Financiera</td><td class="m">infraestructura &lt; 30</td><td class="m">−15 MC (riesgo de impago)</td></tr>
+          <tr><td>Iniciativa privada</td><td>5 Financiera</td><td class="m">infraestructura ≥ 30</td><td class="m">+15 MC</td></tr>
+          <tr><td>Iniciativa privada</td><td>6 Institucional</td><td class="m">siempre</td><td class="m">sin cambio de números</td></tr>
+          <tr><td>Bienestar social</td><td>1 Ciudadanos</td><td class="m">siempre</td><td class="m">+20 MC</td></tr>
+          <tr><td>Bienestar social</td><td>8 Infraestructura</td><td class="m">siempre</td><td class="m">+30 infraestructura (máximo 100)</td></tr>
+          <tr><td>Ambas</td><td>Las demás capas</td><td class="m">siempre</td><td class="m">la corriente pasa sin cambiar números</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+  <p class="sr" id="sr" aria-live="polite"></p>
+</div>
+
+<script>
+(function(){
+'use strict';
+const STEP=1700;
+const reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $=function(s){return document.querySelector(s)};
+
+const ARCH={micro:{name:'Comunidad de Microempresas',infra:20,capital:50},industrial:{name:'Distrito Industrial',infra:80,capital:200}};
+const CUR={privada:'Iniciativa privada',social:'Bienestar social'};
+const LAYERS=[
+  {id:1,name:'Ciudadanos',sub:'Consumo',desc:'Lo que las personas compran y necesitan.'},
+  {id:2,name:'Familiar',sub:'Presupuesto',desc:'Cómo cada hogar reparte su ingreso.'},
+  {id:3,name:'Productiva',sub:'Producción',desc:'Talleres, fábricas y chacras que fabrican.',tag:'condicionada por la capa 8'},
+  {id:4,name:'Comercial',sub:'Intercambio',desc:'Ferias y comercios donde se compra y se vende.'},
+  {id:5,name:'Financiera',sub:'Crédito y ahorro',desc:'Cooperativas, bancos y préstamos.',tag:'condicionada por la capa 8'},
+  {id:6,name:'Institucional',sub:'Reglas',desc:'Trámites, leyes y registros.'},
+  {id:7,name:'Política',sub:'Decisiones',desc:'Quién decide y cómo se decide.'},
+  {id:8,name:'Infraestructura',sub:'Recursos',desc:'Energía, caminos y agua: lo que sostiene a todas las demás.',tag:'sostiene las capas 3 y 5'}
+];
+const ICON={
+  good:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>',
+  warn:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.2l6.2 11H1.8z"/><path d="M8 6.8v3M8 12v.01"/></svg>',
+  bad:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8"/></svg>'
+};
+const ICON_AUDIT='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>';
+
+const S={comm:'micro',sel:'privada',runCur:'privada',infra:20,capital:50,phase:'idle',reached:0,results:{},snap:null,timer:null,t0:0,total:0,remaining:0,hist:[]};
+
+const app=$('#app'),strata=$('#strata'),wrap=$('#wrap'),dep=$('#dep'),go=$('#go'),resetBtn=$('#reset'),result=$('#result'),sr=$('#sr');
+const infraVal=$('#infraVal'),infraFill=$('#infraFill'),infraBar=$('#infraBar'),infraDelta=$('#infraDelta');
+const capVal=$('#capVal'),capDelta=$('#capDelta');
+const commBtns=Array.prototype.slice.call(document.querySelectorAll('#commSegs .seg-btn'));
+const curBtns=Array.prototype.slice.call(document.querySelectorAll('#curSegs .seg-btn'));
+
+function sign(v){return (v>0?'+':'−')+Math.abs(v)}
+
+/* ---- Lógica de la demo ---- */
+function applyEffect(n,cur,st){
+  if(cur==='privada'){
+    if(n===3){
+      const text='Se incentiva la apertura de talleres textiles en los hogares.';
+      if(st.infra<50) return {text:text,note:'Falta de infraestructura: limita la producción en masa.',kind:'warn',reason:'infraestructura '+st.infra+' < 50',dCap:10,dInf:0};
+      return {text:text,note:'Hay energía y vías: los talleres pueden producir en serie.',kind:'good',reason:'infraestructura '+st.infra+' ≥ 50',dCap:25,dInf:0};
+    }
+    if(n===5){
+      const text='Los comerciantes buscan microcréditos.';
+      if(st.infra<30) return {text:text,note:'El riesgo de impago sube: faltan vías para sacar la mercancía.',kind:'bad',reason:'infraestructura '+st.infra+' < 30',dCap:-15,dInf:0};
+      return {text:text,note:'El crédito circula: la mercancía llega al mercado.',kind:'good',reason:'infraestructura '+st.infra+' ≥ 30',dCap:15,dInf:0};
+    }
+    if(n===6) return {text:'Se agilizan los trámites para registrar nuevos negocios.',kind:'info',dCap:0,dInf:0};
+  }
+  if(cur==='social'){
+    if(n===1) return {text:'Se entregan subsidios directos a las familias.',kind:'good',dCap:20,dInf:0};
+    if(n===8) return {text:'Inversión pública en redes de energía para los talleres.',note:'La mejora en infraestructura desbloquea el potencial productivo familiar.',kind:'good',dCap:0,dInf:30};
+  }
+  return null;
+}
+
+/* ---- Construcción de las capas ---- */
+const slabs=LAYERS.map(function(L){
+  const li=document.createElement('li');
+  li.className='slab todo';
+  li.innerHTML='<div class="rail"><i class="seg top"><b></b></i><i class="seg bot"><b></b></i><span class="chip">'+L.id+'</span></div>'+
+    '<div class="body"><div class="head2"><h3>'+L.name+'</h3><span class="sub">'+L.sub+'</span>'+(L.tag?'<span class="tag">'+L.tag+'</span>':'')+'</div>'+
+    '<p class="desc">'+L.desc+'</p><div class="detail" hidden></div><div class="fx" hidden></div></div>';
+  strata.appendChild(li);
+  return li;
+});
+
+const audit=document.createElement('div');
+audit.className='audit';
+audit.hidden=true;
+audit.innerHTML='<p class="audit-t">'+ICON_AUDIT+'<span id="aTitle"></span></p><dl id="aDl"></dl><p class="q"><span class="k">Para preguntarse</span><span id="aQ"></span></p><div><button type="button" class="btn small" id="next">Siguiente capa</button></div>';
+const aTitle=audit.querySelector('#aTitle'),aDl=audit.querySelector('#aDl'),aQ=audit.querySelector('#aQ'),nextBtn=audit.querySelector('#next');
+
+function fillSlab(n){
+  const el=slabs[n-1],r=S.results[n];
+  const d=el.querySelector('.detail'),fx=el.querySelector('.fx'),desc=el.querySelector('.desc');
+  if(!r){d.hidden=true;fx.hidden=true;d.innerHTML='';fx.innerHTML='';desc.hidden=false;return;}
+  desc.hidden=true;
+  let h='';
+  if(r.text) h+='<p class="every"><span class="k">En la vida diaria</span>'+r.text+'</p>';
+  else h+='<p class="every quiet">La corriente pasa por aquí sin cambiar los números.</p>';
+  if(r.note) h+='<p class="note '+r.kind+'"><span class="ico">'+(ICON[r.kind]||'')+'</span><span>'+r.note+(r.reason?' <code>'+r.reason+'</code>':'')+'</span></p>';
+  d.innerHTML=h;d.hidden=false;
+  const f=[];
+  if(r.dCap) f.push('<span class="'+(r.dCap>0?'up':'down')+'">'+sign(r.dCap)+' MC</span>');
+  if(r.dInf) f.push('<span class="'+(r.dInf>0?'up':'down')+'">'+sign(r.dInf)+' infraestructura</span>');
+  fx.innerHTML=f.join('');fx.hidden=!f.length;
+}
+
+/* ---- Variables ---- */
+let capShown=S.capital,capRaf=0;
+function setCap(v,instant){
+  cancelAnimationFrame(capRaf);
+  if(instant||reduce){capShown=v;capVal.textContent=v;return;}
+  const from=capShown,t0=performance.now();
+  (function f(t){
+    const k=Math.min(1,(t-t0)/500);
+    capShown=Math.round(from+(v-from)*k);
+    capVal.textContent=capShown;
+    if(k<1) capRaf=requestAnimationFrame(f);
+  })(t0);
+}
+function setInfra(v){
+  infraVal.textContent=v;
+  infraFill.style.width=v+'%';
+  infraFill.className=v<30?'low':(v<50?'mid':'');
+  infraBar.setAttribute('aria-valuenow',v);
+}
+const timers=new WeakMap();
+function flash(el,v){
+  clearTimeout(timers.get(el));
+  el.textContent=sign(v);
+  el.dataset.dir=v>0?'up':'down';
+  el.classList.add('show');
+  timers.set(el,setTimeout(function(){el.classList.remove('show')},2400));
+}
+
+/* ---- Flujo de la corriente ---- */
+function enter(n){
+  S.reached=n;
+  const eff=applyEffect(n,S.runCur,S);
+  let r={kind:'none',dCap:0,dInf:0};
+  if(eff){
+    r=Object.assign({},eff);
+    const oc=S.capital,oi=S.infra;
+    S.capital=Math.max(0,S.capital+(eff.dCap||0));
+    S.infra=Math.min(100,Math.max(0,S.infra+(eff.dInf||0)));
+    r.dCap=S.capital-oc;r.dInf=S.infra-oi;
+    if(eff.dInf>0&&r.dInf===0) r.note='La infraestructura ya está al máximo.';
+  }
+  S.results[n]=r;
+  fillSlab(n);
+  setInfra(S.infra);setCap(S.capital,false);
+  if(r.dCap) flash(capDelta,r.dCap);
+  if(r.dInf) flash(infraDelta,r.dInf);
+  render();
+  sr.textContent='Capa '+n+': '+LAYERS[n-1].name+'. '+(r.text||'Sin cambio directo.')+(r.note?' '+r.note:'');
+}
+function schedule(ms){clearTimeout(S.timer);S.total=ms;S.t0=performance.now();S.timer=setTimeout(advance,ms)}
+function advance(){
+  if(S.phase!=='running') return;
+  if(S.reached>=8){finish();return;}
+  enter(S.reached+1);
+  schedule(STEP);
+}
+function start(){
+  clearTimeout(S.timer);
+  S.runCur=S.sel;S.results={};S.reached=0;
+  for(let n=1;n<=8;n++) fillSlab(n);
+  S.snap={cap:S.capital,inf:S.infra};
+  S.phase='running';
+  render();
+  enter(1);
+  schedule(STEP);
+}
+function pause(){
+  if(S.phase!=='running') return;
+  clearTimeout(S.timer);
+  S.remaining=Math.max(50,S.total-(performance.now()-S.t0));
+  S.phase='paused';
+  render();
+}
+function resume(){
+  if(S.phase!=='paused') return;
+  S.phase='running';
+  render();
+  schedule(S.remaining);
+}
+function stepOnce(){
+  if(S.phase!=='paused') return;
+  if(S.reached>=8){finish();return;}
+  enter(S.reached+1);
+  S.remaining=STEP;
+}
+function finish(){
+  clearTimeout(S.timer);
+  S.phase='done';
+  S.hist.push({cur:S.runCur,c0:S.snap.cap,c1:S.capital,i0:S.snap.inf,i1:S.infra});
+  render();
+  sr.textContent='Ciclo completo. Capital '+S.snap.cap+' a '+S.capital+' MC. Infraestructura '+S.snap.inf+' a '+S.infra+'.';
+}
+function clearRun(){
+  S.phase='idle';S.reached=0;S.results={};
+  for(let n=1;n<=8;n++) fillSlab(n);
+}
+function loadComm(k){S.comm=k;S.infra=ARCH[k].infra;S.capital=ARCH[k].capital}
+function resetAll(){
+  clearTimeout(S.timer);
+  loadComm(S.comm);S.hist=[];
+  clearRun();
+  setInfra(S.infra);setCap(S.capital,true);
+  capDelta.classList.remove('show');infraDelta.classList.remove('show');
+  render();
+}
+
+/* ---- Dibujo ---- */
+function auditQuestion(n){
+  if(S.runCur==='privada'&&(n===3||n===5)) return '¿Qué pasaría si la infraestructura (hoy '+S.infra+') superara '+(n===3?50:30)+'?';
+  if(S.runCur==='social'&&n===8) return '¿Qué capas se beneficiarán la próxima vez que pase una corriente?';
+  return 'Aquí no se mueve ningún número. ¿Qué capa podría notar este paso más adelante?';
+}
+function drawDep(){
+  const h=wrap.clientHeight,w=26;
+  if(!h) return;
+  dep.setAttribute('viewBox','0 0 '+w+' '+h);
+  dep.setAttribute('width',w);dep.setAttribute('height',h);
+  const y=function(n){return slabs[n-1].offsetTop+30};
+  const xs=3,xv=17;
+  dep.innerHTML='<path class="rail" d="M'+xs+' '+y(8)+'H'+xv+'V'+y(3)+'H'+xs+'M'+xv+' '+y(5)+'H'+xs+'"/>'+
+    '<path class="arr" d="M'+xs+' '+y(3)+'l6 -4v8z M'+xs+' '+y(5)+'l6 -4v8z"/>'+
+    '<circle cx="'+(xs+1)+'" cy="'+y(8)+'" r="3"/>';
+  const running=S.phase==='running'||S.phase==='paused';
+  const hot=running&&((S.runCur==='privada'&&(S.reached===3||S.reached===5))||(S.runCur==='social'&&S.reached===8));
+  dep.classList.toggle('hot',!!hot);
+}
+function verdict(x){
+  const r3=S.results[3],r5=S.results[5];
+  if(x.cur==='privada'){
+    if(r5&&r5.kind==='bad') return ['El crédito (capa 5) salió riesgoso porque la infraestructura (capa 8) es baja. La medida fue la misma; cambió el estado de otra capa.','Prueba Bienestar social sobre esta comunidad y luego repite la Iniciativa privada.'];
+    if(r3&&r3.kind==='warn') return ['La producción (capa 3) quedó limitada por la infraestructura (capa 8).','Prueba Bienestar social sobre esta comunidad y luego repite la Iniciativa privada.'];
+    return ['Con infraestructura suficiente, la producción (capa 3) y el crédito (capa 5) respondieron bien a la misma medida.','Cambia a Microempresas y corre la misma corriente para comparar.'];
+  }
+  return ['La inversión de la capa 8 llevó la infraestructura de '+x.i0+' a '+x.i1+'. Los subsidios de la capa 1 aumentaron el capital circulante.','Ahora corre la Iniciativa privada sobre esta misma comunidad y compara.'];
+}
+function renderResult(){
+  let h='';
+  if(S.phase==='done'){
+    const x=S.hist[S.hist.length-1],v=verdict(x);
+    h+='<h2>Ciclo completo</h2><p class="sub">La corriente regresa a la comunidad transformando el entorno.</p>'+
+      '<dl class="bal"><div><dt>Capital circulante</dt><dd>'+x.c0+' → '+x.c1+' MC</dd></div><div><dt>Infraestructura</dt><dd>'+x.i0+' → '+x.i1+'</dd></div></dl>'+
+      '<p class="verdict">'+v[0]+'</p><p class="next">'+v[1]+'</p>';
+  }else if(S.phase==='running'||S.phase==='paused'){
+    h+='<h2>'+(S.phase==='paused'?'En pausa':'En curso')+'</h2><p class="sub">Capa '+S.reached+' de 8 · '+CUR[S.runCur]+'</p>'+
+      '<p class="next">'+(S.phase==='paused'?'Revisa la auditoría en la capa marcada. Avanza capa por capa o reanuda.':'Pausa en cualquier momento para auditar la capa actual.')+'</p>';
+  }else{
+    h+='<h2>Qué observar</h2><ul class="look"><li>La línea de color es la corriente: baja por las ocho capas en orden.</li><li>Las capas 3 y 5 leen la infraestructura de la capa 8. Mira la barra y sus marcas 30 y 50.</li><li>Corre una corriente, luego la otra sobre la misma comunidad, y compara.</li></ul>';
+  }
+  if(S.hist.length){
+    h+='<h3 class="label">Corridas</h3><ol class="hist">'+S.hist.slice(-5).map(function(x,i){
+      const n=S.hist.length-Math.min(5,S.hist.length)+i+1;
+      return '<li><b>Corrida '+n+' · '+CUR[x.cur]+'</b><span>Capital '+x.c0+' → '+x.c1+' · Infraestructura '+x.i0+' → '+x.i1+'</span></li>';
+    }).join('')+'</ol>';
+  }
+  result.innerHTML=h;
+}
+function render(){
+  const running=S.phase==='running'||S.phase==='paused';
+  app.dataset.run=S.phase==='idle'?S.sel:S.runCur;
+  app.dataset.sel=S.sel;
+  app.classList.toggle('paused',S.phase==='paused');
+  slabs.forEach(function(el,i){
+    const n=i+1;
+    const isActive=running&&n===S.reached;
+    const isDone=n<=S.reached&&!isActive;
+    el.classList.toggle('active',isActive);
+    el.classList.toggle('done',isDone);
+    el.classList.toggle('todo',!isActive&&!isDone);
+    el.classList.toggle('reached',n<=S.reached);
+    if(isActive) el.setAttribute('aria-current','step'); else el.removeAttribute('aria-current');
+  });
+  if(S.phase==='paused'){
+    const n=S.reached,r=S.results[n]||{};
+    slabs[n-1].querySelector('.body').appendChild(audit);
+    aTitle.textContent='Auditoría de la capa '+n+': '+LAYERS[n-1].name;
+    aDl.innerHTML='<dt>Corriente activa</dt><dd>'+CUR[S.runCur]+'</dd>'+
+      '<dt>Diagnóstico</dt><dd>'+(r.note||'Los ciudadanos experimentan cambios económicos indirectos.')+'</dd>'+
+      '<dt>Infraestructura</dt><dd>'+S.infra+'/100</dd>'+
+      '<dt>Capital circulante</dt><dd>'+S.capital+' MC</dd>';
+    aQ.textContent=auditQuestion(n);
+    nextBtn.textContent=n>=8?'Terminar ciclo':'Siguiente capa';
+    audit.hidden=false;
+  }else{
+    audit.hidden=true;
+  }
+  go.textContent=S.phase==='running'?'Pausar y auditar':(S.phase==='paused'?'Reanudar':'Iniciar corriente');
+  commBtns.forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.k===S.comm));b.disabled=running});
+  curBtns.forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.k===S.sel));b.disabled=running});
+  renderResult();
+  drawDep();
+}
+
+/* ---- Eventos ---- */
+go.addEventListener('click',function(){
+  if(S.phase==='running') pause();
+  else if(S.phase==='paused') resume();
+  else start();
+});
+nextBtn.addEventListener('click',stepOnce);
+resetBtn.addEventListener('click',resetAll);
+commBtns.forEach(function(b){b.addEventListener('click',function(){
+  if(S.phase==='running'||S.phase==='paused') return;
+  S.comm=b.dataset.k;resetAll();
+})});
+curBtns.forEach(function(b){b.addEventListener('click',function(){
+  if(S.phase==='running'||S.phase==='paused') return;
+  S.sel=b.dataset.k;
+  if(S.phase==='done') clearRun();
+  render();
+})});
+if(window.ResizeObserver) new ResizeObserver(drawDep).observe(strata);
+window.addEventListener('resize',drawDep);
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(drawDep);
+
+loadComm('micro');
+setInfra(S.infra);setCap(S.capital,true);
+render();
+})();
+</script>
+
+</body></html>
