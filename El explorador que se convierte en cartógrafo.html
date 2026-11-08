@@ -1,0 +1,698 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El explorador que se convierte en cartógrafo</title>
+<style>
+  :root{--bg:#0b1414;--panel:#122322;--ink:#e8dfc8;--gold:#e0b04a;--bad:#d9604c;--good:#6fbf73;--line:#2c4a49}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Menlo,Consolas,monospace}
+  #wrap{max-width:980px;margin:0 auto;padding:10px}
+  h1{font-size:16px;margin:4px 0 8px;color:var(--gold);letter-spacing:.5px}
+  #stage{position:relative}
+  canvas{width:100%;height:auto;display:block;background:#0b1717;border:2px solid var(--line);border-radius:6px;touch-action:manipulation}
+  #menu{position:absolute;inset:0;background:rgba(8,16,16,.94);border-radius:6px;padding:22px 26px;overflow:auto;border:2px solid var(--line)}
+  #menu h2{color:var(--gold);margin:0 0 8px;font-size:20px}
+  #menu p{margin:6px 0;line-height:1.45;font-size:14px}
+  #menu kbd{background:#223a39;border:1px solid var(--line);border-radius:3px;padding:0 5px}
+  button{background:#1c3534;color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:8px 12px;font:inherit;cursor:pointer}
+  button:hover{background:#27504e}
+  button.primary{background:var(--gold);color:#201808;font-weight:bold;border-color:var(--gold)}
+  #controls{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  #result{margin-top:10px}
+  #result h3{color:var(--gold);margin:6px 0}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:#162b2a;color:var(--gold)}
+  .win{color:var(--good)} .lose{color:var(--bad)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <h1>EL EXPLORADOR QUE SE CONVIERTE EN CARTÓGRAFO</h1>
+  <div id="stage">
+    <canvas id="game" width="960" height="560" aria-label="Minijuego El explorador que se convierte en cartógrafo"></canvas>
+    <div id="menu">
+      <h2>🕸️ La misión</h2>
+      <p>Un grupo de exploradores llega al Chaco buscando una ruta para atravesar el territorio. El río parece una buena referencia… pero sus brazos se parecen, las bifurcaciones engañan y el paisaje cambia.</p>
+      <p><b>Tu trabajo:</b> encontrar la <b>cruz de piedra</b> (la salida) y entregar un <b>mapa</b> con el que <b>otro explorador</b> pueda recorrer el río sin repetir tus errores.</p>
+      <p><b>Fase 1 · Explorar.</b> Navegás de punto en punto con provisiones limitadas. Tu cuaderno anota cada llegada, pero si no reconocés un lugar lo anota como <i>otro lugar nuevo</i>. Con <b>balizas</b> (4) marcás puntos para reconocerlos al volver. La <b>niebla</b> (contexto bajo) borra el paisaje de tus anotaciones. El <b>guía local</b> (2 consultas) resuelve confusiones, pero te hace depender de él.</p>
+      <p><b>Fase 2 · Cartografiar.</b> Revisás el cuaderno y <b>fusionás</b> las fichas que creas que son el mismo lugar. Cuidado: fusionar mal también es un error de mapa.</p>
+      <p><b>Fase 3 · Validar.</b> Otro explorador recorre el Chaco usando solamente tu cuaderno.</p>
+      <p><kbd>←</kbd> <kbd>→</kbd> elegir canal · <kbd>↑</kbd>/<kbd>Enter</kbd> navegar (o clic en el canal) · <kbd>B</kbd> baliza · <kbd>G</kbd> guía · <kbd>M</kbd> marcar/fusionar · <kbd>Enter</kbd> entregar mapa · <kbd>R</kbd> reiniciar</p>
+      <p><button class="primary" id="btnStart">Comenzar expedición</button></p>
+    </div>
+  </div>
+  <div id="controls">
+    <button data-act="left">◀ Canal</button>
+    <button data-act="right">Canal ▶</button>
+    <button data-act="go">⛵ Navegar</button>
+    <button data-act="baliza">🚩 Baliza (B)</button>
+    <button data-act="guide">🧭 Guía (G)</button>
+    <button data-act="merge">🔗 Marcar/Fusionar (M)</button>
+    <button data-act="enter">📜 Entregar mapa (Enter)</button>
+    <button data-act="restart">↺ Reiniciar</button>
+  </div>
+  <div id="result" class="hidden"></div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   EL EXPLORADOR QUE SE CONVIERTE EN CARTÓGRAFO
+   Arquitectura (de abajo hacia arriba):
+     0. U          utilidades puras (rng con semilla, ángulos)
+     1. CFG        todos los números de balance en un solo lugar
+     2. LEVELS     niveles como DATOS (grafo de nodos/canales)
+     3. DOMINIO    World · Notebook · Session · Follower · Scoring
+                   (sin DOM: se puede probar en Node)
+     4. Renderer   canvas, solo dibuja el estado
+     5. Game       máquina de estados + input + bucle
+   Fases: menu → explore → carto → validate → result
+   ===================================================================== */
+
+/* ---------- 0. UTILIDADES ---------- */
+const U = {
+  rng(seed){ let a = seed|0; return function(){ a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; },
+  gauss(r){ return (r()+r()+r()+r()-2)*1.7; },            // ~N(0,1)
+  bearing(a,b){ return (Math.atan2(b.x-a.x,-(b.y-a.y))*180/Math.PI+360)%360; }, // 0=N, 90=E
+  angDiff(a,b){ let d=Math.abs(a-b)%360; return d>180?360-d:d; },
+  clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+};
+
+/* ---------- 1. CONFIGURACIÓN / BALANCE ---------- */
+const CFG = {
+  energyStart:150, costMove:6, costRevisit:10, costBaliza:5, costGuide:22,
+  balizas:4, guides:2,
+  contextMax:100, contextDropMove:10, contextGainNew:12, contextGainBaliza:25, contextGainGuide:30, contextLow:35,
+  loopWarn:5, loopPenalty:4,          // pasos sin descubrir nada antes de "dar vueltas"
+  driftDeg:6, driftLen:0.07,          // deriva del cuaderno (dead reckoning)
+  followerNoise:30, matchTol:28, followerMaxSteps:45, followerStepMs:700,
+  stub:175                            // largo visual de los canales en la vista local
+};
+
+/* ---------- 2. NIVELES (datos puros) ---------- */
+const LEVELS = [{
+  id:'chaco-1', title:'Riacho del Chaco', seed:7,
+  nodes:[
+    {id:0, x:70,  y:300, lm:'arenal', name:'Campamento', start:true, unique:true},
+    {id:1, x:190, y:300, lm:'palo'},
+    {id:2, x:300, y:170, lm:'palma'},
+    {id:3, x:300, y:430, lm:'palma'},
+    {id:4, x:430, y:100, lm:'roca'},
+    {id:5, x:420, y:280, lm:'palma'},
+    {id:6, x:430, y:480, lm:'roca'},
+    {id:7, x:560, y:190, lm:'aves'},
+    {id:8, x:565, y:380, lm:'palma'},
+    {id:9, x:690, y:90,  lm:'laguna'},
+    {id:10,x:700, y:280, lm:'roca'},
+    {id:11,x:700, y:460, lm:'aves'},
+    {id:12,x:830, y:280, lm:'cruz', name:'Cruz de piedra', exit:true, unique:true}
+  ],
+  edges:[[0,1],[1,2],[1,3],[2,4],[2,5],[3,5],[3,6],[4,7],[5,8],[6,8],[6,11],[7,9],[7,10],[8,11],[8,10],[10,12],[11,10]]
+}];
+
+const LM = {
+  arenal:{n:'arenal',c:'#e3cf8f',ch:'A'}, palma:{n:'palmar',c:'#4f9a4f',ch:'P'}, palo:{n:'palo borracho',c:'#c98aa0',ch:'B'},
+  roca:{n:'roca',c:'#9aa0a6',ch:'R'}, aves:{n:'colonia de aves',c:'#bfe3ff',ch:'V'}, laguna:{n:'laguna',c:'#2a6fa8',ch:'L'},
+  cruz:{n:'cruz de piedra',c:'#e0b04a',ch:'+'}, '?':{n:'¿?',c:'#666',ch:'?'}
+};
+
+/* ---------- 3. DOMINIO ---------- */
+
+/* El territorio REAL. El jugador nunca lo ve completo. */
+class World {
+  constructor(level){
+    this.level = level;
+    this.nodes = level.nodes.map(n => ({...n, adj:[]}));
+    for (const [a,b] of level.edges){
+      const A=this.nodes[a], B=this.nodes[b], len=Math.hypot(A.x-B.x,A.y-B.y);
+      A.adj.push({to:b, bearing:U.bearing(A,B), len});
+      B.adj.push({to:a, bearing:U.bearing(B,A), len});
+    }
+    this.nodes.forEach(n => n.adj.sort((p,q)=>p.bearing-q.bearing));
+    this.startId = this.nodes.find(n=>n.start).id;
+    this.exitId  = this.nodes.find(n=>n.exit).id;
+    this.balizas = {};                         // nodeId -> número de baliza (cambia el mundo)
+    this.optimal = this.shortest(this.startId, this.exitId);
+  }
+  shortest(a,b){
+    const q=[[a,0]], seen=new Set([a]);
+    while(q.length){ const [n,d]=q.shift(); if(n===b) return d;
+      for(const ad of this.nodes[n].adj) if(!seen.has(ad.to)){ seen.add(ad.to); q.push([ad.to,d+1]); } }
+    return Infinity;
+  }
+  /* Lo que un explorador PERCIBE en un nodo. Con niebla pierde el hito. */
+  observe(id, clear=true){
+    const n=this.nodes[id];
+    return { lm: clear ? n.lm : '?', deg: n.adj.length, baliza: this.balizas[id]||0 };
+  }
+  channelTo(id, bearing, maxDiff=70){          // canal real más cercano a un rumbo
+    let best=null, bd=1e9;
+    for(const a of this.nodes[id].adj){ const d=U.angDiff(a.bearing,bearing); if(d<bd){bd=d;best=a;} }
+    return bd<=maxDiff ? best : null;
+  }
+  edgeKey(a,b){ return a<b ? a+'-'+b : b+'-'+a; }
+}
+
+/* El CUADERNO: lo que el explorador cree que existe (puede tener duplicados, ambigüedades, deriva).
+   Cada "ficha" (entry) describe un lugar tal como fue percibido, NO el lugar real. */
+class Notebook {
+  constructor(world, seed){ this.w=world; this.entries=[]; this.nextId=0; this.rng=U.rng(seed); this.heading=0; }
+  get(eid){ return this.entries.find(e=>e.eid===eid); }
+  _create(node, obs, est){
+    const e={ eid:this.nextId++, lm:obs.lm, deg:obs.deg, baliza:obs.baliza,
+              truth:node.id,            // oculto: solo para puntaje y para el guía
+              mixed:false, isExit:!!node.exit, unique:!!node.unique, est, edges:[] };
+    this.entries.push(e); return e;
+  }
+  /* Registrar una llegada. Solo se reconoce un lugar si tiene baliza o es un hito único. */
+  recordArrival(nodeId, obs, from){
+    const n=this.w.nodes[nodeId]; let e=null;
+    if(obs.baliza) e=this.entries.find(x=>x.baliza===obs.baliza);
+    else if(n.unique) e=this.entries.find(x=>x.unique && x.truth===nodeId);
+    let created=false;
+    if(!e){
+      let est;
+      if(from){                                   // navegación a estima con deriva
+        this.heading += U.gauss(this.rng)*CFG.driftDeg;
+        const sc = 1 + U.gauss(this.rng)*CFG.driftLen;
+        const th = (from.outBearing + this.heading)*Math.PI/180;
+        est = { x: from.entry.est.x + Math.sin(th)*from.len*sc, y: from.entry.est.y - Math.cos(th)*from.len*sc };
+      } else est = { x:n.x, y:n.y };
+      e=this._create(n, obs, est); created=true;
+    }
+    if(from){ this.link(from.entry.eid, from.outBearing, e.eid); this.link(e.eid, from.inBearing, from.entry.eid); }
+    return { entry:e, created };
+  }
+  link(a,b,to){
+    const e=this.get(a); if(!e||a===to) return;
+    if(!e.edges.some(x=>x.to===to && U.angDiff(x.b,b)<10)) e.edges.push({b,to});
+  }
+  matches(e, obs){                                // ¿esta ficha puede describir esta observación?
+    return (e.lm==='?'||obs.lm==='?'||e.lm===obs.lm) && e.deg===obs.deg && e.baliza===obs.baliza;
+  }
+  ambiguous(){                                    // fichas que se confunden con otra
+    const s=new Set();
+    for(let i=0;i<this.entries.length;i++) for(let j=i+1;j<this.entries.length;j++){
+      const a=this.entries[i], b=this.entries[j];
+      if(this.matches(a,{lm:b.lm,deg:b.deg,baliza:b.baliza})){ s.add(a.eid); s.add(b.eid); }
+    }
+    return s;
+  }
+  merge(keepId, dropId){                          // "esto es el mismo lugar"
+    const k=this.get(keepId), d=this.get(dropId); if(!k||!d||k===d) return null;
+    const ok = k.truth===d.truth && !k.mixed && !d.mixed;
+    for(const ed of d.edges) k.edges.push({b:ed.b,to:ed.to===keepId?dropId:ed.to});
+    for(const e of this.entries) for(const ed of e.edges) if(ed.to===dropId) ed.to=keepId;
+    for(const e of this.entries){
+      const seen=[];
+      e.edges=e.edges.filter(ed=>{
+        if(ed.to===e.eid || seen.some(s=>s.to===ed.to && U.angDiff(s.b,ed.b)<10)) return false;
+        seen.push(ed); return true;
+      });
+    }
+    k.isExit=k.isExit||d.isExit; k.baliza=k.baliza||d.baliza; k.unique=k.unique||d.unique;
+    if(k.lm==='?') k.lm=d.lm;
+    if(!ok) k.mixed=true;
+    this.entries=this.entries.filter(e=>e!==d);
+    return { ok, keep:k };
+  }
+  /* Búsqueda de ruta SOLO sobre el cuaderno. */
+  bfs(start, block){
+    const goals=new Set(this.entries.filter(e=>e.isExit).map(e=>e.eid));
+    if(!goals.size) return null;
+    const q=[{e:start,d:0,hop:null}], seen=new Set([start.eid]);
+    while(q.length){
+      const {e,d,hop}=q.shift();
+      if(goals.has(e.eid)) return { dist:d, hop };
+      for(const ed of e.edges){
+        if(block.has(e.eid+':'+Math.round(ed.b))) continue;
+        const t=this.get(ed.to); if(!t||seen.has(t.eid)) continue;
+        seen.add(t.eid); q.push({ e:t, d:d+1, hop: hop||{from:e.eid,b:ed.b} });
+      }
+    }
+    return null;
+  }
+}
+
+/* La EXPEDICIÓN del jugador: recursos, niebla, loops y cuaderno. */
+class Session {
+  constructor(level, seed=1){
+    this.world=new World(level); this.nb=new Notebook(this.world, seed);
+    this.energy=CFG.energyStart; this.context=CFG.contextMax;
+    this.balizasLeft=CFG.balizas; this.guidesLeft=CFG.guides;
+    this.node=this.world.startId; this.visited=new Set([this.node]); this.usedEdges=new Set();
+    this.stats={moves:0,redundant:0,loopTicks:0,lowCtx:0,guide:0,balizas:0,goodMerge:0,badMerge:0};
+    this.sinceNew=0; this.found=false; this.over=false; this.msg='Elegí un canal y navegá. Buscá la cruz de piedra.';
+    this.entry=this.nb.recordArrival(this.node, this.world.observe(this.node), null).entry;
+  }
+  contextLow(){ return this.context<CFG.contextLow; }
+  exits(){                                         // canales del nodo actual + lo que el cuaderno sabe de ellos
+    return this.world.nodes[this.node].adj.map(a=>{
+      const k=this.entry.edges.find(ed=>U.angDiff(ed.b,a.bearing)<10);
+      return {...a, knownTo:k?k.to:null};
+    });
+  }
+  sail(adj){
+    if(this.over) return null;
+    const w=this.world, from=this.node, key=w.edgeKey(from,adj.to);
+    const revisit=this.usedEdges.has(key); this.usedEdges.add(key);
+    let cost = revisit?CFG.costRevisit:CFG.costMove;
+    this.stats.moves++; if(revisit) this.stats.redundant++;
+    const isNew=!this.visited.has(adj.to); this.visited.add(adj.to);
+    let loopWarn=false;
+    if(isNew){ this.sinceNew=0; this.context=U.clamp(this.context+CFG.contextGainNew-CFG.contextDropMove,0,CFG.contextMax); }
+    else {
+      this.sinceNew++; this.context=Math.max(0,this.context-CFG.contextDropMove);
+      if(this.sinceNew>=CFG.loopWarn){ cost+=CFG.loopPenalty; this.stats.loopTicks++; loopWarn=true; }
+    }
+    this.energy-=cost; this.node=adj.to;
+    const low=this.contextLow(); if(low) this.stats.lowCtx++;
+    const obs=w.observe(this.node, !low);
+    const back=w.nodes[this.node].adj.find(a=>a.to===from).bearing;
+    const rec=this.nb.recordArrival(this.node, obs, {entry:this.entry,outBearing:adj.bearing,inBearing:back,len:adj.len});
+    this.entry=rec.entry;
+    if(w.nodes[this.node].exit){ this.found=true; this.over=true; this.entry.isExit=true; this.msg='¡Cruz de piedra! La salida existe. Ahora hay que dibujarla bien.'; }
+    else if(this.energy<=0){ this.over=true; this.msg='Sin provisiones. Entregá el mapa que tengas.'; }
+    else if(!rec.created && this.entry.baliza) this.msg='¡Reconocés la baliza #'+this.entry.baliza+'! Cerraste un lazo.';
+    else if(!rec.created) this.msg='Volviste a un hito conocido.';
+    else if(loopWarn) this.msg='⚠ Estás dando vueltas: cuatro pasos sin descubrir nada y se gasta más.';
+    else if(low) this.msg='Niebla: el paisaje se borra. Anotás "?".';
+    else this.msg=isNew?'Punto nuevo anotado en el cuaderno.':'Este lugar se parece a otro… pero lo anotás como nuevo.';
+    return { revisit, isNew, reused:!rec.created, cost };
+  }
+  placeBaliza(){
+    const w=this.world;
+    if(this.over) return false;
+    if(this.balizasLeft<=0){ this.msg='No te quedan balizas.'; return false; }
+    if(w.balizas[this.node]){ this.msg='Ya hay una baliza acá.'; return false; }
+    const id=CFG.balizas-this.balizasLeft+1; this.balizasLeft--;
+    w.balizas[this.node]=id; this.entry.baliza=id;
+    if(this.entry.lm==='?') this.entry.lm=w.nodes[this.node].lm;
+    this.context=Math.min(CFG.contextMax,this.context+CFG.contextGainBaliza);
+    this.energy-=CFG.costBaliza; this.stats.balizas++;
+    this.msg='Baliza #'+id+' clavada. Este lugar ya es reconocible.';
+    if(this.energy<=0){ this.over=true; this.msg='Sin provisiones. Entregá el mapa que tengas.'; }
+    return true;
+  }
+  useGuide(){
+    if(this.over) return false;
+    if(this.guidesLeft<=0){ this.msg='El guía ya no puede acompañarte.'; return false; }
+    this.guidesLeft--; this.stats.guide++; this.energy-=CFG.costGuide;
+    this.context=Math.min(CFG.contextMax,this.context+CFG.contextGainGuide);
+    const t=this.node; let merged=0;
+    for(const dup of this.nb.entries.filter(e=>e!==this.entry && e.truth===t && !e.mixed)){
+      const keepId=Math.min(dup.eid,this.entry.eid), dropId=Math.max(dup.eid,this.entry.eid);
+      const r=this.nb.merge(keepId,dropId); this.entry=this.nb.get(keepId); merged++;
+      if(!r.ok) this.entry.mixed=true;
+    }
+    if(this.entry.lm==='?') this.entry.lm=this.world.nodes[t].lm;
+    this.msg = merged ? 'El guía: "Ya pasaste por acá". Unió '+(merged+1)+' fichas en una.' : 'El guía confirma: lo que anotaste es correcto.';
+    if(this.energy<=0 && !this.found){ this.over=true; this.msg='Sin provisiones. Entregá el mapa que tengas.'; }
+    return true;
+  }
+}
+
+/* El SEGUNDO EXPLORADOR: solo tiene el cuaderno.
+   Mantiene una "creencia" (conjunto de fichas donde podría estar), planifica con BFS
+   sobre el cuaderno y ejecuta sobre el mundo real con ruido (los canales se parecen). */
+class Follower {
+  constructor(world, nb, seed){
+    this.w=world; this.nb=nb; this.rng=U.rng(seed);
+    this.real=world.startId; this.belief=[nb.entries.find(e=>e.truth===world.startId&&e.unique)||nb.entries[0]];
+    this.trail=[]; this.block=new Set(); this.fails=new Map(); this.pending=null;
+    this.steps=0; this.moveCount=0; this.done=false; this.success=false; this.reason=''; this.path=[this.real];
+    this.stats={errors:0,wrongChannels:0,falseAccepts:0,backtracks:0};
+  }
+  plan(){
+    let best=null;
+    for(const e of this.belief){ const r=this.nb.bfs(e,this.block); if(r&&r.hop&&(!best||r.dist<best.dist)) best=r; }
+    return best;
+  }
+  blockHop(entries,b){ for(const e of entries) this.block.add(e.eid+':'+Math.round(b)); }
+  finish(success, reason, msg, ev){ this.done=true; this.success=success; this.reason=reason; return {...(ev||{type:success?'win':'fail',from:this.real,to:this.real}), type:success?'win':'fail', msg}; }
+  back(node, belief, msg){
+    const ev={type:'backtrack',from:this.real,to:node,msg};
+    this.real=node; this.belief=belief; this.stats.backtracks++; this.moveCount++; this.path.push(node); return ev;
+  }
+  step(){
+    if(this.done) return null;
+    this.steps++;
+    if(this.pending){ const p=this.pending; this.pending=null; return this.back(p.node,p.belief,'Vuelve al último punto seguro.'); }
+    if(this.steps>CFG.followerMaxSteps) return this.finish(false,'loop','Se quedó sin fuerzas girando en círculos: loop infinito.');
+    const p=this.plan();
+    if(!p){
+      if(this.trail.length){ const t=this.trail.pop(); return this.back(t.node,t.belief,'Ninguna ruta válida desde acá: retrocede.'); }
+      const has=this.nb.entries.some(e=>e.isExit);
+      return this.finish(false,'sinruta', has?'El mapa no ofrece ninguna ruta consistente hasta la salida.':'El mapa no tiene marcada la salida.');
+    }
+    const b=p.hop.b;
+    const noisy=b+U.gauss(this.rng)*CFG.followerNoise;
+    const taken=this.w.channelTo(this.real,noisy,70);
+    const prevReal=this.real, prevBelief=this.belief;
+    if(!taken){
+      this.stats.errors++; this.blockHop(prevBelief,b);
+      return {type:'lost',from:prevReal,to:prevReal,msg:'No encuentra el canal que describe el mapa.'};
+    }
+    const wrong=U.angDiff(taken.bearing,b)>20;
+    if(wrong) this.stats.wrongChannels++;
+    this.real=taken.to; this.path.push(this.real); this.moveCount++;
+    if(this.w.nodes[this.real].exit) return this.finish(true,'ok','¡Llegó a la cruz de piedra siguiendo tu mapa!',{from:prevReal,to:this.real});
+    const obs=this.w.observe(this.real,true), nbl=[];
+    for(const e of prevBelief) for(const ed of e.edges){
+      if(U.angDiff(ed.b,b)<=CFG.matchTol && !this.block.has(e.eid+':'+Math.round(ed.b))){
+        const t=this.nb.get(ed.to); if(t && this.nb.matches(t,obs) && !nbl.includes(t)) nbl.push(t);
+      }
+    }
+    if(!nbl.length){
+      this.stats.errors++;
+      const k=prevReal+':'+Math.round(b), n=(this.fails.get(k)||0)+1; this.fails.set(k,n);
+      if(!wrong||n>=2) this.blockHop(prevBelief,b);
+      this.pending={node:prevReal,belief:prevBelief};
+      return {type:'lost',from:prevReal,to:this.real,msg: wrong?'Tomó un canal parecido y el paisaje no coincide.':'El paisaje no coincide con el mapa.'};
+    }
+    if(wrong) this.stats.falseAccepts++;
+    this.trail.push({node:prevReal,belief:prevBelief}); this.belief=nbl;
+    return {type:'move',from:prevReal,to:this.real,wrong,msg: wrong?'Tomó un canal parecido… y el mapa no lo delató.':'Reconoce la referencia y sigue.'};
+  }
+}
+
+/* PUNTAJE + traducción "experiencia del explorador → aprendizaje informático" */
+const Scoring = {
+  compute(S, F){
+    const nb=S.nb, w=S.world;
+    const truths=new Set(nb.entries.map(e=>e.truth));
+    const dup=nb.entries.length-truths.size;
+    const amb=nb.ambiguous().size;
+    const nodesKnown=S.visited.size, nodesTotal=w.nodes.length;
+    const edgesKnown=S.usedEdges.size, edgesTotal=w.level.edges.length;
+    const opt = F.success ? Math.min(1, w.optimal/Math.max(1,F.moveCount)) : 0;
+    let score=0;
+    if(F.success) score+=600;
+    score+=Math.round(200*opt)+Math.round(100*nodesKnown/nodesTotal)+Math.max(0,Math.round(S.energy/2));
+    score-=F.stats.errors*30+S.stats.loopTicks*15+S.stats.guide*25+S.stats.badMerge*40+dup*10;
+    score=Math.max(0,score);
+    const grade=score>=800?'A':score>=600?'B':score>=400?'C':'D';
+    const rows=[
+      ['Dar vueltas sin encontrar salida','Loop infinito', S.stats.loopTicks+' pasos dando vueltas sin descubrir nada'+(F.reason==='loop'?' · el seguidor también cayó en un loop':'')],
+      ['Confundir dos canales','Error de identificación', amb+' fichas del cuaderno se confunden entre sí · seguidor: '+F.stats.wrongChannels+' canales mal tomados, '+F.stats.falseAccepts+' que tu mapa no delató'],
+      ['Perder referencias','Pérdida de contexto', S.stats.lowCtx+' llegadas anotadas con niebla ("?")'],
+      ['Repetir recorridos','Procesos redundantes', S.stats.redundant+' tramos repetidos · '+dup+' fichas duplicadas en el mapa final · fusiones: '+S.stats.goodMerge+' correctas, '+S.stats.badMerge+' erróneas'],
+      ['Depender de un guía local','Conocimiento especializado', S.stats.guide+' consultas al guía ('+CFG.guides+' disponibles)'],
+      ['Elaborar un mapa','Documentación del sistema', nodesKnown+'/'+nodesTotal+' puntos y '+edgesKnown+'/'+edgesTotal+' canales documentados · '+S.stats.balizas+' balizas'],
+      ['Encontrar una ruta confiable','Optimización del algoritmo', F.success ? 'El seguidor llegó en '+F.moveCount+' tramos (óptimo: '+w.optimal+') con '+F.stats.errors+' errores' : 'No hubo ruta confiable: '+F.reason]
+    ];
+    return { score, grade, rows, success:F.success, reason:F.reason };
+  }
+};
+
+/* ---------- 4. RENDER ---------- */
+const Renderer = {
+  W:960, H:560,
+  init(canvas){
+    this.ctx=canvas.getContext('2d'); const r=U.rng(11); this.reeds=[];
+    for(let i=0;i<180;i++) this.reeds.push({x:r()*960,y:r()*560,l:6+r()*12});
+  },
+  bg(x,y,w,h){
+    const c=this.ctx; c.save(); c.beginPath(); c.rect(x,y,w,h); c.clip();
+    const g=c.createLinearGradient(0,y,0,y+h); g.addColorStop(0,'#10292a'); g.addColorStop(1,'#0a1717');
+    c.fillStyle=g; c.fillRect(x,y,w,h); c.strokeStyle='rgba(110,160,100,.18)'; c.lineWidth=1.5;
+    for(const r of this.reeds){ if(r.x<x||r.x>x+w) continue; c.beginPath(); c.moveTo(r.x,r.y); c.lineTo(r.x+2,r.y-r.l); c.stroke(); }
+    c.restore();
+  },
+  bar(x,y,w,h,v,col,label){
+    const c=this.ctx; c.fillStyle='#0a1414'; c.fillRect(x,y,w,h); c.fillStyle=col; c.fillRect(x,y,w*U.clamp(v,0,1),h);
+    c.strokeStyle='#2c4a49'; c.strokeRect(x+.5,y+.5,w-1,h-1); c.fillStyle='#e8dfc8'; c.font='10px ui-monospace,monospace'; c.fillText(label,x+4,y+h-3);
+  },
+  text(t,x,y,col='#e8dfc8',size=13,bold=false,align='left'){
+    const c=this.ctx; c.fillStyle=col; c.font=(bold?'bold ':'')+size+'px ui-monospace,Menlo,monospace'; c.textAlign=align; c.fillText(t,x,y); c.textAlign='left';
+  },
+  lmIcon(lm,x,y,s,a=1){
+    const c=this.ctx; c.save(); c.translate(x,y); c.scale(s,s); c.globalAlpha*=a; c.lineCap='round'; c.lineJoin='round';
+    switch(lm){
+      case 'arenal':
+        c.fillStyle='#e3cf8f'; c.beginPath(); c.ellipse(0,8,32,12,0,0,7); c.fill();
+        c.fillStyle='#c0553a'; c.beginPath(); c.moveTo(-9,6); c.lineTo(0,-14); c.lineTo(9,6); c.closePath(); c.fill(); break;
+      case 'palma':
+        c.strokeStyle='#7a5a34'; c.lineWidth=5; c.beginPath(); c.moveTo(0,16); c.quadraticCurveTo(5,0,0,-16); c.stroke();
+        c.strokeStyle='#4f9a4f'; c.lineWidth=4; for(const k of [-1,-.5,.5,1]){ c.beginPath(); c.moveTo(0,-16); c.quadraticCurveTo(k*14,-32,k*28,-10); c.stroke(); } break;
+      case 'palo':
+        c.fillStyle='#8c8a5a'; c.beginPath(); c.ellipse(0,2,12,20,0,0,7); c.fill();
+        c.fillStyle='#e68ab0'; for(const [px,py] of [[-10,-20],[0,-26],[10,-20],[-4,-16],[6,-14]]){ c.beginPath(); c.arc(px,py,5,0,7); c.fill(); } break;
+      case 'roca':
+        c.fillStyle='#8b9096'; c.beginPath(); c.moveTo(-26,14); c.lineTo(-14,-14); c.lineTo(6,-20); c.lineTo(24,-2); c.lineTo(28,14); c.closePath(); c.fill();
+        c.strokeStyle='#5c6166'; c.lineWidth=2; c.stroke(); break;
+      case 'aves':
+        c.fillStyle='#3c7a48'; c.beginPath(); c.ellipse(0,10,26,11,0,0,7); c.fill();
+        c.strokeStyle='#fff'; c.lineWidth=2.5; for(const [bx,by] of [[-14,-12],[2,-22],[16,-8]]){ c.beginPath(); c.moveTo(bx-7,by); c.lineTo(bx,by+5); c.lineTo(bx+7,by); c.stroke(); } break;
+      case 'laguna':
+        c.fillStyle='#2a6fa8'; c.beginPath(); c.ellipse(0,6,32,14,0,0,7); c.fill();
+        c.strokeStyle='#8fc8ee'; c.lineWidth=2; c.beginPath(); c.ellipse(0,6,18,7,0,0,7); c.stroke(); break;
+      case 'cruz':
+        c.shadowColor='#e0b04a'; c.shadowBlur=18; c.fillStyle='#b6bcbc';
+        c.fillRect(-5,-28,10,44); c.fillRect(-16,-16,32,9); break;
+      default:
+        c.fillStyle='rgba(150,160,160,.55)'; c.beginPath(); c.arc(0,0,26,0,7); c.fill();
+        c.fillStyle='#ddd'; c.font='bold 26px ui-monospace,monospace'; c.textAlign='center'; c.fillText('?',0,9);
+    }
+    c.restore();
+  },
+  channel(cx,cy,dir,L,seed,alpha,width,col){
+    const c=this.ctx, ex=cx+dir.x*L, ey=cy+dir.y*L, off=((seed*73)%41)-20;
+    const mx=(cx+ex)/2-dir.y*off, my=(cy+ey)/2+dir.x*off;
+    const g=c.createLinearGradient(cx,cy,ex,ey); g.addColorStop(0,col); g.addColorStop(1,'rgba(47,127,134,.12)');
+    c.save(); c.globalAlpha*=alpha; c.lineCap='round'; c.strokeStyle=g; c.lineWidth=width;
+    c.beginPath(); c.moveTo(cx,cy); c.quadraticCurveTo(mx,my,ex,ey); c.stroke(); c.restore();
+    return {ex,ey};
+  },
+  boat(x,y,ang){
+    const c=this.ctx; c.save(); c.translate(x,y); c.rotate(ang);
+    c.fillStyle='#8a5a2b'; c.beginPath(); c.ellipse(0,0,7,16,0,0,7); c.fill();
+    c.fillStyle='#e8dfc8'; c.beginPath(); c.arc(0,-2,4,0,7); c.fill(); c.restore();
+  },
+
+  /* ----- Cuaderno (se usa en explorar, cartografiar y validar) ----- */
+  drawNotebook(box,o){
+    const c=this.ctx, nb=o.nb, E=nb.entries;
+    c.save(); c.fillStyle='#10201f'; c.fillRect(box.x,box.y,box.w,box.h); c.strokeStyle='#2c4a49'; c.strokeRect(box.x+.5,box.y+.5,box.w-1,box.h-1);
+    this.text(o.title||'CUADERNO',box.x+10,box.y+19,'#e0b04a',12,true);
+    let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+    for(const e of E){ minx=Math.min(minx,e.est.x); maxx=Math.max(maxx,e.est.x); miny=Math.min(miny,e.est.y); maxy=Math.max(maxy,e.est.y); }
+    const pad=30, top=34, bw=Math.max(80,maxx-minx), bh=Math.max(80,maxy-miny);
+    const sc=Math.min((box.w-2*pad)/bw,(box.h-top-pad)/bh,1.4);
+    const ox=box.x+box.w/2-((minx+maxx)/2)*sc, oy=box.y+top+(box.h-top)/2-((miny+maxy)/2)*sc;
+    this.pos={}; for(const e of E) this.pos[e.eid]={x:ox+e.est.x*sc,y:oy+e.est.y*sc};
+    c.beginPath(); c.rect(box.x,box.y,box.w,box.h); c.clip();
+    c.strokeStyle='rgba(120,190,200,.45)'; c.lineWidth=2;
+    for(const e of E) for(const ed of e.edges){ const a=this.pos[e.eid], b=this.pos[ed.to]; if(!b) continue; c.beginPath(); c.moveTo(a.x,a.y); c.lineTo(b.x,b.y); c.stroke(); }
+    const amb=o.showAmbig?nb.ambiguous():new Set();
+    for(const e of E){
+      const p=this.pos[e.eid], col=(LM[e.lm]||LM['?']).c;
+      if(o.belief&&o.belief.has(e.eid)){ c.fillStyle='rgba(111,191,115,.35)'; c.beginPath(); c.arc(p.x,p.y,19,0,7); c.fill(); }
+      c.fillStyle=col; c.beginPath(); c.arc(p.x,p.y,11,0,7); c.fill();
+      c.lineWidth=2; c.strokeStyle=amb.has(e.eid)?'#d9604c':'#0a1414'; c.beginPath(); c.arc(p.x,p.y,11,0,7); c.stroke();
+      this.text((LM[e.lm]||LM['?']).ch,p.x,p.y+4,'#111',11,true,'center');
+      this.text('#'+e.eid,p.x,p.y+25,'#cfe',10,false,'center');
+      if(e.baliza){ c.fillStyle='#e0b04a'; c.beginPath(); c.arc(p.x+12,p.y-12,7,0,7); c.fill(); this.text(''+e.baliza,p.x+12,p.y-9,'#201808',10,true,'center'); }
+      if(e.isExit) this.text('SALIDA',p.x,p.y-18,'#e0b04a',9,true,'center');
+      if(o.focus===e.eid){ c.strokeStyle='#e0b04a'; c.setLineDash([4,3]); c.lineWidth=2; c.beginPath(); c.arc(p.x,p.y,17,0,7); c.stroke(); c.setLineDash([]); }
+      if(o.mark===e.eid){ c.strokeStyle='#5fd7e8'; c.lineWidth=3; c.beginPath(); c.arc(p.x,p.y,21,0,7); c.stroke(); }
+      if(o.current===e.eid){ c.strokeStyle='#fff'; c.lineWidth=2; c.beginPath(); c.arc(p.x,p.y,15,0,7); c.stroke(); }
+    }
+    c.restore();
+  },
+  hitEntry(x,y){ let best=null,bd=22; for(const id in this.pos){ const d=Math.hypot(this.pos[id].x-x,this.pos[id].y-y); if(d<bd){bd=d;best=+id;} } return best; },
+
+  /* ----- Fase 1: vista local del explorador ----- */
+  drawExplore(G){
+    const c=this.ctx, S=G.S, w=S.world, cx=345, cy=300;
+    this.bg(0,0,690,560);
+    c.save(); c.beginPath(); c.rect(0,0,690,560); c.clip(); c.globalAlpha=U.clamp(G.arrive,0.15,1);
+    G.exits.forEach((a,i)=>{
+      const th=a.bearing*Math.PI/180, dir={x:Math.sin(th),y:-Math.cos(th)};
+      const sel=i===G.sel;
+      const end=this.channel(cx,cy,dir,CFG.stub,w.edgeKey(S.node,a.to).length*7+i,1,sel?30:24,sel?'#4fb4bc':'#2f7f86');
+      a._end=end;
+      if(sel){ c.save(); c.strokeStyle='#e0b04a'; c.lineWidth=3; c.beginPath(); c.arc(end.ex,end.ey,22,0,7); c.stroke(); c.restore(); }
+      this.text(a.knownTo!=null?'→ #'+a.knownTo:'?',end.ex,end.ey+(dir.y>0?36:-30),a.knownTo!=null?'#9fd':'#e0b04a',13,true,'center');
+      c.fillStyle='rgba(232,223,200,.5)'; c.font='10px ui-monospace'; c.textAlign='center';
+      c.fillText(Math.round(a.bearing)+'°',end.ex,end.ey+4); c.textAlign='left';
+    });
+    c.fillStyle='#2f7f86'; c.beginPath(); c.arc(cx,cy,50,0,7); c.fill();
+    c.fillStyle='#3d9aa1'; c.beginPath(); c.arc(cx,cy,42,0,7); c.fill();
+    const node=w.nodes[S.node], lm=S.contextLow()?'?':node.lm;
+    this.lmIcon(lm,cx,cy-6,1.5);
+    const bal=w.balizas[S.node];
+    if(bal){ c.strokeStyle='#e0b04a'; c.lineWidth=3; c.beginPath(); c.moveTo(cx-48,cy+10); c.lineTo(cx-48,cy-34); c.stroke(); c.fillStyle='#e0b04a'; c.fillRect(cx-48,cy-34,22,14); this.text(''+bal,cx-37,cy-23,'#201808',11,true,'center'); }
+    if(!G.anim) this.boat(cx+30,cy+30,0.6);
+    else { const a=G.exits[G.anim.i], t=U.clamp(G.anim.t,0,1), th=a.bearing*Math.PI/180; this.boat(cx+Math.sin(th)*CFG.stub*t,cy-Math.cos(th)*CFG.stub*t,th); }
+    c.restore();
+    const label=lm==='?'?'¿Dónde estoy? (niebla)':(node.name||LM[node.lm].n);
+    this.text(label,cx,cy+82,'#e8dfc8',14,true,'center');
+    this.text('Ficha actual en el cuaderno: #'+S.entry.eid,cx,cy+100,'#9fd',11,false,'center');
+    if(S.contextLow()){
+      const g=c.createRadialGradient(cx,cy,60,cx,cy,380); g.addColorStop(0,'rgba(190,205,205,0)'); g.addColorStop(1,'rgba(190,205,205,.55)');
+      c.fillStyle=g; c.fillRect(0,0,690,560);
+    }
+    /* HUD */
+    this.bar(12,10,210,16,S.energy/CFG.energyStart,S.energy<35?'#d9604c':'#6fbf73','PROVISIONES '+Math.max(0,Math.round(S.energy)));
+    this.bar(12,32,210,16,S.context/CFG.contextMax,S.contextLow()?'#d9604c':'#4fb4bc','CONTEXTO '+Math.round(S.context));
+    this.text('🚩 '+S.balizasLeft+'   🧭 '+S.guidesLeft,240,24,'#e0b04a',14,true);
+    this.bar(240,32,160,16,S.sinceNew/CFG.loopWarn,S.sinceNew>=CFG.loopWarn?'#d9604c':'#b59a3a','VUELTAS '+S.sinceNew+'/'+CFG.loopWarn);
+    this.text('Pasos: '+S.stats.moves,420,24,'#e8dfc8',12);
+    this.text(S.msg,14,544,S.msg.startsWith('⚠')?'#ffb36b':'#e8dfc8',13);
+    this.drawNotebook({x:696,y:0,w:264,h:560},{nb:S.nb,title:'CUADERNO (lo que creés saber)',current:S.entry.eid});
+  },
+
+  /* ----- Fase 2: cartografiar ----- */
+  drawCarto(G){
+    const S=G.S, nb=S.nb; this.bg(0,0,960,560);
+    this.text('FASE 2 · CARTÓGRAFO — revisá el cuaderno antes de entregarlo',16,26,'#e0b04a',15,true);
+    this.text(S.found?'Encontraste la salida.':'No encontraste la salida: el mapa no podrá guiar a nadie hasta la cruz.',16,46,S.found?'#6fbf73':'#d9604c',12);
+    const foc=nb.entries[G.focus];
+    this.drawNotebook({x:10,y:58,w:940,h:400},{nb,title:'CUADERNO — aro rojo = ficha que se confunde con otra',showAmbig:true,focus:foc&&foc.eid,mark:G.mark});
+    if(foc){
+      const conn=foc.edges.map(e=>'#'+e.to+'@'+Math.round(e.b)+'°').join(' ')||'(sin conexiones)';
+      this.text('Ficha #'+foc.eid+' · hito: '+LM[foc.lm].n+' · canales: '+foc.deg+' · baliza: '+(foc.baliza||'ninguna')+' · conexiones: '+conn,14,480,'#e8dfc8',12);
+    }
+    this.text(G.cmsg||'← → mover foco · M marcar una ficha y luego otra parecida para FUSIONARLAS · Enter entrega el mapa',14,504,'#9fd',12);
+    this.text('Fichas: '+nb.entries.length+' · se confunden: '+nb.ambiguous().size+' · lugares reales distintos: ?',14,526,'#b8c4c0',12);
+  },
+
+  /* ----- Fases 3 y 4: validar / resultado ----- */
+  drawValidate(G){
+    const c=this.ctx, S=G.S, F=G.F, w=S.world; this.bg(0,0,960,560);
+    const sc=0.78, ox=20, oy=62, X=n=>ox+n.x*sc, Y=n=>oy+(n.y-60)*sc;
+    this.text('TERRITORIO REAL (revelado)',14,24,'#e0b04a',12,true);
+    c.strokeStyle='#2f7f86'; c.lineWidth=14; c.lineCap='round';
+    for(const [a,b] of w.level.edges){ const A=w.nodes[a],B=w.nodes[b]; c.beginPath(); c.moveTo(X(A),Y(A)); c.lineTo(X(B),Y(B)); c.stroke(); }
+    c.strokeStyle='rgba(224,176,74,.85)'; c.lineWidth=4;
+    c.beginPath(); F.path.forEach((id,i)=>{ const n=w.nodes[id]; i?c.lineTo(X(n),Y(n)):c.moveTo(X(n),Y(n)); }); c.stroke();
+    for(const n of w.nodes){ this.lmIcon(n.lm,X(n),Y(n)-2,.55); if(w.balizas[n.id]){ c.fillStyle='#e0b04a'; c.beginPath(); c.arc(X(n)+14,Y(n)-14,7,0,7); c.fill(); this.text(''+w.balizas[n.id],X(n)+14,Y(n)-11,'#201808',10,true,'center'); } }
+    const r=w.nodes[F.real], pulse=1+0.15*Math.sin(G.t/120);
+    c.strokeStyle='#fff'; c.lineWidth=3; c.beginPath(); c.arc(X(r),Y(r),16*pulse,0,7); c.stroke();
+    this.drawNotebook({x:700,y:0,w:260,h:340},{nb:S.nb,title:'CUADERNO (seguidor)',belief:new Set(F.belief.map(e=>e.eid))});
+    c.fillStyle='#10201f'; c.fillRect(700,346,260,214); c.strokeStyle='#2c4a49'; c.strokeRect(700.5,346.5,259,213);
+    this.text('BITÁCORA DEL SEGUIDOR',710,364,'#e0b04a',12,true);
+    G.log.slice(-8).forEach((m,i)=>this.text(m.t,710,384+i*20,m.c,10.5));
+    this.text('Errores: '+F.stats.errors+'   Canales mal tomados: '+F.stats.wrongChannels,14,540,'#e8dfc8',12);
+  },
+  draw(G){
+    if(G.phase==='explore') this.drawExplore(G);
+    else if(G.phase==='carto') this.drawCarto(G);
+    else if(G.phase==='validate'||G.phase==='result') this.drawValidate(G);
+    else this.bg(0,0,960,560);
+  }
+};
+
+/* ---------- 5. JUEGO: máquina de estados, input, bucle ---------- */
+const Game = {
+  phase:'menu', S:null, F:null, exits:[], sel:0, anim:null, arrive:1, wait:0, ft:0, endWait:0, t:0,
+  focus:0, mark:null, cmsg:'', log:[], runs:0,
+  boot(){
+    const c=document.getElementById('game'); Renderer.init(c); this.canvas=c;
+    const map={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',ArrowUp:'go',w:'go',W:'go',
+               Enter:'enter',b:'baliza',B:'baliza',g:'guide',G:'guide',m:'merge',M:'merge',r:'restart',R:'restart'};
+    window.addEventListener('keydown',e=>{ const a=map[e.key]; if(a){ e.preventDefault(); this.press(a); } });
+    c.addEventListener('pointerdown',e=>this.click(e));
+    document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',()=>this.press(b.dataset.act)));
+    document.getElementById('btnStart').addEventListener('click',()=>this.start());
+    this.last=performance.now(); requestAnimationFrame(t=>this.loop(t));
+  },
+  start(){
+    const level=LEVELS[0]; this.runs++;
+    this.S=new Session(level, level.seed+this.runs); this.F=null; this.log=[]; this.phase='explore';
+    this.focus=0; this.mark=null; this.cmsg=''; this.wait=0; this.endWait=0; this.anim=null;
+    document.getElementById('menu').classList.add('hidden'); document.getElementById('result').classList.add('hidden');
+    this.refreshExits();
+  },
+  refreshExits(){
+    this.exits=this.S.exits(); this.arrive=0;
+    const i=this.exits.findIndex(e=>e.knownTo==null); this.sel=i>=0?i:0;
+  },
+  press(a){
+    const P=this.phase;
+    if(a==='restart'){ this.start(); return; }
+    if(P==='menu'){ if(a==='enter'||a==='go') this.start(); return; }
+    if(P==='explore'){
+      if(this.anim||this.S.over) return;
+      const n=this.exits.length;
+      if(a==='left') this.sel=(this.sel-1+n)%n;
+      else if(a==='right') this.sel=(this.sel+1)%n;
+      else if(a==='go'||a==='enter') this.anim={i:this.sel,t:0,dur:0.5};
+      else if(a==='baliza'){ this.S.placeBaliza(); }
+      else if(a==='guide'){ this.S.useGuide(); this.refreshExits(); }
+      return;
+    }
+    if(P==='carto'){
+      const nb=this.S.nb;
+      if(a==='left') this.focus=(this.focus-1+nb.entries.length)%nb.entries.length;
+      else if(a==='right') this.focus=(this.focus+1)%nb.entries.length;
+      else if(a==='merge') this.merge();
+      else if(a==='enter'||a==='go') this.deliver();
+    }
+  },
+  click(e){
+    const r=this.canvas.getBoundingClientRect(), x=(e.clientX-r.left)*960/r.width, y=(e.clientY-r.top)*560/r.height;
+    if(this.phase==='explore'&&!this.anim&&!this.S.over){
+      this.exits.forEach((a,i)=>{ if(a._end&&Math.hypot(a._end.ex-x,a._end.ey-y)<48){ this.sel=i; this.anim={i,t:0,dur:0.5}; } });
+    } else if(this.phase==='carto'){
+      const id=Renderer.hitEntry(x,y); if(id!=null){ const k=this.S.nb.entries.findIndex(en=>en.eid===id); if(k>=0) this.focus=k; }
+    }
+  },
+  merge(){
+    const S=this.S, nb=S.nb, fe=nb.entries[this.focus]; if(!fe) return;
+    if(this.mark==null){ this.mark=fe.eid; this.cmsg='Marcaste #'+fe.eid+'. Elegí otra ficha que creas que es el MISMO lugar y presioná M (M otra vez sobre la misma cancela).'; return; }
+    if(this.mark===fe.eid){ this.mark=null; this.cmsg='Cancelado.'; return; }
+    const a=nb.get(this.mark);
+    if(!nb.matches(a,{lm:fe.lm,deg:fe.deg,baliza:fe.baliza})){ this.cmsg='Esas fichas no describen el mismo tipo de lugar (hito, canales o baliza distintos).'; this.mark=null; return; }
+    const keepId=Math.min(a.eid,fe.eid), dropId=Math.max(a.eid,fe.eid), r=nb.merge(keepId,dropId);
+    if(r.ok) S.stats.goodMerge++; else S.stats.badMerge++;
+    this.mark=null; this.focus=nb.entries.indexOf(r.keep); this.cmsg='Fusionaste #'+dropId+' dentro de #'+keepId+'. (El cuaderno no te dice si acertaste.)';
+  },
+  deliver(){
+    this.F=new Follower(this.S.world,this.S.nb,LEVELS[0].seed*13+this.runs); this.phase='validate'; this.ft=0; this.endWait=0;
+    this.log=[{t:'El segundo explorador recibe tu cuaderno.',c:'#e8dfc8'}];
+  },
+  update(dt){
+    this.t+=dt*1000;
+    if(this.phase==='explore'){
+      if(this.arrive<1) this.arrive=Math.min(1,this.arrive+dt*3);
+      if(this.anim){ this.anim.t+=dt/this.anim.dur; if(this.anim.t>=1){ const adj=this.exits[this.anim.i]; this.anim=null; this.S.sail(adj); this.refreshExits(); } }
+      else if(this.S.over){ this.wait+=dt; if(this.wait>1.4){ this.phase='carto'; this.focus=0; this.cmsg=''; } }
+    } else if(this.phase==='validate'){
+      const F=this.F;
+      if(!F.done){
+        this.ft+=dt*1000;
+        if(this.ft>=CFG.followerStepMs){
+          this.ft=0; const ev=F.step();
+          if(ev){ const col=ev.type==='win'?'#6fbf73':(ev.type==='lost'||ev.type==='fail')?'#d9604c':ev.type==='backtrack'?'#ffb36b':'#e8dfc8'; this.log.push({t:'• '+ev.msg.slice(0,42),c:col}); }
+        }
+      } else { this.endWait+=dt; if(this.endWait>1.3){ this.phase='result'; this.showResult(); } }
+    }
+  },
+  showResult(){
+    const R=Scoring.compute(this.S,this.F), el=document.getElementById('result');
+    const rows=R.rows.map(r=>'<tr><td>'+r[0]+'</td><td><b>'+r[1]+'</b></td><td>'+r[2]+'</td></tr>').join('');
+    el.innerHTML='<h3 class="'+(R.success?'win':'lose')+'">'+(R.success?'✔ El segundo explorador cruzó el Chaco con tu mapa':'✘ El mapa no alcanzó para cruzar el Chaco')+' — Puntaje '+R.score+' · Rango '+R.grade+'</h3>'
+      +'<table><tr><th>Experiencia del explorador</th><th>Aprendizaje informático</th><th>Lo que pasó en tu expedición</th></tr>'+rows+'</table>'
+      +'<p><button class="primary" onclick="Game.start()">Nueva expedición</button></p>';
+    el.classList.remove('hidden'); el.scrollIntoView({behavior:'smooth',block:'nearest'});
+  },
+  loop(now){
+    const dt=Math.min(0.05,(now-this.last)/1000); this.last=now;
+    this.update(dt); Renderer.draw(this); requestAnimationFrame(t=>this.loop(t));
+  }
+};
+
+if(typeof module!=='undefined') module.exports={U,CFG,LEVELS,World,Notebook,Session,Follower,Scoring};
+if(typeof document!=='undefined') Game.boot();
+</script>
+</body>
+</html>
+
+</body></html>
