@@ -1,0 +1,514 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Biblioteca de Mentores Históricos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: biblioteca de mentores arriba; consola del mundo y panel de análisis lado a lado; montaje en el mapa al final.
+   Color: neutros con tinte verde (estantería de Minecraft). Tres capas con color propio: azul observó, ámbar defendió, rojo ocurrió.
+   Tipo: Space Grotesk para títulos, Inter para texto, JetBrains Mono para la consola del chat. */
+:root {
+  --bg: #F1F5F3;
+  --surface: #FFFFFF;
+  --fg: #16201D;
+  --muted: #55655F;
+  --line: #D3DCD8;
+  --accent: #1F7A5A;
+  --on-accent: #FFFFFF;
+  --obs: #2B6CB0;
+  --def: #8F5A0A;
+  --real: #B83B3B;
+  --ok: #1F7A5A;
+  --open: #6B4FA3;
+  --console-bg: #11171A;
+  --console-fg: #D9E4DF;
+  --console-dim: #7F908A;
+  --console-player: #8FD6B5;
+  --console-sys: #E8C877;
+  --console-line: #26302F;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1413; --surface: #162120; --fg: #E5EEEA; --muted: #93A59E; --line: #2A3835;
+    --accent: #4CC39A; --on-accent: #08231A;
+    --obs: #6FA8E8; --def: #E0A63E; --real: #F07A7A; --ok: #4CC39A; --open: #A58BE0;
+    --console-bg: #090D0E; --console-line: #1E2827;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1413; --surface: #162120; --fg: #E5EEEA; --muted: #93A59E; --line: #2A3835;
+  --accent: #4CC39A; --on-accent: #08231A;
+  --obs: #6FA8E8; --def: #E0A63E; --real: #F07A7A; --ok: #4CC39A; --open: #A58BE0;
+  --console-bg: #090D0E; --console-line: #1E2827;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.7rem, 4.2vw, 2.5rem); line-height: 1.12; }
+h2 { font-size: 1.25rem; line-height: 1.25; }
+p { margin: 0; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 500; }
+.muted { color: var(--muted); }
+.lead { font-size: 1.05rem; color: var(--muted); max-width: 62ch; }
+
+header { display: flex; flex-direction: column; gap: 12px; }
+.callout { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 12px 14px; max-width: 78ch; font-size: 14px; }
+.callout strong { font-family: var(--font-display); }
+
+section { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.sec-head { display: flex; flex-direction: column; gap: 4px; }
+
+/* Biblioteca */
+.shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.mentor {
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+.mentor:hover { border-color: var(--accent); }
+.mentor:focus-visible, .btn:focus-visible, .chip:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mentor[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
+.mentor .name { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; }
+.mentor .area { font-size: 13px; color: var(--muted); }
+.mentor .app { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 600; }
+.mentor .docs { font-size: 13px; margin-top: 2px; }
+.mentor.empty .docs { color: var(--muted); }
+
+/* Columnas */
+.cols { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+
+/* Consola */
+.console { background: var(--console-bg); color: var(--console-fg); border: 1px solid var(--console-line); border-radius: 8px; font-family: var(--font-mono); font-size: 12.5px; overflow: hidden; min-width: 0; }
+.console .bar { padding: 8px 12px; border-bottom: 1px solid var(--console-line); color: var(--console-dim); font-size: 11.5px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.out { height: 25rem; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 3px; }
+.ln { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ln.cmd { color: var(--console-player); }
+.ln.sys { color: var(--console-sys); }
+.ln.dim { color: var(--console-dim); }
+.ln.rule { color: var(--console-dim); }
+.cmdline { display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--console-line); padding: 8px 12px; }
+.cmdline label { color: var(--console-player); white-space: nowrap; }
+.cmdline input { flex: 1; min-width: 0; font: inherit; background: transparent; color: var(--console-fg); border: none; padding: 4px 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 12px; }
+.chip { font: inherit; font-size: 11.5px; cursor: pointer; color: var(--console-fg); background: transparent; border: 1px solid var(--console-line); border-radius: 999px; padding: 4px 10px; }
+.chip:hover { border-color: var(--console-player); color: var(--console-player); }
+
+/* Panel de análisis */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.phead { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+.phead .titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pill { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 4px 10px; white-space: nowrap; background: color-mix(in srgb, var(--c, var(--muted)) 14%, var(--surface)); color: var(--c, var(--muted)); border: 1px solid color-mix(in srgb, var(--c, var(--muted)) 35%, var(--surface)); }
+.pill.ok { --c: var(--ok); } .pill.part { --c: var(--def); } .pill.open { --c: var(--open); } .pill.wait { --c: var(--muted); }
+
+.q { margin: 0; border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-family: var(--font-display); font-size: 1.05rem; }
+.q .lab, .layer .lab { font-family: var(--font-body); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--muted); }
+
+.layer { border: 1px solid color-mix(in srgb, var(--c) 30%, var(--surface)); background: color-mix(in srgb, var(--c) 8%, var(--surface)); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.layer .lhead { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.layer .lab { color: var(--c); }
+.layer .src { font-size: 12px; color: var(--muted); }
+.layer.obs { --c: var(--obs); } .layer.def { --c: var(--def); } .layer.real { --c: var(--real); } .layer.resp { --c: var(--open); }
+.layer.locked { --c: var(--muted); background: transparent; border-style: dashed; color: var(--muted); font-size: 14px; }
+
+.predict { border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.predict h3 { font-size: 1rem; }
+.sliderrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+output { font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; min-width: 6ch; text-align: right; }
+.scale { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.btn { font: inherit; font-weight: 600; cursor: pointer; background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); border-radius: 6px; padding: 8px 14px; align-self: flex-start; }
+.btn:hover { filter: brightness(1.07); }
+.btn.ghost { background: transparent; color: var(--fg); border-color: var(--line); font-weight: 500; }
+
+.gap { border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.gap-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.bars { display: flex; flex-direction: column; gap: 10px; }
+.barrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+.barrow .bl { font-size: 13px; }
+.barrow .bv { font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.track { grid-column: 1 / -1; height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--muted) 18%, var(--surface)); overflow: hidden; }
+.fill { height: 100%; border-radius: 5px; background: var(--c); transition: width 0.5s ease; }
+.fill.me { --c: var(--accent); } .fill.def { --c: var(--def); } .fill.real { --c: var(--real); }
+.tag { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--c) 14%, var(--surface)); color: var(--c); border: 1px solid color-mix(in srgb, var(--c) 35%, var(--surface)); }
+.tag.hi { --c: var(--real); } .tag.mid { --c: var(--def); } .tag.lo { --c: var(--ok); }
+.verdict { font-size: 14px; }
+.fine { font-size: 12.5px; color: var(--muted); }
+
+.open-gap { border: 1px dashed var(--open); border-radius: 6px; padding: 12px 14px; font-size: 14px; background: color-mix(in srgb, var(--open) 8%, var(--surface)); }
+.discuss h3 { font-size: 1rem; margin-bottom: 6px; }
+.discuss ul { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 6px; }
+.emptystate { border: 1px dashed var(--line); border-radius: 6px; padding: 18px; color: var(--muted); display: flex; flex-direction: column; gap: 6px; }
+.emptystate strong { color: var(--fg); font-family: var(--font-display); }
+
+/* Montaje */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Demostración para ingeniería social · Minecraft Education</p>
+    <h1>Biblioteca de mentores históricos</h1>
+    <p class="lead">En búsqueda de las preguntas sin respuesta. Un mentor, un documento y tres capas: lo que el autor observó, lo que defendió y lo que ocurrió.</p>
+    <div class="callout"><strong>Importante.</strong> Los documentos son perspectivas históricas, no verdades absolutas. La capa Ocurrió también es una reconstrucción hecha desde otras fuentes, por eso cada capa indica de dónde viene. Los documentos y las cifras de esta demo son ejemplos ilustrativos.</div>
+  </header>
+
+  <section aria-labelledby="h-mentores">
+    <div class="sec-head">
+      <h2 id="h-mentores">Los seis mentores</h2>
+      <p class="muted">Cada uno representa una estructura de pensamiento. Elige uno, o escribe el comando en la consola.</p>
+    </div>
+    <div class="shelf" id="shelf"></div>
+  </section>
+
+  <div class="cols">
+    <section aria-labelledby="h-consola">
+      <div class="sec-head">
+        <h2 id="h-consola">Consola del mundo</h2>
+        <p class="muted">Así responde el chat del juego cuando el estudiante escribe un comando.</p>
+      </div>
+      <div class="console">
+        <div class="bar"><span>Chat · Biblioteca de Mentores</span><span>puente simulado</span></div>
+        <div class="out" id="out" role="log" aria-live="polite"></div>
+        <form class="cmdline" id="cmdform" autocomplete="off">
+          <label for="cmd">&lt;Estudiante&gt;</label>
+          <input id="cmd" type="text" placeholder="!analizar Campaña del Norte" spellcheck="false">
+        </form>
+        <div class="chips" id="chips"></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-analisis">
+      <div class="sec-head">
+        <h2 id="h-analisis">Análisis del documento</h2>
+        <p class="muted">Primero predices, después lees lo que defendió el mentor y lo que ocurrió.</p>
+      </div>
+      <div class="panel" id="analysis"></div>
+    </section>
+  </div>
+
+  <section aria-labelledby="h-montaje">
+    <div class="sec-head">
+      <h2 id="h-montaje">Montaje en el mapa</h2>
+      <p class="muted">Esta página reproduce en el navegador el recorrido que haría el estudiante dentro del mundo.</p>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Elemento del mapa</th><th>Qué representa</th><th>Cómo funciona</th></tr></thead>
+        <tbody>
+          <tr><td>Atril con libro firmado</td><td>Un documento del mentor (DOC-001, DOC-002, DOC-003)</td><td>El estudiante lee el libro y copia el nombre de la campaña.</td></tr>
+          <tr><td>Chat con !analizar</td><td>El motor de inferencia histórica</td><td>El puente WebSocket envía el comando al script en Python y devuelve el informe al chat.</td></tr>
+          <tr><td>Seis estanterías</td><td>Los seis mentores y su estructura de pensamiento</td><td>Una estantería vacía indica un mentor sin documentos catalogados.</td></tr>
+          <tr><td>Tres salas en fila</td><td>Observó, Defendió y Ocurrió</td><td>Una puerta de hierro separa cada sala. Se abre cuando el estudiante deja su predicción en un cartel.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+const MENTORES = [
+  { clave: 'estratega_militar', nombre: 'Estratega militar', area: 'Coordinación y logística', aplicacion: 'Organización', docs: [{
+    id: 'DOC-001', campania: 'Campaña del Norte', periodo: 'Invierno de 1812',
+    pregunta: '¿Cómo sostener la línea de suministros en el invierno de 1812?',
+    observo: 'Falta de transporte local y carreteras congeladas.',
+    defendio: 'La victoria se obtendrá forzando una marcha rápida antes del invierno.',
+    ocurrio: 'La línea logística colapsó y se perdió el 40 % del contingente por inanición.',
+    respuesta: 'En sus memorias de 1820 admitió que los almacenes fijos a lo largo de la ruta eran indispensables.',
+    estado: 'resuelta',
+    fuentes: { observo: 'Carta del autor al estado mayor', defendio: 'Plan de campaña firmado por el autor', ocurrio: 'Registros de intendencia, reconstrucción posterior', respuesta: 'Memorias del autor, 1820' },
+    metrica: { nombre: 'Pérdidas del contingente', unidad: '%', min: 0, max: 100, paso: 1, inicial: 20, defendido: 8, ocurrido: 40 },
+    discusion: ['¿Qué pesó más en el plan del estratega: lo que observó o lo que necesitaba lograr?', '¿Qué señal de su propia carta contradecía el plan que firmó?']
+  }] },
+  { clave: 'filosofo', nombre: 'Filósofo', area: 'Principios y razonamiento', aplicacion: 'Pensamiento crítico', docs: [] },
+  { clave: 'economista', nombre: 'Economista', area: 'Recursos e intercambio', aplicacion: 'Producción', docs: [{
+    id: 'DOC-002', campania: 'Crisis del Grano', periodo: 'Provincia del Río, tras dos cosechas pobres',
+    pregunta: '¿Cuánto tiempo puede sostener la provincia sus reservas si cierra el comercio exterior?',
+    observo: 'Los graneros públicos estaban llenos a la mitad de su capacidad.',
+    defendio: 'El cierre del comercio protegerá las reservas durante todo un año.',
+    ocurrio: 'Las reservas se agotaron en cinco meses y el mercado negro encareció el pan.',
+    respuesta: null,
+    estado: 'abierta',
+    fuentes: { observo: 'Informe del autor al consejo', defendio: 'Memorial del autor al gobernador', ocurrio: 'Libros de aduana y actas municipales, reconstrucción posterior', respuesta: 'Búsqueda en la biblioteca' },
+    metrica: { nombre: 'Meses de reserva', unidad: 'meses', min: 0, max: 12, paso: 1, inicial: 6, defendido: 12, ocurrido: 5 },
+    discusion: ['¿Qué incentivo tenía el economista para defender la cifra de doce meses?', '¿Qué dato habría cambiado su cálculo y quién lo tenía?']
+  }] },
+  { clave: 'reformador_politico', nombre: 'Reformador político', area: 'Instituciones y representación', aplicacion: 'Gobierno', docs: [] },
+  { clave: 'cientifico', nombre: 'Científico', area: 'Investigación y experimentación', aplicacion: 'Innovación', docs: [] },
+  { clave: 'educador', nombre: 'Educador', area: 'Transmisión de conocimiento', aplicacion: 'Sucesión', docs: [{
+    id: 'DOC-003', campania: 'Escuela de Oficios', periodo: 'Primera década de la escuela',
+    pregunta: '¿Cómo asegurar que los maestros formados hoy enseñen a los del mañana?',
+    observo: 'Cada maestro formaba en promedio a un solo aprendiz y casi todos se marchaban al terminar.',
+    defendio: 'Con un taller central se formarán 200 maestros por año.',
+    ocurrio: 'Se formaron 60 maestros por año y la mitad abandonó la enseñanza en dos años.',
+    respuesta: 'Un informe posterior propone pagar a quienes enseñan, pero no hay registro de que se aplicara.',
+    estado: 'parcial',
+    fuentes: { observo: 'Cuaderno de clases del autor', defendio: 'Propuesta de fundación firmada por el autor', ocurrio: 'Matrículas y actas de la escuela, reconstrucción posterior', respuesta: 'Informe del autor, años después' },
+    metrica: { nombre: 'Maestros formados por año', unidad: 'maestros', min: 0, max: 250, paso: 5, inicial: 100, defendido: 200, ocurrido: 60 },
+    discusion: ['¿Qué mecanismo permitiría que cada maestro formado enseñe a otros?', 'Si la propuesta de pagar a quien enseña nunca se aplicó, ¿la pregunta está respondida?']
+  }] }
+];
+
+const ESTADOS = {
+  resuelta: { texto: 'Respondida posteriormente', clase: 'ok' },
+  parcial: { texto: 'Respuesta parcial', clase: 'part' },
+  abierta: { texto: 'Pregunta sin respuesta', clase: 'open' }
+};
+const CHIPS = ['!mentores', '!analizar Campaña del Norte', '!analizar Crisis del Grano', '!analizar Escuela de Oficios', '!analizar Filósofo', '!ayuda'];
+
+const $ = (s) => document.querySelector(s);
+const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (v, u) => v.toLocaleString('es') + (u === '%' ? ' %' : ' ' + u);
+
+const out = $('#out');
+let state = { m: null, d: null, step: 0, guess: null, reported: false };
+
+function say(text, cls) {
+  const p = document.createElement('div');
+  p.className = 'ln ' + (cls || '');
+  p.textContent = text;
+  out.appendChild(p);
+  out.scrollTop = out.scrollHeight;
+}
+
+function buscar(term) {
+  const t = norm(term);
+  const conDoc = [];
+  const soloMentor = [];
+  MENTORES.forEach((m) => {
+    const mentorOk = norm(m.nombre).includes(t) || norm(m.clave.replace(/_/g, ' ')).includes(t);
+    if (m.docs.length) {
+      m.docs.forEach((d) => { if (mentorOk || norm(d.campania).includes(t)) conDoc.push({ m, d }); });
+    } else if (mentorOk) {
+      soloMentor.push({ m, d: null });
+    }
+  });
+  return { conDoc, soloMentor };
+}
+
+function analizar(arg) {
+  if (!arg) { say('[Biblioteca] Uso: !analizar <campaña o mentor>', 'sys'); return; }
+  const { conDoc, soloMentor } = buscar(arg);
+  if (!conDoc.length && !soloMentor.length) {
+    say('[Biblioteca] No se encontraron registros sobre esa campaña o mentor.', 'sys');
+    return;
+  }
+  if (conDoc.length) {
+    say('=== REPORTE DE INTELIGENCIA HISTÓRICA ===', 'rule');
+    conDoc.slice(0, 3).forEach(({ m, d }) => {
+      say('[Mentor: ' + m.nombre.toUpperCase() + '] Área: ' + m.area, 'sys');
+      say('Campaña: ' + d.campania + ' (' + d.id + ')');
+      say('Pregunta del líder: ' + d.pregunta);
+    });
+    say('Las tres capas se abren en el panel. Primero deja tu predicción.', 'dim');
+    select(conDoc[0].m, conDoc[0].d);
+  } else {
+    const { m } = soloMentor[0];
+    say('=== REPORTE DE INTELIGENCIA HISTÓRICA ===', 'rule');
+    say('[Mentor: ' + m.nombre.toUpperCase() + '] Área: ' + m.area, 'sys');
+    say('Sin documentos catalogados. Estantería vacía: nadie ha escrito aquí la primera pregunta.', 'dim');
+    select(m, null);
+  }
+}
+
+function run(raw) {
+  const cmd = raw.trim();
+  if (!cmd) return;
+  say('<Estudiante> ' + cmd, 'cmd');
+  if (cmd[0] !== '!') { say('[Biblioteca] Los comandos empiezan con "!". Escribe !ayuda.', 'sys'); return; }
+  const parts = cmd.split(/\s+/);
+  const head = parts[0].toLowerCase();
+  const arg = parts.slice(1).join(' ');
+  if (head === '!ayuda') {
+    say('[Biblioteca] Comandos disponibles:', 'sys');
+    say('  !mentores            lista los seis mentores');
+    say('  !analizar <nombre>   abre un documento por campaña o mentor');
+    say('  !ayuda               muestra esta lista');
+  } else if (head === '!mentores') {
+    say('[Biblioteca] Mentores y estructura de pensamiento:', 'sys');
+    MENTORES.forEach((m) => {
+      const n = m.docs.length;
+      say('  ' + m.nombre + ': ' + m.area + ' → ' + m.aplicacion + ' (' + (n ? n + ' documento' + (n > 1 ? 's' : '') : 'sin documentos') + ')');
+    });
+  } else if (head === '!analizar') {
+    analizar(arg);
+  } else {
+    say('[Biblioteca] Comando desconocido: ' + parts[0] + '. Escribe !ayuda.', 'sys');
+  }
+}
+
+function select(m, d) {
+  state = { m, d, step: 0, guess: d ? d.metrica.inicial : null, reported: false };
+  renderShelf();
+  renderAnalysis();
+}
+
+function renderShelf() {
+  $('#shelf').innerHTML = MENTORES.map((m) => {
+    const n = m.docs.length;
+    const activo = state.m && state.m.clave === m.clave;
+    const docs = n ? n + ' documento' + (n > 1 ? 's' : '') + ' · ' + m.docs.map((d) => d.id).join(', ') : 'Sin documentos catalogados';
+    return '<button type="button" class="mentor' + (n ? '' : ' empty') + '" data-clave="' + m.clave + '" aria-pressed="' + (activo ? 'true' : 'false') + '">' +
+      '<span class="app">' + esc(m.aplicacion) + '</span>' +
+      '<span class="name">' + esc(m.nombre) + '</span>' +
+      '<span class="area">' + esc(m.area) + '</span>' +
+      '<span class="docs">' + esc(docs) + '</span></button>';
+  }).join('');
+}
+
+function layer(cls, label, src, text) {
+  return '<div class="layer ' + cls + '"><div class="lhead"><span class="lab">' + label + '</span><span class="src">' + esc(src) + '</span></div><p>' + esc(text) + '</p></div>';
+}
+function locked(msg) { return '<div class="layer locked"><p>' + esc(msg) + '</p></div>'; }
+function barRow(label, value, mt, cls) {
+  const pct = Math.max(0, Math.min(100, ((value - mt.min) / (mt.max - mt.min)) * 100));
+  return '<div class="barrow"><span class="bl">' + label + '</span><span class="bv">' + fmt(value, mt.unidad) + '</span>' +
+    '<div class="track"><div class="fill ' + cls + '" style="width:' + pct + '%"></div></div></div>';
+}
+
+function renderAnalysis() {
+  const el = $('#analysis');
+  const { m, d, step, guess } = state;
+  if (!m) { el.innerHTML = ''; return; }
+  if (!d) {
+    el.innerHTML = '<div class="phead"><div class="titles"><p class="eyebrow">' + esc(m.area) + ' → ' + esc(m.aplicacion) + '</p><h2>' + esc(m.nombre) + '</h2></div><span class="pill wait">Sin documentos</span></div>' +
+      '<div class="emptystate"><strong>Estantería vacía</strong><p>Este mentor aún no tiene libros catalogados. Para los estudiantes es una invitación: buscar un escrito del autor, anotar qué observó, qué defendió y qué pregunta dejó abierta.</p></div>';
+    return;
+  }
+  const mt = d.metrica;
+  const est = ESTADOS[d.estado];
+  let h = '';
+  h += '<div class="phead"><div class="titles"><p class="eyebrow">' + esc(m.nombre) + ' · ' + esc(m.area) + ' → ' + esc(m.aplicacion) + '</p>' +
+       '<h2>' + esc(d.campania) + '</h2><p class="muted">' + esc(d.id) + ' · ' + esc(d.periodo) + '</p></div>' +
+       (step >= 3 ? '<span class="pill ' + est.clase + '">' + est.texto + '</span>' : '<span class="pill wait">Estado por determinar</span>') + '</div>';
+  h += '<blockquote class="q"><span class="lab">Pregunta del autor</span>' + esc(d.pregunta) + '</blockquote>';
+  h += layer('obs', 'Observó', d.fuentes.observo, d.observo);
+
+  if (step === 0) {
+    h += '<div class="predict"><h3>Tu predicción</h3><p>Con solo lo que observó el autor, ¿cuánto estimas para: <strong>' + esc(mt.nombre.toLowerCase()) + '</strong>?</p>' +
+         '<div class="sliderrow"><input type="range" id="guess" min="' + mt.min + '" max="' + mt.max + '" step="' + mt.paso + '" value="' + guess + '" aria-label="Tu estimación de ' + esc(mt.nombre.toLowerCase()) + '"><output id="guessOut" for="guess">' + fmt(guess, mt.unidad) + '</output></div>' +
+         '<div class="scale"><span>' + fmt(mt.min, mt.unidad) + '</span><span>' + fmt(mt.max, mt.unidad) + '</span></div>' +
+         '<button type="button" class="btn" data-act="predecir">Dejar mi predicción</button></div>';
+  } else {
+    h += '<p class="fine">Tu predicción registrada: <strong>' + fmt(guess, mt.unidad) + '</strong></p>';
+  }
+
+  if (step >= 1) {
+    h += layer('def', 'Defendió', d.fuentes.defendio, d.defendio);
+    if (step === 1) h += '<button type="button" class="btn" data-act="contrastar">Contrastar con lo ocurrido</button>';
+  } else {
+    h += locked('Capa bloqueada. Deja tu predicción para ver lo que defendió el autor.');
+  }
+
+  if (step >= 2) {
+    h += layer('real', 'Ocurrió', d.fuentes.ocurrio, d.ocurrio);
+    const dev = Math.abs(mt.ocurrido - mt.defendido) / Math.max(mt.ocurrido, mt.defendido);
+    const nivel = dev > 0.66 ? ['hi', 'Brecha alta'] : dev > 0.33 ? ['mid', 'Brecha media'] : ['lo', 'Brecha baja'];
+    const eS = Math.abs(guess - mt.ocurrido);
+    const eL = Math.abs(mt.defendido - mt.ocurrido);
+    let verdict;
+    if (eS < eL) verdict = 'Tu predicción quedó más cerca de lo ocurrido que la afirmación del mentor (error de ' + fmt(eS, mt.unidad) + ' frente a ' + fmt(eL, mt.unidad) + '). Ambos partían de la misma observación.';
+    else if (eS > eL) verdict = 'La afirmación del mentor quedó más cerca de lo ocurrido que tu predicción (error de ' + fmt(eL, mt.unidad) + ' frente a ' + fmt(eS, mt.unidad) + '), aunque ambos se alejaron.';
+    else verdict = 'Tu error y el del mentor fueron iguales (' + fmt(eS, mt.unidad) + '). Ambos se alejaron de lo ocurrido.';
+    h += '<div class="gap"><div class="gap-head"><h3>' + esc(mt.nombre) + '</h3><span class="tag ' + nivel[0] + '">' + nivel[1] + ' entre defendido y ocurrido</span></div>' +
+         '<div class="bars">' + barRow('Tu predicción', guess, mt, 'me') + barRow('Lo que defendió', mt.defendido, mt, 'def') + barRow('Lo que ocurrió', mt.ocurrido, mt, 'real') + '</div>' +
+         '<div class="scale"><span>' + fmt(mt.min, mt.unidad) + '</span><span>' + fmt(mt.max, mt.unidad) + '</span></div>' +
+         '<p class="verdict">' + verdict + '</p>' +
+         '<p class="fine">Valores de ejemplo para la demostración. En un documento real, cada cifra se cita con su fuente.</p>' +
+         (step === 2 ? '<button type="button" class="btn" data-act="respuesta">Buscar respuesta posterior</button>' : '') + '</div>';
+  } else if (step >= 1) {
+    h += locked('Capa bloqueada. Contrasta con lo ocurrido para abrirla.');
+  } else {
+    h += locked('Capa bloqueada. Se abre después de leer lo que defendió el autor.');
+  }
+
+  if (step >= 3) {
+    if (d.respuesta) {
+      h += layer('resp', 'Respuesta posterior', d.fuentes.respuesta, d.respuesta);
+    } else {
+      h += layer('resp', 'Respuesta posterior', d.fuentes.respuesta, 'Ningún documento posterior responde esta pregunta.');
+      h += '<div class="open-gap"><strong>Brecha histórica.</strong> La pregunta sigue abierta. Es el punto de partida para investigar: ¿qué documento faltaría para cerrarla?</div>';
+    }
+    h += '<div class="discuss"><h3>Para discutir en clase</h3><ul>' + d.discusion.map((q) => '<li>' + esc(q) + '</li>').join('') + '</ul></div>';
+    h += '<button type="button" class="btn ghost" data-act="reiniciar">Reiniciar este ejercicio</button>';
+  } else {
+    h += locked('Capa bloqueada. Aquí aparece si el autor volvió sobre su pregunta.');
+  }
+  el.innerHTML = h;
+}
+
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'guess') {
+    state.guess = Number(e.target.value);
+    $('#guessOut').textContent = fmt(state.guess, state.d.metrica.unidad);
+  }
+});
+
+$('#analysis').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act]');
+  if (!b || !state.d) return;
+  const act = b.dataset.act;
+  if (act === 'predecir') { state.step = 1; say('[Biblioteca] Predicción registrada. Sala 2 abierta: Defendió.', 'sys'); }
+  else if (act === 'contrastar') { state.step = 2; say('[Biblioteca] Sala 3 abierta: Ocurrió.', 'sys'); }
+  else if (act === 'respuesta') {
+    state.step = 3;
+    const est = ESTADOS[state.d.estado];
+    say('[Biblioteca] Estado de la brecha: ' + est.texto.toUpperCase() + '.', 'sys');
+    if (state.d.estado === 'abierta') say('Nadie respondió esta pregunta en los documentos disponibles.', 'dim');
+  }
+  else if (act === 'reiniciar') { state.step = 0; state.guess = state.d.metrica.inicial; say('[Biblioteca] Ejercicio reiniciado: ' + state.d.id + '.', 'sys'); }
+  renderAnalysis();
+});
+
+$('#shelf').addEventListener('click', (e) => {
+  const b = e.target.closest('.mentor');
+  if (!b) return;
+  const m = MENTORES.find((x) => x.clave === b.dataset.clave);
+  run('!analizar ' + (m.docs.length ? m.docs[0].campania : m.nombre));
+});
+
+$('#cmdform').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const i = $('#cmd');
+  run(i.value);
+  i.value = '';
+});
+
+$('#chips').innerHTML = CHIPS.map((c) => '<button type="button" class="chip" data-cmd="' + esc(c) + '">' + esc(c) + '</button>').join('');
+$('#chips').addEventListener('click', (e) => {
+  const b = e.target.closest('.chip');
+  if (b) run(b.dataset.cmd);
+});
+
+say('[Biblioteca] Conectado al mundo de Minecraft Education (simulado).', 'sys');
+say('Escribe !ayuda para ver los comandos.', 'dim');
+renderShelf();
+run('!analizar Campaña del Norte');
+</script>
+
+</body></html>
