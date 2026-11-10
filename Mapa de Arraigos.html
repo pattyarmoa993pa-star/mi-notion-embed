@@ -1,0 +1,540 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mapa de Arraigos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: mapa 6x6 con 4 capas a la izquierda; bitácora, perfiles y comparación a la derecha. */
+:root{
+  --bg:#EDF0EA; --surface:#F8FAF6; --fg:#17211C; --muted:#5B6A62; --line:#CBD3CA;
+  --accent:#2E5E4E; --on-accent:#F8FAF6;
+  --ca:#2B6CB0; --cb:#B26E0C; --cc:#8B4FA8;
+  --danger:#C23B2B; --safe:#4C9A6A; --riv:#5E9AA8; --wall:#3A3F3C; --route:#2F7F9A;
+  --t-L:#E4E8DA; --t-R:#CFE3E6; --t-M:#D8D3C8;
+  --font-display:"Space Grotesk",system-ui,sans-serif; --font-body:"Inter",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121815; --surface:#1A231F; --fg:#E6ECE7; --muted:#93A39A; --line:#2D3B34;
+    --accent:#7FC4A4; --on-accent:#10201A;
+    --ca:#6BA5E6; --cb:#E0A244; --cc:#BE8AD6;
+    --danger:#F0705F; --safe:#5FB081; --riv:#5FA3B3; --wall:#C8D0CA; --route:#6BB8D4;
+    --t-L:#232C25; --t-R:#1E3238; --t-M:#2F2D29; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121815; --surface:#1A231F; --fg:#E6ECE7; --muted:#93A39A; --line:#2D3B34;
+  --accent:#7FC4A4; --on-accent:#10201A;
+  --ca:#6BA5E6; --cb:#E0A244; --cc:#BE8AD6;
+  --danger:#F0705F; --safe:#5FB081; --riv:#5FA3B3; --wall:#C8D0CA; --route:#6BB8D4;
+  --t-L:#232C25; --t-R:#1E3238; --t-M:#2F2D29; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(28px,5vw,42px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:16px;font-weight:700}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.lead{max-width:62ch;color:var(--muted);margin:10px 0 0}
+header{margin-bottom:20px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+@media(min-width:980px){.grid{grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);align-items:start}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;min-width:0}
+.card h2{margin-bottom:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{font:inherit;font-weight:600;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 14px;border-radius:6px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.layer{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:13px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:6px 11px;border-radius:99px;cursor:pointer}
+.layer i{width:10px;height:10px;border-radius:50%;background:var(--sw);display:inline-block}
+.layer[aria-pressed="false"]{color:var(--muted)}
+.layer[aria-pressed="false"] i{background:transparent;box-shadow:inset 0 0 0 1.5px var(--sw)}
+.mapbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px}
+svg{display:block;width:100%;height:auto;max-width:100%}
+svg .hit{cursor:pointer}
+.tl{display:flex;flex-wrap:wrap;gap:6px}
+.tb{position:relative;font:inherit;font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;min-width:38px;padding:7px 0;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);cursor:pointer}
+.tb[disabled]{opacity:.35;cursor:not-allowed}
+.tb.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.tb .dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:var(--danger);border:2px solid var(--bg)}
+.small{font-size:13px;color:var(--muted)}
+.banner{border:1px solid var(--accent);border-radius:8px;padding:10px 14px;background:var(--surface);display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}
+.opt:first-of-type{border-top:0}
+.opt input{margin-top:4px;accent-color:var(--accent)}
+.opt label{cursor:pointer;display:block}
+.opt b{display:block;font-size:14px}
+.zinfo{background:var(--bg);border-radius:6px;padding:8px 10px;font-size:13px;margin:8px 0 10px;min-height:38px}
+.pcard{border:1px solid var(--line);border-left:4px solid var(--c);border-radius:8px;padding:10px 12px;background:var(--surface);cursor:pointer;margin-bottom:10px}
+.pcard.on{outline:2px solid var(--c);outline-offset:0}
+.ph{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:6px}
+.ph small{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+.pb{width:22px;height:22px;border-radius:50%;background:var(--c);color:var(--bg);font-weight:700;font-size:12px;display:grid;place-items:center}
+.chip{font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;border:1px solid var(--line);border-radius:99px;padding:1px 8px;color:var(--muted)}
+.chip.bad{color:var(--danger);border-color:var(--danger)}
+.vr{display:grid;grid-template-columns:92px minmax(0,1fr) 22px 26px;gap:8px;align-items:center;font-size:12.5px;margin:3px 0}
+.vr b{font-variant-numeric:tabular-nums;text-align:right}
+.vr em{font-style:normal;color:var(--muted);font-size:11.5px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%}
+.sc{display:grid;grid-template-columns:84px minmax(0,1fr) 48px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
+.sc.win{font-weight:700}
+.sc .bar i{background:var(--muted)}
+.sc.win .bar i{background:var(--accent)}
+.sc .n{text-align:right;font-variant-numeric:tabular-nums}
+details{margin-top:8px;font-size:12.5px;color:var(--muted)}
+details summary{cursor:pointer;color:var(--fg);font-weight:600}
+details code{display:block;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;margin:4px 0;white-space:normal}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.log li{display:grid;grid-template-columns:10px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13.5px}
+.log li:first-child{border-top:0}
+.log .d{width:10px;height:10px;border-radius:50%;margin-top:6px;background:var(--cc0,var(--muted))}
+.log .tag{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-right:6px}
+.log .tag.cambio{color:var(--danger)}
+.log li.off .tx{text-decoration:line-through;color:var(--muted)}
+.mini{font:inherit;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:5px;padding:2px 8px;cursor:pointer;margin-left:6px}
+.mini:hover{border-color:var(--accent)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-top:1px solid var(--line);white-space:nowrap}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-top:0}
+.big{font-family:var(--font-display);font-size:30px;font-weight:700;line-height:1}
+.stack{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line);margin:8px 0 6px}
+.stack i{display:block;height:100%}
+.leg{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.leg span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;background:var(--k)}
+@media(prefers-reduced-motion:no-preference){.bar i{transition:width .25s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Demo didáctica · 12 turnos = 12 generaciones</p>
+    <h1>Mapa de arraigos</h1>
+    <p class="lead">¿Cuánto de dónde vive una comunidad es decisión propia y cuánto es adaptación a amenazas externas? Avanza turnos, vuelve atrás en la bitácora y quita eventos para averiguarlo.</p>
+  </header>
+
+  <main class="grid">
+    <section class="col">
+      <div class="row" id="layers" role="group" aria-label="Capas del mapa"></div>
+      <div class="mapbox"><svg id="map" viewBox="0 0 576 576" role="img" aria-label="Mapa de 6 por 6 zonas con tres comunidades"></svg></div>
+      <div class="card">
+        <h2>Línea de tiempo</h2>
+        <div class="tl" id="timeline"></div>
+        <p class="small" style="margin:8px 0 0"><span style="color:var(--danger)">●</span> marca los turnos donde cambió un patrón de asentamiento. Toca un turno para ver cómo estaba el mapa.</p>
+      </div>
+      <div class="banner" id="banner" hidden>
+        <span id="bannerTxt"></span>
+        <span class="row"><button class="btn" id="btnPresent" type="button">Ir al presente</button><button class="btn primary" id="btnReplay" type="button">Volver a jugar desde aquí</button></span>
+      </div>
+    </section>
+
+    <aside class="col">
+      <div class="card">
+        <h2>Tu acción este turno</h2>
+        <div id="actions"></div>
+        <div class="zinfo" id="zinfo"></div>
+        <div class="row">
+          <button class="btn primary" id="btnAdvance" type="button">Avanzar turno</button>
+          <button class="btn" id="btnReset" type="button">Reiniciar</button>
+        </div>
+        <p class="small" id="hint" aria-live="polite" style="margin:8px 0 0"></p>
+      </div>
+
+      <div class="card"><h2>Perfiles territoriales</h2><div id="profiles"></div></div>
+      <div class="card"><h2 id="decTitle">Decisión</h2><div id="decision"></div></div>
+      <div class="card"><h2 id="logTitle">Bitácora</h2><div id="log"></div></div>
+      <div class="card"><h2>¿Elección propia o presión externa?</h2><div id="compare"></div></div>
+    </aside>
+  </main>
+</div>
+
+<script>
+(function(){
+'use strict';
+var N=6,TURNS=12,SEED=7;
+var MAP=['LRLLMM','LRLMML','LLRLLL','MLRLRL','MMLLRL','LMLLRL'];
+var TER={L:{n:'Llanura',rec:5,riesgo:6},R:{n:'Ribera',rec:8,riesgo:5},M:{n:'Monte',rec:4,riesgo:2}};
+var BASE=[
+ {k:'A',name:'Azul',z:[1,2],mov:6,arr:5,def:3,rec:6,org:4},
+ {k:'B',name:'Ámbar',z:[4,3],mov:7,arr:4,def:2,rec:5,org:3},
+ {k:'C',name:'Violeta',z:[2,4],mov:4,arr:6,def:4,rec:5,org:5}];
+var COL=['var(--ca)','var(--cb)','var(--cc)'];
+var VARS=[['mov','Movilidad'],['arr','Arraigo'],['amenaza','Amenaza'],['def','Defensa'],['rec','Recursos'],['org','Organización']];
+var TIPO={ataque:'Ataque',invasion:'Invasión',sequia:'Pérdida de recursos',defensa:'Defensa',decision:'Decisión',cambio:'Cambio',accion:'Tu acción',ruta:'Ruta',alianza:'Alianza',presion:'Presión',inicio:'Inicio'};
+var KIND={presion:'Presión externa',recursos:'Recursos escasos',eleccion:'Elección propia'};
+var ACTS=[
+ {id:'observar',t:'Observar',d:'No intervenir este turno.',z:false},
+ {id:'fortificar',t:'Fortificar zona',d:'Sube la defensa de la zona elegida (máximo 3).',z:true},
+ {id:'ruta',t:'Proteger ruta',d:'Abre una ruta en la zona: más movilidad e intercambio para comunidades en ella o al lado.',z:true},
+ {id:'alianza',t:'Promover alianza',d:'Elige una zona con comunidad. Se alía con la más cercana (hasta 4 zonas).',z:true}
+];
+
+function clamp(v,a,b){a=a===undefined?0:a;b=b===undefined?10:b;return Math.max(a,Math.min(b,v));}
+function zr(zi){return Math.floor(zi/N);} function zc(zi){return zi%N;}
+function zn(zi){return 'F'+(zr(zi)+1)+'·C'+(zc(zi)+1);}
+function dist(a,b){return Math.abs(zr(a)-zr(b))+Math.abs(zc(a)-zc(b));}
+function neigh(zi){var r=zr(zi),c=zc(zi),o=[];if(r>0)o.push(zi-N);if(r<N-1)o.push(zi+N);if(c>0)o.push(zi-1);if(c<N-1)o.push(zi+1);return o;}
+function hv(t,ci,k){
+  var x=Math.imul(t+1,374761393)^Math.imul(ci+1,668265263)^Math.imul(k+1,2246822519)^Math.imul(SEED,3266489917);
+  x=Math.imul(x^(x>>>15),2246822519);x=Math.imul(x^(x>>>13),3266489917);x^=x>>>16;
+  return (x>>>0)/4294967296;
+}
+function estadoDe(c,z){
+  if(c.frag>0)return 'fragmentada';
+  if(z.def>=2&&c.arr>=6)return 'fortificada';
+  if(c.arr>=4)return 'asentada';
+  return 'móvil';
+}
+function qual(z){return z.rec*1.2+(6-z.riesgo)*0.5+z.def*0.8+(z.ruta?1:0)-z.conf*0.5;}
+function defTotal(s,ci){var c=s.coms[ci],z=s.zones[c.zi];return c.def+z.def+(z.ter==='M'?1:0)+(c.ali!=null?2:0);}
+
+function init(){
+  var zones=[],r,c;
+  for(r=0;r<N;r++)for(c=0;c<N;c++){var t=MAP[r][c];zones.push({ter:t,rec:TER[t].rec,riesgo:TER[t].riesgo,def:0,ruta:false,conf:0,nconf:0});}
+  var coms=BASE.map(function(b){return {k:b.k,name:b.name,zi:b.z[0]*N+b.z[1],mov:b.mov,arr:b.arr,def:b.def,rec:b.rec,org:b.org,amenaza:1,ataques:[],alto:0,frag:0,ali:null,trail:[b.z[0]*N+b.z[1]],migs:[],estado:''};});
+  coms.forEach(function(c){c.estado=estadoDe(c,zones[c.zi]);});
+  return {zones:zones,coms:coms};
+}
+function link(s,i,j){s.coms[i].ali=j;s.coms[j].ali=i;s.coms[i].org=clamp(s.coms[i].org+1);s.coms[j].org=clamp(s.coms[j].org+1);}
+
+function step(s,t,act,opts,log,decs){
+  function L(who,tipo,texto,extra){var o={who:who,tipo:tipo,texto:texto};if(extra)for(var k in extra)o[k]=extra[k];log.push(o);}
+  s.zones.forEach(function(z){if(z.conf>0)z.conf--;});
+
+  if(act&&act.tipo!=='observar'&&act.zi!=null){
+    var az=s.zones[act.zi];
+    if(act.tipo==='fortificar'){
+      if(az.def<3){az.def++;L(-1,'accion','Fortificas '+zn(act.zi)+': defensa de zona '+az.def+'/3.');}
+      else L(-1,'accion','La zona '+zn(act.zi)+' ya tiene la defensa al máximo.');
+    }else if(act.tipo==='ruta'){
+      az.ruta=true;L(-1,'accion','Proteges una ruta en '+zn(act.zi)+'.');
+    }else if(act.tipo==='alianza'){
+      var ci0=s.coms.findIndex(function(c){return c.zi===act.zi;});
+      if(ci0>=0&&s.coms[ci0].ali==null){
+        var best=-1,bd=99;
+        s.coms.forEach(function(o,j){if(j!==ci0&&o.ali==null){var d=dist(o.zi,act.zi);if(d<bd){bd=d;best=j;}}});
+        if(best>=0&&bd<=4){link(s,ci0,best);L(-1,'alianza','Mediaste una alianza entre '+s.coms[ci0].name+' y '+s.coms[best].name+'.',{cambio:true});}
+        else L(-1,'accion','No hay otra comunidad libre a menos de 4 zonas.');
+      }else L(-1,'accion','En esa zona no hay una comunidad libre para aliar.');
+    }
+  }
+  s.coms.forEach(function(c,ci){
+    if(c.ali!=null){var o=s.coms[c.ali];if(dist(c.zi,o.zi)>3){var oi=c.ali;c.ali=null;o.ali=null;L(ci,'alianza','Se rompe la alianza entre '+c.name+' y '+o.name+': quedaron demasiado lejos.',{cambio:true});}}
+  });
+
+  s.coms.forEach(function(c,ci){
+    var nm=c.name,z=s.zones[c.zi],prev=c.estado;
+    var rd=z.rec>=7?1:(z.rec<=4?-1:0);c.rec=clamp(c.rec+rd);
+    var nearRuta=z.ruta||neigh(c.zi).some(function(n){return s.zones[n].ruta;});
+    if(nearRuta){c.mov=clamp(c.mov+1);c.rec=clamp(c.rec+1);L(ci,'ruta',nm+' usa una ruta protegida: más intercambio y movilidad.');}
+    c.amenaza=clamp(c.amenaza-1);
+    if(c.frag>0)c.frag--;
+
+    var atk=0,inv=0,seq=0;
+    function ev(key,tipo,txt,f){
+      var id=t+'-'+ci+'-'+key,off=opts.disabled.has(id);
+      L(ci,tipo,txt,{id:id,disabled:off,evento:true,fuerza:f});
+      return !off;
+    }
+    if(!opts.noThreats){
+      var p=clamp(0.04+z.riesgo*0.03+t*0.008,0.05,0.6);
+      if(hv(t,ci,1)<p){var f=2+Math.floor(hv(t,ci,4)*3);if(ev('atk','ataque','Ataque de fuerza '+f+' contra '+nm+' en '+zn(c.zi)+'.',f))atk=f;}
+      var pi=t>=4?0.06+(c.org<4?0.06:0):0;
+      if(pi&&hv(t,ci,2)<pi){var f2=4+Math.floor(hv(t,ci,5)*3);if(ev('inv','invasion','Invasión territorial de fuerza '+f2+' sobre '+nm+' en '+zn(c.zi)+'.',f2))inv=f2;}
+    }
+    if(hv(t,ci,3)<0.12){if(ev('seq','sequia','Pérdida de recursos: sequía en '+zn(c.zi)+'.',3))seq=3;}
+
+    if(atk){
+      c.amenaza=clamp(c.amenaza+atk);c.rec=clamp(c.rec-1);z.conf=Math.max(z.conf,atk);z.nconf++;c.ataques.push(t);
+      var dt=defTotal(s,ci);
+      if(dt>=atk){c.arr=clamp(c.arr+2);c.org=clamp(c.org+1);c.amenaza=clamp(c.amenaza-1);L(ci,'defensa','Defensa exitosa de '+nm+' ('+dt+' ≥ '+atk+'): crece el arraigo.');}
+      else{c.arr=clamp(c.arr-1);c.rec=clamp(c.rec-1);L(ci,'defensa','Defensa insuficiente de '+nm+' ('+dt+' < '+atk+'): se pierden recursos.');}
+      if(atk>=4&&z.ruta){z.ruta=false;L(ci,'ruta','La ruta de '+zn(c.zi)+' queda cortada por el ataque.');}
+      if(c.ataques.filter(function(x){return x>=t-2;}).length>=2){c.amenaza=clamp(c.amenaza+1);L(ci,'presion','Ataques recurrentes: la presión sobre '+nm+' se acumula.');}
+    }
+    if(inv){
+      c.amenaza=clamp(c.amenaza+inv);z.conf=Math.max(z.conf,inv);z.nconf++;z.ruta=false;
+      var dt2=defTotal(s,ci);
+      if(dt2>=inv+1){c.arr=clamp(c.arr+1);L(ci,'defensa','La defensa de '+nm+' contiene la invasión ('+dt2+' ≥ '+(inv+1)+').');}
+      else{c.arr=clamp(c.arr-3);L(ci,'defensa','La invasión supera la defensa de '+nm+' ('+dt2+' < '+(inv+1)+'): el arraigo se quiebra.');}
+    }
+    if(seq){c.rec=clamp(c.rec-seq);}
+
+    if(c.amenaza>6)c.alto++;else c.alto=0;
+    if(c.alto>=3){c.frag=2;c.org=clamp(c.org-2);c.arr=clamp(c.arr-2);c.def=clamp(c.def-1);c.alto=0;L(ci,'presion','Conflicto prolongado: '+nm+' se fragmenta.',{cambio:true});}
+
+    var thr=atk>0||inv>0;
+    var dtot=defTotal(s,ci);
+    var sc={};
+    sc.quedarse=c.arr+dtot+c.rec-c.amenaza-(inv?3:0);
+    sc.fortificar=(z.def<3&&c.rec>=3&&c.frag===0)?c.org+c.rec-2*z.def-2+0.8*c.amenaza:-99;
+    var bestN=-1,bq=-1e9;
+    neigh(c.zi).forEach(function(n){
+      if(s.coms.some(function(o,j){return j!==ci&&o.zi===n;}))return;
+      var q=qual(s.zones[n]);if(q>bq){bq=q;bestN=n;}
+    });
+    sc.migrar=bestN>=0?c.mov+1.5*(bq-qual(z))-c.arr+c.amenaza*0.5+(c.rec<=3?2:0):-99;
+    var partner=-1,pd=99;
+    if(c.ali==null&&c.frag===0)s.coms.forEach(function(o,j){if(j!==ci&&o.ali==null){var d=dist(o.zi,c.zi);if(d<=3&&d<pd){pd=d;partner=j;}}});
+    sc.aliarse=partner>=0?c.org+2+(c.amenaza>=4?3:0):-99;
+    sc.resistir=inv?c.org+dtot+c.arr*0.5+1-c.amenaza*0.3:-99;
+
+    var order=['quedarse','fortificar','aliarse','resistir','migrar'],el='quedarse',bv=-1e9;
+    order.forEach(function(k){if(sc[k]>bv){bv=sc[k];el=k;}});
+    var kind=(thr||c.amenaza>=4)?'presion':'eleccion',why='';
+    if(thr)why=atk?'ataque de fuerza '+atk:'invasión de fuerza '+inv;
+    else if(c.amenaza>=4)why='amenaza acumulada';
+    var quiet=false;
+
+    if(el==='quedarse'){
+      if(!thr&&c.amenaza<=4)c.arr=clamp(c.arr+1);
+      if(thr||c.amenaza>=4)L(ci,'decision',nm+' permanece en '+zn(c.zi)+' pese a la presión.');else quiet=true;
+    }else if(el==='fortificar'){
+      z.def=Math.min(3,z.def+1);c.rec=clamp(c.rec-2);c.arr=clamp(c.arr+1);
+      L(ci,'decision',nm+' fortifica '+zn(c.zi)+' (defensa de zona '+z.def+'/3).');
+    }else if(el==='aliarse'){
+      var o=s.coms[partner];link(s,ci,partner);
+      L(ci,'alianza',nm+' y '+o.name+' se alían: la zona segura se extiende.',{cambio:true});
+    }else if(el==='resistir'){
+      if(dtot+c.org*0.5>=inv+1){c.arr=clamp(c.arr+1);c.org=clamp(c.org+1);c.amenaza=clamp(c.amenaza-2);L(ci,'decision',nm+' resiste y conserva el territorio.');}
+      else{c.def=clamp(c.def-1);c.arr=clamp(c.arr-1);L(ci,'decision',nm+' resiste, pero la resistencia no alcanza.');}
+    }else if(el==='migrar'){
+      if(!thr&&c.amenaza<4){kind=c.rec<=3?'recursos':'eleccion';why=c.rec<=3?'recursos bajos':'busca mejores recursos';}
+      var from=c.zi;c.zi=bestN;c.arr=clamp(c.arr-2);c.trail.push(bestN);c.migs.push({t:t,from:from,to:bestN,kind:kind});
+      L(ci,'cambio',nm+' migra de '+zn(from)+' a '+zn(bestN)+'.',{cambio:true,kind:kind});
+    }
+    c.estado=estadoDe(c,s.zones[c.zi]);
+    if(c.estado!==prev&&el!=='migrar')L(ci,'cambio',nm+' pasa de '+prev+' a '+c.estado+'.',{cambio:true});
+    decs[ci]={sc:sc,el:el,kind:kind,why:why,quiet:quiet};
+  });
+}
+function snap(s,t,log,decs){return {t:t,zones:JSON.parse(JSON.stringify(s.zones)),coms:JSON.parse(JSON.stringify(s.coms)),log:log,decs:decs};}
+function run(n,actions,opts){
+  var s=init();
+  var h=[snap(s,0,[{who:-1,tipo:'inicio',texto:'Tres comunidades parten de su lugar de origen. Cada turno es una generación.'}],{})];
+  for(var t=1;t<=n;t++){var log=[],decs={};step(s,t,actions[t-1],opts,log,decs);h.push(snap(s,t,log,decs));}
+  return h;
+}
+
+/* ---------- estado de la interfaz ---------- */
+var actions=[],disabled=new Set(),T=0,V=0,sel=null,selCom=0,act='observar',H;
+var layers={mov:true,asen:true,conf:true,def:true};
+function $(id){return document.getElementById(id);}
+function recompute(){H=run(T,actions,{disabled:disabled,noThreats:false});}
+recompute();
+
+/* ---------- mapa ---------- */
+var S=96;
+function renderMap(){
+  var s=H[V],o='',i;
+  o+='<defs>'+COL.map(function(c,k){return '<marker id="ar'+k+'" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="'+c+'"/></marker>';}).join('')+'</defs>';
+  s.zones.forEach(function(z,zi){
+    var x=zc(zi)*S,y=zr(zi)*S;
+    o+='<rect x="'+x+'" y="'+y+'" width="'+S+'" height="'+S+'" fill="var(--t-'+z.ter+')" stroke="var(--line)"/>';
+    if(z.ter==='R')o+='<path d="M'+(x+12)+' '+(y+34)+'q10 -9 20 0t20 0t20 0t20 0M'+(x+12)+' '+(y+48)+'q10 -9 20 0t20 0t20 0t20 0" stroke="var(--riv)" stroke-width="2" fill="none" opacity=".7"/>';
+    if(z.ter==='M')o+='<path d="M'+(x+54)+' '+(y+40)+'l13 -22l13 22zM'+(x+68)+' '+(y+44)+'l11 -17l11 17z" fill="var(--muted)" opacity=".28"/>';
+    if(layers.conf&&z.nconf>0)o+='<rect x="'+x+'" y="'+y+'" width="'+S+'" height="'+S+'" fill="var(--danger)" opacity="'+Math.min(0.06*z.nconf,0.24)+'"/>';
+  });
+  if(layers.def){
+    s.coms.forEach(function(c,ci){
+      if(c.ali!=null&&c.ali>ci){
+        var o2=s.coms[c.ali];
+        s.zones.forEach(function(z,zi){if(dist(zi,c.zi)<=1||dist(zi,o2.zi)<=1)o+='<rect x="'+zc(zi)*S+'" y="'+zr(zi)*S+'" width="'+S+'" height="'+S+'" fill="var(--safe)" opacity=".2"/>';});
+      }
+    });
+  }
+  if(layers.mov){
+    s.zones.forEach(function(z,zi){if(z.ruta){var x=zc(zi)*S,y=zr(zi)*S;o+='<rect x="'+(x+8)+'" y="'+(y+8)+'" width="'+(S-16)+'" height="'+(S-16)+'" rx="10" fill="none" stroke="var(--route)" stroke-width="2.5" stroke-dasharray="3 6" stroke-linecap="round"/><text x="'+(x+S-12)+'" y="'+(y+S-14)+'" text-anchor="end" font-size="10" font-weight="600" fill="var(--route)">ruta</text>';}});
+    s.coms.forEach(function(c,ci){
+      var off=(ci-1)*6;
+      for(i=1;i<c.trail.length;i++){
+        var a=c.trail[i-1],b=c.trail[i];
+        o+='<line x1="'+(zc(a)*S+S/2+off)+'" y1="'+(zr(a)*S+S/2+off)+'" x2="'+(zc(b)*S+S/2+off)+'" y2="'+(zr(b)*S+S/2+off)+'" stroke="'+COL[ci]+'" stroke-width="3" stroke-dasharray="7 5" marker-end="url(#ar'+ci+')" opacity=".9"/>';
+      }
+    });
+  }
+  if(layers.def){
+    s.zones.forEach(function(z,zi){
+      if(z.def>0){
+        var x=zc(zi)*S,y=zr(zi)*S;
+        o+='<rect x="'+(x+5)+'" y="'+(y+5)+'" width="'+(S-10)+'" height="'+(S-10)+'" fill="none" stroke="var(--wall)" stroke-width="'+(z.def===1?3:4.5)+'"'+(z.def===1?' stroke-dasharray="6 4"':'')+'/>';
+        if(z.def>=3)o+='<rect x="'+(x+13)+'" y="'+(y+13)+'" width="'+(S-26)+'" height="'+(S-26)+'" fill="none" stroke="var(--wall)" stroke-width="2"/>';
+      }
+    });
+    s.coms.forEach(function(c){
+      if(c.ali!=null&&c.ali>s.coms.indexOf(c)){var b=s.coms[c.ali];o+='<line x1="'+(zc(c.zi)*S+S/2)+'" y1="'+(zr(c.zi)*S+S/2)+'" x2="'+(zc(b.zi)*S+S/2)+'" y2="'+(zr(b.zi)*S+S/2)+'" stroke="var(--safe)" stroke-width="4" stroke-dasharray="1 8" stroke-linecap="round"/>';}
+    });
+  }
+  if(layers.conf){
+    s.zones.forEach(function(z,zi){
+      var x=zc(zi)*S,y=zr(zi)*S;
+      if(z.conf>0){
+        var cx=x+S-26,cy=y+26,r1=9+z.conf*3.4,r2=r1*0.5,p=[];
+        for(i=0;i<16;i++){var r=i%2===0?r1:r2,an=i*Math.PI/8;p.push((cx+r*Math.cos(an)).toFixed(1)+','+(cy+r*Math.sin(an)).toFixed(1));}
+        o+='<polygon points="'+p.join(' ')+'" fill="var(--danger)" stroke="var(--bg)" stroke-width="1.5"/><text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" font-size="11" font-weight="700" fill="var(--bg)">'+z.conf+'</text>';
+      }
+      for(i=0;i<Math.min(z.nconf,6);i++)o+='<circle cx="'+(x+10+i*9)+'" cy="'+(y+S-9)+'" r="3" fill="var(--danger)" opacity=".75"/>';
+    });
+  }
+  if(layers.asen){
+    s.coms.forEach(function(c,ci){
+      var cx=zc(c.zi)*S+S/2,cy=zr(c.zi)*S+S/2,n=c.arr>=8?3:(c.arr>=4?2:1),w=20,x0=cx-(n*w)/2+2;
+      var frag=c.frag>0;
+      for(i=0;i<n;i++){
+        var hx=x0+i*w+8;
+        o+='<path d="M'+(hx-8)+' '+(cy+20)+'v-11l8 -8l8 8v11z" fill="'+(frag?'none':COL[ci])+'" stroke="'+COL[ci]+'" stroke-width="2"'+(frag?' stroke-dasharray="3 2"':'')+'/>';
+      }
+      o+='<circle cx="'+cx+'" cy="'+(cy-14)+'" r="12" fill="'+COL[ci]+'" stroke="var(--bg)" stroke-width="2"'+(frag?' opacity=".6"':'')+'/><text x="'+cx+'" y="'+(cy-9.5)+'" text-anchor="middle" font-size="13" font-weight="700" fill="var(--bg)">'+c.k+'</text>';
+    });
+  }
+  if(sel!=null)o+='<rect x="'+(zc(sel)*S+2)+'" y="'+(zr(sel)*S+2)+'" width="'+(S-4)+'" height="'+(S-4)+'" fill="none" stroke="var(--accent)" stroke-width="4"/>';
+  s.zones.forEach(function(z,zi){
+    o+='<rect class="hit" data-zi="'+zi+'" x="'+zc(zi)*S+'" y="'+zr(zi)*S+'" width="'+S+'" height="'+S+'" fill="transparent" tabindex="0" role="button" aria-label="Zona '+zn(zi)+', '+TER[z.ter].n+'"/>';
+  });
+  $('map').innerHTML=o;
+}
+
+/* ---------- línea de tiempo, banner, capas ---------- */
+function renderLayers(){
+  var defs=[['mov','Movilidad','var(--route)'],['asen','Asentamientos','var(--ca)'],['conf','Conflictos','var(--danger)'],['def','Defensas','var(--wall)']];
+  $('layers').innerHTML=defs.map(function(d){return '<button type="button" class="layer" data-l="'+d[0]+'" aria-pressed="'+layers[d[0]]+'" style="--sw:'+d[2]+'"><i></i>'+d[1]+'</button>';}).join('');
+}
+function renderTimeline(){
+  var h='';
+  for(var t=0;t<=TURNS;t++){
+    var ch=t>0&&t<=T&&H[t].log.some(function(e){return e.cambio&&!e.disabled;});
+    h+='<button type="button" class="tb'+(t===V?' on':'')+'" data-t="'+t+'"'+(t>T?' disabled':'')+' aria-label="Turno '+t+'">'+t+(ch?'<span class="dot"></span>':'')+'</button>';
+  }
+  $('timeline').innerHTML=h;
+  var b=$('banner');
+  if(V<T){b.hidden=false;$('bannerTxt').textContent='Estás viendo el turno '+V+' de '+T+'. Lo que hagas desde aquí reescribe lo que vino después.';}
+  else b.hidden=true;
+}
+
+/* ---------- acción ---------- */
+function renderActions(){
+  $('actions').innerHTML=ACTS.map(function(a){
+    return '<div class="opt"><input type="radio" name="act" id="act-'+a.id+'" value="'+a.id+'"'+(act===a.id?' checked':'')+'><label for="act-'+a.id+'"><b>'+a.t+'</b><span class="small">'+a.d+'</span></label></div>';
+  }).join('');
+  renderZinfo();
+  var atEnd=T>=TURNS,past=V<T;
+  $('btnAdvance').disabled=atEnd||past;
+  $('btnAdvance').textContent=atEnd?'Simulación completa':'Avanzar al turno '+(T+1);
+}
+function renderZinfo(){
+  var el=$('zinfo');
+  if(sel==null){el.textContent='Toca una zona del mapa para elegir dónde aplicar la acción.';return;}
+  var z=H[V].zones[sel],occ=H[V].coms.filter(function(c){return c.zi===sel;}).map(function(c){return c.name;}).join(', ');
+  el.innerHTML='<b>'+zn(sel)+'</b> · '+TER[z.ter].n+' · recursos '+z.rec+' · defensa '+z.def+'/3 · '+(z.ruta?'con ruta':'sin ruta')+' · conflicto '+z.nconf+(occ?' · <b>'+occ+'</b>':'');
+}
+
+/* ---------- perfiles ---------- */
+function renderProfiles(){
+  var s=H[V],p=V>0?H[V-1]:null;
+  $('profiles').innerHTML=s.coms.map(function(c,i){
+    var rows=VARS.map(function(v){
+      var val=c[v[0]],d=p?val-p.coms[i][v[0]]:0;
+      return '<div class="vr"><span>'+v[1]+'</span><div class="bar"><i style="width:'+val*10+'%;background:'+(v[0]==='amenaza'?'var(--danger)':COL[i])+'"></i></div><b>'+val+'</b><em>'+(d?(d>0?'+'+d:d):'')+'</em></div>';
+    }).join('');
+    return '<div class="pcard'+(i===selCom?' on':'')+'" data-ci="'+i+'" tabindex="0" role="button" style="--c:'+COL[i]+'"><div class="ph"><span class="pb">'+c.k+'</span><strong>'+c.name+'</strong><span class="chip'+(c.estado==='fragmentada'?' bad':'')+'">'+c.estado+'</span><small>'+zn(c.zi)+'</small></div>'+rows+'</div>';
+  }).join('');
+}
+
+/* ---------- decisión ---------- */
+function renderDecision(){
+  var c=H[V].coms[selCom];
+  $('decTitle').textContent='Decisión de '+c.name+(V>0?' · turno '+V:'');
+  if(V===0){$('decision').innerHTML='<p class="small" style="margin:0">Avanza un turno para ver cómo cada comunidad puntúa sus opciones.</p>';return;}
+  var d=H[V].decs[selCom];if(!d)return;
+  var names={quedarse:'Quedarse',fortificar:'Fortificar',aliarse:'Aliarse',resistir:'Resistir',migrar:'Migrar'};
+  var vals=Object.keys(d.sc).filter(function(k){return d.sc[k]>-90;}).map(function(k){return d.sc[k];});
+  var mx=Math.max.apply(null,vals.concat([1])),mn=Math.min.apply(null,vals.concat([0]));
+  var rows=['quedarse','fortificar','aliarse','resistir','migrar'].map(function(k){
+    var v=d.sc[k],ok=v>-90,w=ok?Math.max(3,((v-mn)/(mx-mn||1))*100):0;
+    return '<div class="sc'+(k===d.el?' win':'')+'"><span>'+names[k]+'</span><div class="bar"><i style="width:'+w+'%"></i></div><span class="n">'+(ok?v.toFixed(1):'—')+'</span></div>';
+  }).join('');
+  $('decision').innerHTML=rows+'<p style="margin:10px 0 0;font-size:14px"><b>'+names[d.el]+'</b> · '+KIND[d.kind]+(d.why?' ('+d.why+')':'')+'</p>'+
+    '<details><summary>Fórmulas de la decisión</summary>'+
+    '<code>quedarse = arraigo + defensa total + recursos − amenaza (−3 si hay invasión)</code>'+
+    '<code>fortificar = organización + recursos − 2×defensa de zona − 2 + 0,8×amenaza</code>'+
+    '<code>migrar = movilidad + 1,5×(calidad destino − calidad actual) − arraigo + 0,5×amenaza (+2 si recursos ≤ 3)</code>'+
+    '<code>aliarse = organización + 2 (+3 si amenaza ≥ 4)</code>'+
+    '<code>resistir = organización + defensa total + 0,5×arraigo + 1 − 0,3×amenaza (solo con invasión)</code>'+
+    '<code>defensa total = defensa propia + defensa de zona + 1 en monte + 2 con alianza</code></details>';
+}
+
+/* ---------- bitácora ---------- */
+function renderLog(){
+  var s=H[V];
+  $('logTitle').textContent=V===0?'Bitácora · origen':'Bitácora · turno '+V;
+  var h='<ul class="log">';
+  if(!s.log.length)h+='<li><span class="d"></span><span class="tx">Sin novedades.</span></li>';
+  s.log.forEach(function(e,idx){
+    var col=e.who>=0?COL[e.who]:'var(--muted)';
+    h+='<li class="'+(e.disabled?'off':'')+'"><span class="d" style="--cc0:'+col+'"></span><span><span class="tag'+(e.cambio&&!e.disabled?' cambio':'')+'">'+(e.cambio&&!e.disabled?'Cambio de patrón':TIPO[e.tipo])+'</span><span class="tx">'+e.texto+'</span>'+
+      (e.evento?'<button type="button" class="mini" data-ev="'+e.id+'">'+(e.disabled?'Restaurar':'Quitar evento')+'</button>':'')+'</span></li>';
+  });
+  h+='</ul>';
+  if(disabled.size)h+='<p class="small" style="margin:10px 0 0">Eventos quitados: '+disabled.size+' <button type="button" class="mini" data-ev="__all">Restaurar todos</button></p>';
+  else if(V>0)h+='<p class="small" style="margin:10px 0 0">Quita un ataque, una invasión o una sequía y el sistema vuelve a calcular todos los turnos.</p>';
+  $('log').innerHTML=h;
+}
+
+/* ---------- comparación ---------- */
+function renderCompare(){
+  var el=$('compare');
+  if(V===0){el.innerHTML='<p class="small" style="margin:0">Avanza algunos turnos. Aquí se compara el mapa real con el mismo mundo sin ataques ni invasiones.</p>';return;}
+  var ghost=run(V,actions.slice(0,V),{disabled:new Set(),noThreats:true})[V];
+  var real=H[V],tot=0,pres=0,rec=0,ele=0,rows='';
+  real.coms.forEach(function(c,i){
+    var g=ghost.coms[i],d=dist(c.zi,g.zi);
+    var mp=c.migs.filter(function(m){return m.kind==='presion';}).length,mr=c.migs.filter(function(m){return m.kind==='recursos';}).length,me=c.migs.filter(function(m){return m.kind==='eleccion';}).length;
+    tot+=c.migs.length;pres+=mp;rec+=mr;ele+=me;
+    rows+='<tr><td><b style="color:'+COL[i]+'">'+c.name+'</b></td><td>'+zn(c.zi)+'</td><td>'+zn(g.zi)+'</td><td>'+d+'</td><td>'+c.migs.length+' ('+mp+' · '+mr+' · '+me+')</td></tr>';
+  });
+  var pct=tot?Math.round(pres/tot*100):0;
+  el.innerHTML='<div class="big">'+(tot?pct+'%':'—')+'</div><p style="margin:6px 0 0;font-size:14px">'+(tot?'de los '+tot+' desplazamientos registrados hasta el turno '+V+' tuvo una amenaza como causa directa.':'Todavía no hubo desplazamientos. Las comunidades permanecen donde empezaron.')+'</p>'+
+    (tot?'<div class="stack"><i style="width:'+pres/tot*100+'%;background:var(--danger)"></i><i style="width:'+rec/tot*100+'%;background:var(--cb)"></i><i style="width:'+ele/tot*100+'%;background:var(--accent)"></i></div><div class="leg"><span style="--k:var(--danger)">Presión externa</span><span style="--k:var(--cb)">Recursos escasos</span><span style="--k:var(--accent)">Elección propia</span></div>':'')+
+    '<div class="tw" style="margin-top:12px"><table><thead><tr><th>Comunidad</th><th>Real</th><th>Sin amenazas</th><th>Distancia</th><th>Migraciones</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<p class="small" style="margin:8px 0 0">Distancia en zonas entre la posición real y la que tendría sin ataques ni invasiones. Migraciones: total (presión · recursos · elección).</p>';
+}
+
+function renderAll(){renderMap();renderLayers();renderTimeline();renderActions();renderProfiles();renderDecision();renderLog();renderCompare();}
+
+/* ---------- eventos ---------- */
+function setHint(t){$('hint').textContent=t||'';}
+$('layers').addEventListener('click',function(e){var b=e.target.closest('[data-l]');if(!b)return;layers[b.dataset.l]=!layers[b.dataset.l];renderLayers();renderMap();});
+$('timeline').addEventListener('click',function(e){var b=e.target.closest('[data-t]');if(!b||b.disabled)return;V=+b.dataset.t;setHint('');renderAll();});
+function pickZone(e){var r=e.target.closest('[data-zi]');if(!r)return;sel=+r.dataset.zi;setHint('');renderMap();renderZinfo();}
+$('map').addEventListener('click',pickZone);
+$('map').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pickZone(e);}});
+function pickCom(e){var p=e.target.closest('[data-ci]');if(!p)return;selCom=+p.dataset.ci;renderProfiles();renderDecision();}
+$('profiles').addEventListener('click',pickCom);
+$('profiles').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();pickCom(e);}});
+$('actions').addEventListener('change',function(e){if(e.target&&e.target.name==='act'){act=e.target.value;setHint('');}});
+$('log').addEventListener('click',function(e){
+  var b=e.target.closest('[data-ev]');if(!b)return;
+  var id=b.dataset.ev;
+  if(id==='__all')disabled.clear();else if(disabled.has(id))disabled['delete'](id);else disabled.add(id);
+  recompute();renderAll();
+});
+$('btnAdvance').addEventListener('click',function(){
+  if(T>=TURNS||V<T)return;
+  var def=ACTS.filter(function(a){return a.id===act;})[0];
+  if(def.z&&sel==null){setHint('Elige una zona en el mapa para aplicar «'+def.t+'».');return;}
+  actions[T]={tipo:act,zi:def.z?sel:null};
+  T++;V=T;act='observar';setHint('');recompute();renderAll();
+});
+$('btnReset').addEventListener('click',function(){actions=[];disabled=new Set();T=0;V=0;sel=null;selCom=0;act='observar';setHint('');recompute();renderAll();});
+$('btnPresent').addEventListener('click',function(){V=T;renderAll();});
+$('btnReplay').addEventListener('click',function(){actions=actions.slice(0,V);T=V;recompute();setHint('Historia reescrita desde el turno '+V+'.');renderAll();});
+
+renderAll();
+})();
+</script>
+
+</body></html>
