@@ -1,0 +1,142 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Bach: The Convergence Engine</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: una columna; medidor arriba, tres laboratorios con el mismo motivo, medición al final */
+:root{--bg:#f2f5f9;--fg:#14202e;--mut:#56657a;--card:#fff;--line:#d5dde8;--v1:#2f5fd0;--v2:#d9731f;--good:#1b8a5f;--bad:#cf3f4a;--fh:'Space Grotesk',system-ui,sans-serif;--fb:Inter,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1621;--fg:#e5ecf4;--mut:#93a3b8;--card:#162131;--line:#27364a;--v1:#7ba3ff;--v2:#ffae63;--good:#47c996;--bad:#ff7a84;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1621;--fg:#e5ecf4;--mut:#93a3b8;--card:#162131;--line:#27364a;--v1:#7ba3ff;--v2:#ffae63;--good:#47c996;--bad:#ff7a84;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--fb);padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;display:grid;gap:20px}
+h1,h2{font-family:var(--fh);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(28px,6vw,40px)}h2{font-size:22px}
+p{margin:0}.mut{color:var(--mut)}.sm{font-size:14px}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:12px;min-width:0}
+.q{font-weight:600;color:var(--v1)}
+canvas{width:100%;height:150px;display:block;border-radius:6px;border:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:600 14px var(--fb);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:var(--v1)}button[aria-pressed=true]{background:var(--v1);color:var(--bg);border-color:var(--v1)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--v1);outline-offset:2px}
+button.ok{border-color:var(--good);color:var(--good)}button.no{border-color:var(--bad);color:var(--bad)}
+code{font:13px ui-monospace,Menlo,monospace;background:var(--bg);padding:2px 6px;border-radius:4px;overflow-wrap:anywhere}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--v1)}
+.dot{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:3px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px dashed var(--line);color:var(--mut);border-radius:20px;padding:4px 12px;font-size:14px}
+.chip.on{border:1px solid var(--good);color:var(--good);font-weight:600}
+.lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px}
+.qb{display:grid;gap:8px;padding-top:10px;border-top:1px solid var(--line)}
+</style>
+
+<main>
+<header style="display:grid;gap:8px">
+  <p class="mut sm" style="font-family:var(--fh);letter-spacing:.08em;text-transform:uppercase">Genialidad como puente entre disciplinas · Tonight: Bach</p>
+  <h1>Bach: The Convergence Engine</h1>
+  <p class="mut">Una misma melodía de 8 notas. Tres laboratorios para descubrir que matemática, programación y música hablan de lo mismo. Usa auriculares o sube el volumen.</p>
+  <div class="chips" aria-live="polite"><span class="chip" id="c0">Matemática ↔ Programación</span><span class="chip" id="c1">Programación ↔ Música</span><span class="chip" id="c2">Matemática ↔ Música</span></div>
+  <p class="sm"><b id="cnt">0</b> de 3 conexiones descubiertas. Al final hay tres preguntas para conectarlas.</p>
+</header>
+
+<section>
+  <h2>01 · Matemática pura 🧮</h2>
+  <p class="q">¿Qué propiedades hacen coherente a una composición?</p>
+  <p class="sm mut">Aplica transformaciones al motivo azul. La versión naranja es el resultado. Mira los saltos entre notas: ¿qué se conserva y qué cambia?</p>
+  <canvas id="c1cv"></canvas>
+  <div class="row"><button id="bR">Espejo en el tiempo</button><button id="bI">Invertir</button><button id="bT">Subir una quinta</button><button id="bX">Reiniciar</button></div>
+  <div class="row"><button id="p1a">▶ Original</button><button id="p1b">▶ Versión naranja</button></div>
+  <p class="sm">Saltos original: <code id="i0"></code></p>
+  <p class="sm">Saltos nueva: <code id="i1"></code></p>
+  <p class="sm">Código equivalente: <code id="src">notas</code></p>
+</section>
+
+<section>
+  <h2>02 · Programación &lt;/&gt;</h2>
+  <p class="q">¿Cómo diseñarías un sistema que genere esta estructura?</p>
+  <p class="sm mut">Dos voces son dos procesos que ejecutan el mismo motivo. La segunda arranca con retardo y una octava más grave. Mueve el control y busca cuándo chocan.</p>
+  <canvas id="c2cv"></canvas>
+  <div class="row"><label for="d2">Retardo: <b id="dv2">4</b> pulsos</label><input type="range" id="d2" min="0" max="8" step="1" value="4"></div>
+  <p class="sm"><code id="code2">voz2 = lanzar(motivo, retardo=4)</code></p>
+  <p class="sm" id="r2"></p>
+  <div class="row"><button id="p2">▶ Ejecutar las dos voces</button></div>
+</section>
+
+<section>
+  <h2>03 · Música 🎵</h2>
+  <p class="q">¿Cómo puede algo tan complejo sonar comprensible?</p>
+  <p class="sm mut">Escucha cada voz sola y luego juntas. Es el mismo canon del laboratorio 02.</p>
+  <canvas id="c3cv"></canvas>
+  <div class="row"><label for="d3">Retardo: <b id="dv3">4</b> pulsos</label><input type="range" id="d3" min="0" max="8" step="1" value="4"></div>
+  <div class="row" role="group" aria-label="Qué voces escuchar"><button data-s="v1" aria-pressed="false">Solo voz 1</button><button data-s="v2" aria-pressed="false">Solo voz 2</button><button data-s="both" aria-pressed="true">Juntas</button><button id="p3">▶ Escuchar</button></div>
+  <p class="sm lg"><i style="background:var(--good)"></i>suena bien<i style="background:var(--bad)"></i>tensión (juntas)</p>
+  <p class="sm" id="r3"></p>
+</section>
+
+<section>
+  <h2>Tu medición</h2>
+  <p class="sm mut">¿Cuántas conexiones descubriste entre disciplinas que creías independientes? Cada respuesta correcta enciende una.</p>
+  <div id="qs" style="display:grid;gap:14px"></div>
+  <p id="fin" class="sm" style="font-weight:600" hidden>Tres conexiones. Una misma persona, tres lenguajes: eso es una genialidad que sirve de puente.</p>
+</section>
+</main>
+
+<script>
+const M=[60,63,62,60,67,65,63,62],CONS=new Set([0,3,4,7,8,9]);
+let ops=[],delay=4,solo='both',ac,tok=0;
+const $=id=>document.getElementById(id),css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const mk=(ps,s)=>ps.map((p,i)=>({p,t:s+i,d:1}));
+const steps=p=>p.slice(1).map((x,i)=>(x-p[i]>0?'+':'')+(x-p[i])).join(' ');
+function applyOps(){let p=M.slice();ops.forEach(o=>{if(o=='R')p.reverse();else if(o=='I')p=p.map(x=>2*M[0]-x);else p=p.map(x=>x+7)});return p}
+function canon(){const v1=mk(M,0),v2=mk(M.map(x=>x-12),delay);let bad=0,pairs=0,seq=[];
+  for(let t=0;t<16;t++){const a=v1.find(n=>n.t==t),b=v2.find(n=>n.t==t);
+    if(a&&b){pairs++;const ok=CONS.has(Math.abs(a.p-b.p)%12);seq.push(ok);if(!ok){bad++;a.bad=b.bad=1}}}
+  return{v1,v2,bad,pairs,seq}}
+function draw(cv,vs,lo,hi,total,head,mode){
+  const dpr=devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;
+  const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle=css('--bg');x.fillRect(0,0,W,H);
+  x.strokeStyle=css('--line');x.lineWidth=1;for(let b=0;b<=total;b++){const px=b/total*W;x.beginPath();x.moveTo(px,0);x.lineTo(px,H);x.stroke()}
+  const nh=H/(hi-lo+1);
+  vs.forEach(v=>v.n.forEach(n=>{const px=n.t/total*W+1,py=(hi-n.p)*nh;
+    x.fillStyle=mode=='cons'?css(n.bad?'--bad':'--good'):css('--'+v.c);
+    if(mode=='cons'&&v.c=='v2')x.globalAlpha=.6;x.fillRect(px,py,W/total-2,nh-1);x.globalAlpha=1;
+    if(mode=='v'&&n.bad){x.strokeStyle=css('--bad');x.lineWidth=2;x.strokeRect(px,py,W/total-2,nh-1)}}));
+  if(head!=null){x.strokeStyle=css('--fg');x.lineWidth=2;const px=head/total*W;x.beginPath();x.moveTo(px,0);x.lineTo(px,H);x.stroke()}}
+const cv1=$('c1cv'),cv2=$('c2cv'),cv3=$('c3cv');
+cv1.r=()=>draw(cv1,[{n:mk(M,0),c:'v1'},{n:mk(applyOps(),0),c:'v2'}],46,80,8,cv1.h,'v');
+cv2.r=()=>{const k=canon();draw(cv2,[{n:k.v1,c:'v1'},{n:k.v2,c:'v2'}],44,76,16,cv2.h,'v')};
+cv3.r=()=>{const k=canon(),vs=[];if(solo!='v2')vs.push({n:k.v1,c:'v1'});if(solo!='v1')vs.push({n:k.v2,c:'v2'});draw(cv3,vs,44,76,16,cv3.h,solo=='both'?'cons':'v')};
+function play(cv,voices,total){ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume();
+  const t0=ac.currentTime+.05,B=.42,my=++tok;
+  voices.forEach(v=>v.forEach(n=>{const o=ac.createOscillator(),g=ac.createGain(),s=t0+n.t*B;o.type='triangle';o.frequency.value=440*2**((n.p-69)/12);
+    g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(.12,s+.02);g.gain.exponentialRampToValueAtTime(.001,s+n.d*B);
+    o.connect(g);g.connect(ac.destination);o.start(s);o.stop(s+n.d*B+.05)}));
+  (function f(){const b=(ac.currentTime-t0)/B;cv.h=(b>=0&&b<total&&my==tok)?b:null;cv.r();if(cv.h!=null)requestAnimationFrame(f)})()}
+function upd1(){$('i0').textContent=steps(M);$('i1').textContent=steps(applyOps());
+  const code={R:'[::-1]',I:'',T:''};let s='notas';ops.forEach(o=>{s=o=='R'?`reversed(${s})`:o=='I'?`[2*eje-p for p in ${s}]`:`[p+7 for p in ${s}]`});$('src').textContent=s;cv1.r()}
+function upd(){$('dv2').textContent=$('dv3').textContent=delay;$('d2').value=$('d3').value=delay;
+  const k=canon();$('code2').textContent=`voz2 = lanzar(motivo, retardo=${delay})`;
+  $('r2').innerHTML=k.pairs?`Pulsos con las dos voces sonando: <b>${k.pairs}</b>. Choques: <b style="color:var(--bad)">${k.bad}</b>.`:'Las voces nunca suenan a la vez: la segunda entra cuando la primera termina.';
+  $('r3').innerHTML=k.pairs?k.seq.map(o=>`<span class="dot" style="background:var(--${o?'good':'bad'})"></span>`).join('')+` ${k.pairs-k.bad} de ${k.pairs} pulsos suenan bien. La tensión aparece y se resuelve en el siguiente pulso.`:'No hay pulsos juntos, así que no hay tensión que escuchar.';
+  cv2.r();cv3.r()}
+$('bR').onclick=()=>{ops.push('R');upd1()};$('bI').onclick=()=>{ops.push('I');upd1()};$('bT').onclick=()=>{ops.push('T');upd1()};$('bX').onclick=()=>{ops=[];upd1()};
+$('p1a').onclick=()=>play(cv1,[mk(M,0)],8);$('p1b').onclick=()=>play(cv1,[mk(applyOps(),0)],8);
+['d2','d3'].forEach(i=>$(i).oninput=e=>{delay=+e.target.value;upd()});
+$('p2').onclick=()=>{const k=canon();play(cv2,[k.v1,k.v2],16)};
+$('p3').onclick=()=>{const k=canon(),v=[];if(solo!='v2')v.push(k.v1);if(solo!='v1')v.push(k.v2);play(cv3,v,16)};
+document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{solo=b.dataset.s;document.querySelectorAll('[data-s]').forEach(x=>x.setAttribute('aria-pressed',x==b));cv3.r()});
+const Q=[
+ {q:'El botón «Espejo» del laboratorio 01 se escribe en código así:',o:['sorted(notas)','reversed(notas)','len(notas)'],a:1},
+ {q:'El «retardo» del laboratorio 02 es una técnica musical que se llama:',o:['Acorde','Silencio','Canon'],a:2},
+ {q:'Un choque rojo del laboratorio 03 suena áspero porque, en matemática, es:',o:['Una razón de frecuencias complicada, como 16:15','Una suma de notas que da cero','Un error del programa'],a:0}];
+const found=new Set();
+Q.forEach((q,i)=>{const d=document.createElement('div');d.className='qb';d.innerHTML=`<p>${q.q}</p><div class="row"></div>`;
+  q.o.forEach((t,j)=>{const b=document.createElement('button');b.textContent=t;b.onclick=()=>{
+    if(found.has(i))return;if(j==q.a){b.className='ok';found.add(i);$('c'+i).classList.add('on');$('cnt').textContent=found.size;$('fin').hidden=found.size<3;d.querySelectorAll('button').forEach(x=>x.disabled=true)}else b.className='no'};
+    d.lastChild.appendChild(b)});$('qs').appendChild(d)});
+addEventListener('resize',()=>{cv1.r();cv2.r();cv3.r()});
+matchMedia('(prefers-color-scheme:dark)').addEventListener&&matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{cv1.r();cv2.r();cv3.r()});
+upd1();upd();
+</script>
+
+</body></html>
