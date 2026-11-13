@@ -1,0 +1,187 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Desafío 01 Movimiento</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: encabezado + etapas, escenario (canvas) junto a panel de control, luego respuesta, comprensión, registro y configuración. */
+:root{--bg:#12112b;--panel:#1d1b45;--line:#34317a;--fg:#f3f1ff;--mut:#a9a5d6;--ball:#ff6b4a;--ok:#3ee0d0;--goal:#ffd23f;--bad:#ff8fa3;
+--head:"Space Grotesk",system-ui,sans-serif;--body:Inter,system-ui,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--head);margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,6vw,44px);line-height:1.05}
+h2{font-size:18px}
+.eyebrow{font:600 12px var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--goal)}
+p{margin:0;max-width:65ch}
+.mut{color:var(--mut)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.steps{display:flex;flex-wrap:wrap;gap:6px}
+.steps span{font:600 12px var(--body);padding:5px 10px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+.steps span.on{background:var(--goal);color:#12112b;border-color:var(--goal)}
+.steps span.past{color:var(--fg);border-color:var(--ok)}
+.lv{display:flex;flex-wrap:wrap;gap:8px}
+button{font:600 14px var(--body);color:var(--fg);background:transparent;border:1px solid var(--line);border-radius:10px;padding:9px 14px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--fg)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.act{background:var(--ball);border-color:var(--ball);color:#12112b}
+button.sel{border-color:var(--ok);color:var(--ok)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--goal);outline-offset:2px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px}
+@media(max-width:760px){.main{grid-template-columns:minmax(0,1fr)}}
+canvas{width:100%;height:auto;display:block;border-radius:10px;border:1px solid var(--line);background:#0c0b22}
+canvas.drag{touch-action:none;cursor:grab}
+label{display:flex;justify-content:space-between;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--ball)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.tile b{display:block;font:700 18px var(--head);font-variant-numeric:tabular-nums}
+.tile small{color:var(--mut)}
+.fb.ok{border-color:var(--ok)}.fb.no{border-color:var(--bad)}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opts button{text-align:left}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+.scroll{overflow-x:auto}
+textarea{width:100%;min-height:160px;background:#0c0b22;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px;font:12px/1.4 ui-monospace,Menlo,monospace}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+</style>
+<div class="wrap">
+<header>
+<div class="eyebrow">Demo · Física básica interactiva</div>
+<h1>Desafío 01 · Movimiento</h1>
+<p class="mut">¿Cómo conseguir que un objeto llegue a una meta? Movimiento, velocidad y trayectoria.</p>
+</header>
+<div class="steps" id="steps" aria-label="Etapas del desafío"></div>
+<div class="card">
+<div class="row"><div class="lv" id="lv"></div></div>
+<h2 id="ctx"></h2>
+<p id="mis" class="mut"></p>
+</div>
+<div class="main">
+<div class="card">
+<canvas id="cv" width="800" height="400" aria-label="Escenario de lanzamiento"></canvas>
+<div class="mut" id="hint2"></div>
+</div>
+<div class="card">
+<h3>Exploración</h3>
+<div class="row"><button id="m1" class="sel">Controles</button><button id="m2">Lanzar con el dedo</button></div>
+<label>Velocidad <span id="vo"></span></label>
+<input type="range" id="v" min="5" max="30" step="0.5" value="20">
+<label>Ángulo <span id="ao"></span></label>
+<input type="range" id="a" min="5" max="85" step="1" value="45">
+<button class="act" id="go">Lanzar</button>
+<button id="pista" hidden>Pedir una pista</button>
+<p class="mut" id="ph"></p>
+</div>
+</div>
+<div class="card fb" id="fb" hidden>
+<h3 id="fbt"></h3>
+<p id="fbx"></p>
+<div class="tiles" id="tiles"></div>
+</div>
+<div class="card" id="q" hidden>
+<h3>Comprensión</h3>
+<p id="qq"></p>
+<div class="opts" id="qo"></div>
+<p id="qw"></p>
+<div><button class="act" id="next" hidden>Siguiente nivel</button></div>
+</div>
+<div class="card">
+<h3>Registro de intentos</h3>
+<div class="tiles" id="ev"></div>
+<div class="scroll"><table><thead><tr><th>#</th><th>Nivel</th><th>Vel.</th><th>Áng.</th><th>Resultado</th></tr></thead><tbody id="lg"></tbody></table></div>
+</div>
+<div class="card">
+<h3>Configuración de desafíos</h3>
+<p class="mut">Cambiá metas, obstáculos, viento y preguntas sin tocar el código. El docente edita este JSON y aplica.</p>
+<textarea id="cfg" spellcheck="false" aria-label="Configuración JSON"></textarea>
+<div class="row"><button id="ap">Aplicar</button><button id="rs">Restaurar</button><span id="cm" class="mut"></span></div>
+</div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const DEF=[
+{name:"Nivel 1 · Campo abierto",context:"Un dron de reparto debe dejar un paquete en la plataforma amarilla.",goal:{x:60,w:8},obstacle:null,wind:0,
+ hint:"Probá con un ángulo cercano a 45° y ajustá solo la velocidad.",
+ q:{t:"Mientras la pelota vuela, ¿qué pasa con su velocidad horizontal (sin viento)?",o:["Se mantiene constante, nada la frena en horizontal","Baja hasta cero en el punto más alto","Aumenta por efecto de la gravedad"],c:0,w:"La gravedad solo actúa hacia abajo. Por eso el movimiento horizontal es uniforme y el vertical es acelerado."}},
+{name:"Nivel 2 · Barrera",context:"Hay una antena en el camino. La pelota tiene que pasar por encima.",goal:{x:75,w:7},obstacle:{x:40,w:3,h:14},wind:0,
+ hint:"Un ángulo bajo recorre rápido la distancia, pero sube poco. Subí el ángulo y compensá la velocidad.",
+ q:{t:"¿Por qué un ángulo muy bajo hizo chocar la pelota con la barrera?",o:["Sube poco antes de llegar a ese punto y su altura allí es menor que la barrera","La gravedad es más fuerte con ángulos bajos","La velocidad se reduce con ángulos bajos"],c:0,w:"La trayectoria es una parábola. Con ángulo bajo, la altura en cada punto es menor."}},
+{name:"Nivel 3 · Viento",context:"Sopla viento de frente. El mismo lanzamiento ya no llega igual.",goal:{x:70,w:6},obstacle:{x:38,w:3,h:10},wind:-1.5,
+ hint:"El viento resta velocidad horizontal en todo el vuelo. Probá con más velocidad inicial.",
+ q:{t:"¿Qué efecto tiene el viento de frente?",o:["Reduce la velocidad horizontal, así que hay que compensar con más velocidad inicial","Cambia la gravedad","Solo afecta la altura máxima"],c:0,w:"El viento agrega una aceleración horizontal contraria. El alcance baja aunque no cambies nada en tu lanzamiento."}}];
+const STG=["Contexto","Misión","Exploración","Respuesta","Adaptación","Comprensión"];
+let cfg=JSON.parse(JSON.stringify(DEF)),L=0,mode=1,v=20,a=45,st="idle",ball=null,trail=[],ghosts=[],log=[],done=[],und=[],fails=[],stage=2,qdone=false;
+const cv=$("#cv"),cx=cv.getContext("2d"),G=9.8,S=8,GY=370,P={x:6};
+function steps(){$("#steps").innerHTML=STG.map((s,i)=>`<span class="${i==stage?"on":i<stage?"past":""}">${s}</span>`).join("")}
+function levels(){$("#lv").innerHTML=cfg.map((c,i)=>`<button data-i="${i}" class="${i==L?"sel":""}" ${i>0&&!done[i-1]&&!done[i]?"disabled":""}>${done[i]?"✓ ":""}${c.name.split(" · ")[0]}</button>`).join("");
+ document.querySelectorAll("#lv button").forEach(b=>b.onclick=()=>start(+b.dataset.i))}
+function start(i){L=i;st="idle";ball=null;trail=[];ghosts=[];qdone=false;stage=2;
+ const c=cfg[L];$("#ctx").textContent=c.name+" — "+c.context;
+ $("#mis").textContent="Misión: lograr que la pelota aterrice sobre la plataforma amarilla."+(c.obstacle?" Evitá la barrera.":"")+(c.wind?" Hay viento de frente.":"");
+ $("#fb").hidden=true;$("#q").hidden=true;$("#pista").hidden=true;$("#ph").textContent="";$("#go").disabled=false;
+ steps();levels();draw()}
+function sync(){$("#vo").textContent=v.toFixed(1)+" m/s";$("#ao").textContent=a+"°";$("#v").value=v;$("#a").value=a}
+$("#v").oninput=e=>{v=+e.target.value;sync();if(st!="flying")draw()};
+$("#a").oninput=e=>{a=+e.target.value;sync();if(st!="flying")draw()};
+function setMode(m){mode=m;$("#m1").className=m==1?"sel":"";$("#m2").className=m==2?"sel":"";cv.className=m==2?"drag":"";
+ $("#hint2").textContent=m==2?"Arrastrá hacia atrás desde la pelota y soltá para lanzar.":"Ajustá velocidad y ángulo, después tocá Lanzar.";
+ $("#go").hidden=m==2;$("#v").disabled=$("#a").disabled=m==2}
+$("#m1").onclick=()=>setMode(1);$("#m2").onclick=()=>setMode(2);
+function launch(){if(st=="flying")return;const r=a*Math.PI/180;
+ ball={x:P.x,y:0,vx:v*Math.cos(r),vy:v*Math.sin(r),t:0,max:0,v0:v,a0:a,h:null};trail=[];st="flying";stage=2;steps();$("#go").disabled=true;requestAnimationFrame(tick)}
+$("#go").onclick=launch;
+function tick(){if(st!="flying")return;const c=cfg[L],o=c.obstacle,dt=.03;
+ for(let k=0;k<2&&st=="flying";k++){ball.vx+=c.wind*dt;ball.x+=ball.vx*dt;ball.vy-=G*dt;ball.y+=ball.vy*dt;ball.t+=dt;ball.max=Math.max(ball.max,ball.y);trail.push([ball.x,ball.y]);
+ if(o&&ball.x>=o.x&&ball.x<=o.x+o.w&&ball.y<o.h)return end("barrera");
+ if(ball.y<=0&&ball.t>.1)return end("suelo");if(ball.x>100)return end("suelo")}
+ draw();requestAnimationFrame(tick)}
+const f1=n=>n.toFixed(1);
+function end(kind){st="done";$("#go").disabled=false;const c=cfg[L],g=c.goal,b=ball,x=b.x,d0=g.x-x,d1=x-(g.x+g.w);
+ let res,ok=false,t,m;
+ if(kind=="barrera"){res="Chocó con la barrera";t="Chocó con la barrera";m=`La pelota estaba a ${f1(Math.max(b.y,0))} m de altura al llegar y la barrera mide ${c.obstacle.h} m. Su trayectoria era demasiado baja en ese punto. Subí el ángulo para ganar altura antes de llegar, o aumentá la velocidad.`}
+ else if(x>=g.x&&x<=g.x+g.w){ok=true;res="¡Llegó!";t="¡Llegó a la meta!";m=`Aterrizó a ${f1(x)} m, dentro de la plataforma. Tu lanzamiento combinó ${f1(b.vx<0?b.v0*Math.cos(b.a0*Math.PI/180):b.v0*Math.cos(b.a0*Math.PI/180))} m/s horizontales con ${f1(b.v0*Math.sin(b.a0*Math.PI/180))} m/s verticales.`}
+ else if(d0>0){res=`Corto por ${f1(d0)} m`;t="Quedó corta";m=`Cayó ${f1(d0)} m antes de la plataforma. La distancia es velocidad horizontal por tiempo de vuelo: ${f1(b.v0*Math.cos(b.a0*Math.PI/180))} m/s durante ${f1(b.t)} s. `+(c.wind?"El viento de frente le restó velocidad horizontal. ":"")+"Probá con más velocidad o un ángulo más cercano a 45°."}
+ else{res=`Pasada por ${f1(d1)} m`;t="Se pasó";m=`Cayó ${f1(d1)} m después de la plataforma. Tenía demasiada velocidad horizontal o demasiado tiempo de vuelo. Bajá la velocidad o alejá el ángulo de 45°.`}
+ ghosts.push(trail.slice());if(ghosts.length>3)ghosts.shift();
+ log.push({L,v:b.v0,a:b.a0,res,ok});if(ok)done[L]=true;else fails[L]=(fails[L]||0)+1;
+ const fb=$("#fb");fb.hidden=false;fb.className="card fb "+(ok?"ok":"no");$("#fbt").textContent=t;$("#fbx").textContent=m;
+ const T=(n,l)=>`<div class="tile"><b>${n}</b><small>${l}</small></div>`;
+ $("#tiles").innerHTML=T(f1(b.v0*Math.cos(b.a0*Math.PI/180))+" m/s","velocidad horizontal")+T(f1(b.v0*Math.sin(b.a0*Math.PI/180))+" m/s","velocidad vertical inicial")+T(f1(b.t)+" s","tiempo de vuelo")+T(f1(b.max)+" m","altura máxima")+T(f1(x-P.x)+" m","distancia recorrida");
+ stage=ok?5:3;steps();levels();report();draw();
+ if(!ok&&fails[L]>=3){$("#pista").hidden=false}
+ if(ok){const q=c.q;$("#q").hidden=false;$("#qq").textContent=q.t;$("#qw").textContent="";$("#next").hidden=true;
+  $("#qo").innerHTML=q.o.map((o,i)=>`<button data-i="${i}">${o}</button>`).join("");
+  document.querySelectorAll("#qo button").forEach(bt=>bt.onclick=()=>{const i=+bt.dataset.i;if(i==q.c){und[L]=true;qdone=true;$("#qw").textContent="Correcto. "+q.w;bt.className="sel";report();
+   if(L<cfg.length-1){$("#next").hidden=false;stage=4;steps()}else $("#qw").textContent+=" Completaste el desafío."}else $("#qw").textContent="Todavía no. Releé lo que pasó en tu lanzamiento y probá otra opción."})}}
+$("#next").onclick=()=>start(L+1);
+$("#pista").onclick=()=>{$("#ph").textContent=cfg[L].hint};
+function report(){const n=log.length,k=log.filter(l=>l.ok).length,u=und.filter(Boolean).length;
+ $("#ev").innerHTML=[[n,"intentos"],[k,"aciertos"],[u+"/"+cfg.length,"conceptos explicados"]].map(([a,b])=>`<div class="tile"><b>${a}</b><small>${b}</small></div>`).join("");
+ $("#lg").innerHTML=log.slice(-8).map((l,i)=>`<tr><td>${log.length-Math.min(8,log.length)+i+1}</td><td>${l.L+1}</td><td>${f1(l.v)}</td><td>${l.a}°</td><td>${l.res}</td></tr>`).join("")}
+function draw(){const c=cfg[L],g=c.goal,o=c.obstacle;cx.clearRect(0,0,800,400);
+ cx.fillStyle="#0c0b22";cx.fillRect(0,0,800,400);cx.strokeStyle="#34317a";cx.fillStyle="#a9a5d6";cx.font="11px Inter,sans-serif";cx.lineWidth=1;
+ for(let m=0;m<=100;m+=10){cx.beginPath();cx.moveTo(m*S,0);cx.lineTo(m*S,GY);cx.globalAlpha=.35;cx.stroke();cx.globalAlpha=1;cx.fillText(m+" m",m*S+3,GY+16)}
+ cx.fillStyle="#1d1b45";cx.fillRect(0,GY,800,30);
+ cx.fillStyle="#ffd23f";cx.fillRect(g.x*S,GY-4,g.w*S,8);cx.fillRect(g.x*S+g.w*S/2-1,GY-26,2,22);cx.beginPath();cx.moveTo(g.x*S+g.w*S/2+1,GY-26);cx.lineTo(g.x*S+g.w*S/2+14,GY-20);cx.lineTo(g.x*S+g.w*S/2+1,GY-14);cx.fill();
+ if(o){cx.fillStyle="#ff8fa3";cx.fillRect(o.x*S,GY-o.h*S,o.w*S,o.h*S);cx.fillStyle="#12112b";cx.font="600 11px Inter,sans-serif";cx.fillText(o.h+" m",o.x*S-2,GY-o.h*S-5)}
+ cx.fillStyle="#a9a5d6";cx.font="600 12px Inter,sans-serif";cx.fillText(c.wind?"Viento ← "+Math.abs(c.wind)+" m/s²":"Sin viento",10,18);
+ ghosts.forEach((t,i)=>{cx.strokeStyle="#a9a5d6";cx.globalAlpha=.25+i*.12;cx.setLineDash([4,5]);path(t);cx.setLineDash([])});cx.globalAlpha=1;
+ cx.strokeStyle="#3ee0d0";cx.lineWidth=3;if(st!="idle")path(trail);cx.lineWidth=1;
+ const bx=st=="idle"?P.x:ball.x,by=st=="idle"?0:ball.y;
+ if(st=="idle"||st=="done"&&false){const r=a*Math.PI/180,len=v*4;cx.strokeStyle="#ffd23f";cx.lineWidth=3;cx.beginPath();cx.moveTo(P.x*S,GY-8);cx.lineTo(P.x*S+len*Math.cos(r),GY-8-len*Math.sin(r));cx.stroke();cx.lineWidth=1}
+ cx.fillStyle="#ff6b4a";cx.beginPath();cx.arc(bx*S,GY-by*S-7,7,0,7);cx.fill()}
+function path(t){if(t.length<2)return;cx.beginPath();cx.moveTo(t[0][0]*S,GY-t[0][1]*S-7);t.forEach(p=>cx.lineTo(p[0]*S,GY-p[1]*S-7));cx.stroke()}
+let drag=false;
+function wp(e){const r=cv.getBoundingClientRect(),k=800/r.width;return{x:(e.clientX-r.left)*k/S,y:(GY-(e.clientY-r.top)*k)/S}}
+cv.onpointerdown=e=>{if(mode!=2||st=="flying")return;const p=wp(e);if(Math.hypot(p.x-P.x,p.y-1)<8){drag=true;cv.setPointerCapture(e.pointerId);if(st=="done"){st="idle";ball=null;trail=[]}}};
+cv.onpointermove=e=>{if(!drag)return;const p=wp(e),dx=P.x-p.x,dy=1-p.y;v=Math.min(30,Math.max(5,Math.hypot(dx,dy)*1.2));a=Math.min(85,Math.max(5,Math.round(Math.atan2(dy,Math.max(dx,.01))*180/Math.PI)));sync();draw()};
+cv.onpointerup=()=>{if(drag){drag=false;launch()}};
+$("#ap").onclick=()=>{try{const j=JSON.parse($("#cfg").value);if(!Array.isArray(j)||!j.length)throw 0;j.forEach(c=>{if(!c.name||!c.goal||!(c.goal.x>0)||!(c.goal.w>0)||!c.q||!Array.isArray(c.q.o))throw 0});
+ cfg=j;done=[];und=[];fails=[];log=[];report();start(0);$("#cm").textContent="Configuración aplicada."}catch(e){$("#cm").textContent="El JSON no es válido. Cada desafío necesita name, goal {x, w} y q {t, o, c, w}."}};
+$("#rs").onclick=()=>{cfg=JSON.parse(JSON.stringify(DEF));$("#cfg").value=JSON.stringify(cfg,null,1);done=[];und=[];fails=[];log=[];report();start(0);$("#cm").textContent="Valores originales restaurados."};
+$("#cfg").value=JSON.stringify(cfg,null,1);sync();setMode(1);report();start(0);
+</script>
+
+</body></html>
