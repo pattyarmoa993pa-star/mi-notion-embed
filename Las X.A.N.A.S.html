@@ -1,0 +1,504 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Las X.A.N.A.S.</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Concepto: gabinete arcade nocturno. Una pantalla pixelada de bosque asturiano, HUD arriba, diálogo y mandos debajo. */
+:root{
+  --noche:#0f1c22; --panel:#162830; --linea:#2e4852; --niebla:#d3e6df; --tenue:#8fa9a6;
+  --ambar:#f0b84a; --agua:#62c4d6; --lazo:#d0553f; --musgo:#2f5d3a;
+  --pix:'Press Start 2P',ui-monospace,Menlo,Consolas,monospace;
+  --txt:'VT323',ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--noche); color:var(--niebla); font-family:var(--txt); font-size:21px; line-height:1.15;
+  padding-block:16px 28px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.cab{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+header{display:flex;flex-direction:column;gap:6px}
+h1{font:400 clamp(18px,5.4vw,30px)/1.2 var(--pix);color:var(--ambar);letter-spacing:.04em;margin:0;text-wrap:balance}
+.sub{margin:0;color:var(--tenue)}
+.hud{display:grid;grid-template-columns:repeat(4,minmax(0,auto));gap:10px 18px;align-items:end;justify-content:space-between;
+  background:var(--panel);border:2px solid var(--linea);padding:10px 12px}
+.it{display:flex;flex-direction:column;gap:6px;min-width:0}
+.it b{font:400 9px var(--pix);color:var(--tenue);letter-spacing:.06em}
+.it span.val{font:400 13px var(--pix);color:var(--niebla);font-variant-numeric:tabular-nums}
+.vidas,.slots{display:flex;gap:5px;height:16px;align-items:center}
+.v{width:16px;height:14px;background:var(--lazo);clip-path:polygon(0 25%,25% 0,50% 25%,75% 0,100% 25%,100% 55%,50% 100%,0 55%)}
+.v.off{background:var(--linea)}
+.s{width:14px;height:14px;background:var(--linea);border:2px solid var(--noche)}
+.s.on{background:var(--ambar)}
+.reloj{position:relative;width:140px;max-width:100%;height:14px;border:2px solid var(--noche);
+  background:linear-gradient(90deg,#e8cf6a 0%,#e8cf6a 48%,#e58d78 60%,#c46b8f 90%,#2a3566 100%)}
+.marca{position:absolute;top:-4px;width:4px;height:18px;background:var(--niebla);box-shadow:0 0 0 2px var(--noche)}
+.pantalla{position:relative;border:4px solid var(--linea);background:#000;box-shadow:0 0 0 2px var(--noche),0 0 28px rgba(98,196,214,.15)}
+canvas{display:block;width:100%;height:auto;aspect-ratio:8/5;image-rendering:pixelated}
+.ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,20,26,.86);padding:12px;text-align:center}
+.caja{max-width:30em;display:flex;flex-direction:column;gap:12px;align-items:center}
+.caja p{margin:0}
+.pix{font:400 clamp(11px,3vw,15px)/1.5 var(--pix)}
+.gran{font:400 clamp(14px,4.4vw,24px)/1.3 var(--pix);color:var(--ambar)}
+.fila{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.btn{font:400 11px var(--pix);color:var(--noche);background:var(--ambar);border:0;padding:11px 13px;box-shadow:0 4px 0 #8a6420;cursor:pointer;touch-action:manipulation}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #8a6420}
+.btn:focus-visible{outline:3px solid var(--agua);outline-offset:2px}
+.btn.sec{background:var(--panel);color:var(--niebla);box-shadow:0 4px 0 var(--linea)}
+.btn.sec:active{box-shadow:0 1px 0 var(--linea)}
+.log{background:var(--panel);border:2px solid var(--linea);padding:10px 12px;min-height:7.6em;display:flex;flex-direction:column;justify-content:flex-end;gap:4px}
+.log p{margin:0;opacity:.45}
+.log p:nth-last-child(2){opacity:.7}
+.log p:last-child{opacity:1;color:var(--niebla)}
+.elec{display:flex;flex-direction:column;gap:8px}
+.elec .q{margin:0;color:var(--agua)}
+.btn.opc{font:400 21px/1.1 var(--txt);text-align:left;color:var(--niebla);background:var(--panel);border:2px solid var(--agua);box-shadow:none;padding:9px 12px}
+.btn.opc:hover{background:#1d3640}
+.mandos{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center;justify-content:space-between}
+.dpad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);gap:4px}
+.dpad .btn{padding:0;display:flex;align-items:center;justify-content:center;font-size:14px}
+.dpad .u{grid-area:1/2}.dpad .l{grid-area:2/1}.dpad .r{grid-area:2/3}.dpad .d{grid-area:3/2}
+@media (hover:hover) and (pointer:fine){.dpad{display:none}}
+.acc{display:flex;flex-wrap:wrap;gap:10px;flex:1;justify-content:flex-end}
+.pie{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:center;color:var(--tenue);font-size:18px}
+.pie p{margin:0;max-width:44em}
+@media (max-width:520px){.hud{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<main class="cab">
+  <header>
+    <h1>LAS X.A.N.A.S.</h1>
+    <p class="sub">Aprende a leer el bosque antes de tocarlo.</p>
+  </header>
+
+  <section class="hud" aria-label="Estado de la partida">
+    <div class="it"><b>VIDAS</b><div class="vidas" id="vidas"></div></div>
+    <div class="it"><b>PUNTOS</b><span class="val" id="puntos">00000</span></div>
+    <div class="it"><b>PISTAS</b><div class="slots" id="slots"></div></div>
+    <div class="it"><b id="fase">DÍA</b><div class="reloj" aria-hidden="true"><div class="marca" id="marca"></div></div></div>
+  </section>
+
+  <div class="pantalla">
+    <canvas id="c" width="320" height="200" role="img" aria-label="Bosque asturiano con un roble, un hórreo, un sendero y una fuente"></canvas>
+    <div class="ov" id="ov"></div>
+  </div>
+
+  <div class="log" id="log" aria-live="polite"></div>
+  <div class="elec" id="elec" hidden></div>
+
+  <section class="mandos" aria-label="Mandos">
+    <div class="dpad" aria-label="Mover">
+      <button class="btn sec u" data-d="up" aria-label="Arriba">▲</button>
+      <button class="btn sec l" data-d="left" aria-label="Izquierda">◀</button>
+      <button class="btn sec r" data-d="right" aria-label="Derecha">▶</button>
+      <button class="btn sec d" data-d="down" aria-label="Abajo">▼</button>
+    </div>
+    <div class="acc">
+      <button class="btn" data-a="mirar">MIRAR (E)</button>
+      <button class="btn" data-a="tomar">TOMAR (Q)</button>
+      <button class="btn" data-a="tocar">TOCAR (T)</button>
+      <button class="btn" data-a="verter">VERTER (V)</button>
+      <button class="btn" data-a="esperar">ESPERAR (Z)</button>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <p>Mover: flechas o WASD. Inspirado en los relatos recogidos por Aurelio de Llano Roza de Ampudia en «Del folklore asturiano» (1922). La historia del juego es original.</p>
+    <button class="btn sec" id="snd">SONIDO: SÍ</button>
+  </footer>
+</main>
+
+<script>
+/*ENGINE-START*/
+/* Motor: traducción directa de xanas_motor.py. El relato son datos; las reglas son funciones. */
+const ZONAS_INICIALES=['bosque','roble','horreo','sendero','fuente'];
+const LUGARES={
+  bosque:'Un bosque de castaños. Hay un roble, un hórreo, un sendero y, más abajo, una fuente.',
+  roble:'Un roble viejo con letras talladas en la corteza.',
+  horreo:'Un hórreo abandonado. Alguien dejó una canción escrita en una viga.',
+  sendero:'Un sendero de barro. Junto a una piedra descansa un cuenco.',
+  fuente:'Una fuente de piedra. El agua cae despacio.',
+  prado:'Un prado nuevo, abierto donde antes solo había zarzas. El agua corre libre hacia el valle.'
+};
+const PISTAS={
+  roble:['grabado','En la corteza: «Quien se lleva el reflejo, se queda con el rostro.»'],
+  horreo:['cancion','En la viga: «Barro que guarda el alba, que el agua vuelva a ser su cara.»'],
+  sendero:['cuenco','Dentro del cuenco de barro hay agua tan quieta que ves el cielo en ella.']
+};
+const PRUEBA={
+  pregunta:'La Xana susurra: «Cada alba vengo y no me reconozco. ¿Qué me falta?»',
+  opciones:['Un peine de oro, como a todas las xanas.','Mi reflejo, que alguien guarda.','Un mozo que me haga un regalo.'],
+  correcta:1
+};
+const DIA_HASTA=14, ALBA_HASTA=26;
+
+function nuevoEstado(){
+  return {zona:'bosque',turno:0,vidas:3,puntos:0,inventario:new Set(),pistas:new Set(),
+    banderas:new Set(),zonas:new Set(ZONAS_INICIALES),turbia_desde:-99,xana_vista:false,fin:''};
+}
+const fase=e=>e.turno<=DIA_HASTA?'dia':(e.turno<=ALBA_HASTA?'alba':'noche');
+const xanaPresente=e=>e.zona==='fuente'&&fase(e)==='alba'&&(e.turno-e.turbia_desde>3)&&!e.banderas.has('liberada');
+
+const REGLAS=[
+  (e,a,o)=>{ if(a==='tocar'&&o==='agua'&&e.zona==='fuente'){e.turbia_desde=e.turno;e.puntos-=5;return 'Las ondas rompen el reflejo. El agua se enturbia.';} },
+  (e,a,o)=>{ if(e.turno-e.turbia_desde===3) return 'El agua vuelve a quedarse quieta.'; },
+  (e,a,o)=>{ if(a==='verter'&&o==='suelo'&&e.inventario.has('cuenco')){e.inventario.delete('cuenco');e.vidas-=1;return 'El agua se pierde en la tierra. Lo que guardaba ya no está. (-1 vida)';} }
+];
+
+function finDeTurno(e,msgs,accion,objetivo){
+  e.turno+=1;
+  for(const r of REGLAS){const m=r(e,accion,objetivo); if(m) msgs.push(m);}
+  if(e.turno>ALBA_HASTA){
+    e.turno=0; e.turbia_desde=-99; e.vidas-=1;
+    msgs.push('Cae la noche y el bosque se cierra. Amanece de nuevo. (-1 vida)');
+  }
+  if(e.vidas<=0){e.fin='derrota';msgs.push('Te quedas sin vidas. El bosque guarda su secreto.');}
+}
+function deduccion(e,msgs){
+  if(e.pistas.size===3&&!e.banderas.has('deduccion')){
+    e.banderas.add('deduccion');e.puntos+=20;
+    msgs.push('Las tres frases hablan de lo mismo: algo se llevó algo que no era suyo.');
+  }
+}
+function avisoXana(e,msgs){
+  const p=xanaPresente(e);
+  if(p&&!e.xana_vista&&!e.banderas.has('prueba')){
+    msgs.push('Una figura se inclina sobre el agua. Te mira sin reconocerse.');
+    msgs.push(PRUEBA.pregunta);
+  }
+  e.xana_vista=p;
+}
+function ejecutar(e,comando){
+  const msgs=[];
+  if(e.fin) return ['La partida terminó.'];
+  const partes=comando.toLowerCase().trim().split(/\s+/);
+  const verbo=partes[0], arg=partes[1]||'';
+  if(verbo==='ir'){
+    if(e.zonas.has(arg)&&arg!==e.zona){e.zona=arg;msgs.push(LUGARES[arg]);}
+    else msgs.push('No puedes ir ahí.');
+  } else if(verbo==='mirar'||verbo==='examinar'){
+    msgs.push(LUGARES[e.zona]);
+    if(PISTAS[e.zona]){
+      const [clave,texto]=PISTAS[e.zona];
+      msgs.push(texto);
+      if(!e.pistas.has(clave)){e.pistas.add(clave);e.puntos+=10;msgs.push('(Pista '+e.pistas.size+'/3)');deduccion(e,msgs);}
+    }
+    if(e.zona==='fuente'&&xanaPresente(e)) msgs.push('La Xana espera una respuesta.');
+  } else if(verbo==='tomar'&&arg==='cuenco'){
+    if(e.zona==='sendero'&&!e.inventario.has('cuenco')&&!e.banderas.has('liberada')){
+      e.inventario.add('cuenco');msgs.push('Llevas el cuenco con cuidado, sin inclinarlo.');
+    } else msgs.push('No hay nada así que tomar aquí.');
+  } else if(verbo==='responder'){
+    if(xanaPresente(e)&&!e.banderas.has('prueba')){
+      const el=parseInt(arg,10)-1;
+      if(el===PRUEBA.correcta){
+        e.banderas.add('prueba');e.puntos+=30;
+        msgs.push('La Xana alza la mirada: «Alguien lo entendió.» ¿Cómo la ayudas?');
+      } else {
+        e.vidas-=1;e.zona='bosque';
+        msgs.push('La Xana se desvanece entre la bruma. Despiertas en el bosque. (-1 vida)');
+        if(e.vidas<=0) e.fin='derrota';
+      }
+    } else msgs.push('Nadie espera tu respuesta.');
+  } else if(verbo==='devolver'||verbo==='quedarme'||verbo==='pedir'){
+    if(e.banderas.has('prueba')&&xanaPresente(e)){
+      if(verbo==='devolver'&&e.inventario.has('cuenco')){
+        e.inventario.delete('cuenco');e.banderas.add('liberada');e.zonas.add('prado');e.puntos+=50;
+        msgs.push('Viertes el cuenco en la fuente. El agua se aquieta, la Xana se ve por fin.');
+        msgs.push('Se rompe el encantamiento. Las zarzas se abren: nueva zona desbloqueada → prado.');
+        e.fin='victoria';
+      } else if(verbo==='devolver'){
+        msgs.push('No tienes qué devolver. Recuerda dónde reposa lo que falta.');
+      } else {
+        e.vidas-=1;
+        msgs.push('La Xana apaga su luz: ayudarla a cambio de algo no la libera. (-1 vida)');
+        e.zona='bosque';
+        if(e.vidas<=0) e.fin='derrota';
+      }
+    } else msgs.push('Todavía no es momento de eso.');
+  } else if(verbo==='tocar'||verbo==='verter'){
+    /* la consecuencia la produce una regla oculta */
+  } else if(verbo==='esperar'){
+    msgs.push('Pasa el tiempo. Es '+fase(e)+'.');
+  } else msgs.push('No entiendo.');
+  if(!e.fin) finDeTurno(e,msgs,verbo,arg);
+  if(!e.fin) avisoXana(e,msgs);
+  return msgs;
+}
+/*ENGINE-END*/
+
+/* ---------------- Interfaz arcade ---------------- */
+const $=id=>document.getElementById(id);
+const cv=$('c'), g=cv.getContext('2d'); g.imageSmoothingEnabled=false;
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+let E=nuevoEstado(), modo='titulo', epilogo=false, bonusDado=false;
+const P={x:160,y:100,paso:0,mov:false};
+const keys={};
+const HOT={roble:{x:60,y:76},horreo:{x:260,y:76},sendero:{x:60,y:154},fuente:{x:240,y:154}};
+let sonido=true, AC=null, registro=[];
+
+function beep(f,d,t,v){
+  if(!sonido) return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(), n=AC.createGain();
+    o.type=t||'square'; o.frequency.value=f; n.gain.value=v||0.04;
+    o.connect(n); n.connect(AC.destination); o.start(); o.stop(AC.currentTime+(d||0.08));
+  }catch(_){}
+}
+function melodia(notas){ notas.forEach((f,i)=>setTimeout(()=>beep(f,0.1,'square',0.04),i*110)); }
+
+function recordGet(){ try{return parseInt(localStorage.getItem('xanas-record')||'0',10)||0;}catch(_){return 0;} }
+function recordSet(v){ try{localStorage.setItem('xanas-record',String(v));}catch(_){} }
+
+function say(t){
+  registro.push(t); if(registro.length>6) registro.shift();
+  $('log').innerHTML=registro.map(x=>'<p>'+x.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</p>').join('');
+}
+function hud(){
+  $('vidas').innerHTML=[0,1,2].map(i=>'<i class="v'+(i<E.vidas?'':' off')+'"></i>').join('');
+  $('puntos').textContent=String(Math.max(0,E.puntos)).padStart(5,'0');
+  $('slots').innerHTML=[0,1,2].map(i=>'<i class="s'+(i<E.pistas.size?' on':'')+'"></i>').join('');
+  $('fase').textContent={dia:'DÍA',alba:'ALBA',noche:'NOCHE'}[fase(E)];
+  $('marca').style.left=Math.min(96,(E.turno/(ALBA_HASTA+1))*100)+'%';
+}
+function elecciones(){
+  const box=$('elec');
+  if(modo==='juego'&&!epilogo&&!E.fin&&xanaPresente(E)){
+    if(!E.banderas.has('prueba')){
+      box.innerHTML='<p class="q">¿Qué le falta a la Xana?</p>'+PRUEBA.opciones.map((o,i)=>'<button class="btn opc" data-r="responder '+(i+1)+'">'+(i+1)+'. '+o+'</button>').join('');
+    } else {
+      box.innerHTML='<p class="q">¿Cómo la ayudas?</p>'+
+        '<button class="btn opc" data-r="devolver">Devolver lo que falta</button>'+
+        '<button class="btn opc" data-r="quedarme">Quedarme con ello</button>'+
+        '<button class="btn opc" data-r="pedir">Pedir un deseo</button>';
+    }
+    box.hidden=false;
+    box.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{run(b.dataset.r);b.blur();}));
+  } else { box.hidden=true; box.innerHTML=''; }
+}
+function syncJugador(){
+  if(E.zona==='bosque'&&zonaPorPos()!=='bosque'){P.x=160;P.y=100;}
+}
+function zonaPorPos(){
+  let mejor='bosque', bd=28;
+  for(const k in HOT){const d=Math.hypot(P.x-HOT[k].x,P.y-HOT[k].y); if(d<bd){bd=d;mejor=k;}}
+  return mejor;
+}
+function run(cmd){
+  if(modo!=='juego'||epilogo||E.fin) return;
+  const msgs=ejecutar(E,cmd).filter(m=>!m.startsWith('  '));
+  if(!msgs.length) msgs.push('No ocurre nada.');
+  const todo=msgs.join(' ');
+  msgs.forEach(say);
+  if(todo.includes('(Pista')) melodia([523,659]);
+  if(todo.includes('Las tres frases')) setTimeout(()=>melodia([659,784,988]),230);
+  if(todo.includes('-1 vida')) beep(110,0.25,'sawtooth',0.05);
+  if(todo.includes('Una figura')) melodia([880,1175,1568]);
+  if(todo.includes('enturbia')) beep(150,0.2,'triangle',0.06);
+  syncJugador(); hud(); elecciones();
+  if(E.fin) setTimeout(terminar,700);
+}
+function accion(a){
+  if(modo!=='juego'||epilogo) return;
+  if(a==='mirar') run('mirar');
+  else if(a==='tomar') run('tomar cuenco');
+  else if(a==='tocar') run('tocar agua');
+  else if(a==='verter'){
+    if(!E.inventario.has('cuenco')){say('No llevas nada que verter.');return;}
+    run('verter suelo');
+  } else if(a==='esperar') run('esperar');
+}
+
+function overlay(html){ const o=$('ov'); if(!html){o.hidden=true;o.innerHTML='';return;} o.hidden=false;o.innerHTML=html; }
+function mostrarTitulo(){
+  modo='titulo';
+  overlay('<div class="caja"><p class="gran">LAS X.A.N.A.S.</p>'+
+    '<p>Una xana aparece junto a la fuente solo cuando se dan ciertas condiciones. Nadie te dirá cuáles. Busca tres pistas, lee lo que dicen y decide con cuidado.</p>'+
+    '<p class="pix" style="color:var(--agua)">Récord '+String(recordGet()).padStart(5,'0')+'</p>'+
+    '<button class="btn" id="go">INICIO</button></div>');
+  $('go').addEventListener('click',empezar); $('go').focus();
+}
+function empezar(){
+  E=nuevoEstado(); epilogo=false; bonusDado=false; P.x=160;P.y=100; registro=[];
+  modo='juego'; overlay(''); say(LUGARES.bosque); hud(); elecciones(); beep(660,0.1);
+  $('go')&&$('go').blur();
+}
+function terminar(){
+  modo='fin'; elecciones();
+  const rec=recordGet();
+  if(E.fin==='victoria'){
+    const bonus=E.vidas*10; if(!bonusDado){E.puntos+=bonus;bonusDado=true;}
+    if(E.puntos>rec) recordSet(E.puntos);
+    hud(); melodia([523,659,784,1047,784,1047]);
+    overlay('<div class="caja"><p class="gran">NIVEL SUPERADO</p>'+
+      '<p>El agua se aquietó y la Xana volvió a reconocerse. Las zarzas se abrieron y apareció el prado.</p>'+
+      '<p class="pix">PUNTOS '+String(E.puntos).padStart(5,'0')+'</p>'+
+      '<p>Incluye +'+bonus+' por las vidas que te quedaban.</p>'+
+      '<p class="pix" style="color:var(--agua)">RÉCORD '+String(Math.max(rec,E.puntos)).padStart(5,'0')+'</p>'+
+      '<div class="fila"><button class="btn" id="b1">ENTRAR AL PRADO</button><button class="btn sec" id="b2">OTRA VEZ</button></div></div>');
+    $('b1').addEventListener('click',()=>{epilogo=true;modo='juego';overlay('');P.x=160;P.y=110;say(LUGARES.prado);say('Nueva zona desbloqueada. Pulsa «Otra vez» para volver a jugar.');addReinicio();});
+    $('b2').addEventListener('click',empezar);
+  } else {
+    if(E.puntos>rec) recordSet(E.puntos);
+    hud(); melodia([392,330,262,196]);
+    overlay('<div class="caja"><p class="gran">FIN DEL ALBA</p>'+
+      '<p>El bosque guarda su secreto. Las pistas siguen donde las dejaste.</p>'+
+      '<p class="pix">PUNTOS '+String(Math.max(0,E.puntos)).padStart(5,'0')+'</p>'+
+      '<button class="btn" id="b2">OTRA VEZ</button></div>');
+    $('b2').addEventListener('click',empezar);
+  }
+  const b=$('b1')||$('b2'); b&&b.focus();
+}
+function addReinicio(){
+  if(document.getElementById('re')) return;
+  const b=document.createElement('button'); b.className='btn'; b.id='re'; b.textContent='OTRA VEZ';
+  b.addEventListener('click',()=>{b.remove();empezar();});
+  document.querySelector('.acc').appendChild(b);
+}
+
+/* --- Entradas --- */
+const MAP={arrowup:'up',w:'up',arrowdown:'down',s:'down',arrowleft:'left',a:'left',arrowright:'right',d:'right'};
+addEventListener('keydown',ev=>{
+  const k=ev.key.toLowerCase();
+  if(MAP[k]){keys[MAP[k]]=true; ev.preventDefault(); return;}
+  if(k==='e'||k===' ') {ev.preventDefault(); accion('mirar');}
+  else if(k==='q') accion('tomar');
+  else if(k==='t') accion('tocar');
+  else if(k==='v') accion('verter');
+  else if(k==='z') accion('esperar');
+  else if(k==='1'||k==='2'||k==='3'){ if(xanaPresente(E)&&!E.banderas.has('prueba')) run('responder '+k); }
+});
+addEventListener('keyup',ev=>{const k=MAP[ev.key.toLowerCase()]; if(k) keys[k]=false;});
+document.querySelectorAll('[data-d]').forEach(b=>{
+  const d=b.dataset.d;
+  b.addEventListener('pointerdown',ev=>{ev.preventDefault();keys[d]=true;});
+  ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>{keys[d]=false;}));
+});
+document.querySelectorAll('[data-a]').forEach(b=>b.addEventListener('click',()=>{accion(b.dataset.a);b.blur();}));
+$('snd').addEventListener('click',()=>{sonido=!sonido;$('snd').textContent='SONIDO: '+(sonido?'SÍ':'NO');$('snd').blur();});
+
+/* --- Dibujo --- */
+const R=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h);};
+let sem=7; const rnd=()=>{sem=(sem*1103515245+12345)&0x7fffffff;return sem/0x7fffffff;};
+const hierba=[];for(let i=0;i<70;i++)hierba.push([rnd()*316|0,rnd()*196|0,rnd()<.5]);
+const flores=[];for(let i=0;i<46;i++)flores.push([rnd()*316|0,rnd()*150|0,['#f4d35e','#f2f0e6','#e58d78','#b98bd9'][i%4]]);
+const arboles=[[12,22],[104,18],[160,12],[208,20],[300,24],[14,104],[118,186],[178,184],[304,176],[22,190],[290,120]];
+
+function arbol(x,y){
+  R(x-2,y,4,10,'#4a3322'); R(x-12,y-2,24,6,'#1f4a2e'); R(x-9,y-8,18,8,'#1f4a2e'); R(x-5,y-13,10,6,'#1f4a2e');
+  R(x-6,y-8,4,3,'#2b6a3d'); R(x+1,y-1,5,2,'#2b6a3d');
+}
+function sendas(){
+  const c=[160,100];
+  Object.values(HOT).forEach(h=>{
+    const n=22; for(let i=0;i<=n;i++){const x=c[0]+(h.x-c[0])*i/n, y=c[1]+(h.y-c[1])*i/n; R(x-4,y-4,9,9,'#6a5a3c');}
+  });
+  R(150,90,20,20,'#6a5a3c');
+}
+function roble(t){
+  R(53,48,14,28,'#5a3d26'); R(56,52,3,20,'#6d4a2f');
+  R(30,14,60,14,'#245a33'); R(24,24,72,16,'#1f4f2c'); R(36,8,48,8,'#2b6a3d'); R(38,38,44,8,'#1b4326');
+  R(44,16,6,3,'#348049'); R(70,26,6,3,'#348049');
+  const c='#d9c9a0'; R(57,56,2,7,c); R(60,54,2,9,c); R(63,57,2,5,c); R(58,66,6,2,c);
+}
+function horreo(){
+  R(246,66,4,10,'#8b8b86'); R(272,66,4,10,'#8b8b86'); R(243,64,10,3,'#a2a29c'); R(269,64,10,3,'#a2a29c');
+  R(244,44,32,20,'#7b5230'); for(let i=0;i<5;i++) R(248+i*6,44,1,20,'#5f3d22');
+  R(240,38,40,6,'#8a3b2d'); R(245,33,30,5,'#8a3b2d'); R(251,28,18,5,'#8a3b2d'); R(258,24,4,4,'#d9c9a0');
+  R(256,52,8,12,'#2a1a10');
+}
+function cuencoSpot(t){
+  R(50,156,20,8,'#8a8a85'); R(52,154,16,3,'#a2a29c');
+  if(!E.inventario.has('cuenco')&&!E.banderas.has('liberada')){R(54,148,12,7,'#a0623a');R(56,148,8,2,'#62c4d6');R(54,148,12,1,'#c07a4a');}
+}
+function fuente(t){
+  const turbia=E.turno-E.turbia_desde<=3;
+  R(222,142,36,20,'#8d948f'); R(224,140,32,3,'#aab0ab'); R(226,144,28,14,turbia?'#7a6a48':'#3f8fa8');
+  R(228,146,24,10,turbia?'#8a7852':(xanaPresente(E)||E.banderas.has('liberada')?'#8fd6e4':'#62c4d6'));
+  R(238,128,4,16,'#aab0ab'); R(236,126,8,3,'#8d948f');
+  const o=reduce?0:Math.floor(t*3)%3;
+  R(239,130+o*4,2,2,'#bfe9f1');
+  if(turbia){const w=reduce?2:(Math.floor(t*4)%4); R(232-w,148,16+w*2,1,'#a8946a'); R(230-w,152,20+w*2,1,'#a8946a');}
+  else {const w=reduce?0:(Math.floor(t*2)%2); R(234-w,150,12+w*2,1,'#d3f2f7');}
+}
+function xana(t){
+  const b=reduce?0:Math.round(Math.sin(t*2)*2);
+  const x=240,y=114+b;
+  g.globalAlpha=.22; R(x-14,y-18,28,40,'#9fe8e0'); g.globalAlpha=1;
+  R(x-5,y-12,10,6,'#9fe8e0'); R(x-7,y-10,3,22,'#9fe8e0'); R(x+4,y-10,3,22,'#9fe8e0');
+  R(x-4,y-8,8,7,'#f1e3d3'); R(x-3,y-6,1,2,'#33414a'); R(x+2,y-6,1,2,'#33414a');
+  R(x-6,y-1,12,16,'#bff3ee'); R(x-8,y+10,16,7,'#a6e6e0'); R(x-5,y+15,10,3,'#8fd6d0');
+}
+function jugador(){
+  const x=Math.round(P.x), y=Math.round(P.y), p=P.mov?(Math.floor(P.paso)%2):0;
+  R(x-4,y-1,8,3,'rgba(0,0,0,.28)');
+  R(x-3,y-14,6,3,'#3a2a1a'); R(x-3,y-11,6,4,'#e8c39e'); R(x-4,y-7,8,7,'#d0553f');
+  R(x-3,y-p,2,3,'#2a2a35'); R(x+1,y-(1-p),2,3,'#2a2a35');
+  if(E.inventario.has('cuenco')){R(x+5,y-9,8,5,'#a0623a');R(x+6,y-9,6,2,'#62c4d6');}
+}
+function zarzas(t){
+  const lib=E.banderas.has('liberada');
+  const parts=lib?[[88,10],[118,10]]:[[88,40]];
+  R(306,84,14,12,'#1c3a24'); R(306,118,14,12,'#1c3a24');
+  if(!lib) R(306,96,14,22,'#1c3a24');
+  for(let i=0;i<8;i++){R(306+(i*5)%12,86+i*5,2,2,'#4a3322');}
+  if(lib){g.globalAlpha=.4+(reduce?0:.15*Math.sin(t*3));R(306,96,14,22,'#f0e7a8');g.globalAlpha=1;}
+}
+function destellos(t){
+  const on=reduce||Math.floor(t*2)%2===0; if(!on) return;
+  const pts=[['roble',74,62,'grabado'],['horreo',280,58,'cancion'],['sendero',72,150,'cuenco']];
+  pts.forEach(([z,x,y,c])=>{ if(!E.pistas.has(c)){R(x,y-2,1,5,'#fff6c8');R(x-2,y,5,1,'#fff6c8');} });
+}
+function escenaBosque(t){
+  R(0,0,320,200,'#2f5d3a');
+  hierba.forEach(([x,y,a])=>{R(x,y,a?3:2,a?2:3,'#3a6d46');});
+  sendas();
+  arboles.forEach(([x,y])=>arbol(x,y));
+  roble(t); horreo(); cuencoSpot(t); fuente(t); zarzas(t);
+  if(xanaPresente(E)) xana(t);
+  destellos(t);
+  jugador();
+  const f=fase(E);
+  if(f==='alba'){g.fillStyle='rgba(255,150,130,.16)';g.fillRect(0,0,320,200);
+    for(let i=0;i<4;i++){const mx=reduce?i*80:((t*7+i*90)%380)-50; g.fillStyle='rgba(235,245,245,.10)';g.fillRect(mx,40+i*40,90,10);}}
+  else if(f==='noche'){g.fillStyle='rgba(8,16,48,.5)';g.fillRect(0,0,320,200);}
+}
+function escenaPrado(t){
+  R(0,0,320,200,'#5aa04f');
+  R(0,0,320,34,'#9fd6e8'); R(30,10,30,8,'#f4f8f8'); R(220,16,40,8,'#f4f8f8');
+  flores.forEach(([x,y,c])=>R(x,34+y,3,3,c));
+  const o=reduce?0:Math.floor(t*6)%16;
+  R(0,160,320,22,'#62c4d6'); for(let x=-16;x<336;x+=16) R(x+o,166,8,2,'#d3f2f7'); R(0,182,320,18,'#4c8a43');
+  /* la Xana, liberada, junto a su reflejo en el arroyo */
+  const xx=160, xy=140;
+  R(xx-5,xy-12,10,6,'#9fe8e0'); R(xx-4,xy-8,8,7,'#f1e3d3'); R(xx-3,xy-6,1,2,'#33414a'); R(xx+2,xy-6,1,2,'#33414a'); R(xx-1,xy-3,3,1,'#c9786a');
+  R(xx-6,xy-1,12,16,'#bff3ee');
+  g.globalAlpha=.45; R(xx-5,171,10,6,'#9fe8e0'); R(xx-4,177,8,7,'#f1e3d3'); g.globalAlpha=1;
+  jugador();
+}
+
+/* --- Bucle --- */
+let ult=0;
+function frame(ms){
+  const t=ms/1000, dt=Math.min(.05,(ms-ult)/1000||0); ult=ms;
+  if(modo==='juego'){
+    let dx=(keys.right?1:0)-(keys.left?1:0), dy=(keys.down?1:0)-(keys.up?1:0);
+    P.mov=!!(dx||dy);
+    if(P.mov){
+      const l=Math.hypot(dx,dy); P.x+=dx/l*72*dt; P.y+=dy/l*72*dt; P.paso+=dt*8;
+      P.x=Math.max(8,Math.min(312,P.x)); P.y=Math.max(30,Math.min(epilogo?150:192,P.y));
+      if(!epilogo){const z=zonaPorPos(); if(z!==E.zona) run('ir '+z);}
+    }
+  } else P.mov=false;
+  if(epilogo) escenaPrado(t); else escenaBosque(t);
+  requestAnimationFrame(frame);
+}
+hud(); mostrarTitulo(); requestAnimationFrame(frame);
+</script>
+
+</body></html>
