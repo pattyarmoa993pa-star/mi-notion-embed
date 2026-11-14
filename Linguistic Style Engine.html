@@ -1,0 +1,546 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Linguistic Style Engine</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabecera + pestañas; en "Motor", controles a la izquierda y resultado a la derecha; todo apila en móvil */
+:root {
+  --bg: #F2F5F7; --surface: #FFFFFF; --ink: #12202B; --muted: #566877; --line: #D3DDE4;
+  --accent: #0E7C86; --accent-soft: #DCEFF1; --accent-ink: #FFFFFF;
+  --ok: #1E6B43; --ok-soft: #DDF0E5; --warn: #8A5200; --warn-soft: #FBEBCF; --off: #566877; --off-soft: #E6ECF0;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1820; --surface: #14232E; --ink: #E6EEF3; --muted: #93A6B4; --line: #26394779;
+    --accent: #4FC3CF; --accent-soft: #123640; --accent-ink: #06222A;
+    --ok: #7AD8A1; --ok-soft: #123524; --warn: #EDB966; --warn-soft: #3A2C12; --off: #93A6B4; --off-soft: #1D303C;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1820; --surface: #14232E; --ink: #E6EEF3; --muted: #93A6B4; --line: #26394779;
+  --accent: #4FC3CF; --accent-soft: #123640; --accent-ink: #06222A;
+  --ok: #7AD8A1; --ok-soft: #123524; --warn: #EDB966; --warn-soft: #3A2C12; --off: #93A6B4; --off-soft: #1D303C;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; margin: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.25rem; font-weight: 600; }
+h3 { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+.lead { max-width: 62ch; color: var(--muted); margin-top: 12px; font-size: 1.02rem; }
+.notice { margin-top: 18px; padding: 10px 14px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; background: var(--surface); font-size: 0.88rem; color: var(--muted); max-width: 78ch; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 26px; border-bottom: 1px solid var(--line); }
+.tabs button { font: 600 0.92rem var(--font-body); color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; margin-bottom: -1px; cursor: pointer; }
+.tabs button:hover { color: var(--ink); }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.view { margin-top: 24px; }
+.view[hidden] { display: none; }
+
+.pipe { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.pipe .node { flex: 1 1 150px; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 12px; }
+.pipe .node b { display: block; font-family: var(--font-display); font-size: 0.95rem; }
+.pipe .node span { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+.pipe .node.live { border-color: var(--accent); background: var(--accent-soft); }
+.pipe .arrow { align-self: center; color: var(--muted); font-family: var(--font-mono); }
+.mono { font-family: var(--font-mono); }
+
+.main { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 20px; margin-top: 20px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; min-width: 0; }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.phrases { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.phrases button { text-align: left; font: 500 0.92rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px; cursor: pointer; }
+.phrases button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+select { font: 500 0.9rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 8px; min-width: 0; width: 100%; }
+.tagbox { margin-top: 14px; padding: 10px 12px; border-radius: 6px; background: var(--bg); border: 1px dashed var(--accent); font-family: var(--font-mono); font-size: 0.82rem; overflow-wrap: anywhere; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip { font-family: var(--font-mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 99px; background: var(--off-soft); color: var(--off); }
+.chip.hit { background: var(--ok-soft); color: var(--ok); }
+.chip.miss { background: var(--warn-soft); color: var(--warn); }
+.hint { font-size: 0.82rem; color: var(--muted); margin-top: 10px; }
+
+.out { margin: 10px 0 0; font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 600; line-height: 1.3; text-wrap: balance; }
+.alt { margin-top: 10px; color: var(--muted); }
+.alt q { color: var(--ink); font-weight: 500; }
+.src { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+.tablewrap { overflow-x: auto; margin-top: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.num, th.num { font-variant-numeric: tabular-nums; }
+.bar { height: 8px; width: 96px; background: var(--off-soft); border-radius: 4px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 8px; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.bar.lit i { background: var(--muted); }
+.cmp td:first-child { white-space: nowrap; font-weight: 600; }
+.tag-flag { font-size: 0.78rem; color: var(--muted); display: block; }
+.eras { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-top: 10px; }
+.era { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--bg); min-width: 0; }
+.era.cur { border-color: var(--accent); background: var(--accent-soft); }
+.era small { display: block; font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+.era p { font-weight: 500; overflow-wrap: anywhere; }
+.why li { margin: 6px 0; }
+.why ul { padding-left: 18px; margin: 8px 0 0; }
+.scorebar { margin-top: 8px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0 0; }
+.filters .field { width: 190px; }
+.pill { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+.pill.real { background: var(--ok-soft); color: var(--ok); }
+.pill.sim { background: var(--warn-soft); color: var(--warn); }
+.pill.no { background: var(--off-soft); color: var(--off); }
+.lane { margin-top: 12px; }
+.lane > h3 { margin-bottom: 8px; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.flow .nd { flex: 1 1 160px; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--bg); display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.flow .nd b { font-family: var(--font-display); font-size: 0.93rem; }
+.flow .nd span.d { font-size: 0.8rem; color: var(--muted); }
+.flow .ar { align-self: center; color: var(--muted); font-family: var(--font-mono); }
+.steps { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 8px; }
+.steps li { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.steps .n { font-family: var(--font-mono); color: var(--accent); font-weight: 500; }
+.ru { font-size: 1.5rem; font-family: var(--font-display); font-weight: 600; }
+.ru-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
+.ru-card { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--bg); min-width: 0; }
+.ru-card.cur { border-color: var(--accent); background: var(--accent-soft); }
+.ru-card .lbl { font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); }
+.ru-card .rom { color: var(--muted); font-size: 0.88rem; font-style: italic; }
+@media (max-width: 820px) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .pipe .arrow, .flow .ar { transform: rotate(90deg); flex: 0 0 100%; text-align: center; }
+  .steps li { grid-template-columns: 30px minmax(0, 1fr); }
+  .steps li .pill { grid-column: 2; justify-self: start; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bar i { transition: width 0.3s ease; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Prototipo · biblioteca semilla</p>
+    <h1>Linguistic Style Engine</h1>
+    <p class="lead">Un motor que no traduce solo lo que alguien dice: infiere cómo lo diría un hablante nativo en un estilo, una época y un contexto concretos. Elige una frase, combina etiquetas y compara.</p>
+    <p class="notice" id="notice"></p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button role="tab" data-tab="motor" aria-selected="true">Motor</button>
+    <button role="tab" data-tab="biblioteca" aria-selected="false">Biblioteca</button>
+    <button role="tab" data-tab="ruso" aria-selected="false">Ruso (mini)</button>
+    <button role="tab" data-tab="arquitectura" aria-selected="false">Arquitectura</button>
+  </nav>
+
+  <section class="view" id="v-motor">
+    <div class="pipe" id="pipe"></div>
+    <div class="main">
+      <div class="stack">
+        <div class="panel">
+          <h3>1 · Frase de entrada (español)</h3>
+          <div class="phrases" id="phrases"></div>
+          <p class="hint">En producción, el Motor A procesaría cualquier frase. Aquí hay cinco con su significado ya identificado.</p>
+        </div>
+        <div class="panel">
+          <h3>2 · Style Tag</h3>
+          <div class="fields">
+            <div class="field"><label for="selGenre">Género</label><select id="selGenre"></select></div>
+            <div class="field"><label for="selEra">Época</label><select id="selEra"></select></div>
+            <div class="field"><label for="selTone">Tono</label><select id="selTone"></select></div>
+            <div class="field"><label for="selCtx">Contexto</label><select id="selCtx"></select></div>
+          </div>
+          <div class="tagbox" id="tagbox"></div>
+          <p class="hint">Las dimensiones se combinan de forma independiente. Ninguna está atada a una serie concreta.</p>
+        </div>
+      </div>
+      <div class="stack" id="result"></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-biblioteca" hidden>
+    <div class="panel">
+      <h2>Biblioteca de patrones</h2>
+      <p class="lead" id="libLead" style="margin-top:6px"></p>
+      <div class="filters">
+        <div class="field"><label for="fIntent">Intención</label><select id="fIntent"></select></div>
+        <div class="field"><label for="fEra">Época</label><select id="fEra"></select></div>
+      </div>
+      <div class="tablewrap"><table id="libTable"></table></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-ruso" hidden>
+    <div class="main">
+      <div class="stack">
+        <div class="panel">
+          <h3>Frase de entrada (español)</h3>
+          <div class="phrases" id="ruPhrases"></div>
+          <div class="fields">
+            <div class="field"><label for="ruRel">Hablas con</label><select id="ruRel"></select></div>
+            <div class="field"><label for="ruGen">Esa persona es</label><select id="ruGen"></select></div>
+          </div>
+          <div class="tagbox" id="ruTag"></div>
+        </div>
+      </div>
+      <div class="stack" id="ruResult"></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-arquitectura" hidden>
+    <div class="stack" id="arch"></div>
+  </section>
+</div>
+
+<script>
+/* ---------- Datos: biblioteca semilla (patrones originales escritos para esta demo) ---------- */
+var ERAS = {
+  clasica: { es: "Clásica (años 80)", tag: "clasico" },
+  "90s": { es: "Años 90", tag: "90s" },
+  "2000s": { es: "Años 2000", tag: "2000s" },
+  actual: { es: "Contemporánea", tag: "contemporaneo" }
+};
+var TONES = { directo: "Directo", diplomatico: "Diplomático", sarcastico: "Sarcástico" };
+var CTXS = { amigos: "Entre amigos", trabajo: "En el trabajo", familia: "En familia" };
+var GENRES = { sitcom: "Sitcom", entrevista: "Entrevista (sin corpus)", academico: "Académico (sin corpus)" };
+
+var INTENTS = {
+  desacuerdo: { id: "desacuerdo_suave", es: "No creo que sea una buena idea.", sense: "Desacuerdo suave",
+    literal: "I do not believe that it is a good idea.", conv: "I don't think that's a good idea." },
+  rechazo: { id: "rechazo_de_plan", es: "No tengo ganas de salir hoy.", sense: "Rechazo de un plan",
+    literal: "I do not have desire of to go out today.", conv: "I don't feel like going out today." },
+  incredulidad: { id: "incredulidad", es: "No me lo puedo creer.", sense: "Incredulidad",
+    literal: "I cannot believe it to myself.", conv: "I can't believe it." },
+  ayuda: { id: "pedir_ayuda", es: "¿Me puedes ayudar con esto?", sense: "Pedir ayuda",
+    literal: "Me can you help with this?", conv: "Can you help me with this?" },
+  reproche: { id: "reproche_leve", es: "Llegas tarde otra vez.", sense: "Reproche leve",
+    literal: "You arrive late another time.", conv: "You're late again." }
+};
+
+var P = [
+  ["P01","desacuerdo","I really don't think that's wise, dear.","clasica","diplomatico","familia"],
+  ["P02","desacuerdo","Frankly, I don't see that working.","clasica","directo","trabajo"],
+  ["P03","desacuerdo","Oh sure, because that always works out so well.","90s","sarcastico","amigos"],
+  ["P04","desacuerdo","Yeah, I don't think so. Bad idea.","90s","directo","amigos"],
+  ["P05","desacuerdo","Oh, great plan. What could possibly go wrong?","2000s","sarcastico","amigos"],
+  ["P06","desacuerdo","I'm not sure that's the smartest move here.","2000s","diplomatico","trabajo"],
+  ["P07","desacuerdo","I'm not sure that's such a good idea.","actual","diplomatico","amigos"],
+  ["P08","desacuerdo","Yeah, I don't think that's gonna work.","actual","directo","amigos"],
+  ["P09","rechazo","I think I'll stay in this evening, if you don't mind.","clasica","diplomatico","familia"],
+  ["P10","rechazo","Count me out tonight.","clasica","directo","amigos"],
+  ["P11","rechazo","Nah, I'm just gonna stay in tonight.","90s","directo","amigos"],
+  ["P12","rechazo","Sure, nothing says fun like putting on real pants.","90s","sarcastico","amigos"],
+  ["P13","rechazo","Going out? Pass. My couch and I have plans.","2000s","sarcastico","amigos"],
+  ["P14","rechazo","Ugh, I'm so not up for going out tonight.","actual","directo","amigos"],
+  ["P15","rechazo","I'll pass on drinks tonight, but have fun!","actual","diplomatico","trabajo"],
+  ["P16","incredulidad","Well, I never!","clasica","directo","familia"],
+  ["P17","incredulidad","No way. Get out.","90s","directo","amigos"],
+  ["P18","incredulidad","Oh, that's rich. Really.","90s","sarcastico","amigos"],
+  ["P19","incredulidad","Shut up. Are you serious right now?","2000s","directo","amigos"],
+  ["P20","incredulidad","Wait, what? No. There's no way.","actual","directo","amigos"],
+  ["P21","incredulidad","Wow. Okay. Totally normal thing to happen.","actual","sarcastico","trabajo"],
+  ["P22","ayuda","I wonder if I might trouble you for a moment?","clasica","diplomatico","trabajo"],
+  ["P23","ayuda","Give me a hand with this, would you?","clasica","directo","familia"],
+  ["P24","ayuda","Hey, can you give me a hand here?","90s","directo","amigos"],
+  ["P25","ayuda","Don't everybody jump up at once. A little help?","2000s","sarcastico","amigos"],
+  ["P26","ayuda","Do you have a sec? I could use a hand with this.","actual","diplomatico","trabajo"],
+  ["P27","ayuda","Can you help me out real quick?","actual","directo","amigos"],
+  ["P28","reproche","We did say seven o'clock, didn't we?","clasica","diplomatico","familia"],
+  ["P29","reproche","This is becoming a habit, I'm afraid.","clasica","directo","trabajo"],
+  ["P30","reproche","Nice of you to join us.","90s","sarcastico","amigos"],
+  ["P31","reproche","Wow, look who finally decided to show up.","2000s","sarcastico","amigos"],
+  ["P32","reproche","Seriously? Late again?","actual","directo","amigos"],
+  ["P33","reproche","Hey, we started without you. Everything okay?","actual","diplomatico","trabajo"]
+].map(function (r) { return { id: r[0], intent: r[1], text: r[2], era: r[3], tone: r[4], ctx: r[5], genre: "sitcom" }; });
+
+var W = { era: 3, tone: 2, ctx: 2, genre: 1 };
+var LABEL = { era: "Época", tone: "Tono", ctx: "Contexto", genre: "Género" };
+
+/* ---------- Lógica del Motor B: puntuar patrones según las etiquetas activas ---------- */
+function rank(intent, sel) {
+  return P.filter(function (p) { return p.intent === intent; }).map(function (p) {
+    var s = 0, max = 0, m = {};
+    ["era", "tone", "ctx"].forEach(function (d) {
+      if (sel[d] !== "any") { max += W[d]; m[d] = p[d] === sel[d]; if (m[d]) s += W[d]; }
+    });
+    if (sel.genre === "sitcom") { max += W.genre; s += W.genre; m.genre = true; }
+    return { p: p, s: s, max: max, m: m };
+  }).sort(function (a, b) { return b.s - a.s || a.p.id.localeCompare(b.p.id); });
+}
+
+/* ---------- Métricas ilustrativas ---------- */
+function words(t) { return t.toLowerCase().replace(/[^a-z' ]/g, " ").split(/\s+/).filter(Boolean); }
+function distance(a, b) {
+  var A = words(a), B = words(b), setA = {}, setB = {}, inter = 0, uni = 0, k;
+  A.forEach(function (w) { setA[w] = 1; }); B.forEach(function (w) { setB[w] = 1; });
+  for (k in setA) { uni++; if (setB[k]) inter++; }
+  for (k in setB) { if (!setA[k]) uni++; }
+  return uni ? Math.round((1 - inter / uni) * 100) : 0;
+}
+function colloquial(t, literal) {
+  var s = 30;
+  var c = (t.match(/n't|'re|'ll|'m|'s|'d|gonna|wanna|gotta/gi) || []).length;
+  s += Math.min(c, 3) * 9;
+  if (/\b(yeah|well|hey|ugh|wow|nah|oh|seriously|wait|okay|sec|real quick|so not|pass)\b/i.test(t)) s += 14;
+  if (words(t).length <= 8) s += 8;
+  var stiff = (t.match(/\b(do not|cannot|it is|that is|I am)\b/gi) || []).length;
+  s -= Math.min(stiff, 2) * 12;
+  if (literal) s -= 15;
+  return Math.max(5, Math.min(98, s));
+}
+
+/* ---------- Estado ---------- */
+var state = { intent: "desacuerdo", genre: "sitcom", era: "actual", tone: "directo", ctx: "amigos" };
+var ruState = { phrase: "tarde", rel: "amigo", gen: "m" };
+function $(id) { return document.getElementById(id); }
+
+function opts(map, any) {
+  var h = any ? '<option value="any">' + any + "</option>" : "";
+  for (var k in map) { h += '<option value="' + k + '">' + (map[k].es || map[k]) + "</option>"; }
+  return h;
+}
+
+function tagString(sel) {
+  var t = "ingles_nativo_estilo_" + sel.genre;
+  if (sel.era !== "any") t += "_" + ERAS[sel.era].tag;
+  return t;
+}
+
+/* ---------- Pestaña Motor ---------- */
+function renderPipe(intent) {
+  var it = INTENTS[intent];
+  $("pipe").innerHTML =
+    '<div class="node"><b>Entrada</b><span>«' + it.es + "»</span></div>" +
+    '<div class="arrow">→</div>' +
+    '<div class="node"><b>Motor A · significado</b><span>Intención detectada: <span class="mono">' + it.id + "</span></span></div>" +
+    '<div class="arrow">→</div>' +
+    '<div class="node live"><b>Motor B · estilo</b><span>Consulta la biblioteca con el Style Tag</span></div>' +
+    '<div class="arrow">→</div>' +
+    '<div class="node"><b>Salida</b><span>Equivalencia conversacional + métricas</span></div>';
+}
+
+function renderPhrases() {
+  var h = "";
+  for (var k in INTENTS) {
+    h += '<button data-intent="' + k + '" aria-pressed="' + (k === state.intent) + '">' + INTENTS[k].es + "</button>";
+  }
+  $("phrases").innerHTML = h;
+}
+
+function chipsFor(r, sel) {
+  var h = "";
+  ["genre", "era", "tone", "ctx"].forEach(function (d) {
+    var val = d === "era" ? ERAS[r.p.era].es : d === "tone" ? TONES[r.p.tone] : d === "ctx" ? CTXS[r.p.ctx] : "Sitcom";
+    var cls = sel[d] === "any" ? "" : (r.m[d] ? " hit" : " miss");
+    h += '<span class="chip' + cls + '">' + val + "</span>";
+  });
+  return h;
+}
+
+function renderResult() {
+  var it = INTENTS[state.intent];
+  renderPipe(state.intent);
+  $("tagbox").innerHTML = tagString(state) +
+    (state.tone !== "any" ? " + tono:" + state.tone : "") + (state.ctx !== "any" ? " + contexto:" + state.ctx : "");
+  if (state.genre !== "sitcom") {
+    $("result").innerHTML = '<div class="panel"><h3>Sin corpus para esta etiqueta</h3>' +
+      '<p class="out">' + it.conv + "</p>" +
+      '<p class="src">Solo hay traducción convencional.</p>' +
+      '<p class="hint">Así se agrega un estilo nuevo: se cargan patrones con esa etiqueta en la biblioteca. El motor no cambia.</p></div>';
+    return;
+  }
+  var ranked = rank(state.intent, state);
+  var top = ranked[0], alt = ranked[1];
+  var cLit = colloquial(it.literal, true), cConv = colloquial(it.conv, false), cAd = colloquial(top.p.text, false);
+  function row(name, flag, txt, c, lit, d) {
+    return "<tr><td>" + name + '<span class="tag-flag">' + flag + "</span></td><td>" + txt +
+      '</td><td class="num"><span class="bar' + (lit ? " lit" : "") + '"><i style="width:' + c + '%"></i></span>' + c +
+      '</td><td class="num">' + (d === null ? "—" : d + "%") + "</td></tr>";
+  }
+  var eraCards = "";
+  for (var e in ERAS) {
+    var re = rank(state.intent, { genre: "sitcom", era: e, tone: state.tone, ctx: state.ctx })[0];
+    eraCards += '<div class="era' + (state.era === e ? " cur" : "") + '"><small>' + ERAS[e].es + " · " + re.p.id + "</small><p>" + re.p.text + "</p></div>";
+  }
+  var why = "";
+  ["genre", "era", "tone", "ctx"].forEach(function (d) {
+    var want = d === "genre" ? "Sitcom" : state[d] === "any" ? null : (d === "era" ? ERAS[state.era].es : d === "tone" ? TONES[state.tone] : CTXS[state.ctx]);
+    var mark = want === null ? "sin restricción" : (top.m[d] ? "coincide" : "no coincide, se usó el patrón más cercano");
+    why += "<li><b>" + LABEL[d] + ":</b> " + (want === null ? "cualquiera" : want) + " → " + mark + " <span class=\"mono\">(peso " + W[d] + ")</span></li>";
+  });
+  var pct = Math.round(top.s / top.max * 100);
+  $("result").innerHTML =
+    '<div class="panel"><h3>3 · Salida adaptada</h3>' +
+    '<p class="out">“' + top.p.text + "”</p>" +
+    '<div class="chips">' + chipsFor(top, state) + "</div>" +
+    '<p class="alt">Otra posible salida: <q>' + alt.p.text + "</q> <span class=\"mono\">(" + alt.p.id + ", " + alt.s + "/" + alt.max + ")</span></p>" +
+    '<p class="src">Equivalencia conversacional, no literal. Significado: ' + it.sense.toLowerCase() + ".</p></div>" +
+
+    '<div class="panel"><h3>Tres niveles de traducción</h3><div class="tablewrap"><table class="cmp"><thead><tr>' +
+    '<th>Nivel</th><th>Resultado</th><th class="num">Coloquialidad*</th><th class="num">Distancia al literal</th></tr></thead><tbody>' +
+    row("Literal", "Suena traducido", it.literal, cLit, true, null) +
+    row("Convencional", "Correcta y neutra", it.conv, cConv, false, distance(it.literal, it.conv)) +
+    row("Adaptada", "Con la voz del estilo", top.p.text, cAd, false, distance(it.literal, top.p.text)) +
+    '</tbody></table></div><p class="hint">*Heurística ilustrativa: cuenta contracciones, muletillas y longitud. Mide coloquialidad, no corrección. La distancia al literal sí se calcula sobre las palabras de cada versión.</p></div>' +
+
+    '<div class="panel"><h3>La misma frase a través de las épocas</h3><div class="eras">' + eraCards + '</div>' +
+    '<p class="hint">Se mantienen el tono y el contexto elegidos; solo cambia la época.</p></div>' +
+
+    '<div class="panel why"><h3>¿Por qué esta salida?</h3>' +
+    '<p style="margin-top:8px">Patrón <span class="mono">' + top.p.id + "</span> de la intención <span class=\"mono\">" + it.id + "</span>.</p><ul>" + why + "</ul>" +
+    '<div class="scorebar"><span class="bar"><i style="width:' + pct + '%"></i></span><span class="mono">' + top.s + "/" + top.max + " · " + pct + "% de coincidencia</span></div>" +
+    '<p class="hint">Así de simple es la lógica: el motor puntúa cada patrón contra las etiquetas y entrega el que mejor encaja.</p></div>';
+}
+
+/* ---------- Pestaña Biblioteca ---------- */
+function renderLib() {
+  var fi = $("fIntent").value, fe = $("fEra").value;
+  var rows = P.filter(function (p) { return (fi === "all" || p.intent === fi) && (fe === "all" || p.era === fe); });
+  var h = '<thead><tr><th>ID</th><th>Patrón</th><th>Intención</th><th>Época</th><th>Tono</th><th>Contexto</th></tr></thead><tbody>';
+  rows.forEach(function (p) {
+    h += '<tr><td class="mono">' + p.id + "</td><td>" + p.text + '</td><td class="mono">' + INTENTS[p.intent].id + "</td><td>" + ERAS[p.era].es + "</td><td>" + TONES[p.tone] + "</td><td>" + CTXS[p.ctx] + "</td></tr>";
+  });
+  $("libTable").innerHTML = h + "</tbody>";
+  $("libLead").textContent = rows.length + " de " + P.length + " patrones. Cada uno guarda cómo se expresa una intención con una combinación de etiquetas.";
+}
+
+/* ---------- Pestaña Ruso ---------- */
+var RU = {
+  ayuda: { es: "¿Me puedes ayudar con esto?", gender: false,
+    ty: { m: ["Поможешь мне?", "Pomózhesh mne?"], f: ["Поможешь мне?", "Pomózhesh mne?"] },
+    vy: ["Вы не могли бы мне помочь?", "Vy ne mógli by mne pomóch?"] },
+  tarde: { es: "Llegas tarde otra vez.", gender: true,
+    ty: { m: ["Опять опоздал!", "Opyat opozdal!"], f: ["Опять опоздала!", "Opyat opozdala!"] },
+    vy: ["Вы опять опоздали.", "Vy opyat opozdali."] },
+  gracias: { es: "Gracias por venir.", gender: true,
+    ty: { m: ["Спасибо, что пришёл.", "Spasibo, chto prishyol."], f: ["Спасибо, что пришла.", "Spasibo, chto prishla."] },
+    vy: ["Спасибо, что пришли.", "Spasibo, chto prishli."] }
+};
+var RELS = { amigo: ["Un amigo cercano", "ty"], colega: ["Un colega de confianza", "ty"], jefe: ["Tu jefe", "vy"], mayor: ["Una persona mayor que no conoces", "vy"] };
+
+function renderRu() {
+  var ph = "";
+  for (var k in RU) ph += '<button data-ru="' + k + '" aria-pressed="' + (k === ruState.phrase) + '">' + RU[k].es + "</button>";
+  $("ruPhrases").innerHTML = ph;
+  var d = RU[ruState.phrase], trato = RELS[ruState.rel][1], g = ruState.gen;
+  var tyV = d.ty[g], vyV = d.vy;
+  var cur = trato === "ty" ? tyV : vyV;
+  $("ruTag").innerHTML = "ruso_nativo_estilo_sitcom_contemporaneo + rasgo:trato_" + trato;
+  var notes = "<li><b>Ты / Вы:</b> «" + RELS[ruState.rel][0].toLowerCase() + "» → " + (trato === "ty" ? "ты (confianza)" : "Вы (distancia y respeto)") + ".</li>";
+  if (!d.gender) notes += "<li><b>Género:</b> esta frase no lleva concordancia.</li>";
+  else if (trato === "ty") notes += "<li><b>Género:</b> con ты el verbo en pasado concuerda con quien escucha (" + (g === "m" ? "masculino" : "femenino") + ").</li>";
+  else notes += "<li><b>Género:</b> con Вы el verbo va en plural y no cambia con el género.</li>";
+  $("ruResult").innerHTML =
+    '<div class="panel"><h3>Salida</h3><p class="ru" lang="ru" style="margin-top:8px">' + cur[0] + '</p><p class="rom">' + cur[1] + "</p>" +
+    '<ul class="why" style="padding-left:18px;margin:12px 0 0">' + notes + "</ul></div>" +
+    '<div class="panel"><h3>Mismo mensaje, dos tratos</h3><div class="ru-pair">' +
+    '<div class="ru-card' + (trato === "ty" ? " cur" : "") + '"><span class="lbl">ты · confianza</span><p class="ru" lang="ru">' + tyV[0] + '</p><p class="rom">' + tyV[1] + "</p></div>" +
+    '<div class="ru-card' + (trato === "vy" ? " cur" : "") + '"><span class="lbl">Вы · distancia</span><p class="ru" lang="ru">' + vyV[0] + '</p><p class="rom">' + vyV[1] + "</p></div></div>" +
+    '<p class="hint">Una traducción sin estilo daría la misma frase a todos. En ruso, elegir mal el trato cambia la relación entre las personas, por eso es un módulo propio y no una adaptación del inglés.</p>' +
+    '<p class="hint">Estas frases deben revisarse con un hablante nativo antes de presentarse.</p></div>';
+}
+
+/* ---------- Pestaña Arquitectura ---------- */
+function pill(t) { var c = t === "Real en la demo" ? "real" : t === "Simulado" ? "sim" : "no"; return '<span class="pill ' + c + '">' + t + "</span>"; }
+function nd(b, d, st) { return '<div class="nd"><b>' + b + '</b><span class="d">' + d + "</span>" + pill(st) + "</div>"; }
+function renderArch() {
+  var phases = [
+    ["Reunir subtítulos licenciados en inglés", "No incluido"],
+    ["Extraer patrones y clasificarlos", "Simulado"],
+    ["Construir las primeras etiquetas", "Real en la demo"],
+    ["Integrar traducción semántica", "Simulado"],
+    ["Crear evaluaciones de naturalidad", "Real en la demo"],
+    ["Incorporar el módulo ruso", "Simulado"],
+    ["Comparar resultados por época y estilo", "Real en la demo"]
+  ];
+  var ps = "";
+  phases.forEach(function (f, i) { ps += '<li><span class="n">0' + (i + 1) + "</span><span>" + f[0] + "</span>" + pill(f[1]) + "</li>"; });
+  var dims = [
+    ["Idioma", "Inglés, ruso", "Inglés en el motor, ruso en un módulo aparte"],
+    ["Naturalidad", "Nativo, formal, cotidiano", "Fija en «nativo»"],
+    ["Género", "Sitcom, drama, documental", "Sitcom activo; entrevista y académico sin corpus"],
+    ["Época", "1980, 1990, 2000, contemporáneo", "Activa"],
+    ["Personalidad y comunicación", "Sarcástico, directo, diplomático", "Activas como «tono»"],
+    ["Contexto", "Amigos, trabajo, familia", "Activo"]
+  ];
+  var ds = "";
+  dims.forEach(function (r) { ds += "<tr><td><b>" + r[0] + "</b></td><td>" + r[1] + "</td><td>" + r[2] + "</td></tr>"; });
+  $("arch").innerHTML =
+    '<div class="panel"><h2>Dos motores y una biblioteca</h2>' +
+    '<p class="lead" style="margin-top:6px">Los subtítulos originales enseñan cómo habla la gente en su idioma, pero no enseñan a traducir desde el español. Por eso el significado y el estilo se resuelven por separado.</p>' +
+    '<div class="lane"><h3>Construcción (se hace una vez)</h3><div class="flow">' +
+    nd("Subtítulos licenciados", "Con marcas de tiempo, personajes y contexto de escena", "No incluido") + '<span class="ar">→</span>' +
+    nd("Extracción", "Detecta fórmulas y expresiones por intención", "Simulado") + '<span class="ar">→</span>' +
+    nd("Clasificación", "Asigna Style Tags: época, tono, contexto, género", "Simulado") + '<span class="ar">→</span>' +
+    nd("Biblioteca de patrones", P.length + " patrones semilla originales", "Real en la demo") +
+    '</div></div>' +
+    '<div class="lane"><h3>Uso (cada vez que alguien traduce)</h3><div class="flow">' +
+    nd("Frase + Style Tag", "Lo que elige el usuario", "Real en la demo") + '<span class="ar">→</span>' +
+    nd("Motor A · traducción", "Extrae el significado y la intención", "Simulado") + '<span class="ar">→</span>' +
+    nd("Motor B · estilo", "Puntúa patrones contra las etiquetas", "Real en la demo") + '<span class="ar">→</span>' +
+    nd("Salida y métricas", "Literal, convencional y adaptada", "Real en la demo") +
+    '</div></div></div>' +
+    '<div class="panel"><h2>Dimensiones de etiqueta</h2><div class="tablewrap"><table><thead><tr><th>Dimensión</th><th>Ejemplos</th><th>En esta demo</th></tr></thead><tbody>' + ds + '</tbody></table></div>' +
+    '<p class="hint">Agregar un idioma o un estilo (por ejemplo <span class="mono">ruso_nativo_estilo_negociacion</span>) significa cargar patrones nuevos con su etiqueta. El motor no se reconstruye.</p></div>' +
+    '<div class="panel"><h2>Ruta del MVP</h2><ol class="steps">' + ps + '</ol>' +
+    '<p class="hint">No se entrena un modelo desde cero: se usan Python, una base de patrones y un modelo de lenguaje existente. Los subtítulos deben tener licencia o permiso de uso si el proyecto se distribuye públicamente.</p></div>';
+}
+
+/* ---------- Navegación y eventos ---------- */
+var TABS = ["motor", "biblioteca", "ruso", "arquitectura"];
+function showTab(name) {
+  if (TABS.indexOf(name) < 0) name = "motor";
+  TABS.forEach(function (t) { $("v-" + t).hidden = t !== name; });
+  Array.prototype.forEach.call(document.querySelectorAll(".tabs button"), function (b) { b.setAttribute("aria-selected", String(b.dataset.tab === name)); });
+}
+document.querySelector(".tabs").addEventListener("click", function (e) {
+  var b = e.target.closest("button"); if (!b) return;
+  location.hash = b.dataset.tab; showTab(b.dataset.tab);
+});
+window.addEventListener("hashchange", function () { showTab(location.hash.slice(1)); });
+
+$("phrases").addEventListener("click", function (e) {
+  var b = e.target.closest("button"); if (!b) return;
+  state.intent = b.dataset.intent; renderPhrases(); renderResult();
+});
+$("ruPhrases").addEventListener("click", function (e) {
+  var b = e.target.closest("button"); if (!b) return;
+  ruState.phrase = b.dataset.ru; renderRu();
+});
+
+$("selGenre").innerHTML = opts(GENRES);
+$("selEra").innerHTML = opts(ERAS, "Cualquiera");
+$("selTone").innerHTML = opts(TONES, "Cualquiera");
+$("selCtx").innerHTML = opts(CTXS, "Cualquiera");
+$("selGenre").value = state.genre; $("selEra").value = state.era; $("selTone").value = state.tone; $("selCtx").value = state.ctx;
+[["selGenre", "genre"], ["selEra", "era"], ["selTone", "tone"], ["selCtx", "ctx"]].forEach(function (x) {
+  $(x[0]).addEventListener("change", function () { state[x[1]] = this.value; renderResult(); });
+});
+
+var li = '<option value="all">Todas</option>';
+for (var ik in INTENTS) li += '<option value="' + ik + '">' + INTENTS[ik].sense + "</option>";
+$("fIntent").innerHTML = li;
+$("fEra").innerHTML = opts(ERAS, "Todas").replace('value="any"', 'value="all"');
+$("fIntent").addEventListener("change", renderLib);
+$("fEra").addEventListener("change", renderLib);
+
+var rl = ""; for (var rk in RELS) rl += '<option value="' + rk + '">' + RELS[rk][0] + "</option>";
+$("ruRel").innerHTML = rl; $("ruRel").value = ruState.rel;
+$("ruGen").innerHTML = '<option value="m">Hombre</option><option value="f">Mujer</option>';
+$("ruRel").addEventListener("change", function () { ruState.rel = this.value; renderRu(); });
+$("ruGen").addEventListener("change", function () { ruState.gen = this.value; renderRu(); });
+
+$("notice").textContent = "Demo con una biblioteca semilla de " + P.length + " patrones escritos para esta presentación, no extraídos de guiones reales. El significado de cada frase viene precargado; las etiquetas, la puntuación, la comparación por época y las métricas se calculan en vivo.";
+renderPhrases(); renderResult(); renderLib(); renderRu(); renderArch();
+showTab(location.hash.slice(1));
+</script>
+
+</body></html>
