@@ -1,0 +1,660 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>La Muralla Viva</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Press+Start+2P&display=swap">
+<style>
+/* Composición: una sola columna. Medidores arriba, mapa 2D con vista superior al centro, acciones debajo.
+   Menú, informe y ficha histórica reemplazan la zona de juego en lugar de superponerse. */
+:root{
+  --bg:#1b1610; --panel:#251d14; --line:#4b3b29; --fg:#efe3c9; --mute:#b4a385;
+  --tierra:#b5532f; --seco:#c8b26e; --madera:#7b5331; --oliva:#8aa04c; --alerta:#e4572e; --azul:#7fa3b5;
+  --f-display:'Press Start 2P',ui-monospace,Menlo,Consolas,monospace;
+  --f-body:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:16px 32px;
+}
+.app{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 16px}
+.kicker{font:600 11px/1.3 var(--f-body);letter-spacing:.14em;text-transform:uppercase;color:var(--seco);margin:0 0 6px}
+h1{font:400 20px/1.3 var(--f-display);margin:0;text-wrap:balance}
+@media(min-width:700px){h1{font-size:26px}}
+h2{font:400 15px/1.5 var(--f-display);margin:0 0 10px;text-wrap:balance}
+h3{font:600 12px/1.4 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--seco);margin:0 0 8px}
+p{margin:0 0 10px;max-width:68ch}
+.tools{display:flex;gap:8px}
+button{font:inherit;color:inherit}
+.btn{
+  background:var(--panel);border:2px solid var(--madera);color:var(--fg);padding:10px 14px;min-height:44px;
+  font:600 14px/1.2 var(--f-body);cursor:pointer;text-align:center;
+}
+.btn:hover:not(:disabled){border-color:var(--seco)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.main{background:var(--tierra);border-color:#d77b52;color:#fff}
+.btn.main:hover:not(:disabled){border-color:#ffd9b0}
+.btn.small{min-height:36px;padding:6px 10px;font-size:13px}
+:focus-visible{outline:3px solid var(--seco);outline-offset:2px}
+.panel{background:var(--panel);border:1px solid var(--line);padding:16px}
+.levels{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.lvl{display:flex;flex-direction:column;gap:6px;text-align:left;align-items:stretch}
+.lvl .n{font:400 11px/1.5 var(--f-display);color:var(--seco)}
+.lvl .d{font-size:13px;color:var(--mute)}
+.lvl .best{font-size:12px;color:var(--oliva)}
+ol.how{margin:0;padding-left:20px;display:grid;gap:6px;max-width:70ch}
+.keys{font-size:13px;color:var(--mute)}
+kbd{font:600 12px var(--f-body);background:#3a2c1d;border:1px solid var(--line);padding:1px 6px}
+
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(min-width:760px){.hud{grid-template-columns:repeat(6,1fr)}}
+.m{background:var(--panel);border:1px solid var(--line);padding:8px 10px;min-width:0}
+.m b{display:block;font:600 10px/1.3 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m .v{font:600 17px/1.3 var(--f-body);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:#3a2c1d;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--oliva);width:50%}
+.m.mid .bar i{background:var(--seco)}
+.m.low .bar i{background:var(--alerta)}
+.m.low .v{color:var(--alerta)}
+
+.status{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:space-between;font-size:14px}
+.day{font:400 10px/1.5 var(--f-display);color:var(--seco)}
+#alert{min-height:22px;font-weight:600}
+#alert.warn{color:var(--alerta)}
+.stage{position:relative;background:#000;border:2px solid var(--madera);line-height:0}
+canvas{display:block;width:100%;height:auto;image-rendering:pixelated;touch-action:manipulation;cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--mute)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:-1px}
+#sel{font-size:14px;min-height:22px}
+#toast{font-size:13px;color:var(--seco);min-height:20px}
+.acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px}
+.acts .btn{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;min-height:56px}
+.acts small{font:400 11px var(--f-body);color:var(--mute)}
+.acts .btn:disabled small{color:inherit}
+
+.total{font:400 34px/1.2 var(--f-display);color:var(--seco)}
+.axes{display:grid;gap:10px;margin:14px 0}
+.ax{display:grid;grid-template-columns:minmax(0,150px) 1fr 46px;gap:10px;align-items:center;font-size:14px}
+.ax small{display:block;color:var(--mute);font-size:12px}
+.ax .bar{height:10px;margin:0}
+.ax .pct{font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:520px){.ax{grid-template-columns:1fr 44px}.ax .bar{grid-column:1/-1;order:3}}
+.two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+ul.log{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14px}
+ul.log.good li::marker{color:var(--oliva)}
+ul.log.bad li::marker{color:var(--alerta)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+details{border:1px solid var(--line);background:var(--panel);padding:0}
+summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";display:inline-block;width:18px;color:var(--seco);font-family:var(--f-display)}
+details[open] summary::before{content:"–"}
+details .a{padding:0 14px 12px 32px;font-size:14px}
+.fich{display:grid;gap:8px}
+.note{font-size:13px;color:var(--mute)}
+a{color:var(--seco)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app">
+  <header>
+    <div>
+      <p class="kicker">Homenaje a los defensores del Fortín Nanawa · 1933</p>
+      <h1>La Muralla Viva</h1>
+    </div>
+    <div class="tools">
+      <button class="btn small" id="b-pause" hidden>Pausa (P)</button>
+      <button class="btn small" id="b-snd" aria-pressed="false">Sonido: sí</button>
+    </div>
+  </header>
+
+  <!-- MENÚ -->
+  <section id="s-menu" class="screen">
+    <div class="panel">
+      <p>Mantén en pie un sistema defensivo bajo presión. Repara brechas, lleva suministros, restablece comunicaciones y decide dónde actuar primero. El puntaje premia que la defensa siga funcionando, no cuántos ataques se rechacen.</p>
+      <div class="levels" style="margin:14px 0">
+        <button class="btn lvl" id="go-1"><span class="n">NIVEL 1</span><strong>La primera muralla</strong><span class="d">20 al 26 de enero de 1933. Cuatro sectores en herradura, recursos limitados y ataques por oleadas.</span><span class="best" id="best-1"></span></button>
+        <button class="btn lvl" id="go-2"><span class="n">NIVEL 2</span><strong>La muralla reforzada</strong><span class="d">4 al 9 de julio de 1933. Cinco sectores y una pista de aterrizaje. Llega una mina, luego columnas por el norte y el sur.</span><span class="best" id="best-2"></span></button>
+      </div>
+      <h3>Cómo se juega</h3>
+      <ol class="how">
+        <li>Elige un sector tocándolo o con las teclas 1 a 6. <strong>0</strong> es el comando, donde está la reserva.</li>
+        <li><strong>Repara</strong> brechas, <strong>abastece</strong> munición, agua y alimentos, <strong>reconecta</strong> enlaces cortados y <strong>reconoce</strong> el terreno para ver los ataques con más anticipación.</li>
+        <li>Cada acción gasta movilidad. Se recupera sola, pero más despacio si hay enlaces cortados.</li>
+        <li>Los ataques siguen un patrón y se repiten igual si reintentas el nivel.</li>
+      </ol>
+      <p class="keys" style="margin-top:12px"><kbd>1</kbd>–<kbd>6</kbd> sector · <kbd>R</kbd> reparar · <kbd>A</kbd> abastecer · <kbd>C</kbd> reconectar · <kbd>E</kbd> reconocer · <kbd>P</kbd> pausa</p>
+      <div class="row"><button class="btn small" id="go-ficha-menu">Ver ficha histórica</button></div>
+    </div>
+  </section>
+
+  <!-- JUEGO -->
+  <section id="s-play" class="screen" hidden>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="hud" id="hud"></div>
+      <div class="status"><span class="day" id="day"></span><span id="alert"></span></div>
+      <div class="stage"><canvas id="cv" width="960" height="560" role="img" aria-label="Mapa del fortín visto desde arriba con sectores conectados por trincheras y caminos"></canvas></div>
+      <div class="legend"><span><i style="background:#8aa04c"></i>Integridad</span><span><i style="background:#c8b26e"></i>Munición, agua y comida</span><span><i style="background:#7fa3b5"></i>Resistencia</span></div>
+      <div id="sel" aria-live="off"></div>
+      <div class="acts">
+        <button class="btn" id="a-rep">Reparar <small>R · 2 mov</small></button>
+        <button class="btn" id="a-sup">Abastecer <small>A · 2 mov</small></button>
+        <button class="btn" id="a-con">Reconectar <small>C · 2 mov</small></button>
+        <button class="btn" id="a-rec">Reconocer <small>E · 1,5 mov</small></button>
+      </div>
+      <div id="toast" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- INFORME -->
+  <section id="s-report" class="screen" hidden>
+    <div class="panel" id="report"></div>
+  </section>
+
+  <!-- FICHA -->
+  <section id="s-ficha" class="screen" hidden>
+    <div class="fich">
+      <div class="panel">
+        <h2>Ficha histórica: Nanawa</h2>
+        <p>La Guerra del Chaco (1932–1935) enfrentó a Paraguay y Bolivia. Esta ficha resume lo que las fuentes consultadas documentan y separa lo que el juego inventa. Detrás de cada cifra hay personas de ambos países.</p>
+      </div>
+      <details open><summary>¿Qué importancia estratégica tenía Nanawa?</summary><div class="a">
+        <p>Paraguay estableció el fortín en 1928 y en 1933 se lo consideraba su posición más fuerte en la zona. En diciembre de 1932 Bolivia tomó varios puestos entre Nanawa y el río Pilcomayo. En el ataque de julio, según las fuentes, el objetivo era aislar Isla Poí y avanzar hacia Concepción. Desde marzo de 1933 Nanawa fue el cuartel general del III Cuerpo de Ejército paraguayo.</p></div></details>
+      <details><summary>¿Por qué era importante conservar las líneas de abastecimiento?</summary><div class="a">
+        <p>Una posición fortificada resiste mientras reciba munición, agua y alimentos. En julio de 1933 Paraguay reabasteció a la guarnición por aire, con municiones y granadas, incluso bajo fuego desde tierra. En el Nivel 2 la pista de aterrizaje representa esa idea: si queda aislada o dañada, el vuelo se pierde.</p></div></details>
+      <details><summary>¿Cómo evolucionó la fortificación entre enero y julio?</summary><div class="a">
+        <p>Antes de enero ya existía una línea defensiva curva hacia el oeste, con trincheras en zigzag, alambre de púas y nidos de ametralladora, en forma de herradura. Durante la primera ofensiva se construyó una pista de aterrizaje cerca del frente, y en marzo Nanawa pasó a ser cuartel general del III Cuerpo. Las fuentes consultadas no detallan otras ampliaciones concretas, así que el Nivel 2 es una interpretación jugable y no un plano fiel.</p></div></details>
+      <details><summary>¿Qué decisiones permitieron mantener la defensa?</summary><div class="a">
+        <p>Las fuentes apuntan a una combinación: posiciones preparadas con anticipación, recuperación de las partes perdidas y reabastecimiento en pleno combate. En enero, las lluvias intensas obligaron a los atacantes a abandonar lo ganado y las fuerzas paraguayas recuperaron las posiciones. Es un resumen general; para el detalle conviene consultar a historiadores especializados.</p></div></details>
+      <details><summary>Las batallas, en cifras aproximadas</summary><div class="a">
+        <p>Primera batalla, 20 al 26 de enero: unos 9.000 bolivianos frente a unos 2.500 paraguayos; murieron unos 2.000 bolivianos y 248 paraguayos. Segunda batalla, 4 al 9 de julio: Bolivia perdió unos 1.600 hombres y Paraguay unos 500. Las cifras varían según el autor.</p></div></details>
+      <div class="panel two">
+        <div><h3>Documentado</h3><ul class="log">
+          <li>Las fechas de ambas batallas.</li><li>La disposición en herradura, con trincheras en zigzag y alambre de púas.</li><li>La pista de aterrizaje y el reabastecimiento aéreo.</li><li>Una mina antes del asalto de julio, y columnas desde el norte y el sur.</li></ul></div>
+        <div><h3>Ficticio</h3><ul class="log">
+          <li>Los seis medidores y sus valores.</li><li>Los nombres y la distribución de los sectores.</li><li>El orden y la fuerza de cada ataque.</li><li>La movilidad como recurso y la puntuación.</li></ul></div>
+      </div>
+      <p class="note">Fuentes: <a href="https://en.wikipedia.org/wiki/First_Battle_of_Nanawa" target="_blank" rel="noopener">First Battle of Nanawa</a> y <a href="https://en.wikipedia.org/wiki/Second_Battle_of_Nanawa" target="_blank" rel="noopener">Second Battle of Nanawa</a>.</p>
+      <div class="row" style="margin-top:0"><button class="btn" id="ficha-back">Volver</button></div>
+    </div>
+  </section>
+</div>
+
+<script>
+'use strict';
+/*ENGINE_START*/
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function rng(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+const r0=v=>Math.round(v);
+const fmt=t=>{const m=Math.floor(t/60),s=Math.floor(t%60);return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');};
+
+const LEVELS=[
+ {id:1,name:'La primera muralla',month:'ene',dayStart:20,days:7,dur:120,seed:1933,
+  nodes:[{n:'Comando',x:700,y:290,cmd:1},{n:'Norte',x:470,y:105},{n:'Noroeste',x:300,y:215},{n:'Suroeste',x:300,y:375},{n:'Sur',x:470,y:485}],
+  links:[[0,1],[0,2],[0,3],[0,4],[1,2],[2,3],[3,4]],arc:[1,2,3,4],
+  gap:[6.8,4.2],firstAt:6,dmg:29,cutP:.3,use:.43,movRegen:.8,depotRegen:2.2,infoDecay:.7,air:false,mina:false},
+ {id:2,name:'La muralla reforzada',month:'jul',dayStart:4,days:6,dur:150,seed:1940,
+  nodes:[{n:'Comando',x:745,y:295,cmd:1},{n:'Norte',x:520,y:90},{n:'Noroeste',x:330,y:170},{n:'Reducto',x:290,y:300},{n:'Suroeste',x:330,y:430},{n:'Sur',x:520,y:505},{n:'Pista',x:860,y:105,pista:1}],
+  links:[[0,1],[0,3],[0,5],[0,6],[6,1],[1,2],[2,3],[3,4],[4,5]],arc:[1,2,3,4,5],
+  gap:[7.5,4.5],firstAt:6,dmg:27,cutP:.4,use:.4,movRegen:.9,depotRegen:2.4,infoDecay:.8,
+  air:true,flightEvery:24,flightFirst:14,flightLoad:30,airAt:32,airEvery:30,pistaIdx:6,mina:true,minaAt:24,minaIdx:3}
+];
+const COST={rep:2,sup:2,con:2,rec:1.5};
+const hooks={hit(){},rep(){},sup(){},con(){},rec(){},warn(){},fall(){},flight(){},end(){}};
+let S=null;
+
+function buildSchedule(L){
+  const R=rng(L.seed), ev=[];
+  const add=(t,i,mult=1,kind='asalto',cut=false)=>ev.push({t,i,mult,kind,cut,warned:false,done:false});
+  const gapAt=t=>L.gap[0]+(L.gap[1]-L.gap[0])*(t/L.dur);
+  const arc=L.arc; let bag=[], t=L.firstAt, minaDone=!L.mina;
+  const refill=()=>{bag=['sweep','focus','pincer'];for(let i=2;i>0;i--){const j=(R()*(i+1))|0;[bag[i],bag[j]]=[bag[j],bag[i]];}};
+  while(t<L.dur-5){
+    if(!minaDone&&t>=L.minaAt-6){
+      minaDone=true;
+      add(L.minaAt,L.minaIdx,2.1,'mina',true);
+      add(L.minaAt+7,arc[0],1.2); add(L.minaAt+7,arc[arc.length-1],1.2);
+      t=L.minaAt+16; continue;
+    }
+    if(!bag.length) refill();
+    const p=bag.pop(); let span=0;
+    if(p==='sweep'){
+      const seq=R()<.5?arc.slice():arc.slice().reverse(); const n=Math.min(seq.length,L.mina?4:3);
+      for(let j=0;j<n;j++) add(t+j*1.8,seq[j]); span=(n-1)*1.8;
+    }else if(p==='focus'){
+      const i=arc[(R()*arc.length)|0]; add(t,i); add(t+2.4,i); span=2.4;
+      if(t>L.dur*.5){add(t+4.8,i);span=4.8;}
+    }else{
+      const a=(R()*arc.length)|0, b=(a+Math.floor(arc.length/2))%arc.length; add(t,arc[a]); add(t,arc[b]);
+    }
+    t+=span+gapAt(t);
+  }
+  if(L.air) for(let tt=L.airAt;tt<L.dur-5;tt+=L.airEvery) add(tt,L.pistaIdx,.9,'aereo');
+  return ev.sort((x,y)=>x.t-y.t);
+}
+
+function newGame(li,seedOffset=0){
+  const L=LEVELS[li];
+  S={li,L,t:0,over:false,won:false,reason:'',sel:1,
+    sec:L.nodes.map((n,i)=>({i,name:n.n,x:n.x,y:n.y,cmd:!!n.cmd,pista:!!n.pista,integ:100,supply:80,morale:80,conn:true,iso:0,isoLogged:false,wasDown:false,acts:[],hitAt:-99})),
+    links:L.links.map(([a,b],k)=>({a,b,k,cut:false})),
+    depot:100,mov:6,info:70,nextFlight:L.air?L.flightFirst:Infinity,
+    events:buildSchedule(L),warns:[],hits:[],log:[],R:rng(L.seed+7+seedOffset),
+    st:{time:0,conn:0,integ:0,supply:0,supN:0,supTimely:0,fOk:0,fLost:0,lastEmpty:-99},sc:null};
+  S.sec[0].morale=100; recomputeConn(); return S;
+}
+const defs=()=>S.sec.filter(s=>!s.cmd);
+const logG=(w,text)=>S.log.push({t:S.t,k:'g',w,text});
+const logB=(w,text)=>S.log.push({t:S.t,k:'b',w,text});
+function adj(i){return S.links.filter(l=>l.a===i||l.b===i);}
+function recomputeConn(){
+  const seen=new Set([0]),q=[0];
+  while(q.length){const c=q.shift();for(const l of S.links){if(l.cut)continue;const o=l.a===c?l.b:(l.b===c?l.a:-1);if(o>=0&&!seen.has(o)){seen.add(o);q.push(o);}}}
+  S.sec.forEach(s=>s.conn=seen.has(s.i));
+}
+function pathTo(i){
+  const par={0:-1},q=[0];
+  while(q.length){const c=q.shift();if(c===i)break;for(const l of S.links){if(l.cut)continue;const o=l.a===c?l.b:(l.b===c?l.a:-1);if(o>=0&&!(o in par)){par[o]=c;q.push(o);}}}
+  if(!(i in par)) return [];
+  const p=[];for(let c=i;c!==-1;c=par[c])p.unshift(c);return p;
+}
+function cutLinks(i,n){
+  const out=[];
+  for(let k=0;k<n;k++){const opts=adj(i).filter(l=>!l.cut);if(!opts.length)break;const l=opts[(S.R()*opts.length)|0];l.cut=true;out.push(l);}
+  if(out.length) recomputeConn();
+  return out;
+}
+function applyAttack(ev){
+  const s=S.sec[ev.i],L=S.L,dryBefore=s.supply<20,supBefore=s.supply;
+  const prepared=s.acts.some(a=>a>=ev.t-8&&a<ev.t);
+  const dmg=L.dmg*ev.mult*(dryBefore?1.4:1)*(.85+S.R()*.3);
+  s.integ=Math.max(0,s.integ-dmg); s.supply=Math.max(0,s.supply-10*ev.mult); s.morale=Math.max(0,s.morale-5*ev.mult); s.hitAt=S.t;
+  S.hits.push({i:s.i,t:S.t});
+  const n=ev.cut?2:(S.R()<L.cutP?1:0);
+  const cl=cutLinks(s.i,n);
+  if(dryBefore) logB(12,`${fmt(S.t)} · ${s.name} recibió un ataque con la munición casi agotada (${r0(supBefore)}%).`);
+  if(prepared&&s.integ>35) logG(14,`${fmt(S.t)} · Te anticipaste al ataque en ${s.name}: resistió con ${r0(s.integ)}%.`);
+  hooks.hit(s,ev,cl);
+}
+
+function update(dt){
+  if(S.over) return;
+  const L=S.L; S.t+=dt; const D=defs(); recomputeConn();
+  const cutFrac=S.links.filter(l=>l.cut).length/S.links.length;
+  S.mov=Math.min(10,S.mov+L.movRegen*(1-.6*cutFrac)*dt);
+  S.depot=Math.min(100,S.depot+L.depotRegen*dt);
+  const disc=D.filter(s=>!s.conn).length/D.length;
+  S.info=clamp(S.info-(L.infoDecay+L.infoDecay*2*disc)*dt,0,100);
+  for(const s of D){
+    s.supply=clamp(s.supply-(s.conn?L.use:L.use*1.8)*dt,0,100);
+    const ok=s.supply>30&&s.integ>30;
+    s.morale=clamp(s.morale+((ok?.7:-1.3)+(s.conn?0:-.9))*dt,0,100);
+    if(!s.conn){s.iso+=dt;if(s.iso>8&&!s.isoLogged){s.isoLogged=true;logB(16,`${fmt(S.t)} · ${s.name} pasó más de 8 segundos sin comunicación.`);}}
+    else{s.iso=0;s.isoLogged=false;}
+    if(s.integ<=0&&!s.wasDown){
+      s.wasDown=true;
+      const since=s.acts.length?S.t-s.acts[s.acts.length-1]:S.t;
+      logB(30,`${fmt(S.t)} · Se abrió una brecha en ${s.name}; hacía ${r0(since)} s que no recibía atención.`);
+      hooks.fall(s);
+    }
+    if(s.integ>0) s.wasDown=false;
+  }
+  if(S.t>=S.nextFlight){
+    S.nextFlight+=L.flightEvery; const p=S.sec[L.pistaIdx];
+    if(p.conn&&p.integ>25){S.depot=Math.min(100,S.depot+L.flightLoad);S.st.fOk++;logG(16,`${fmt(S.t)} · Llegó un vuelo de reabastecimiento: la pista estaba comunicada y operativa.`);hooks.flight(true);}
+    else{S.st.fLost++;logB(20,`${fmt(S.t)} · Se perdió un vuelo de reabastecimiento: la pista estaba aislada o dañada.`);hooks.flight(false);}
+  }
+  const lead=S.info<35?1.6:3+S.info*.07;
+  for(const ev of S.events){if(!ev.warned&&S.t>=ev.t-lead){ev.warned=true;S.warns.push(ev);hooks.warn(ev,S.info>=35);}}
+  for(const ev of S.warns){if(!ev.done&&S.t>=ev.t){ev.done=true;applyAttack(ev);}}
+  S.warns=S.warns.filter(e=>!e.done);
+  const st=S.st; st.time+=dt;
+  st.conn+=dt*D.filter(s=>s.conn).length/D.length;
+  st.integ+=dt*D.reduce((a,s)=>a+s.integ,0)/D.length/100;
+  st.supply+=dt*D.reduce((a,s)=>a+s.supply,0)/D.length/100;
+  const op=D.filter(s=>s.integ>0&&s.morale>0).length;
+  const avgMor=D.reduce((a,s)=>a+s.morale,0)/D.length;
+  if(op<D.length*.4) finish(false,'colapso');
+  else if(avgMor<12) finish(false,'agotamiento');
+  else if(S.t>=L.dur) finish(true,'');
+}
+function scores(){
+  const st=S.st,T=Math.max(st.time,1);
+  const resist=S.won?1:clamp(S.t/S.L.dur,0,.97);
+  const coord=st.conn/T, integ=st.integ/T;
+  const timely=st.supN?st.supTimely/st.supN:.4;
+  const logi=.6*timely+.4*(st.supply/T);
+  let resp=0;for(const h of S.hits){const s=S.sec[h.i];if(s.acts.some(a=>a>=h.t-4&&a<=h.t+6))resp++;}
+  const adapt=S.hits.length?resp/S.hits.length:.5;
+  const axes={resist,coord,logi,adapt,integ};
+  const total=r0(100*(.25*resist+.2*coord+.2*logi+.15*adapt+.2*integ));
+  return {axes,total};
+}
+function finish(won,reason){S.over=true;S.won=won;S.reason=reason;S.sc=scores();hooks.end();}
+
+function act(kind,sel){
+  if(!S||S.over) return {ok:false,msg:''};
+  const c=COST[kind]; if(S.mov<c) return {ok:false,msg:'Falta movilidad: espera unos segundos.'};
+  const D=defs(), s=S.sec[sel], pay=()=>{S.mov-=c;};
+  if(kind==='rec'){
+    const b=S.info; S.info=clamp(S.info+30,0,100); pay();
+    if(b<=40) logG(10,`${fmt(S.t)} · Reconociste el terreno con la información en ${r0(b)}%, y recuperaste margen para anticiparte.`);
+    else if(b>=85) logB(6,`${fmt(S.t)} · Reconociste el terreno cuando la información ya estaba alta.`);
+    hooks.rec(); return {ok:true};
+  }
+  if(!s) return {ok:false,msg:'Elige un sector.'};
+  if(kind==='con'){
+    const cut=adj(s.i).filter(l=>l.cut);
+    if(!cut.length) return {ok:false,msg:`No hay enlaces cortados en ${s.name}.`};
+    const before=D.filter(x=>x.conn).length; cut.forEach(l=>{l.cut=false;}); recomputeConn();
+    const gain=D.filter(x=>x.conn).length-before; pay(); s.acts.push(S.t);
+    if(gain>0) logG(15+10*gain,`${fmt(S.t)} · Reconectaste ${s.name} y recuperaste la comunicación con ${gain} sector${gain>1?'es':''}.`);
+    hooks.con(s,cut); return {ok:true};
+  }
+  if(s.cmd) return {ok:false,msg:'El comando no necesita esa acción.'};
+  if(kind==='rep'){
+    if(s.integ>=98) return {ok:false,msg:`${s.name} ya está íntegro.`};
+    const before=s.integ, oth=D.filter(x=>x!==s).sort((a,b)=>a.integ-b.integ)[0];
+    s.integ=Math.min(100,s.integ+28); s.morale=Math.min(100,s.morale+4); pay(); s.acts.push(S.t);
+    if(before<=45) logG(28+(before<=15?10:0),`${fmt(S.t)} · Reparaste ${s.name} cuando estaba al ${r0(before)}%.`);
+    else if(before>=75&&oth&&oth.integ<=35) logB(18,`${fmt(S.t)} · Reparaste ${s.name} (${r0(before)}%) mientras ${oth.name} estaba al ${r0(oth.integ)}%.`);
+    else if(before>=88) logB(8,`${fmt(S.t)} · Reparación poco necesaria en ${s.name} (${r0(before)}%).`);
+    hooks.rep(s); return {ok:true};
+  }
+  if(kind==='sup'){
+    if(!s.conn) return {ok:false,msg:`${s.name} está aislado: reconecta primero.`};
+    if(s.supply>=95) return {ok:false,msg:`${s.name} ya tiene suficiente.`};
+    if(S.depot<8) return {ok:false,msg:'La reserva está casi vacía.'};
+    const before=s.supply, depotBefore=S.depot, oth=D.filter(x=>x!==s).sort((a,b)=>a.supply-b.supply)[0];
+    const give=Math.min(Math.min(30,100-s.supply),S.depot/.65);
+    S.depot-=give*.65; s.supply+=give; s.morale=Math.min(100,s.morale+5); pay(); s.acts.push(S.t);
+    S.st.supN++; if(before<=45) S.st.supTimely++;
+    if(before<=40) logG(25,`${fmt(S.t)} · Llevaste suministros a ${s.name} con ${r0(before)}% de munición.`);
+    else if(before>=70&&oth&&oth.supply<=25) logB(18,`${fmt(S.t)} · Abasteciste ${s.name} (${r0(before)}%) mientras ${oth.name} tenía ${r0(oth.supply)}%.`);
+    if(depotBefore>=8&&S.depot<8&&S.t-S.st.lastEmpty>20){S.st.lastEmpty=S.t;logB(10,`${fmt(S.t)} · Dejaste casi vacía la reserva del comando.`);}
+    hooks.sup(s,pathTo(s.i)); return {ok:true};
+  }
+  return {ok:false,msg:''};
+}
+/*ENGINE_END*/
+
+/* ---------- Presentación ---------- */
+const $=s=>document.querySelector(s);
+const W=960,H=560;
+const REDUCE=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const cv=$('#cv'),ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=false;
+let terrain=null,fx=[],crates=[],rings=[],planes=[],shake=0,lastT=0,running=false,paused=false,prevScreen='s-menu',hudAcc=0,toastT=0,flashMsg='';
+
+/* Sonido: simple y opcional */
+let AC=null,MUTED=false,drone=null;
+function audioInit(){if(AC||MUTED)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){AC=null;}}
+function tone(f,d,type,v,slide){
+  if(!AC||MUTED)return;
+  try{const o=AC.createOscillator(),g=AC.createGain(),n=AC.currentTime;o.type=type||'square';o.frequency.setValueAtTime(f,n);if(slide)o.frequency.linearRampToValueAtTime(f+slide,n+d);g.gain.setValueAtTime(v||.04,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(AC.destination);o.start(n);o.stop(n+d);}catch(e){}
+}
+function thump(d,v){
+  if(!AC||MUTED)return;
+  try{const n=AC.currentTime,len=Math.floor(AC.sampleRate*d),b=AC.createBuffer(1,len,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<len;i++)a[i]=(Math.random()*2-1)*(1-i/len);const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();f.type='lowpass';f.frequency.value=420;g.gain.value=v;s.buffer=b;s.connect(f);f.connect(g);g.connect(AC.destination);s.start(n);}catch(e){}
+}
+function droneStart(){
+  if(!AC||MUTED||drone)return;
+  try{const g=AC.createGain();g.gain.value=.0;const o1=AC.createOscillator(),o2=AC.createOscillator();o1.type='sine';o2.type='sine';o1.frequency.value=55;o2.frequency.value=58.5;o1.connect(g);o2.connect(g);g.connect(AC.destination);o1.start();o2.start();drone={g,o1,o2};}catch(e){drone=null;}
+}
+function droneStop(){if(!drone)return;try{drone.o1.stop();drone.o2.stop();}catch(e){}drone=null;}
+function droneLevel(p){if(drone&&AC)try{drone.g.gain.setTargetAtTime(MUTED?0:.015+.05*p,AC.currentTime,.4);}catch(e){}}
+
+/* Terreno */
+function makeTerrain(L){
+  const oc=document.createElement('canvas');oc.width=W;oc.height=H;const g=oc.getContext('2d'),R=rng(L.seed*3+1);
+  const base=['#7f4127','#74391f','#8a4a2c','#6f3720'];
+  for(let y=0;y<H;y+=4)for(let x=0;x<W;x+=4){g.fillStyle=base[(R()*4)|0];g.fillRect(x,y,4,4);}
+  const veg=['#7d6f3f','#6f6438','#8a7d49','#5f5a33'];
+  for(let p=0;p<46;p++){let x=((R()*W/4)|0)*4,y=((R()*H/4)|0)*4;const n=10+((R()*30)|0);for(let k=0;k<n;k++){g.fillStyle=veg[(R()*4)|0];g.fillRect(x,y,4,4);x+=(((R()*3)|0)-1)*4;y+=(((R()*3)|0)-1)*4;}}
+  for(let b=0;b<60;b++){const x=((R()*W/4)|0)*4,y=((R()*H/4)|0)*4;g.fillStyle='#3f4528';g.fillRect(x,y+4,12,8);g.fillStyle='#566033';g.fillRect(x+2,y,8,6);g.fillStyle='#2b2214';g.fillRect(x+5,y+12,2,4);}
+  const pts=L.arc.map(i=>({x:L.nodes[i].x-100,y:L.nodes[i].y}));
+  pts.unshift({x:pts[0].x+10,y:10});pts.push({x:pts[pts.length-1].x+10,y:H-10});
+  g.strokeStyle='rgba(205,191,154,.55)';g.lineWidth=2;g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y));g.stroke();
+  g.strokeStyle='#cdbf9a';g.lineWidth=2;
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],len=Math.hypot(b.x-a.x,b.y-a.y),n=Math.floor(len/14);for(let k=0;k<=n;k++){const x=a.x+(b.x-a.x)*k/n,y=a.y+(b.y-a.y)*k/n;g.beginPath();g.moveTo(x-4,y-4);g.lineTo(x+4,y+4);g.moveTo(x+4,y-4);g.lineTo(x-4,y+4);g.stroke();}}
+  const gr=g.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,W*.62);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.45)');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  return oc;
+}
+function zig(a,b,amp,step){
+  const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy),nx=-dy/len,ny=dx/len,n=Math.max(2,Math.round(len/step)),pts=[];
+  for(let k=0;k<=n;k++){const f=k/n,o=(k===0||k===n)?0:(k%2?amp:-amp);pts.push({x:a.x+dx*f+nx*o,y:a.y+dy*f+ny*o});}
+  return pts;
+}
+function stroke(pts,w,col,dash){ctx.lineWidth=w;ctx.strokeStyle=col;ctx.setLineDash(dash||[]);ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.setLineDash([]);}
+function txt(s,x,y,size,col,align,font){ctx.font=`${size}px ${font||"'Press Start 2P',ui-monospace,Menlo,monospace"}`;ctx.fillStyle=col;ctx.textAlign=align||'center';ctx.fillText(s,x,y);}
+
+function drawLinks(){
+  for(const l of S.links){
+    const a=S.sec[l.a],b=S.sec[l.b],road=l.a===0||l.b===0;
+    if(road){
+      stroke([a,b],8,'#8a6a3d',[]);stroke([a,b],4,l.cut?'#4a3a28':'#c9a46a',l.cut?[]:[]);
+      if(!l.cut)stroke([a,b],1,'#6e5230',[8,8]);
+    }else{
+      const pts=zig(a,b,6,26);stroke(pts,11,'#a98456');stroke(pts,6,'#2a1a0d');
+    }
+    const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    if(l.cut){
+      stroke([a,b],4,'#e4572e',[7,9]);
+      ctx.strokeStyle='#ffd0b8';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(mx-9,my-9);ctx.lineTo(mx+9,my+9);ctx.moveTo(mx+9,my-9);ctx.lineTo(mx-9,my+9);ctx.stroke();
+    }else{
+      const f=(S.t*.35+l.k*.37)%1;ctx.fillStyle='#ffe9a8';ctx.fillRect(a.x+(b.x-a.x)*f-2,a.y+(b.y-a.y)*f-2,5,5);
+    }
+  }
+}
+function bars(x,y,s){
+  const rows=[[s.integ,'#8aa04c'],[s.supply,'#c8b26e'],[s.morale,'#7fa3b5']];
+  rows.forEach((r,i)=>{ctx.fillStyle='#120b06';ctx.fillRect(x,y+i*9,112,6);ctx.fillStyle=r[0]<30?'#e4572e':r[1];ctx.fillRect(x,y+i*9,112*clamp(r[0],0,100)/100,6);});
+}
+function badge(s,x,y){ctx.fillStyle='#1b1610';ctx.fillRect(x,y,24,24);ctx.fillStyle='#c8b26e';ctx.fillRect(x+2,y+2,20,20);txt(String(s.i),x+12,y+18,12,'#1b1610','center');}
+function drawSector(s){
+  if(s.cmd) return drawCmd(s);
+  if(s.pista) return drawPista(s);
+  const w=132,h=84,x=s.x-w/2,y=s.y-h/2,down=s.integ<=0;
+  ctx.fillStyle=down?'#4a3a2a':'#a88a58';ctx.fillRect(x-6,y-6,w+12,h+12);
+  ctx.fillStyle='#2e1d10';ctx.fillRect(x+4,y+4,w-8,h-8);
+  const lit=Math.ceil(clamp(s.integ,0,100)/10);
+  for(let i=0;i<10;i++){ctx.fillStyle=i<lit?'#c3a066':'#3b2a1b';ctx.fillRect(x+8+i*11.4,y+8,9,7);}
+  ctx.fillStyle='#7b5331';[[x-6,y-6],[x+w-2,y-6],[x-6,y+h-2],[x+w-2,y+h-2]].forEach(p=>ctx.fillRect(p[0],p[1],8,8));
+  ctx.fillStyle='#6b7a3f';ctx.fillRect(x-10,y+h/2-6,8,12);
+  txt(s.name.toUpperCase(),s.x,y+34,10,down?'#8a7a60':'#efe3c9','center');
+  bars(x+10,y+44,s);
+  badge(s,x-12,y-14);
+  if(!s.conn){ctx.fillStyle='rgba(20,14,8,.55)';ctx.fillRect(x-6,y-6,w+12,h+12);txt('SIN ENLACE',s.x,y+h/2+4,9,'#e4572e','center');}
+  if(down){txt('BRECHA',s.x,y+22,9,'#e4572e','center');}
+  if(S.t-s.hitAt<.3){ctx.fillStyle=`rgba(255,120,60,${.5*(1-(S.t-s.hitAt)/.3)})`;ctx.fillRect(x-6,y-6,w+12,h+12);}
+  if(S.sel===s.i){ctx.save();ctx.setLineDash([8,6]);ctx.lineDashOffset=-S.t*20;ctx.strokeStyle='#ffe08a';ctx.lineWidth=3;ctx.strokeRect(x-14,y-14,w+28,h+28);ctx.restore();}
+}
+function drawCmd(s){
+  const x=s.x,y=s.y;
+  ctx.fillStyle='#2e1d10';ctx.fillRect(x-48,y-36,96,72);ctx.fillStyle='#5f6b36';ctx.fillRect(x-44,y-32,88,64);
+  ctx.fillStyle='#7b5331';ctx.fillRect(x-48,y-36,96,10);ctx.fillRect(x-48,y+26,96,10);
+  ctx.fillStyle='#cdbf9a';ctx.fillRect(x+28,y-52,3,22);ctx.fillRect(x+22,y-52,15,3);
+  const n=Math.ceil(S.depot/20);for(let i=0;i<5;i++){ctx.fillStyle=i<n?'#c8b26e':'#3b2a1b';ctx.fillRect(x-38+i*15,y-18,12,12);}
+  txt('COMANDO',x,y+16,9,'#efe3c9','center');
+  badge(s,x-60,y-48);
+  if(S.sel===0){ctx.save();ctx.setLineDash([8,6]);ctx.lineDashOffset=-S.t*20;ctx.strokeStyle='#ffe08a';ctx.lineWidth=3;ctx.strokeRect(x-62,y-50,124,100);ctx.restore();}
+}
+function drawPista(s){
+  const w=150,h=44,x=s.x-w/2,y=s.y-h/2,down=s.integ<=0;
+  ctx.fillStyle='#2e1d10';ctx.fillRect(x-6,y-6,w+12,h+36);
+  ctx.fillStyle=down?'#6a5a45':'#a99a72';ctx.fillRect(x,y,w,h);
+  ctx.fillStyle='#efe3c9';for(let i=0;i<7;i++)ctx.fillRect(x+10+i*20,y+h/2-2,12,4);
+  const lit=Math.ceil(clamp(s.integ,0,100)/10);for(let i=0;i<10;i++){ctx.fillStyle=i<lit?'#c3a066':'#3b2a1b';ctx.fillRect(x+4+i*14.4,y+h+4,12,5);}
+  ctx.fillStyle='#120b06';ctx.fillRect(x+4,y+h+14,142,6);ctx.fillStyle=s.supply<30?'#e4572e':'#c8b26e';ctx.fillRect(x+4,y+h+14,142*s.supply/100,6);
+  txt('PISTA',s.x,y+h/2+4,9,'#1b1610','center');
+  badge(s,x-12,y-14);
+  if(!s.conn){ctx.fillStyle='rgba(20,14,8,.55)';ctx.fillRect(x-6,y-6,w+12,h+36);txt('SIN ENLACE',s.x,y+h/2+4,9,'#e4572e','center');}
+  if(S.t-s.hitAt<.3){ctx.fillStyle=`rgba(255,120,60,${.5*(1-(S.t-s.hitAt)/.3)})`;ctx.fillRect(x-6,y-6,w+12,h+36);}
+  if(S.sel===s.i){ctx.save();ctx.setLineDash([8,6]);ctx.lineDashOffset=-S.t*20;ctx.strokeStyle='#ffe08a';ctx.lineWidth=3;ctx.strokeRect(x-14,y-14,w+28,h+52);ctx.restore();}
+}
+function drawWarnings(){
+  for(const ev of S.warns){
+    const s=S.sec[ev.i],rem=Math.max(0,ev.t-S.t),pulse=(Math.sin(S.t*14)+1)/2;
+    ctx.save();ctx.strokeStyle=`rgba(228,87,46,${.35+.5*pulse})`;ctx.lineWidth=3;ctx.setLineDash([10,8]);ctx.lineDashOffset=-S.t*40;
+    ctx.beginPath();ctx.moveTo(8,s.y);ctx.lineTo(s.x-90,s.y);ctx.stroke();ctx.restore();
+    ctx.fillStyle='#e4572e';const ax=s.x-92;ctx.beginPath();ctx.moveTo(ax,s.y-9);ctx.lineTo(ax+14,s.y);ctx.lineTo(ax,s.y+9);ctx.fill();
+    const label=ev.kind==='mina'?'MINA':ev.kind==='aereo'?'AÉREO':'ATAQUE';
+    ctx.fillStyle='#1b1610';ctx.fillRect(s.x-46,s.y-74,92,24);ctx.fillStyle='#e4572e';ctx.fillRect(s.x-44,s.y-72,88,20);
+    txt(`${label} ${Math.ceil(rem)}`,s.x,s.y-57,9,'#fff','center');
+  }
+}
+function spawnBoom(x,y,big){
+  const n=REDUCE?4:(big?26:16);
+  for(let i=0;i<n;i++){const a=Math.random()*6.28,v=40+Math.random()*(big?200:130);fx.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:0,m:.5+Math.random()*.5,s:3+Math.random()*(big?7:5),c:['#ffd27a','#ff9a3c','#e4572e','#3b2a1b'][(Math.random()*4)|0]});}
+  rings.push({x,y,r:6,m:big?110:70,col:'255,160,80',l:0,d:.45});
+}
+function spawnSparks(x,y,col){for(let i=0;i<10;i++)fx.push({x:x+(Math.random()-.5)*80,y:y+20,vx:(Math.random()-.5)*30,vy:-40-Math.random()*50,l:0,m:.8,s:4,c:col});}
+function drawFX(dt){
+  for(const p of fx){p.l+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;ctx.globalAlpha=Math.max(0,1-p.l/p.m);ctx.fillStyle=p.c;ctx.fillRect(p.x,p.y,p.s,p.s);}
+  ctx.globalAlpha=1;fx=fx.filter(p=>p.l<p.m);
+  for(const r of rings){r.l+=dt;const f=r.l/r.d;ctx.strokeStyle=`rgba(${r.col},${Math.max(0,1-f)})`;ctx.lineWidth=4;const rr=r.r+(r.m-r.r)*f;ctx.strokeRect(r.x-rr,r.y-rr,rr*2,rr*2);}
+  rings=rings.filter(r=>r.l<r.d);
+  for(const c of crates){c.p+=dt*c.sp;const n=c.pts.length-1;if(n<1){c.p=99;continue;}const f=Math.min(c.p,n),k=Math.min(Math.floor(f),n-1),u=f-k,a=c.pts[k],b=c.pts[k+1];ctx.fillStyle='#2a1a0d';ctx.fillRect(a.x+(b.x-a.x)*u-6,a.y+(b.y-a.y)*u-6,12,12);ctx.fillStyle=c.col||'#c8b26e';ctx.fillRect(a.x+(b.x-a.x)*u-4,a.y+(b.y-a.y)*u-4,8,8);}
+  crates=crates.filter(c=>c.p<c.pts.length-1);
+  for(const p of planes){p.x+=p.vx*dt;ctx.fillStyle='#efe3c9';ctx.fillRect(p.x-12,p.y-2,24,4);ctx.fillRect(p.x-3,p.y-10,6,20);ctx.fillRect(p.x+10,p.y-5,4,10);}
+  planes=planes.filter(p=>p.x>-40);
+}
+function draw(dt){
+  ctx.save();
+  if(shake>0&&!REDUCE){ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake=Math.max(0,shake-dt*40);}
+  ctx.drawImage(terrain,0,0);
+  drawLinks();S.sec.forEach(drawSector);drawWarnings();drawFX(dt);
+  ctx.restore();
+  if(paused){ctx.fillStyle='rgba(27,22,16,.7)';ctx.fillRect(0,0,W,H);txt('PAUSA',W/2,H/2,28,'#c8b26e','center');}
+}
+
+/* Hooks del motor hacia la presentación */
+hooks.hit=(s,ev,cl)=>{const big=ev.kind==='mina';spawnBoom(s.x-60,s.y+(Math.random()-.5)*40,big);shake=big?18:9;thump(big?.5:.3,big?.5:.35);if(cl.length)tone(180,.25,'sawtooth',.04,-100);};
+hooks.rep=s=>{spawnSparks(s.x,s.y,'#ffe08a');tone(520,.08,'square',.04);tone(700,.1,'square',.04);};
+hooks.sup=(s,path)=>{const pts=path.map(i=>({x:S.sec[i].x,y:S.sec[i].y}));if(pts.length>1)crates.push({pts,p:0,sp:2.2});spawnSparks(s.x,s.y,'#c8b26e');tone(330,.1,'triangle',.05);tone(440,.12,'triangle',.05);};
+hooks.con=(s,cut)=>{cut.forEach(l=>{const a=S.sec[l.a],b=S.sec[l.b];rings.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2,r:4,m:40,col:'255,233,168',l:0,d:.5});});tone(600,.15,'sine',.05,300);};
+hooks.rec=()=>{const c=S.sec[0];rings.push({x:c.x,y:c.y,r:10,m:320,col:'127,163,181',l:0,d:.9});tone(260,.3,'sine',.05,200);};
+hooks.warn=(ev,known)=>{if(known){tone(880,.09,'square',.04);setTimeout(()=>tone(880,.09,'square',.04),140);}else{tone(660,.2,'sawtooth',.05);}};
+hooks.fall=s=>{spawnBoom(s.x,s.y,true);shake=16;thump(.6,.5);};
+hooks.flight=ok=>{const p=S.sec[S.L.pistaIdx];planes.push({x:W+30,y:p.y-20,vx:-220});if(ok){const pts=pathTo(S.L.pistaIdx).map(i=>({x:S.sec[i].x,y:S.sec[i].y})).reverse();if(pts.length>1)crates.push({pts,p:0,sp:1.6,col:'#efe3c9'});tone(420,.2,'triangle',.05,200);}else tone(200,.3,'sawtooth',.05,-80);};
+hooks.end=()=>{running=false;droneStop();setTimeout(showReport,900);};
+
+/* HUD */
+const METERS=[['integ','Integridad'],['abast','Abastecimiento'],['comu','Comunicación'],['resi','Resistencia'],['movi','Movilidad'],['info','Información']];
+$('#hud').innerHTML=METERS.map(m=>`<div class="m" id="m-${m[0]}"><b>${m[1]}</b><span class="v">0</span><div class="bar"><i></i></div></div>`).join('');
+function setMeter(id,pct,label){const el=$('#m-'+id);el.querySelector('.v').textContent=label;el.querySelector('i').style.width=clamp(pct,0,100)+'%';el.classList.toggle('low',pct<30);el.classList.toggle('mid',pct>=30&&pct<55);}
+function updateHUD(){
+  const D=defs();const avg=k=>D.reduce((a,s)=>a+s[k],0)/D.length;
+  setMeter('integ',avg('integ'),r0(avg('integ'))+'%');
+  setMeter('abast',S.depot,r0(S.depot)+'%');
+  setMeter('comu',100*D.filter(s=>s.conn).length/D.length,D.filter(s=>s.conn).length+'/'+D.length);
+  setMeter('resi',avg('morale'),r0(avg('morale'))+'%');
+  setMeter('movi',S.mov*10,S.mov.toFixed(1).replace('.',',')+'/10');
+  setMeter('info',S.info,r0(S.info)+'%');
+  const L=S.L,di=Math.min(L.days-1,Math.floor(S.t/L.dur*L.days));
+  $('#day').textContent=`Día ${di+1} de ${L.days} · ${L.dayStart+di} ${L.month} 1933 · ${fmt(Math.max(0,L.dur-S.t))}`;
+  const nxt=S.warns.slice().sort((a,b)=>a.t-b.t)[0],al=$('#alert');
+  if(nxt){const s=S.sec[nxt.i],k=nxt.kind==='mina'?'Mina':nxt.kind==='aereo'?'Ataque aéreo':'Ataque';al.textContent=`${k} en ${s.name} en ${Math.ceil(nxt.t-S.t)} s`;al.className='warn';}
+  else{al.textContent=S.info<35?'Información baja: los avisos llegarán con poco margen.':'Sin ataques a la vista.';al.className='';}
+  const s=S.sec[S.sel];
+  $('#sel').textContent=s.cmd?`0 · Comando. Reserva ${r0(S.depot)}%.`:`${s.i} · ${s.name}. Integridad ${r0(s.integ)}%, munición ${r0(s.supply)}%, resistencia ${r0(s.morale)}%. ${s.conn?'Comunicado.':'Sin enlace con el comando.'}`;
+  const mv=S.mov;
+  [['rep',2],['sup',2],['con',2],['rec',1.5]].forEach(([k,c])=>{$('#a-'+k).disabled=mv<c||S.over||paused;});
+  droneLevel(clamp(1-avg('integ')/100+S.warns.length*.1,0,1));
+}
+function toast(t){flashMsg=t;$('#toast').textContent=t;toastT=2.8;}
+
+/* Flujo */
+function show(id){document.querySelectorAll('.screen').forEach(e=>{e.hidden=e.id!==id;});$('#b-pause').hidden=id!=='s-play';if(id!=='s-ficha')prevScreen=id;window.scrollTo(0,0);}
+function best(){try{return JSON.parse(localStorage.getItem('muralla-best')||'{}');}catch(e){return {};}}
+function saveBest(li,v){try{const b=best();if(!b[li]||v>b[li]){b[li]=v;localStorage.setItem('muralla-best',JSON.stringify(b));}}catch(e){}}
+function menuBest(){const b=best();[1,2].forEach(n=>{$('#best-'+n).textContent=b[n-1]?`Mejor puntaje: ${b[n-1]}`:'';});}
+function start(li){
+  audioInit();newGame(li);terrain=makeTerrain(S.L);fx=[];crates=[];rings=[];planes=[];shake=0;paused=false;running=true;
+  S.sel=1;$('#b-pause').textContent='Pausa (P)';$('#toast').textContent='';show('s-play');updateHUD();lastT=performance.now();droneStart();
+  requestAnimationFrame(loop);
+}
+function loop(now){
+  if(!running)return;
+  const dt=Math.min(.05,(now-lastT)/1000);lastT=now;
+  if(!paused)update(dt);
+  draw(paused?0:dt);
+  hudAcc+=dt;if(hudAcc>.1){hudAcc=0;updateHUD();}
+  if(toastT>0){toastT-=dt;if(toastT<=0)$('#toast').textContent='';}
+  requestAnimationFrame(loop);
+}
+function togglePause(){if(!S||S.over||!running)return;paused=!paused;$('#b-pause').textContent=paused?'Seguir (P)':'Pausa (P)';updateHUD();}
+function doAct(k){
+  if(!running||paused)return;const r=act(k,S.sel);
+  if(!r.ok&&r.msg){toast(r.msg);tone(150,.12,'square',.03);}
+  updateHUD();
+}
+
+function axisRow(lbl,hint,v){const p=r0(v*100);return `<div class="ax"><div>${lbl}<small>${hint}</small></div><div class="bar"><i style="width:${p}%"></i></div><div class="pct">${p}%</div></div>`;}
+function showReport(){
+  const sc=S.sc,A=sc.axes,L=S.L;saveBest(S.li,sc.total);
+  const goods=S.log.filter(e=>e.k==='g').sort((a,b)=>b.w-a.w).slice(0,3);
+  const bads=S.log.filter(e=>e.k==='b').sort((a,b)=>b.w-a.w).slice(0,3);
+  const verdict=S.won?(sc.total>=75?'La muralla se sostuvo con orden':sc.total>=50?'La muralla se sostuvo con dificultades':'La muralla se sostuvo al límite'):'La muralla cedió';
+  const why=S.won?`Resististe los ${L.days} días del escenario.`:(S.reason==='agotamiento'?`La resistencia de los defensores se agotó a los ${fmt(S.t)}.`:`Demasiados sectores quedaron fuera de servicio a los ${fmt(S.t)}.`);
+  const names={resist:'Resistencia',coord:'Coordinación',logi:'Logística',adapt:'Adaptación',integ:'Integridad'};
+  const weakest=Object.keys(A).sort((a,b)=>A[a]-A[b])[0];
+  const tips={resist:'Prioriza lo que evita el colapso antes de optimizar lo demás.',coord:'Reconecta antes: un sector aislado se queda sin munición y sin información.',logi:'Abastece cuando la munición baje de 45%, no cuando se agote.',adapt:'Actúa sobre el sector atacado en los segundos siguientes al golpe.',integ:'Repara los sectores bajos antes de que una segunda oleada los alcance.'};
+  const li=l=>l.length?l.map(e=>`<li>${e.text}</li>`).join(''):'<li>No hubo decisiones destacadas en esta partida.</li>';
+  $('#report').innerHTML=`
+    <h2>${verdict}</h2><p>${L.name}. ${why}</p>
+    <div class="total">${sc.total}<span style="font-size:13px;color:var(--mute);font-family:var(--f-body)"> / 100</span></div>
+    <div class="axes">
+      ${axisRow('Resistencia','Tiempo que se mantuvo la defensa',A.resist)}
+      ${axisRow('Coordinación','Sectores que siguieron comunicados',A.coord)}
+      ${axisRow('Logística','Recursos entregados a tiempo',A.logi)}
+      ${axisRow('Adaptación','Respuesta a los ataques recibidos',A.adapt)}
+      ${axisRow('Integridad','Infraestructura que siguió operativa',A.integ)}
+    </div>
+    <p><strong>Eje más débil: ${names[weakest]}.</strong> ${tips[weakest]}</p>
+    <div class="two" style="margin-top:12px">
+      <div><h3>Decisiones que sostuvieron la muralla</h3><ul class="log good">${li(goods)}</ul></div>
+      <div><h3>Decisiones que comprometieron su estabilidad</h3><ul class="log bad">${li(bads)}</ul></div>
+    </div>
+    <div class="row">
+      <button class="btn main" id="r-ficha">Abrir ficha histórica</button>
+      <button class="btn" id="r-retry">Reintentar</button>
+      ${S.won&&S.li===0?'<button class="btn" id="r-next">Jugar el Nivel 2</button>':''}
+      <button class="btn" id="r-menu">Menú</button>
+    </div>`;
+  $('#r-ficha').onclick=()=>openFicha();
+  $('#r-retry').onclick=()=>start(S.li);
+  const nx=$('#r-next');if(nx)nx.onclick=()=>start(1);
+  $('#r-menu').onclick=()=>{menuBest();show('s-menu');};
+  show('s-report');
+}
+function openFicha(){const from=prevScreen;show('s-ficha');prevScreen=from;}
+
+$('#go-1').onclick=()=>start(0);
+$('#go-2').onclick=()=>start(1);
+$('#go-ficha-menu').onclick=()=>openFicha();
+$('#ficha-back').onclick=()=>{menuBest();show(prevScreen);};
+$('#b-pause').onclick=togglePause;
+$('#b-snd').onclick=()=>{MUTED=!MUTED;$('#b-snd').textContent='Sonido: '+(MUTED?'no':'sí');$('#b-snd').setAttribute('aria-pressed',String(MUTED));if(MUTED)droneStop();else{audioInit();if(running)droneStart();}};
+$('#a-rep').onclick=()=>doAct('rep');$('#a-sup').onclick=()=>doAct('sup');$('#a-con').onclick=()=>doAct('con');$('#a-rec').onclick=()=>doAct('rec');
+cv.addEventListener('pointerdown',e=>{
+  if(!running)return;const rc=cv.getBoundingClientRect(),x=(e.clientX-rc.left)*W/rc.width,y=(e.clientY-rc.top)*H/rc.height;
+  let bi=-1,bd=1e9;S.sec.forEach(s=>{const d=Math.hypot(s.x-x,s.y-y);if(d<bd){bd=d;bi=s.i;}});
+  if(bd<90){S.sel=bi;updateHUD();}
+});
+document.addEventListener('keydown',e=>{
+  if($('#s-play').hidden||e.ctrlKey||e.metaKey||e.altKey)return;
+  const k=e.key.toLowerCase();
+  if(k==='p'||k===' '){if(document.activeElement&&document.activeElement.tagName==='BUTTON'&&k===' ')return;e.preventDefault();togglePause();return;}
+  if(!running||paused)return;
+  if(k==='r')doAct('rep');else if(k==='a')doAct('sup');else if(k==='c')doAct('con');else if(k==='e')doAct('rec');
+  else if(k==='0'){S.sel=0;updateHUD();}
+  else if(/^[1-6]$/.test(k)){const i=+k;if(S.sec[i]){S.sel=i;updateHUD();}}
+});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&running&&!paused)togglePause();});
+menuBest();
+</script>
+
+</body></html>
