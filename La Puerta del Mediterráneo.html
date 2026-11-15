@@ -1,0 +1,605 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>La Puerta del Mediterráneo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@400;700&display=swap">
+<style>
+  /* Carta náutica de noche: marcador arriba, escenario al centro, lentes y lectura abajo */
+  :root {
+    --bg: #0a2038;
+    --panel: #102f4f;
+    --panel-2: #163b60;
+    --line: #2a5681;
+    --ink: #eaf4ff;
+    --muted: #a8c2da;
+    --accent: #ffb703;
+    --accent-ink: #2b1d00;
+    --good: #52d273;
+    --bad: #ff6b6b;
+    --font-display: 'Fredoka', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-body: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.45;
+    padding-block: 16px 28px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .app { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 700; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(1.5rem, 5vw, 2.1rem); line-height: 1.1; }
+  h2 { font-size: 1.35rem; }
+  p { margin: 0; }
+  .sub { color: var(--muted); margin-top: 4px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .reglas { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .reglas li { display: flex; gap: 10px; align-items: baseline; }
+  .reglas b { font-family: var(--font-display); color: var(--accent); min-width: 1.2em; }
+  .niveles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .nivel { min-height: 64px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; text-align: left; display: flex; flex-direction: column; gap: 2px; }
+  .nivel strong { font-family: var(--font-display); font-size: 1.15rem; }
+  .nivel span { color: var(--muted); font-size: .9rem; }
+  .nivel:hover { border-color: var(--accent); }
+  .leyenda { color: var(--muted); font-size: .92rem; }
+  .btn { min-height: 46px; padding: 0 20px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); font-family: var(--font-display); font-weight: 700; }
+  .btn.primario { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .fila { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  .marcador { display: flex; flex-wrap: wrap; gap: 8px; }
+  .dato { flex: 1 1 100px; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; }
+  .dato small { display: block; color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
+  .dato strong { font-family: var(--font-display); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+  canvas { display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 14px; border: 1px solid var(--line); touch-action: manipulation; background: #1d78a0; }
+
+  .hud { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+  .medidor { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .medidor .tit { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .85rem; text-transform: uppercase; letter-spacing: .06em; }
+  .medidor .tit b { color: var(--ink); font-family: var(--font-display); letter-spacing: 0; text-transform: none; font-size: 1rem; }
+  .barra { height: 10px; border-radius: 6px; background: var(--panel-2); overflow: hidden; }
+  .barra i { display: block; height: 100%; width: 0; background: var(--good); transition: width .2s; }
+  .luces { display: flex; gap: 8px; align-items: center; }
+  .luces span { width: 18px; height: 18px; border-radius: 50%; background: var(--panel-2); border: 1px solid var(--line); }
+  #semaforo[data-n="0"] span:nth-child(1) { background: var(--good); }
+  #semaforo[data-n="1"] span:nth-child(2) { background: var(--accent); }
+  #semaforo[data-n="2"] span:nth-child(3) { background: var(--bad); }
+  .huecos { display: flex; gap: 6px; }
+  .huecos span { width: 30px; height: 16px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line); }
+  .huecos span.on { background: var(--accent); border-color: var(--accent); }
+
+  .lentes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .lente { min-height: 48px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 10px; font-family: var(--font-display); font-weight: 700; }
+  .lente[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .lectura { color: var(--muted); min-height: 1.5em; }
+  .lectura b { color: var(--ink); }
+
+  .estrellas { font-family: var(--font-display); font-size: 2.6rem; color: var(--accent); letter-spacing: .1em; line-height: 1; }
+  .cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+  .lecciones { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; }
+</style>
+
+<main class="app">
+  <header>
+    <h1>La Puerta del Mediterráneo</h1>
+    <p class="sub">Controlá el paso entre el Atlántico y el Mediterráneo desde el Peñón de Gibraltar.</p>
+  </header>
+
+  <section id="menu" class="card">
+    <h2>Cómo se juega</h2>
+    <ul class="reglas">
+      <li><b>1</b><span>El canal es angosto: caben 3 barcos, todos en el mismo sentido.</span></li>
+      <li><b>2</b><span>Tocá un barco para darle paso. Tocalo de nuevo para frenarlo.</span></li>
+      <li><b>3</b><span>Los barcos con aro amarillo son urgentes y se impacientan rápido.</span></li>
+      <li><b>4</b><span>Armá convoyes de 3 barcos del mismo sentido para ganar bonus.</span></li>
+    </ul>
+    <p class="leyenda">Barcos naranjas vienen del Atlántico. Barcos claros vienen del Mediterráneo. Cada ronda dura 60 segundos.</p>
+    <div class="niveles">
+      <button class="nivel" data-n="0"><strong>Calma</strong><span>1 barco cada 6 segundos</span></button>
+      <button class="nivel" data-n="1"><strong>Movido</strong><span>1 barco cada 4 segundos</span></button>
+      <button class="nivel" data-n="2"><strong>Hora pico</strong><span>1 barco cada 2,5 segundos</span></button>
+    </div>
+  </section>
+
+  <section id="juego" hidden>
+    <div class="app">
+      <div class="marcador">
+        <div class="dato"><small>Tiempo</small><strong id="tTiempo">60</strong></div>
+        <div class="dato"><small>Puntos</small><strong id="tPuntos">0</strong></div>
+        <div class="dato"><small>Racha</small><strong id="tRacha">×1.0</strong></div>
+        <div class="dato"><small>Cruzaron</small><strong id="tCruz">0</strong></div>
+        <div class="dato"><small>Se fueron</small><strong id="tFueron">0</strong></div>
+      </div>
+      <canvas id="cv" role="img" aria-label="Mapa del estrecho de Gibraltar con barcos esperando para cruzar"></canvas>
+      <div class="hud">
+        <div class="medidor"><div class="tit">Flujo <b id="flujoTxt">—</b></div><div class="barra"><i id="flujoFill"></i></div></div>
+        <div class="medidor"><div class="tit">Congestión <b id="congTxt">Fluido</b></div><div class="luces" id="semaforo" data-n="0"><span></span><span></span><span></span></div></div>
+        <div class="medidor"><div class="tit">Canal <b id="canalTxt">0/3</b></div><div class="huecos" id="huecos"><span></span><span></span><span></span></div></div>
+      </div>
+      <div class="lentes" role="group" aria-label="Lentes de observación">
+        <button class="lente" data-l="0" aria-pressed="true">👁 Observador</button>
+        <button class="lente" data-l="1" aria-pressed="false">🚦 Coordinador</button>
+        <button class="lente" data-l="2" aria-pressed="false">🚚 Comerciante</button>
+        <button class="lente" data-l="3" aria-pressed="false">♟ Estratega</button>
+      </div>
+      <p class="lectura" id="lectura"></p>
+      <div class="fila"><button class="btn" id="salir">Volver al inicio</button></div>
+    </div>
+  </section>
+
+  <section id="fin" class="card" hidden>
+    <h2>Ronda terminada</h2>
+    <div class="estrellas" id="estrellas" role="img" aria-label="">☆☆☆</div>
+    <div class="cifras">
+      <div class="dato"><small>Puntos</small><strong id="fPuntos">0</strong></div>
+      <div class="dato"><small>Cruzaron</small><strong id="fCruz">0</strong></div>
+      <div class="dato"><small>Se fueron</small><strong id="fFueron">0</strong></div>
+      <div class="dato"><small>Mejor racha</small><strong id="fRacha">0</strong></div>
+    </div>
+    <h3>Lo que mostró tu partida</h3>
+    <ul class="lecciones" id="lecciones"></ul>
+    <div class="fila">
+      <button class="btn primario" id="otra">Jugar otra vez</button>
+      <button class="btn" id="elegir">Elegir nivel</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/*CORE_START*/
+const CFG = {
+  W: 800, H: 450, Y: 225,
+  GATE: { 1: 290, '-1': 510 },     // entrada al canal según el sentido
+  SALIDA: { 1: 510, '-1': 290 },   // salida del canal
+  ORIGEN: { 1: -40, '-1': 840 },   // donde aparecen los barcos
+  EDGE: { 1: 840, '-1': -40 },     // donde desaparecen al cruzar
+  CAPACIDAD: 3, MAX_BARCOS: 8,
+  V: 70, V_CANAL: 46, GAP: 1.6,
+  DURACION: 60,
+  PAC: 18, PAC_URG: 10, URG_PROB: 0.25, CAMBIO: 2.2,
+  NIVELES: [{ nombre: 'Calma', cada: 6 }, { nombre: 'Movido', cada: 4 }, { nombre: 'Hora pico', cada: 2.5 }]
+};
+const CARGAS = [
+  { k: 'alim', e: '🍎', n: 'Alimentos', v: 10 },
+  { k: 'merc', e: '📦', n: 'Mercancías', v: 10 },
+  { k: 'comb', e: '⛽', n: 'Combustible', v: 12 },
+  { k: 'pasa', e: '🧳', n: 'Pasajeros', v: 14 }
+];
+const COLC = ['#ff7a7a', '#d9b36a', '#b388ff', '#6ee7b7'];
+const SPOTS_A = [[245, 225], [245, 175], [245, 275], [200, 225], [200, 175], [200, 275], [155, 225], [155, 175], [155, 275], [110, 225]];
+const SPOTS = { 1: SPOTS_A, '-1': SPOTS_A.map(function (p) { return [CFG.W - p[0], p[1]]; }) };
+
+function nuevoJuego(nivel, rand) {
+  return {
+    nivel: nivel, rand: rand || Math.random, t: 0, dur: CFG.DURACION, estado: 'jugando',
+    pts: 0, racha: 0, mejor: 0, cruzaron: 0, fueron: 0, convoyes: 0,
+    boats: [], spawnT: 1.0, lastGrant: -9, marcaSeq: 0, ordenSeq: 0, idSeq: 0, ultimaDir: 0, vacioDesde: -1,
+    congT: 0, llenoT: 0,
+    porCarga: { alim: 0, merc: 0, comb: 0, pasa: 0 },
+    ultimo: { alim: -99, merc: -99, comb: -99, pasa: -99 },
+    msg: '', msgT: 0, lens: [0, 0, 0, 0]
+  };
+}
+function aviso(g, t) { g.msg = t; g.msgT = 2.2; }
+function mult(g) { return 1 + 0.5 * Math.min(4, Math.floor(g.racha / 3)); }
+function ocupantes(g) { return g.boats.filter(function (b) { return b.estado === 'entrando' || b.estado === 'canal'; }); }
+function colas(g) {
+  const c = { 1: 0, '-1': 0 };
+  g.boats.forEach(function (b) { if (b.estado === 'llegando' || b.estado === 'espera') c[b.dir]++; });
+  return c;
+}
+function aparecer(g) {
+  if (g.boats.length >= CFG.MAX_BARCOS) return;
+  const dir = g.rand() < 0.5 ? 1 : -1;
+  const spots = SPOTS[dir];
+  let idx = -1;
+  for (let i = 0; i < spots.length; i++) {
+    if (!g.boats.some(function (b) { return b.dir === dir && b.spot === i; })) { idx = i; break; }
+  }
+  if (idx < 0) return;
+  const urg = g.rand() < CFG.URG_PROB;
+  const pm = urg ? CFG.PAC_URG : CFG.PAC;
+  g.boats.push({
+    id: ++g.idSeq, dir: dir, carga: Math.floor(g.rand() * CARGAS.length), urg: urg, pm: pm, pat: pm,
+    x: CFG.ORIGEN[dir], y: spots[idx][1], spot: idx, estado: 'llegando', marca: 0, orden: 0, motivo: ''
+  });
+}
+function ir(b, tx, ty, v, dt) {
+  const dx = tx - b.x, dy = ty - b.y, d = Math.hypot(dx, dy), s = v * dt;
+  if (d <= s) { b.x = tx; b.y = ty; return true; }
+  b.x += dx / d * s; b.y += dy / d * s;
+  return false;
+}
+function bloqueado(g, b) {
+  return g.boats.some(function (o) {
+    return o !== b && o.dir === b.dir && (o.estado === 'entrando' || o.estado === 'canal') &&
+      o.orden < b.orden && Math.hypot(o.x - b.x, o.y - b.y) < 42;
+  });
+}
+function cruzar(g, b) {
+  const c = CARGAS[b.carga];
+  g.cruzaron++; g.racha++; g.mejor = Math.max(g.mejor, g.racha);
+  g.pts += Math.round(c.v * (b.urg ? 2 : 1) * mult(g));
+  g.porCarga[c.k]++; g.ultimo[c.k] = g.t;
+}
+function mover(g, b, dt) {
+  switch (b.estado) {
+    case 'llegando':
+      if (ir(b, SPOTS[b.dir][b.spot][0], b.y, CFG.V, dt)) b.estado = 'espera';
+      break;
+    case 'espera':
+      b.pat -= dt;
+      if (b.pat <= 0) {
+        b.estado = 'impaciente'; b.spot = -1; b.marca = 0; b.motivo = '';
+        g.fueron++; g.racha = 0; g.pts = Math.max(0, g.pts - 5);
+        aviso(g, 'Se fue un barco -5');
+      }
+      break;
+    case 'impaciente':
+      if (ir(b, CFG.ORIGEN[b.dir], b.y, CFG.V, dt)) b.estado = 'fin';
+      break;
+    case 'entrando':
+      if (!bloqueado(g, b) && ir(b, CFG.GATE[b.dir], CFG.Y, CFG.V, dt)) b.estado = 'canal';
+      break;
+    case 'canal':
+      if (!bloqueado(g, b) && ir(b, CFG.SALIDA[b.dir], CFG.Y, CFG.V_CANAL, dt)) { cruzar(g, b); b.estado = 'sale'; }
+      break;
+    case 'sale':
+      if (ir(b, CFG.EDGE[b.dir], CFG.Y, CFG.V, dt)) b.estado = 'fin';
+      break;
+  }
+}
+function conceder(g) {
+  const oc = ocupantes(g);
+  const dirOc = oc.length ? oc[0].dir : 0;
+  if (oc.length) g.vacioDesde = -1; else if (g.vacioDesde < 0) g.vacioDesde = g.t;
+  const cambiando = function (b) {
+    return oc.length === 0 && g.ultimaDir !== 0 && b.dir !== g.ultimaDir && g.t - g.vacioDesde < CFG.CAMBIO;
+  };
+  g.boats.forEach(function (b) {
+    if (b.estado === 'espera' && b.marca) {
+      b.motivo = oc.length >= CFG.CAPACIDAD ? 'canal lleno'
+        : (dirOc && dirOc !== b.dir ? 'otro sentido' : (cambiando(b) ? 'cambio de sentido' : ''));
+    } else b.motivo = '';
+  });
+  if (g.t - g.lastGrant < CFG.GAP || oc.length >= CFG.CAPACIDAD) return;
+  const cands = g.boats.filter(function (b) {
+    return b.estado === 'espera' && b.marca && (dirOc === 0 || b.dir === dirOc) && !cambiando(b);
+  }).sort(function (a, b) { return a.marca - b.marca; });
+  const b = cands[0];
+  if (!b) return;
+  b.estado = 'entrando'; b.spot = -1; b.orden = ++g.ordenSeq; b.motivo = ''; g.lastGrant = g.t; g.ultimaDir = b.dir;
+  if (oc.length + 1 === CFG.CAPACIDAD) { g.convoyes++; g.pts += 15; aviso(g, '¡Convoy de 3! +15'); }
+}
+function paso(g, dt, lens) {
+  if (g.estado !== 'jugando') return;
+  g.t += dt;
+  if (lens >= 0) g.lens[lens] += dt;
+  if (g.msgT > 0) g.msgT -= dt;
+  g.spawnT -= dt;
+  if (g.spawnT <= 0) { aparecer(g); g.spawnT = CFG.NIVELES[g.nivel].cada * (0.8 + 0.4 * g.rand()); }
+  g.boats.forEach(function (b) { mover(g, b, dt); });
+  conceder(g);
+  g.boats = g.boats.filter(function (b) { return b.estado !== 'fin'; });
+  const c = colas(g);
+  if (Math.max(c[1], c[-1]) >= 4) {
+    g.congT += dt;
+    if (g.congT >= 1.5) { g.congT -= 1.5; g.pts = Math.max(0, g.pts - 1); }
+  } else g.congT = 0;
+  if (ocupantes(g).length >= CFG.CAPACIDAD) g.llenoT += dt;
+  if (g.t >= g.dur) { g.t = g.dur; g.estado = 'fin'; }
+}
+function tocar(g, b) {
+  if (b.estado === 'llegando' || b.estado === 'espera') { b.marca = b.marca ? 0 : ++g.marcaSeq; return true; }
+  return false;
+}
+function buscar(g, x, y) {
+  let best = null, bd = 44;
+  g.boats.forEach(function (b) {
+    if (b.estado === 'impaciente' || b.estado === 'fin') return;
+    const d = Math.hypot(b.x - x, b.y - y);
+    if (d < bd) { bd = d; best = b; }
+  });
+  return best;
+}
+function flujoVivo(g) { const t = g.cruzaron + g.fueron; return t ? g.cruzaron / t : null; }
+function resultado(g) {
+  const esp = g.boats.filter(function (b) { return b.estado === 'llegando' || b.estado === 'espera'; }).length;
+  const enCamino = g.boats.filter(function (b) { return b.estado === 'entrando' || b.estado === 'canal' || b.estado === 'sale'; }).length;
+  const cruz = g.cruzaron + enCamino;
+  const tot = cruz + g.fueron + esp;
+  const flujo = tot ? cruz / tot : 0;
+  return { flujo: flujo, estrellas: flujo >= 0.85 ? 3 : (flujo >= 0.65 ? 2 : 1), esperando: esp };
+}
+function nivelCongestion(g) {
+  const c = colas(g), m = Math.max(c[1], c[-1]);
+  return m >= 4 ? 2 : (m >= 2 ? 1 : 0);
+}
+function sugerencia(g) {
+  const oc = ocupantes(g);
+  let dir;
+  if (oc.length) dir = oc[0].dir;
+  else {
+    const sc = { 1: 0, '-1': 0 };
+    g.boats.forEach(function (b) { if (b.estado === 'espera') sc[b.dir] += (b.urg ? 2 : 1) + (1 - b.pat / b.pm); });
+    dir = sc[1] >= sc[-1] ? 1 : -1;
+  }
+  const lista = g.boats.filter(function (b) { return b.estado === 'espera' && b.dir === dir; })
+    .sort(function (a, b) { return (b.urg - a.urg) || (a.pat - b.pat); });
+  return { dir: dir, lista: lista };
+}
+
+/* ---------- dibujo ---------- */
+const COL = {
+  atl: '#1b4f8a', mid: '#1d78a0', med: '#1fa5a0', europa: '#6f9e56', africa: '#cdbd8e',
+  rockL: '#b9b4aa', rockD: '#7c7870', ink: '#eaf4ff', amber: '#ffb703', good: '#52d273', bad: '#ff6b6b',
+  hullE: '#ff9f43', hullW: '#e8f7f5'
+};
+const EMOJI = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+
+function texto(ctx, s, x, y, al, sz, col) {
+  ctx.save();
+  ctx.font = '700 ' + (sz || 13) + 'px Fredoka, system-ui, sans-serif';
+  ctx.textAlign = al || 'center'; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(6,24,44,.85)';
+  ctx.strokeText(s, x, y);
+  ctx.fillStyle = col || COL.ink; ctx.fillText(s, x, y);
+  ctx.restore();
+}
+function poligono(ctx, pts, fill, stroke) {
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 3; ctx.stroke(); }
+}
+function dibujarMapa(ctx, tms) {
+  const W = CFG.W, H = CFG.H;
+  const gr = ctx.createLinearGradient(0, 0, W, 0);
+  gr.addColorStop(0, COL.atl); gr.addColorStop(0.5, COL.mid); gr.addColorStop(1, COL.med);
+  ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = 'rgba(255,255,255,.10)'; ctx.lineWidth = 2;
+  for (let i = 0; i < 46; i++) {
+    const x = (i * 131) % W, y = (i * 79) % H, o = Math.sin(tms * 1.2 + i) * 3;
+    ctx.beginPath(); ctx.moveTo(x + o, y); ctx.quadraticCurveTo(x + o + 8, y - 4, x + o + 16, y); ctx.stroke();
+  }
+  poligono(ctx, [[230, 0], [570, 0], [540, 100], [515, 170], [285, 170], [260, 100]], COL.europa, 'rgba(255,255,255,.55)');
+  poligono(ctx, [[230, H], [570, H], [540, 350], [515, 280], [285, 280], [260, 350]], COL.africa, 'rgba(255,255,255,.55)');
+  poligono(ctx, [[318, 170], [332, 126], [352, 92], [372, 66], [392, 58], [400, 170]], COL.rockL);
+  poligono(ctx, [[392, 58], [412, 74], [432, 104], [448, 140], [458, 170], [400, 170]], COL.rockD);
+  ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(392, 58); ctx.lineTo(392, 36); ctx.stroke();
+  poligono(ctx, [[392, 36], [410, 42], [392, 48]], COL.bad);
+  ctx.save();
+  ctx.setLineDash([8, 8]); ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(CFG.GATE[1], CFG.Y); ctx.lineTo(CFG.GATE[-1], CFG.Y); ctx.stroke();
+  ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(255,183,3,.7)';
+  [CFG.GATE[1], CFG.GATE[-1]].forEach(function (x) { ctx.beginPath(); ctx.moveTo(x, 172); ctx.lineTo(x, 278); ctx.stroke(); });
+  ctx.restore();
+  texto(ctx, 'A · ATLÁNTICO', 115, 24, 'center', 15);
+  texto(ctx, 'B · GIBRALTAR', 400, 22, 'center', 15);
+  texto(ctx, 'C · MEDITERRÁNEO', 685, 24, 'center', 15);
+  texto(ctx, 'EUROPA', 495, 120, 'center', 12, '#dcebd0');
+  texto(ctx, 'PEÑÓN', 400, 150, 'center', 11);
+  texto(ctx, 'ÁFRICA', 400, 330, 'center', 12, '#f6ecd0');
+}
+function dibujarBarco(ctx, b) {
+  const d = b.dir;
+  ctx.save();
+  ctx.translate(b.x, b.y);
+  if (b.estado === 'impaciente') ctx.globalAlpha = 0.55;
+  ctx.fillStyle = d > 0 ? COL.hullE : COL.hullW;
+  ctx.beginPath();
+  ctx.moveTo(-18 * d, -9); ctx.lineTo(14 * d, -9); ctx.lineTo(22 * d, 0); ctx.lineTo(14 * d, 9); ctx.lineTo(-18 * d, 9);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+  if (b.urg) { ctx.strokeStyle = COL.amber; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 27, 0, Math.PI * 2); ctx.stroke(); }
+  ctx.font = '16px ' + EMOJI; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(CARGAS[b.carga].e, -2 * d, 1);
+  ctx.restore();
+}
+function dibujarInsignias(ctx, b) {
+  if (b.estado !== 'llegando' && b.estado !== 'espera') return;
+  if (b.estado === 'espera') {
+    const r = Math.max(0, b.pat / b.pm);
+    ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(b.x - 17, b.y + 17, 34, 5);
+    ctx.fillStyle = r > 0.5 ? COL.good : (r > 0.25 ? COL.amber : COL.bad);
+    ctx.fillRect(b.x - 17, b.y + 17, 34 * r, 5);
+  }
+  const bx = b.x, by = b.y - 24;
+  if (b.marca) {
+    ctx.fillStyle = COL.good; ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#06260f'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(bx - 4, by); ctx.lineTo(bx - 1, by + 3); ctx.lineTo(bx + 4, by - 3); ctx.stroke();
+  } else if (b.estado === 'espera') {
+    ctx.fillStyle = 'rgba(6,24,44,.8)'; ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillRect(bx - 3.5, by - 4, 2.5, 8); ctx.fillRect(bx + 1, by - 4, 2.5, 8);
+  }
+  if (b.motivo) texto(ctx, b.motivo, bx, b.y - 40, 'center', 11, COL.amber);
+}
+function dibujarLente(ctx, g, lens, tms) {
+  const oc = ocupantes(g), c = colas(g);
+  if (lens === 0) {
+    const f = (tms * 0.6) % 1, r = 20 + f * 150;
+    ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,' + (0.5 * (1 - f)) + ')'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(392, 58, r, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    g.boats.forEach(function (b) {
+      if (b.estado !== 'llegando') return;
+      const s = SPOTS[b.dir][b.spot];
+      ctx.save(); ctx.setLineDash([5, 6]); ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(s[0], s[1]); ctx.stroke(); ctx.restore();
+    });
+    [1, -1].forEach(function (dir) {
+      const llegan = g.boats.filter(function (b) { return b.dir === dir && b.estado === 'llegando'; }).length;
+      texto(ctx, 'Llegan: ' + llegan, dir > 0 ? 14 : CFG.W - 14, 52, dir > 0 ? 'left' : 'right', 13);
+      if (c[dir] + llegan >= 4) {
+        const x = CFG.GATE[dir], a = 0.6 + 0.4 * Math.sin(tms * 6);
+        ctx.save(); ctx.globalAlpha = a;
+        poligono(ctx, [[x, 184], [x - 11, 204], [x + 11, 204]], COL.amber);
+        ctx.restore();
+        texto(ctx, 'Se viene cola', x, 176, 'center', 12, COL.amber);
+      }
+    });
+  } else if (lens === 1) {
+    const sg = sugerencia(g);
+    for (let i = 0; i < CFG.CAPACIDAD; i++) {
+      const x = 352 + i * 48;
+      ctx.fillStyle = i < oc.length ? 'rgba(255,183,3,.9)' : 'rgba(255,255,255,.2)';
+      ctx.fillRect(x - 18, 190, 36, 18);
+      ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.strokeRect(x - 18, 190, 36, 18);
+    }
+    texto(ctx, 'Canal ' + oc.length + '/' + CFG.CAPACIDAD, 400, 182, 'center', 12);
+    sg.lista.slice(0, 3).forEach(function (b, i) {
+      ctx.fillStyle = COL.amber; ctx.beginPath(); ctx.arc(b.x + 22, b.y - 26, 11, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#2b1d00'; ctx.font = '700 13px Fredoka, system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(i + 1), b.x + 22, b.y - 25);
+    });
+    texto(ctx, sg.dir > 0 ? 'Sugerido: abrir el paso ▶' : 'Sugerido: ◀ abrir el paso', 400, 264, 'center', 13, COL.amber);
+  } else if (lens === 2) {
+    g.boats.forEach(function (b) {
+      if (b.estado === 'fin' || b.estado === 'impaciente') return;
+      const car = CARGAS[b.carga];
+      ctx.strokeStyle = COLC[b.carga]; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(b.x, b.y, 22, 0, Math.PI * 2); ctx.stroke();
+      texto(ctx, '+' + (car.v * (b.urg ? 2 : 1)), b.x, b.y + 36, 'center', 12, COLC[b.carga]);
+    });
+    CARGAS.forEach(function (car, i) {
+      const x = 235 + i * 100, activa = g.porCarga[car.k] > 0 && g.t - g.ultimo[car.k] < 20;
+      ctx.save(); ctx.globalAlpha = activa ? 1 : 0.4;
+      ctx.fillStyle = 'rgba(6,24,44,.75)'; ctx.fillRect(x - 40, 414, 80, 28);
+      ctx.strokeStyle = COLC[i]; ctx.lineWidth = 2; ctx.strokeRect(x - 40, 414, 80, 28);
+      ctx.font = '16px ' + EMOJI; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff';
+      ctx.fillText(car.e, x - 16, 429);
+      ctx.restore();
+      texto(ctx, '×' + g.porCarga[car.k], x + 14, 429, 'center', 13, activa ? COLC[i] : COL.ink);
+    });
+  } else {
+    const bloq = oc.length ? -oc[0].dir : 0, lleno = oc.length >= CFG.CAPACIDAD;
+    [1, -1].forEach(function (dir) {
+      const n = c[dir], x = dir > 0 ? 10 : CFG.W - 24, h = Math.min(8, n) * 24;
+      const trabado = (bloq === dir || lleno) && n > 0;
+      if (trabado) {
+        ctx.fillStyle = 'rgba(255,107,107,.22)'; ctx.fillRect(dir > 0 ? 95 : 535, 105, 170, 200);
+        texto(ctx, 'Espera por el paso', dir > 0 ? 180 : 620, 320, 'center', 12, COL.bad);
+      }
+      ctx.fillStyle = trabado ? COL.bad : COL.good; ctx.fillRect(x, 400 - h, 14, h);
+      ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.5; ctx.strokeRect(x, 200, 14, 200);
+      texto(ctx, 'Presión', x + 7, 190, 'center', 11);
+    });
+    texto(ctx, oc.length ? (oc[0].dir > 0 ? 'Pasa el Atlántico ▶' : '◀ Pasa el Mediterráneo') : 'Paso libre', 400, 264, 'center', 13, COL.amber);
+  }
+}
+function dibujar(ctx, g, lens, tms) {
+  dibujarMapa(ctx, tms);
+  const orden = g.boats.slice().sort(function (a, b) { return a.y - b.y; });
+  orden.forEach(function (b) { dibujarBarco(ctx, b); });
+  dibujarLente(ctx, g, lens, tms);
+  orden.forEach(function (b) { dibujarInsignias(ctx, b); });
+  if (g.msgT > 0) {
+    ctx.save(); ctx.globalAlpha = Math.min(1, g.msgT);
+    texto(ctx, g.msg, 400, 372, 'center', 20, COL.amber);
+    ctx.restore();
+  }
+}
+/*CORE_END*/
+
+/*UI_START*/
+(function () {
+  const $ = function (id) { return document.getElementById(id); };
+  const ROLES = [
+    { n: 'Observador', t: 'Ves quién llega pronto y dónde se viene la cola.' },
+    { n: 'Coordinador', t: 'Ves el orden sugerido y los lugares libres del canal.' },
+    { n: 'Comerciante', t: 'Ves la carga de cada barco y qué rutas siguen activas.' },
+    { n: 'Estratega', t: 'Ves quién espera por culpa de quién usa el paso.' }
+  ];
+  const cv = $('cv'), ctx = cv.getContext('2d');
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = CFG.W * dpr; cv.height = CFG.H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  let g = null, lens = 0, last = 0, raf = 0, nivel = 1;
+
+  function mostrar(id) { ['menu', 'juego', 'fin'].forEach(function (k) { $(k).hidden = k !== id; }); }
+  function elegirLente(i) {
+    lens = i;
+    document.querySelectorAll('.lente').forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.dataset.l) === i)); });
+    $('lectura').innerHTML = '<b>' + ROLES[i].n + '.</b> ' + ROLES[i].t;
+  }
+  function hud() {
+    $('tTiempo').textContent = Math.max(0, Math.ceil(g.dur - g.t));
+    $('tPuntos').textContent = g.pts;
+    $('tRacha').textContent = '×' + mult(g).toFixed(1);
+    $('tCruz').textContent = g.cruzaron;
+    $('tFueron').textContent = g.fueron;
+    const fv = flujoVivo(g);
+    $('flujoTxt').textContent = fv === null ? '—' : Math.round(fv * 100) + '%';
+    $('flujoFill').style.width = (fv === null ? 0 : fv * 100) + '%';
+    const n = nivelCongestion(g);
+    $('semaforo').dataset.n = String(n);
+    $('congTxt').textContent = ['Fluido', 'Se forma cola', '¡Atasco!'][n];
+    const oc = ocupantes(g).length;
+    $('canalTxt').textContent = oc + '/' + CFG.CAPACIDAD;
+    Array.prototype.forEach.call($('huecos').children, function (s, i) { s.classList.toggle('on', i < oc); });
+  }
+  function fin() {
+    const r = resultado(g);
+    $('estrellas').textContent = '★'.repeat(r.estrellas) + '☆'.repeat(3 - r.estrellas);
+    $('estrellas').setAttribute('aria-label', r.estrellas + ' de 3 estrellas');
+    $('fPuntos').textContent = g.pts; $('fCruz').textContent = g.cruzaron;
+    $('fFueron').textContent = g.fueron; $('fRacha').textContent = g.mejor;
+    const pct = Math.round(g.llenoT / g.dur * 100);
+    const usadas = g.lens.filter(function (s) { return s > 3; }).length;
+    const items = [
+      'El canal estuvo lleno el ' + pct + '% del tiempo. Un punto angosto limita a todas las rutas que dependen de él.',
+      g.convoyes ? 'Armaste ' + g.convoyes + (g.convoyes > 1 ? ' convoyes' : ' convoy') + ' de 3 barcos: aprovechaste la capacidad del paso.'
+                 : 'No armaste convoyes. Probá darle paso a 3 barcos seguidos del mismo sentido.',
+      usadas > 1 ? 'Usaste ' + usadas + ' lentes. Cada una mostró algo distinto del mismo lugar.'
+                 : 'Probá otra lente: el mismo lugar vale distinto según el rol.',
+      'Dato: en su parte más angosta, el estrecho de Gibraltar mide unos 14 km.'
+    ];
+    const ul = $('lecciones'); ul.textContent = '';
+    items.forEach(function (t) { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+    mostrar('fin');
+  }
+  function bucle(ts) {
+    const dt = last ? Math.min(0.05, (ts - last) / 1000) : 0;
+    last = ts;
+    paso(g, dt, lens);
+    dibujar(ctx, g, lens, ts / 1000);
+    hud();
+    if (g.estado === 'fin') { fin(); return; }
+    raf = requestAnimationFrame(bucle);
+  }
+  function comenzar(n) {
+    nivel = n; g = nuevoJuego(n);
+    cancelAnimationFrame(raf); last = 0;
+    mostrar('juego'); elegirLente(lens);
+    raf = requestAnimationFrame(bucle);
+  }
+  document.querySelectorAll('.nivel').forEach(function (b) { b.addEventListener('click', function () { comenzar(Number(b.dataset.n)); }); });
+  document.querySelectorAll('.lente').forEach(function (b) { b.addEventListener('click', function () { elegirLente(Number(b.dataset.l)); }); });
+  $('salir').addEventListener('click', function () { cancelAnimationFrame(raf); mostrar('menu'); });
+  $('otra').addEventListener('click', function () { comenzar(nivel); });
+  $('elegir').addEventListener('click', function () { mostrar('menu'); });
+  cv.addEventListener('pointerdown', function (e) {
+    if (!g || g.estado !== 'jugando') return;
+    const r = cv.getBoundingClientRect();
+    const x = (e.clientX - r.left) * CFG.W / r.width, y = (e.clientY - r.top) * CFG.H / r.height;
+    const b = buscar(g, x, y);
+    if (!b) return;
+    if (!tocar(g, b)) aviso(g, 'Ese barco ya va en camino');
+    e.preventDefault();
+  });
+  document.addEventListener('keydown', function (e) {
+    if ($('juego').hidden) return;
+    if (e.key >= '1' && e.key <= '4') elegirLente(Number(e.key) - 1);
+  });
+  elegirLente(0);
+})();
+/*UI_END*/
+</script>
+
+</body></html>
