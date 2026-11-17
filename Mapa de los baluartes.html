@@ -1,0 +1,323 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mapa de los baluartes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+:root{
+  /* Concept: schematic map on the left, one focus card on the right. The lines carry the argument: a post is as strong as what reaches it. */
+  --bg:#eceff0;--surface:#f7f9f9;--ink:#16221f;--muted:#566763;--line:#cbd5d2;
+  --land:#dde6e1;--land-line:#a9bab2;--water:#7fb1c6;
+  --accent:#0e6e72;--cut:#b3261e;--ind:#8a5a2b;--pop:#b9791a;
+  --e-col:#2b6a8f;--e-ind:#2a7a5a;--e-tri:#7b4f95;--e-cha:#8a6a3a;
+  --flow-t:#0b5558;--flow-g:#c47a0c;
+  --f-head:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1514;--surface:#172120;--ink:#e3ece9;--muted:#9bada8;--line:#2b3b38;
+  --land:#1b2825;--land-line:#38524b;--water:#3c7690;
+  --accent:#4fc0c4;--cut:#ff7b72;--ind:#d3a066;--pop:#e0a447;
+  --e-col:#6fb2d6;--e-ind:#5fc296;--e-tri:#bd93d6;--e-cha:#c9a66e;
+  --flow-t:#8fe0e3;--flow-g:#f0b94d;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1514;--surface:#172120;--ink:#e3ece9;--muted:#9bada8;--line:#2b3b38;
+  --land:#1b2825;--land-line:#38524b;--water:#3c7690;
+  --accent:#4fc0c4;--cut:#ff7b72;--ind:#d3a066;--pop:#e0a447;
+  --e-col:#6fb2d6;--e-ind:#5fc296;--e-tri:#bd93d6;--e-cha:#c9a66e;
+  --flow-t:#8fe0e3;--flow-g:#f0b94d;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-block:20px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto}
+header{margin-bottom:16px}
+h1{font:700 clamp(24px,4vw,34px)/1.1 var(--f-head);margin:0 0 6px;text-wrap:balance;letter-spacing:-.01em}
+header p{margin:0;color:var(--muted);max-width:60ch}
+.grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:20px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+/* map */
+.mapbox{min-width:0}
+svg#map{display:block;width:100%;height:auto;max-height:78vh}
+.land{fill:var(--land);stroke:var(--land-line);stroke-width:1.5}
+.river{fill:none;stroke:var(--water);stroke-width:5;stroke-linecap:round}
+.river.apa{stroke-width:3}
+.rlabel{font:italic 500 9px var(--f-body);fill:var(--muted)}
+.region{font:600 9px var(--f-body);fill:var(--muted);letter-spacing:.14em}
+.hatch-line{stroke:var(--ind);stroke-width:1.4}
+.zone{fill:url(#hatch);stroke:var(--ind);stroke-width:1.2;stroke-dasharray:4 3}
+#ind{opacity:0;transition:opacity .4s}
+#ind.show{opacity:.75}
+.zlabel{font:italic 500 8.5px var(--f-body);fill:var(--ind)}
+.pd{fill:var(--pop);opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.2);transition:opacity .35s,transform .35s}
+#pop.show .pd{opacity:.95;transform:scale(1)}
+
+.lk{fill:none;stroke:var(--land-line);stroke-width:1.6;transition:stroke .3s,opacity .3s,stroke-width .3s}
+.lk.on{stroke:var(--accent);stroke-width:2}
+.lk.dim{opacity:.35}
+.lk.cut{stroke:var(--cut);stroke-width:2;stroke-dasharray:3 6}
+.fl{fill:none;stroke-linecap:round;opacity:0;transition:opacity .3s;pointer-events:none}
+.fl.f-n{stroke:var(--accent);stroke-width:3;stroke-dasharray:.1 9;opacity:1;animation:mv 1s linear infinite}
+.fl.f-t{stroke:var(--flow-t);stroke-width:3.5;stroke-dasharray:6 6;opacity:1;animation:mv 1s linear infinite}
+.fl.f-g{stroke:var(--flow-g);stroke-width:5;stroke-dasharray:.1 10;opacity:1;animation:mv 1.2s linear infinite}
+@keyframes mv{to{stroke-dashoffset:-20}}
+
+.node{cursor:pointer;outline:none}
+.node .dot{stroke:var(--bg);stroke-width:2.5;transition:r .2s}
+.node:hover .dot,.node:focus-visible .dot{r:13}
+.node .core{fill:var(--bg);pointer-events:none}
+.node .halo{fill:none;stroke:var(--accent);stroke-width:2;opacity:0}
+.node.tgt .halo{animation:pulse 1.3s ease-out infinite}
+@keyframes pulse{0%{opacity:.9;r:12}100%{opacity:0;r:26}}
+.node.sel .core{fill:var(--ink)}
+.node:focus-visible .hit{stroke:var(--accent);stroke-width:2}
+.hit{fill:transparent}
+.nlabel{font:600 10.5px var(--f-body);fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:3.5px;stroke-linejoin:round;pointer-events:none}
+.hub rect{fill:var(--ink)}
+.ring{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round;transition:stroke-dasharray .6s ease,stroke .3s}
+.ring.low{stroke:var(--cut)}
+
+.toggles{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.sw{display:inline-flex;align-items:center;gap:9px;font:500 13px var(--f-body);color:var(--ink);background:var(--surface);
+  border:1px solid var(--line);border-radius:999px;padding:7px 14px 7px 8px;cursor:pointer}
+.sw .knob{width:26px;height:16px;border-radius:999px;background:var(--line);position:relative;transition:background .2s;flex:none}
+.sw .knob::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--surface);transition:transform .2s}
+.sw[aria-pressed="true"] .knob{background:var(--accent)}
+.sw[aria-pressed="true"] .knob::after{transform:translateX(10px)}
+.sw.danger[aria-pressed="true"] .knob{background:var(--cut)}
+.sw:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dotk{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+/* panel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.era{display:inline-flex;align-items:center;gap:7px;font:600 12px var(--f-body);color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.panel h2{font:700 22px/1.2 var(--f-head);margin:6px 0 6px;text-wrap:balance}
+.lead{margin:0 0 14px;color:var(--muted)}
+.funcs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.fn{display:inline-flex;align-items:center;gap:6px;font:500 12.5px var(--f-body);padding:5px 10px;border-radius:6px;border:1px solid var(--line);color:var(--muted);opacity:.5}
+.fn.on{opacity:1;color:var(--ink);border-color:var(--ink)}
+.fn svg{width:15px;height:15px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px}
+.chip{font:500 12.5px var(--f-body);color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer;text-align:left}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.detail{min-height:3em;margin:0 0 16px;font-size:14px}
+.meter{margin-bottom:10px}
+.mrow{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.mrow b{color:var(--ink);font-weight:600}
+.bar{height:9px;border-radius:5px;background:var(--line);overflow:hidden}
+.fill{height:100%;border-radius:5px;transition:width .6s ease,background .3s}
+.fill.s{background:var(--muted)}
+.fill.c{background:var(--accent)}
+.fill.c.low{background:var(--cut)}
+.status{margin:12px 0 0;font-size:14px;min-height:3em}
+.note{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.tiny{font-size:11.5px;color:var(--muted);margin:6px 0 0}
+@media (prefers-reduced-motion:reduce){.fl,.node.tgt .halo{animation:none}.ring,.fill,.lk,.pd,#ind{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Mapa de los baluartes</h1>
+    <p>Un baluarte sostiene presencia, comunicaciones y abastecimiento. Toca un punto y luego prueba cortarle el abastecimiento.</p>
+  </header>
+  <div class="grid">
+    <div class="mapbox">
+      <svg id="map" viewBox="0 0 360 540" role="img" aria-label="Mapa esquemático de Paraguay con seis baluartes y sus conexiones">
+        <defs>
+          <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="6" class="hatch-line"/>
+          </pattern>
+        </defs>
+        <path class="land" d="M50 90 L190 32 L192 195 L335 150 L340 265 L322 345 L328 450 L262 520 L232 508 L180 470 L50 450 Z"/>
+        <path class="river" d="M190 32 C188 90 195 150 192 195 S205 250 200 276 S210 350 212 389 S224 460 232 508"/>
+        <path class="river apa" d="M192 195 C230 190 290 178 336 152"/>
+        <text class="rlabel" x="198" y="335" transform="rotate(-90 198 335)" text-anchor="middle">R. Paraguay</text>
+        <text class="rlabel" x="308" y="162" text-anchor="middle">R. Apa</text>
+        <text class="region" x="95" y="410" text-anchor="middle">CHACO</text>
+        <text class="region" x="278" y="340" text-anchor="middle">REGIÓN ORIENTAL</text>
+        <g id="ind">
+          <ellipse class="zone" cx="215" cy="160" rx="92" ry="52"/>
+          <ellipse class="zone" cx="100" cy="245" rx="54" ry="82"/>
+          <text class="zlabel" x="215" y="104" text-anchor="middle">pueblos mbayá</text>
+          <text class="zlabel" x="100" y="340" text-anchor="middle">grupos chaqueños</text>
+        </g>
+        <g id="pop"></g>
+        <g id="links"></g>
+        <g id="nodes"></g>
+        <circle id="ring" class="ring" r="21" pathLength="100"/>
+      </svg>
+      <div class="toggles">
+        <button class="sw danger" id="t-cut" aria-pressed="false"><span class="knob"></span>Cortar el abastecimiento</button>
+        <button class="sw" id="t-pop" aria-pressed="false"><span class="knob"></span>Defender poblando</button>
+        <button class="sw" id="t-ind" aria-pressed="true"><span class="knob"></span>Pueblos indígenas</button>
+      </div>
+      <div class="legend">
+        <span><i class="dotk" style="background:var(--e-col)"></i>Colonial</span>
+        <span><i class="dotk" style="background:var(--e-ind)"></i>Estado independiente</span>
+        <span><i class="dotk" style="background:var(--e-tri)"></i>Triple Alianza</span>
+        <span><i class="dotk" style="background:var(--e-cha)"></i>Guerra del Chaco</span>
+      </div>
+      <p class="tiny">El territorio no estaba vacío: hubo conflictos con pueblos indígenas, sobre todo mbayá y otros grupos chaqueños. Esquema ilustrativo, posiciones aproximadas.</p>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+</div>
+
+<script>
+const NODES={
+  conc:{name:'Villa Real de la Concepción',short:'Concepción',era:'col',x:214,y:276,lx:214,ly:304,an:'middle',fn:'agc',
+    text:'Base desde la cual se organizaba una red de presencia territorial en el norte.'},
+  apa:{name:'Fortines del Apa',short:'Fortines del Apa',era:'col',x:266,y:190,lx:266,ly:214,an:'middle',fn:'gc',
+    text:'Cadena de puestos sobre el río Apa para vigilar la frontera.'},
+  borbon:{name:'Fuerte Borbón (hoy Fuerte Olimpo)',short:'Fuerte Borbón',era:'col',x:176,y:132,lx:162,ly:136,an:'end',fn:'gc',
+    text:'Fuerte sobre el río Paraguay que se sostenía con apoyo desde el sur.'},
+  tevego:{name:'Colonia Tevegó',short:'Tevegó',era:'ind',x:160,y:236,lx:146,ly:240,an:'end',fn:'ag',
+    text:'Colonia de frontera que dependía del apoyo de Concepción.'},
+  humaita:{name:'Humaitá',short:'Humaitá',era:'tri',x:240,y:484,lx:254,ly:488,an:'start',fn:'gc',
+    text:'Fortaleza sobre el río Paraguay que cerraba el paso fluvial hacia Asunción.'},
+  nanawa:{name:'Fortín Nanawa',short:'Nanawa',era:'cha',x:112,y:318,lx:112,ly:341,an:'middle',fn:'g',
+    text:'Línea fortificada del Chaco, defendida en enero y julio de 1933.'}
+};
+const HUB={x:208,y:389};
+const ERA={col:['Colonial','--e-col'],ind:['Estado independiente','--e-ind'],tri:['Guerra de la Triple Alianza','--e-tri'],cha:['Guerra del Chaco','--e-cha']};
+const ICON={
+  a:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 5h12v8H2zM2 5l2-3h8l2 3M6 8h4"/></svg>',
+  g:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 1.5l5.5 2v4c0 3.3-2.4 5.6-5.5 7-3.1-1.4-5.5-3.7-5.5-7v-4z"/></svg>',
+  c:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="12" r="1.2" fill="currentColor"/><path d="M4.8 9.2a4.5 4.5 0 016.4 0M2.4 6.8a8 8 0 0111.2 0"/></svg>'
+};
+const FN={a:'Abastece',g:'Guarnece',c:'Comunica'};
+const LINKS=[
+  {a:'conc',b:'apa',bend:-16},{a:'conc',b:'borbon',bend:14},{a:'conc',b:'tevego',bend:-10},
+  {a:'hub',b:'conc',bend:8},{a:'hub',b:'humaita',bend:-10},{a:'hub',b:'nanawa',bend:-18}
+];
+const CHIPS=[
+  {t:'Cadena de fortines del Apa',d:'Contribuía a formar una cadena de fortines sobre el río Apa.',nodes:['apa'],flow:'n'},
+  {t:'Sostén del Fuerte Borbón',d:'Ayudaba al sostenimiento del Fuerte Borbón.',nodes:['borbon'],flow:'n'},
+  {t:'Colonia Tevegó',d:'Participaba en el mantenimiento de la colonia Tevegó.',nodes:['tevego'],flow:'n'},
+  {t:'Tropas',d:'Proveía tropas para las guarniciones fronterizas.',nodes:['apa','borbon'],flow:'t'},
+  {t:'Ganado',d:'Proveía ganado para su mantenimiento.',nodes:['apa','borbon','tevego'],flow:'g'},
+  {t:'Poblar el norte',d:'Favorecía la expansión de asentamientos y actividades económicas en el norte.',nodes:[],pop:true}
+];
+const state={sel:'conc',cut:false,pop:false,ind:true,chip:null};
+const $=s=>document.querySelector(s);
+const P=id=>id==='hub'?HUB:NODES[id];
+const NS='http://www.w3.org/2000/svg';
+
+function pathD(l){
+  const a=P(l.a),b=P(l.b),mx=(a.x+b.x)/2,my=(a.y+b.y)/2,dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||1;
+  const cx=mx+(-dy/len)*l.bend,cy=my+(dx/len)*l.bend;
+  return `M${a.x} ${a.y} Q${cx} ${cy} ${b.x} ${b.y}`;
+}
+
+/* static map parts */
+(function build(){
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const anchors=[[214,276,30,9],[243,232,16,5],[266,190,20,5],[160,236,22,5],[176,132,18,4],[292,240,22,5],[255,305,18,4]];
+  let dots='',i=0;
+  anchors.forEach(([x,y,r,n])=>{for(let k=0;k<n;k++){const ang=rnd()*6.283,d=8+rnd()*r;
+    dots+=`<rect class="pd" x="${(x+Math.cos(ang)*d-2).toFixed(1)}" y="${(y+Math.sin(ang)*d-2).toFixed(1)}" width="4" height="4" style="transition-delay:${i++*28}ms"/>`;}});
+  $('#pop').innerHTML=dots;
+
+  $('#links').innerHTML=LINKS.map((l,k)=>`<path id="lk${k}" class="lk" d="${pathD(l)}"/><path id="fl${k}" class="fl" d="${pathD(l)}"/>`).join('');
+
+  let h=`<g class="hub"><rect x="${HUB.x-5}" y="${HUB.y-5}" width="10" height="10"/><text class="nlabel" x="${HUB.x+11}" y="${HUB.y+4}">Asunción</text></g>`;
+  for(const id in NODES){const n=NODES[id];
+    h+=`<g class="node" id="n-${id}" data-id="${id}" tabindex="0" role="button" aria-label="${n.name}">
+      <circle class="halo" cx="${n.x}" cy="${n.y}" r="12"/>
+      <circle class="hit" cx="${n.x}" cy="${n.y}" r="19"/>
+      <circle class="dot" cx="${n.x}" cy="${n.y}" r="11" style="fill:var(${ERA[n.era][1]})"/>
+      <circle class="core" cx="${n.x}" cy="${n.y}" r="3.2"/>
+      <text class="nlabel" x="${n.lx}" y="${n.ly}" text-anchor="${n.an}">${n.short}</text></g>`;}
+  $('#nodes').innerHTML=h;
+  document.querySelectorAll('.node').forEach(g=>{
+    const go=()=>select(g.dataset.id);
+    g.addEventListener('click',go);
+    g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
+  });
+})();
+
+function select(id){state.sel=id;state.chip=null;renderPanel();update();}
+
+function renderPanel(){
+  const n=NODES[state.sel],e=ERA[n.era];
+  const funcs=['a','g','c'].map(f=>`<span class="fn${n.fn.includes(f)?' on':''}">${ICON[f]}${FN[f]}</span>`).join('');
+  let extra='';
+  if(state.sel==='conc'){
+    extra=`<div class="chips">${CHIPS.map((c,i)=>`<button class="chip" data-i="${i}" aria-pressed="false">${c.t}</button>`).join('')}</div>
+    <p class="detail" id="detail"></p>`;
+  }
+  $('#panel').innerHTML=`
+    <span class="era"><i class="dotk" style="background:var(${e[1]})"></i>${e[0]}</span>
+    <h2>${n.name}</h2>
+    <p class="lead">${n.text}</p>
+    <div class="funcs">${funcs}</div>
+    ${extra}
+    <div class="meter"><div class="mrow"><span>Soldados</span><b>Sin cambios</b></div><div class="bar"><div class="fill s" style="width:78%"></div></div></div>
+    <div class="meter"><div class="mrow"><span>Capacidad de respuesta</span><b id="cap-t">Alta</b></div><div class="bar"><div class="fill c" id="cap-f" style="width:100%"></div></div></div>
+    <p class="status" id="status"></p>
+    <p class="note" id="note"></p>`;
+  document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+    const c=CHIPS[+b.dataset.i];
+    if(c.pop){state.pop=!state.pop;}
+    else{state.chip=(state.chip===+b.dataset.i)?null:+b.dataset.i;}
+    update();
+  }));
+}
+
+function update(){
+  const sel=state.sel,n=NODES[sel];
+  const chip=(state.chip!==null&&sel==='conc')?CHIPS[state.chip]:null;
+  LINKS.forEach((l,k)=>{
+    const touch=l.a===sel||l.b===sel;
+    const tgt=chip&&l.a==='conc'&&chip.nodes.includes(l.b);
+    let cls='lk',fl='fl';
+    if(!touch||(chip&&!tgt&&!state.cut)) cls+=' dim';
+    else if(state.cut) cls+=' cut';
+    else{cls+=' on';fl+=' f-'+(chip?chip.flow:'n');}
+    $('#lk'+k).setAttribute('class',cls);
+    $('#fl'+k).setAttribute('class',fl);
+  });
+  for(const id in NODES){
+    const g=$('#n-'+id);
+    g.classList.toggle('sel',id===sel);
+    g.classList.toggle('tgt',!!(chip&&chip.nodes.includes(id)));
+  }
+  const cap=state.cut?(state.pop?45:15):100;
+  const ring=$('#ring');
+  ring.setAttribute('cx',n.x);ring.setAttribute('cy',n.y);
+  ring.setAttribute('transform',`rotate(-90 ${n.x} ${n.y})`);
+  ring.style.strokeDasharray=`${cap} ${100-cap}`;
+  ring.classList.toggle('low',state.cut);
+  const f=$('#cap-f');
+  if(f){f.style.width=cap+'%';f.classList.toggle('low',state.cut);
+    $('#cap-t').textContent=cap>70?'Alta':cap>30?'Media':'Baja';
+    $('#status').textContent=state.cut
+      ?(state.pop?'Los asentamientos cercanos sostienen parte de la respuesta, pero el puesto sigue aislado.'
+        :'Sin alimentos, refuerzos ni información, el puesto pierde capacidad aunque conserve sus soldados.')
+      :'Recibe alimentos, refuerzos e información. Prueba cortar el abastecimiento.';
+    $('#note').textContent=state.sel==='conc'
+      ?'No era una muralla que protegía una ciudad: mantenía presencia, vigilancia y capacidad de respuesta en una frontera extensa.'
+      :'Defender dependía de lo que el puesto podía recibir, no solo de cuántos soldados tenía.';
+  }
+  document.querySelectorAll('.chip').forEach(b=>{
+    const c=CHIPS[+b.dataset.i];
+    b.setAttribute('aria-pressed',c.pop?String(state.pop):String(state.chip===+b.dataset.i));
+  });
+  const d=$('#detail');
+  if(d) d.textContent=chip?chip.d:(state.pop?CHIPS[5].d:'Toca una función para ver qué sostenía Concepción.');
+  $('#pop').classList.toggle('show',state.pop);
+  $('#ind').classList.toggle('show',state.ind);
+  $('#t-cut').setAttribute('aria-pressed',state.cut);
+  $('#t-pop').setAttribute('aria-pressed',state.pop);
+  $('#t-ind').setAttribute('aria-pressed',state.ind);
+}
+
+$('#t-cut').addEventListener('click',()=>{state.cut=!state.cut;update();});
+$('#t-pop').addEventListener('click',()=>{state.pop=!state.pop;update();});
+$('#t-ind').addEventListener('click',()=>{state.ind=!state.ind;update();});
+renderPanel();update();
+</script>
+
+</body></html>
