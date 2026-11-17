@@ -1,0 +1,591 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Autonomía, de Asunción a Marte</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: panel de aula. A la izquierda los estudiantes, a la derecha el detalle del seleccionado;
+   debajo, intervención, evidencia, portafolio y notas del mapa.
+   Dos mundos: rojo tierra = Asunción 1867, índigo de atardecer marciano = Marte. */
+:root{
+  --bg:#F2F4F7; --surface:#FFFFFF; --surface-2:#E8ECF1; --ink:#1B2230; --ink-2:#4A5568; --line:#D3DAE3;
+  --tierra:#A9502A; --tierra-soft:#F4E2D9; --marte:#4B4FA3; --marte-soft:#E3E4F5;
+  --ok:#1C7F54; --ok-soft:#DDF1E7; --warn:#946010; --warn-soft:#FAEBCB; --crit:#C42B3A; --crit-soft:#FADDE0;
+  --o2:#1F8F6B; --agua:#1C80B0; --en:#B97A0E; --oro:#C9972B;
+  --display:'Bricolage Grotesque',system-ui,sans-serif; --body:'DM Sans',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161E; --surface:#1A202B; --surface-2:#252D3A; --ink:#E8ECF2; --ink-2:#A8B3C3; --line:#2F3948;
+    --tierra:#E59068; --tierra-soft:#3B261B; --marte:#A3A8F2; --marte-soft:#26284B;
+    --ok:#52C890; --ok-soft:#173A2B; --warn:#E3AB48; --warn-soft:#3C2E12; --crit:#F27783; --crit-soft:#431D23;
+    --o2:#4CC59C; --agua:#4DB1E0; --en:#E3A93B; --oro:#E5B84B; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161E; --surface:#1A202B; --surface-2:#252D3A; --ink:#E8ECF2; --ink-2:#A8B3C3; --line:#2F3948;
+  --tierra:#E59068; --tierra-soft:#3B261B; --marte:#A3A8F2; --marte-soft:#26284B;
+  --ok:#52C890; --ok-soft:#173A2B; --warn:#E3AB48; --warn-soft:#3C2E12; --crit:#F27783; --crit-soft:#431D23;
+  --o2:#4CC59C; --agua:#4DB1E0; --en:#E3A93B; --oro:#E5B84B; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(28px,4.4vw,40px);font-weight:700}
+h2{font-size:20px;font-weight:700}
+h3{font-size:15px;font-weight:600}
+p{margin:0}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+.lead{max-width:68ch;color:var(--ink-2)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--marte);outline-offset:2px}
+
+header{display:flex;flex-direction:column;gap:10px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:7px 12px;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-size:13px}
+.btn:hover{border-color:var(--ink-2)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.summary{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:14px;color:var(--ink-2)}
+.summary b{color:var(--ink);font-variant-numeric:tabular-nums}
+
+.main{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.roster{display:flex;flex-direction:column;gap:10px;min-width:0}
+.stu{display:flex;flex-direction:column;gap:8px;text-align:left;width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.stu:hover{border-color:var(--ink-2)}
+.stu[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.stu-top,.stu-sub{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.stu-name{font-weight:700;font-size:16px}
+.stu-step{font-size:13px;color:var(--ink-2)}
+.bar{display:block;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ink-2);transition:width .4s}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.crit{background:var(--crit-soft);color:var(--crit)}
+.pill.idle{background:var(--surface-2);color:var(--ink-2)}
+.zone{font-size:12px;font-weight:700;padding:2px 8px;border-radius:5px;white-space:nowrap}
+.zone.t{background:var(--tierra-soft);color:var(--tierra)}
+.zone.m{background:var(--marte-soft);color:var(--marte)}
+
+.detail{display:flex;flex-direction:column;gap:20px}
+.d-head{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center}
+.d-head .spacer{flex:1}
+.block{display:flex;flex-direction:column;gap:10px;min-width:0}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+ol.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}
+.steps li{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-2);padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+.steps .num{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;border:1.5px solid var(--ink-2)}
+.steps li.done{color:var(--ink)}
+.steps li.done .num{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.steps li.cur{border-color:var(--ink);color:var(--ink);font-weight:700}
+.libro{display:flex;gap:6px;align-items:center}
+.slot{flex:1;height:16px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line)}
+.slot.on{background:var(--oro);border-color:var(--oro)}
+.libro-n{font-variant-numeric:tabular-nums;font-weight:700;min-width:84px;text-align:right;font-size:14px}
+.gauges{display:flex;flex-direction:column;gap:9px}
+.gauges.off{opacity:.45}
+.gauge{display:grid;grid-template-columns:78px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:14px}
+.track{position:relative;height:12px;border-radius:6px;background:var(--surface-2);overflow:hidden}
+.fill{height:100%;border-radius:6px;transition:width .4s,background-color .3s}
+.mark{position:absolute;top:0;bottom:0;width:2px;background:var(--ink);opacity:.55}
+.gv{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.gv.crit{color:var(--crit);font-weight:700}
+.gv.warn{color:var(--warn);font-weight:700}
+.note{font-size:13px;color:var(--ink-2)}
+.spark{overflow-x:auto}
+.spark svg{display:block;width:100%;min-width:300px;height:auto}
+.spark .grid{stroke:var(--line);stroke-width:1}
+.spark .thr{stroke:var(--crit);stroke-width:1;stroke-dasharray:3 3}
+.spark .tx{fill:var(--ink-2);font-size:10px;font-family:'DM Sans',system-ui,sans-serif}
+.spark .ln{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.cmds{display:flex;flex-wrap:wrap;gap:8px}
+.cmd{font-family:var(--mono);font-size:12.5px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 10px}
+.cmd:hover{border-color:var(--ink);background:var(--surface-2)}
+.log{font-family:var(--mono);font-size:12.5px;line-height:1.55;background:var(--surface-2);border-radius:8px;padding:12px;max-height:250px;overflow-y:auto}
+.log div{overflow-wrap:anywhere}
+.log .t{color:var(--ink-2);margin-right:8px}
+.log .cmd-l{font-weight:600}
+.log .sys{color:var(--ink-2)}
+.log .alert{color:var(--crit);font-weight:600}
+.log .teacher{color:var(--marte);font-weight:600}
+
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.list{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.list li{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:8px}
+.list .why{font-size:13px;color:var(--ink-2)}
+.q{padding:12px 14px;border-radius:8px;background:var(--marte-soft);color:var(--ink)}
+.q b{color:var(--marte)}
+.ev{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 0;border-top:1px solid var(--line)}
+.ev:first-child{border-top:0;padding-top:0}
+.ev .d{grid-column:1;font-size:13px;color:var(--ink-2)}
+.ev .p{grid-row:1 / span 2;grid-column:2;align-self:center}
+
+.port{display:flex;flex-direction:column;gap:16px}
+.prow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px 16px;padding-top:16px;border-top:1px solid var(--line)}
+.prow:first-of-type{border-top:0;padding-top:0}
+.worlds{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.world{display:flex;flex-direction:column;gap:4px;font-size:13px}
+textarea{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;resize:vertical;min-height:58px}
+.field{grid-column:2;display:flex;flex-direction:column;gap:4px}
+.field label{font-size:13px;color:var(--ink-2)}
+.checks{display:flex;flex-direction:column;gap:10px}
+.checks label{display:flex;gap:10px;align-items:flex-start}
+.checks input{margin-top:4px;width:16px;height:16px;accent-color:var(--marte)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+footer{font-size:13px;color:var(--ink-2);max-width:72ch}
+
+@media (max-width:900px){
+  .main,.two{grid-template-columns:minmax(0,1fr)}
+  .roster{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+}
+@media (max-width:560px){
+  .prow{grid-template-columns:minmax(0,1fr)}
+  .field{grid-column:1}
+  .gauge{grid-template-columns:70px minmax(0,1fr) 84px;gap:8px}
+}
+@media (prefers-reduced-motion:reduce){.bar i,.fill{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Minecraft Education · Monitor de práctica</span>
+    <h1>Autonomía, de Asunción a Marte</h1>
+    <p class="lead">Sigue cómo cada estudiante recorre el mapa: la Primera Asamblea de Mujeres Americanas (Asunción, 24 de febrero de 1867), el Libro de Oro y la colonia autónoma en Marte. Elige a un estudiante, mira sus recursos y decide cuándo preguntar o dar una pista.</p>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Ritmo del juego">
+        <button type="button" id="r-demo" aria-pressed="true">Demo · 2 s por ciclo</button>
+        <button type="button" id="r-real" aria-pressed="false">Real · 10 s por ciclo</button>
+      </div>
+      <button type="button" class="btn" id="pausa">Pausar</button>
+      <button type="button" class="btn" id="reiniciar">Reiniciar demo</button>
+    </div>
+    <div class="summary" id="resumen" aria-live="off"></div>
+  </header>
+
+  <section class="main" aria-label="Estudiantes y detalle">
+    <div class="roster" id="roster" role="group" aria-label="Estudiantes"></div>
+
+    <div class="card detail">
+      <div class="d-head">
+        <h2 id="d-name">Estudiante</h2>
+        <span class="pill" id="d-pill"></span>
+        <span class="zone" id="d-zone"></span>
+        <span class="spacer"></span>
+        <button type="button" class="btn primary" id="pista">Enviar pista</button>
+      </div>
+
+      <div class="block">
+        <span class="label">Recorrido</span>
+        <ol class="steps" id="steps"></ol>
+      </div>
+
+      <div class="block">
+        <span class="label">Libro de Oro</span>
+        <div class="libro"><div class="libro-slots" style="display:flex;gap:6px;flex:1" id="slots"></div><span class="libro-n" id="libro-n"></span></div>
+      </div>
+
+      <div class="block">
+        <span class="label">Soporte vital de la colonia</span>
+        <div class="gauges" id="gauges">
+          <div class="gauge"><span>Oxígeno</span><div class="track"><div class="fill" id="f-o2" style="background:var(--o2)"></div><span class="mark" style="left:20%"></span></div><span class="gv" id="v-o2"></span></div>
+          <div class="gauge"><span>Agua</span><div class="track"><div class="fill" id="f-agua" style="background:var(--agua)"></div><span class="mark" style="left:20%"></span></div><span class="gv" id="v-agua"></span></div>
+          <div class="gauge"><span>Energía</span><div class="track"><div class="fill" id="f-en" style="background:var(--en)"></div><span class="mark" style="left:20%"></span></div><span class="gv" id="v-en"></span></div>
+        </div>
+        <p class="note" id="gauge-note"></p>
+        <div class="spark" id="spark"></div>
+      </div>
+
+      <div class="block">
+        <span class="label">Probar comandos como estudiante</span>
+        <div class="cmds" id="cmds">
+          <button type="button" class="cmd" data-c="iniciar_mundo">iniciar_mundo</button>
+          <button type="button" class="cmd" data-c="asamblea">asamblea</button>
+          <button type="button" class="cmd" data-c="donar">donar</button>
+          <button type="button" class="cmd" data-c="viajar_marte">viajar_marte</button>
+          <button type="button" class="cmd" data-c="estado">estado</button>
+          <button type="button" class="cmd" data-c="reciclar_agua">reciclar_agua</button>
+          <button type="button" class="cmd" data-c="generar_energia">generar_energia</button>
+        </div>
+      </div>
+
+      <div class="block">
+        <span class="label">Chat del mapa</span>
+        <div class="log" id="log" role="log" tabindex="0" aria-label="Chat del estudiante"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="card block">
+      <h2>Para intervenir</h2>
+      <ul class="list" id="alertas"></ul>
+      <div class="q" id="pregunta"></div>
+    </div>
+    <div class="card block">
+      <h2 id="ev-title">Evidencia de aprendizaje</h2>
+      <div id="evidencia"></div>
+    </div>
+  </section>
+
+  <section class="card port">
+    <div class="block">
+      <h2>Portafolio: Tierra Colorada y Regolito marciano</h2>
+      <p class="note">Al cruzar el portal, el estudiante recibe una Cámara y un Libro y Pluma. Aquí anota lo que compara en Geografía y Biología. Lo que escribas se guarda por estudiante mientras la página siga abierta.</p>
+    </div>
+    <div>
+      <div class="prow">
+        <h3>Suelo</h3>
+        <div class="worlds">
+          <div class="world"><span class="zone t" style="align-self:flex-start">Tierra Colorada</span>Terracota roja</div>
+          <div class="world"><span class="zone m" style="align-self:flex-start">Regolito marciano</span>Arenisca roja</div>
+        </div>
+        <div class="field"><label for="nota-0">¿En qué se parecen los dos suelos y en qué cambian?</label><textarea id="nota-0" data-n="0"></textarea></div>
+      </div>
+      <div class="prow">
+        <h3>Construcciones</h3>
+        <div class="worlds">
+          <div class="world"><span class="zone t" style="align-self:flex-start">Tierra Colorada</span>Residencia colonial de cuarzo con techo de ladrillos</div>
+          <div class="world"><span class="zone m" style="align-self:flex-start">Regolito marciano</span>Domo de vidrio cerrado y presurizado</div>
+        </div>
+        <div class="field"><label for="nota-1">¿Para qué sirve cada construcción?</label><textarea id="nota-1" data-n="1"></textarea></div>
+      </div>
+      <div class="prow">
+        <h3>Cultivos y agua</h3>
+        <div class="worlds">
+          <div class="world"><span class="zone t" style="align-self:flex-start">Tierra Colorada</span>Sin cultivos ni agua construidos en el mapa</div>
+          <div class="world"><span class="zone m" style="align-self:flex-start">Regolito marciano</span>Trigo hidropónico con agua dentro del domo</div>
+        </div>
+        <div class="field"><label for="nota-2">¿Qué necesitaría la Tierra Colorada para cultivar, y por qué en Marte hace falta un domo?</label><textarea id="nota-2" data-n="2"></textarea></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card block">
+    <h2>Notas para quienes construyen el mapa</h2>
+    <div class="checks">
+      <label><input type="checkbox" id="ck-npc"><span>NPC con aspecto civil de época dentro de la residencia, llamado Doña Escolástica Barrios de Gill, con botones de diálogo que ejecutan <code>asamblea</code> y <code>donar</code>.</span></label>
+      <label><input type="checkbox" id="ck-agente"><span>Agente programado para reparar muros o replantar tras una tormenta de polvo en Marte, para mostrar infraestructura que se mantiene.</span></label>
+      <label><input type="checkbox" id="ck-items"><span>Cámara y Libro y Pluma entregados al jugador al cruzar el portal hacia Marte.</span></label>
+    </div>
+    <p class="note">El código del mapa anuncia el comando <code>generar_energia</code> pero no lo define. Esta demo lo simula con +20 de energía y −5 de agua para que se pueda practicar. Agrégalo en el mapa si quieres que el estudiante lo use de verdad.</p>
+  </section>
+
+  <footer>Los estudiantes y sus datos son simulados. El mapa de Minecraft no envía información a esta página: sirve para ensayar qué observar, qué preguntar y cuándo dar una pista.</footer>
+</div>
+
+<script>
+(function(){
+  var META=10, ALERTA=20, ATENCION=40;
+  var RES=[{k:'o2',n:'Oxígeno'},{k:'agua',n:'Agua'},{k:'en',n:'Energía'}];
+  var COL=['var(--o2)','var(--agua)','var(--en)'];
+  var PASOS=['Mundo construido','Asamblea de 1867','Libro de Oro completo','Colonia en Marte'];
+  var S=[], sel=0, ritmo=2000, pausado=false, timer=null, logKey='';
+  function $(id){return document.getElementById(id);}
+  function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function hora(){return new Date().toLocaleTimeString('es-PY',{hour12:false});}
+
+  function nuevo(nombre,skill){
+    return {nombre:nombre,skill:skill,mundo:false,asamblea:false,oro:0,marte:false,o2:100,agua:100,en:100,
+      ticks:0,colapsos:0,usos:0,notas:['','',''],hist:[],log:[],alerta:false};
+  }
+  function say(s,txt,kind){
+    s.log.push({t:hora(),k:kind||'sys',x:txt});
+    if(s.log.length>60) s.log.shift();
+  }
+  var H={
+    iniciar_mundo:function(s){
+      s.mundo=true;
+      say(s,'Construyendo Zona 1: Asunción 1867 (Tierra Colorada)…');
+      say(s,'Construyendo Zona 2: Colonia autónoma en Marte…');
+      say(s,"Escenarios listos. Escribe 'asamblea' para iniciar el hito histórico.");
+    },
+    asamblea:function(s){
+      s.asamblea=true;
+      say(s,'=== 24 de febrero de 1867: Primera Asamblea de Mujeres Americanas ===');
+      say(s,'Doña Escolástica Barrios de Gill convoca a entregar joyas para la defensa y la reconstrucción.');
+      say(s,"Usa el comando 'donar' con lingotes de oro en tu mano para registrar en el Libro de Oro.");
+    },
+    donar:function(s){
+      if(s.oro<META){
+        s.oro+=2;
+        say(s,'Donación asentada en el Libro de Oro: '+s.oro+' / '+META+' kg.');
+        if(s.oro>=META){
+          say(s,'¡El Libro de Oro está completo! Las Residentas han sentado las bases de la resiliencia.');
+          say(s,"Portal temporal desbloqueado. Escribe 'viajar_marte' para trasladar este conocimiento al futuro.");
+        }
+      } else say(s,"El Libro de Oro ya alcanzó su peso histórico. Escribe 'viajar_marte'.");
+    },
+    viajar_marte:function(s){
+      if(s.oro<META){say(s,"Aún debes completar el legado del Libro de Oro en Asunción (usa 'asamblea' y 'donar').");return;}
+      s.marte=true;
+      say(s,'MARTE: COLONIA AUTÓNOMA — De la Tierra Colorada al Regolito');
+      say(s,'Aplica el modelo de Las Residentas: gestiona recursos sin depender de suministros externos.');
+      say(s,"Comandos de colonia: 'estado', 'reciclar_agua', 'generar_energia'.");
+    },
+    estado:function(s){
+      say(s,'--- ESTADO DE AUTONOMÍA MARCIANA ---');
+      say(s,'Oxígeno (Invernadero): '+s.o2+'%');
+      say(s,'Agua (Extracción/Reciclaje): '+s.agua+'%');
+      say(s,'Energía (Paneles/Red): '+s.en+'%');
+    },
+    reciclar_agua:function(s){
+      if(!s.marte) return;
+      s.agua=Math.min(100,s.agua+15); s.o2=Math.min(100,s.o2+10); s.usos++;
+      say(s,'Sistema hidropónico optimizado: agua y oxígeno estabilizados mediante conocimiento compartido.');
+    },
+    generar_energia:function(s){
+      if(!s.marte) return;
+      s.en=Math.min(100,s.en+20); s.agua=Math.max(0,s.agua-5); s.usos++;
+      say(s,'Paneles ajustados: energía +20%, agua −5% (orden agregada por la demo).');
+    }
+  };
+  function cmd(s,name){say(s,'<'+s.nombre+'> '+name,'cmd'); H[name](s);}
+
+  function fisica(s){
+    if(!s.marte) return;
+    s.ticks++; s.o2-=2; s.agua-=3; s.en-=2;
+    var low=Math.min(s.o2,s.agua,s.en);
+    if(low<=0){
+      say(s,'Colapso del soporte vital. Reiniciando parámetros de emergencia…','alert');
+      s.o2=s.agua=s.en=50; s.colapsos++; s.alerta=false;
+    } else if(low<=ALERTA){
+      if(!s.alerta){say(s,'¡ALERTA DE SUPERVIVENCIA! Recursos críticos. La autonomía requiere mantenimiento activo.','alert'); s.alerta=true;}
+    } else s.alerta=false;
+    s.hist.push([s.o2,s.agua,s.en]); if(s.hist.length>40) s.hist.shift();
+  }
+  function bot(s){
+    if(Math.random()>s.skill) return;
+    if(!s.mundo) return cmd(s,'iniciar_mundo');
+    if(!s.asamblea) return cmd(s,'asamblea');
+    if(s.oro<META) return cmd(s,'donar');
+    if(!s.marte) return cmd(s,'viajar_marte');
+    if(s.agua<=45||s.o2<=45) return cmd(s,'reciclar_agua');
+    if(s.en<=45) return cmd(s,'generar_energia');
+    if(Math.random()<0.15) cmd(s,'estado');
+  }
+  function guion(s,pasos){pasos.forEach(function(p){if(p) cmd(s,p); fisica(s);});}
+
+  function estado(s){
+    if(!s.mundo) return 'idle';
+    if(s.marte){var m=Math.min(s.o2,s.agua,s.en); if(m<=ALERTA) return 'crit'; if(m<=ATENCION) return 'warn';}
+    return 'ok';
+  }
+  var ETQ={ok:'Va bien',warn:'Atención',crit:'Necesita ayuda',idle:'Sin iniciar'};
+  function resumenS(s){
+    if(!s.mundo) return 'Sin iniciar';
+    if(!s.asamblea) return 'Mundo listo';
+    if(s.oro<META) return 'Libro de Oro '+s.oro+'/'+META+' kg';
+    if(!s.marte) return 'Listo para viajar';
+    return 'Ciclo '+s.ticks+' en Marte';
+  }
+  function avance(s){
+    var a=0; if(s.mundo)a=10; if(s.asamblea)a=20; a+=Math.min(s.oro,META)/META*30;
+    if(s.marte){a=60+Math.min(s.ticks,20)/20*40;} return Math.round(a);
+  }
+  function bajo(s){
+    var j=0; if(s.agua<s[RES[j].k]) j=1; if(s.en<s[RES[j].k]) j=2; return j;
+  }
+  function guia(s){
+    var e=estado(s);
+    if(!s.mundo) return {q:'Antes de empezar: ¿qué creen que pasaba en Asunción en 1867?',p:'Escribe iniciar_mundo para construir los dos escenarios.'};
+    if(!s.asamblea) return {q:'¿Quién era la persona que convoca la asamblea y por qué la reunión era importante?',p:'Escribe asamblea para empezar el hito histórico.'};
+    if(s.oro<META) return {q:'¿Por qué se entregaban joyas y no otra cosa? ¿Qué significa donar para toda la comunidad?',p:'Usa donar para asentar una alhaja en el Libro de Oro.'};
+    if(!s.marte) return {q:'El Libro está completo. ¿Qué crees que necesita una comunidad para empezar de nuevo lejos de casa?',p:'El Libro de Oro está completo. Escribe viajar_marte.'};
+    if(e==='crit'||e==='warn'){
+      var r=RES[bajo(s)];
+      var p=(r.k==='en')?'La energía baja. Prueba generar_energia.':'Mira el agua y el oxígeno. ¿Qué comando los recupera?';
+      return {q:r.n+' está en '+s[r.k]+'%. ¿Qué hacían Las Residentas cuando algo faltaba y no llegaba ayuda de afuera? ¿Quién podría colaborar contigo?',p:p};
+    }
+    return {q:'¿Qué parecidos y qué diferencias encuentras entre la Tierra Colorada y el Regolito? Anótalo en tu Libro y Pluma.',p:'Escribe estado y compara los números con lo que anotaste en tu cuaderno.'};
+  }
+
+  function setPill(el,s){var e=estado(s); el.className='pill '+e; el.textContent=ETQ[e];}
+
+  function buildRoster(){
+    var r=$('roster'); r.innerHTML='';
+    S.forEach(function(s,i){
+      var b=document.createElement('button'); b.type='button'; b.className='stu'; b.dataset.i=i;
+      b.innerHTML='<span class="stu-top"><span class="stu-name">'+esc(s.nombre)+'</span><span class="pill"></span></span>'+
+        '<span class="stu-sub"><span class="zone"></span><span class="stu-step"></span></span>'+
+        '<span class="bar"><i></i></span>';
+      b.addEventListener('click',function(){sel=i; cargarNotas(); logKey=''; render();});
+      r.appendChild(b);
+    });
+  }
+  function renderRoster(){
+    var cards=$('roster').children;
+    S.forEach(function(s,i){
+      var c=cards[i];
+      c.setAttribute('aria-pressed',i===sel?'true':'false');
+      setPill(c.querySelector('.pill'),s);
+      var z=c.querySelector('.zone'); z.textContent=s.marte?'Marte':'Asunción 1867'; z.className='zone '+(s.marte?'m':'t');
+      c.querySelector('.stu-step').textContent=resumenS(s);
+      c.querySelector('.bar i').style.width=avance(s)+'%';
+      c.setAttribute('aria-label',s.nombre+', '+ETQ[estado(s)]+', '+resumenS(s));
+    });
+  }
+  function renderResumen(){
+    var t=0,m=0,a=0;
+    S.forEach(function(s){ if(s.marte)m++; else t++; if(estado(s)==='crit')a++; });
+    $('resumen').innerHTML='<span>En Asunción <b>'+t+'</b></span><span>En Marte <b>'+m+'</b></span><span>Necesitan ayuda <b>'+a+'</b></span>'+(pausado?'<span><b>En pausa</b></span>':'');
+  }
+
+  function spark(s){
+    var h=s.hist;
+    if(h.length<2) return '<p class="note">El historial de recursos aparece cuando el estudiante llega a Marte.</p>';
+    var W=340,Hh=124,L=30,R=62,T=8,B=20,n=40,pw=W-L-R,ph=Hh-T-B;
+    function y(v){return T+ph*(1-Math.max(0,Math.min(100,v))/100);}
+    function x(i){return L+pw*i/(n-1);}
+    var off=n-h.length, g='';
+    [0,50,100].forEach(function(v){
+      g+='<line class="grid" x1="'+L+'" x2="'+(L+pw)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text class="tx" x="'+(L-6)+'" y="'+(y(v)+3)+'" text-anchor="end">'+v+'</text>';
+    });
+    g+='<line class="thr" x1="'+L+'" x2="'+(L+pw)+'" y1="'+y(ALERTA)+'" y2="'+y(ALERTA)+'"/>';
+    g+='<text class="tx" x="'+(L+4)+'" y="'+(y(ALERTA)-4)+'">Alerta 20%</text>';
+    var ends=[];
+    RES.forEach(function(r,j){
+      var pts=h.map(function(p,i){return x(off+i).toFixed(1)+','+y(p[j]).toFixed(1);}).join(' ');
+      g+='<polyline class="ln" stroke="'+COL[j]+'" points="'+pts+'"/>';
+      var yy=y(h[h.length-1][j]);
+      g+='<circle cx="'+x(n-1)+'" cy="'+yy+'" r="3" fill="'+COL[j]+'"/>';
+      ends.push({j:j,y:yy});
+    });
+    ends.sort(function(a,b){return a.y-b.y;});
+    for(var i=1;i<ends.length;i++) if(ends[i].y-ends[i-1].y<11) ends[i].y=ends[i-1].y+11;
+    ends.forEach(function(e){
+      g+='<text x="'+(L+pw+8)+'" y="'+(e.y+3.5)+'" font-size="10.5" font-weight="700" font-family="DM Sans,system-ui,sans-serif" fill="'+COL[e.j]+'">'+RES[e.j].n+'</text>';
+    });
+    g+='<text class="tx" x="'+(L+pw/2)+'" y="'+(Hh-4)+'" text-anchor="middle">Últimos ciclos</text>';
+    return '<svg viewBox="0 0 '+W+' '+Hh+'" role="img" aria-label="Historial de oxígeno, agua y energía en los últimos ciclos">'+g+'</svg>';
+  }
+
+  function nivel(p,done,prog){return done?'ok':prog?'warn':'idle';}
+  var ETQ2={ok:'Logrado',warn:'En proceso',idle:'Por observar'};
+  function evidencia(s){
+    var nn=s.notas.filter(function(t){return t.trim().length>0;}).length;
+    var sano=s.marte&&Math.min(s.o2,s.agua,s.en)>ATENCION;
+    return [
+      {t:'Historia: la Asamblea y el Libro de Oro',d:s.oro+' de '+META+' kg donados',n:nivel(0,s.oro>=META,s.oro>0||s.asamblea)},
+      {t:'Ciencia e ingeniería: sostener la colonia',d:s.marte?(s.ticks+' ciclos en Marte'+(s.colapsos?', '+s.colapsos+' colapso'+(s.colapsos>1?'s':''):', sin colapsos')):'Todavía no llegó a Marte',n:nivel(0,sano&&s.ticks>=10&&s.colapsos===0,s.marte)},
+      {t:'Trabajo colectivo: usar los sistemas compartidos',d:s.usos+' acciones de reciclaje o energía',n:nivel(0,s.usos>=3,s.usos>=1)},
+      {t:'Documentación: Libro y Pluma',d:nn+' de 3 comparaciones escritas',n:nivel(0,nn>=3,nn>=1)}
+    ];
+  }
+
+  function renderDetail(){
+    var s=S[sel];
+    $('d-name').textContent=s.nombre;
+    setPill($('d-pill'),s);
+    var z=$('d-zone'); z.textContent=s.marte?'Marte':'Asunción 1867'; z.className='zone '+(s.marte?'m':'t');
+    $('pista').textContent='Enviar pista a '+s.nombre;
+
+    var done=[s.mundo,s.asamblea,s.oro>=META,s.marte], cur=done.indexOf(false);
+    $('steps').innerHTML=PASOS.map(function(p,i){
+      return '<li class="'+(done[i]?'done':i===cur?'cur':'')+'"><span class="num">'+(i+1)+'</span><span>'+p+(done[i]?'<span class="sr"> (hecho)</span>':i===cur?'<span class="sr"> (en curso)</span>':'')+'</span></li>';
+    }).join('');
+
+    var sl=''; for(var i=0;i<5;i++) sl+='<div class="slot'+(i<s.oro/2?' on':'')+'"></div>';
+    $('slots').innerHTML=sl;
+    $('libro-n').textContent=s.oro+' / '+META+' kg';
+
+    $('gauges').className='gauges'+(s.marte?'':' off');
+    RES.forEach(function(r){
+      var v=Math.max(0,s[r.k]), f=$('f-'+r.k), t=$('v-'+r.k);
+      f.style.width=v+'%';
+      f.style.background=(s.marte&&v<=ALERTA)?'var(--crit)':(s.marte&&v<=ATENCION)?'var(--warn)':'';
+      if(!f.style.background) f.style.background='var(--'+r.k+')';
+      t.textContent=s.marte?(v+'%'+(v<=ALERTA?' crítico':v<=ATENCION?' bajo':'')):'—';
+      t.className='gv'+(s.marte&&v<=ALERTA?' crit':s.marte&&v<=ATENCION?' warn':'');
+    });
+    $('gauge-note').textContent=s.marte?'La línea marca el 20%. Por debajo se activa la alerta y, al llegar a 0, la colonia colapsa y se reinicia al 50%.':'Los recursos empiezan a bajar cuando el estudiante viaja a Marte.';
+    $('spark').innerHTML=spark(s);
+
+    var key=sel+':'+s.log.length;
+    if(key!==logKey){
+      logKey=key; var el=$('log');
+      el.innerHTML=s.log.map(function(l){
+        var cls=l.k==='cmd'?'cmd-l':l.k;
+        return '<div class="'+cls+'"><span class="t">'+l.t+'</span>'+esc(l.x)+'</div>';
+      }).join('')||'<div class="sys">Todavía no hay mensajes.</div>';
+      el.scrollTop=el.scrollHeight;
+    }
+  }
+
+  function renderIntervenir(){
+    var ul=$('alertas'), foco=document.activeElement, go=foco&&foco.dataset?foco.dataset.go:null;
+    var items=S.map(function(s,i){return {s:s,i:i,e:estado(s)};}).filter(function(o){return o.e==='crit'||o.e==='warn';});
+    ul.innerHTML=items.length?items.map(function(o){
+      var r=RES[bajo(o.s)];
+      return '<li><div><b>'+esc(o.s.nombre)+'</b> <span class="pill '+o.e+'">'+ETQ[o.e]+'</span><div class="why">'+r.n+' al '+Math.max(0,o.s[r.k])+'%</div></div><button type="button" class="btn" data-go="'+o.i+'">Ver</button></li>';
+    }).join(''):'<li><span class="why">Nadie necesita ayuda ahora.</span></li>';
+    if(go!==null&&go!==undefined){var b=ul.querySelector('[data-go="'+go+'"]'); if(b) b.focus();}
+    var g=guia(S[sel]);
+    $('pregunta').innerHTML='<b>Pregunta para '+esc(S[sel].nombre)+':</b> '+esc(g.q);
+  }
+  function renderEvidencia(){
+    var s=S[sel];
+    $('ev-title').textContent='Evidencia de aprendizaje de '+s.nombre;
+    $('evidencia').innerHTML=evidencia(s).map(function(e){
+      return '<div class="ev"><b>'+e.t+'</b><span class="d">'+esc(e.d)+'</span><span class="p pill '+(e.n==='idle'?'idle':e.n)+'">'+ETQ2[e.n]+'</span></div>';
+    }).join('');
+  }
+  function cargarNotas(){
+    S[sel].notas.forEach(function(t,i){$('nota-'+i).value=t;});
+  }
+  function render(){
+    renderRoster(); renderResumen(); renderDetail(); renderIntervenir(); renderEvidencia();
+  }
+
+  function iniciar(){
+    var ana=nuevo('Ana',0.7), mateo=nuevo('Mateo',0.5), sofia=nuevo('Sofía',0.35), ben=nuevo('Benjamín',0.12);
+    guion(ana,['iniciar_mundo','asamblea','donar','donar','donar','donar','donar','viajar_marte',null,null,null,'reciclar_agua',null,null,'generar_energia',null,null,'reciclar_agua',null,null]);
+    ana.notas[0]='Los dos suelos son rojos.';
+    guion(mateo,['iniciar_mundo','asamblea','donar','donar','donar']);
+    var pre=['iniciar_mundo','asamblea','donar','donar','donar','donar','donar','viajar_marte'];
+    for(var i=0;i<24;i++) pre.push(null);
+    guion(ben,pre);
+    S=[ana,mateo,sofia,ben]; sel=0; logKey='';
+    buildRoster(); cargarNotas(); render();
+  }
+  function arrancar(){
+    clearInterval(timer);
+    timer=setInterval(function(){
+      if(pausado) return;
+      S.forEach(function(s){fisica(s); bot(s);});
+      render();
+    },ritmo);
+  }
+
+  $('cmds').addEventListener('click',function(e){
+    var b=e.target.closest('[data-c]'); if(!b) return;
+    cmd(S[sel],b.dataset.c); render();
+  });
+  $('pista').addEventListener('click',function(){
+    var s=S[sel]; say(s,'Pista del docente: '+guia(s).p,'teacher'); s.skill=Math.max(s.skill,0.6); render();
+  });
+  $('alertas').addEventListener('click',function(e){
+    var b=e.target.closest('[data-go]'); if(!b) return;
+    sel=parseInt(b.dataset.go,10); cargarNotas(); logKey=''; render();
+  });
+  document.querySelectorAll('textarea[data-n]').forEach(function(t){
+    t.addEventListener('input',function(){S[sel].notas[parseInt(t.dataset.n,10)]=t.value; renderEvidencia(); renderRoster();});
+  });
+  $('r-demo').addEventListener('click',function(){ritmo=2000;$('r-demo').setAttribute('aria-pressed','true');$('r-real').setAttribute('aria-pressed','false');arrancar();});
+  $('r-real').addEventListener('click',function(){ritmo=10000;$('r-real').setAttribute('aria-pressed','true');$('r-demo').setAttribute('aria-pressed','false');arrancar();});
+  $('pausa').addEventListener('click',function(){pausado=!pausado;$('pausa').textContent=pausado?'Reanudar':'Pausar';renderResumen();});
+  $('reiniciar').addEventListener('click',function(){pausado=false;$('pausa').textContent='Pausar';iniciar();});
+
+  iniciar(); arrancar();
+})();
+</script>
+
+</body></html>
