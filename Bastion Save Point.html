@@ -1,0 +1,345 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Bastión Save Point</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Concepto: dos paneles gemelos (A depende de un líder, B reparte el conocimiento) sobre una mesa de control con roles, semillas y crisis. */
+:root{
+  --bg:#EDF1EF; --surface:#F8FAF9; --fg:#14262A; --muted:#52666A; --line:#CAD5D2; --track:#DCE5E2;
+  --accent:#1F7A6A; --accent-ink:#FFFFFF; --seed:#9A6410; --warn:#B3402F; --good:#2C7A4B;
+  --f-display:'Fraunces',Georgia,serif; --f-body:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1819; --surface:#162224; --fg:#E3EDEA; --muted:#8FA4A4; --line:#2A3C3E; --track:#23342F;
+    --accent:#4FC1A9; --accent-ink:#0B1A17; --seed:#E0A94B; --warn:#E27664; --good:#6CC48C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1819; --surface:#162224; --fg:#E3EDEA; --muted:#8FA4A4; --line:#2A3C3E; --track:#23342F;
+  --accent:#4FC1A9; --accent-ink:#0B1A17; --seed:#E0A94B; --warn:#E27664; --good:#6CC48C; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body);
+  padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.eyebrow{margin:0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font:600 clamp(26px,5vw,38px)/1.15 var(--f-display);margin:6px 0 8px;text-wrap:balance}
+h2{font:600 18px/1.3 var(--f-display);margin:0 0 10px}
+.lede{margin:0;max-width:65ch;color:var(--muted)}
+.head-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+button{font:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 14px;border-radius:8px;font-weight:500}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:hover{border-color:var(--accent)}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.caption{min-height:3.2em;padding:12px 14px;border:1px dashed var(--line);border-radius:8px;color:var(--fg);background:var(--surface)}
+.panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.phead{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+.phead h2{margin:0}
+.tag{font-size:13px;color:var(--muted)}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;font-variant-numeric:tabular-nums}
+.chip b{font-weight:600}
+.ind{display:flex;flex-direction:column;gap:5px}
+.irow{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.irow span:first-child{min-width:0}
+.irow em{display:block;font-style:normal;font-size:12px;color:var(--muted)}
+.val{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.dl{margin-right:6px;font-size:12px;font-weight:600}
+.dl.up{color:var(--good)} .dl.down{color:var(--warn)}
+.bar{position:relative;height:10px;border-radius:5px;background:var(--track);overflow:visible}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--accent);transition:width .5s ease}
+.ind.inv .bar i{background:var(--warn);opacity:.8}
+.floor{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1px;background:var(--fg);border-radius:2px}
+.sub{font-size:13px;color:var(--muted);margin:0 0 6px}
+.roles{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.roles li{border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-size:13px;color:var(--muted)}
+.roles li.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ladder{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.ladder li{border:1px solid var(--line);border-radius:6px;padding:6px;font-size:12px;min-height:58px;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}
+.ladder li.done{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.ladder li.now{border-style:dashed;border-color:var(--accent)}
+.ladder em{font-style:normal;color:var(--accent);font-weight:600}
+.seeds{font-size:13px;color:var(--seed)}
+.verdict{border-radius:8px;padding:10px 12px;font-size:14px;border:1px solid var(--line)}
+.verdict.ok{border-color:var(--good)} .verdict.bad{border-color:var(--warn)}
+.verdict strong{display:block}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--fg);padding:8px 16px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.rolegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:8px}
+.rolebtn{text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:2px}
+.rolebtn:hover{border-color:var(--accent)}
+.rolebtn span{font-size:13px;color:var(--muted)}
+.rolebtn em{font-style:normal;font-size:12px;color:var(--accent)}
+select{font:inherit;width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);margin-bottom:8px}
+.row2{display:flex;flex-wrap:wrap;gap:8px}
+.wide{grid-column:1/-1}
+.log{margin:0;padding-left:20px;font-size:13px;color:var(--muted);max-height:220px;overflow:auto}
+.log li:first-child{color:var(--fg)}
+.foot{font-size:12px;color:var(--muted);margin:0}
+@media (max-width:480px){.ladder{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<main class="wrap">
+  <header>
+    <p class="eyebrow">The Elven Archive · simulación social</p>
+    <h1>Panel estratégico de la comunidad</h1>
+    <p class="lede">El progreso no se mide por lo que se construyó, sino por la incertidumbre que se redujo. Compará dos comunidades ante la misma crisis y mirá cuánto sobrevive sin sus personas clave.</p>
+    <div class="head-actions">
+      <button class="btn primary" id="demoBtn" type="button">Reproducir demo guiada</button>
+      <button class="btn" id="stopBtn" type="button">Detener</button>
+      <button class="btn" id="resetBtn" type="button">Reiniciar</button>
+    </div>
+  </header>
+
+  <div class="caption" id="caption" aria-live="polite"></div>
+  <section class="panels" id="panels" aria-label="Paneles de las dos comunidades"></section>
+
+  <section class="controls" aria-label="Mesa de control">
+    <div class="box wide">
+      <h2>Dónde actuás</h2>
+      <div class="seg" role="group" aria-label="Comunidad activa">
+        <button type="button" data-c="A" aria-pressed="false">Comunidad A</button>
+        <button type="button" data-c="B" aria-pressed="true">Comunidad B</button>
+      </div>
+    </div>
+    <div class="box wide">
+      <h2>Roles</h2>
+      <p class="sub">Una misión avanza cuando actúan al menos 3 roles distintos. Repetir el mismo rol rinde menos.</p>
+      <div class="rolegrid" id="rolegrid"></div>
+    </div>
+    <div class="box">
+      <h2>Legado diferido</h2>
+      <p class="sub">Una semilla no cambia ningún indicador hoy. Se activa cuando llega una crisis que la necesita.</p>
+      <label for="seedSel" class="sub">Tipo de contribución</label>
+      <select id="seedSel"></select>
+      <button class="btn" id="seedBtn" type="button">Dejar semilla</button>
+    </div>
+    <div class="box">
+      <h2>Crisis</h2>
+      <p class="sub">El golpe es mayor cuanto más depende la comunidad de personas individuales.</p>
+      <label for="crisisSel" class="sub">Acontecimiento</label>
+      <select id="crisisSel"></select>
+      <div class="row2">
+        <button class="btn primary" id="crisisBoth" type="button">Lanzar en ambas</button>
+        <button class="btn" id="crisisOne" type="button">Solo en la activa</button>
+      </div>
+    </div>
+    <div class="box wide">
+      <h2>Registro</h2>
+      <ol class="log" id="log" aria-live="polite"></ol>
+    </div>
+  </section>
+  <p class="foot">Simulación ficticia con valores de ejemplo. La línea oscura sobre cada barra marca el piso que fija un Save Point consolidado.</p>
+</main>
+
+<script>
+const IND=[
+  {k:'K',n:'Conocimiento recuperado'},
+  {k:'C',n:'Conexiones entre grupos'},
+  {k:'A',n:'Problemas anticipados'},
+  {k:'S',n:'Soluciones reproducibles'},
+  {k:'D',n:'Dependencia de personas individuales',inv:true,note:'Indicador inverso: menor es mejor'}
+];
+const SHORT={K:'Conocimiento',C:'Conexiones',A:'Anticipación',S:'Soluciones',D:'Dependencia'};
+const ROLES={
+  cronista:{n:'El Cronista',s:'Cronista',d:'Conserva la memoria histórica y evita repetir errores.',fx:{K:10,S:4,D:-3}},
+  interprete:{n:'El Intérprete',s:'Intérprete',d:'Descifra información y conecta disciplinas.',fx:{K:5,C:5,A:4}},
+  arquitecto:{n:'El Arquitecto',s:'Arquitecto',d:'Diseña sistemas, procesos y escenarios alternativos.',fx:{S:10,A:4,D:-3}},
+  diplomatico:{n:'El Diplomático',s:'Diplomático',d:'Conecta grupos con intereses distintos.',fx:{C:10,D:-4}},
+  explorador:{n:'El Explorador',s:'Explorador',d:'Detecta oportunidades y riesgos emergentes.',fx:{A:10,K:3}},
+  restaurador:{n:'El Restaurador',s:'Restaurador',d:'Recupera capacidades y repara relaciones.',fx:{C:4,S:4,D:-6}}
+};
+const LEVELS=[
+  {n:'Descubrimiento',tag:'Señal detectada'},
+  {n:'Interpretación',tag:'Conocimiento contrastado'},
+  {n:'Arquitectura',tag:'Modelo construido'},
+  {n:'Conexión',tag:'Alianza operativa'},
+  {n:'Legado',tag:'Save Point consolidado'}
+];
+const SEEDS={
+  documentar:'Documentar una técnica que todavía nadie necesita',
+  ruta:'Crear una ruta alternativa sin utilidad aparente',
+  ensenar:'Enseñar una habilidad a otro jugador',
+  error:'Registrar un error para que no se repita',
+  conectar:'Conectar dos grupos sin objetivo compartido'
+};
+const CRISES={
+  lider:{n:'Desaparece el líder de una comunidad',hit:{K:15,C:20,A:15,S:25},counter:['ensenar','documentar']},
+  ruta:{n:'Se interrumpe una ruta comercial',hit:{C:30,S:15,A:10},counter:['ruta']},
+  biblioteca:{n:'Una generación pierde acceso a la biblioteca',hit:{K:35,A:10,S:10,C:5},counter:['documentar','error']},
+  traslado:{n:'Un asentamiento debe trasladarse',hit:{S:25,A:20,C:15,K:5},counter:['conectar']}
+};
+const START={A:{K:35,C:20,A:15,S:15,D:80},B:{K:85,C:65,A:70,S:45,D:25}};
+const NAMES={A:'Comunidad A',B:'Comunidad B'};
+const TAGS={A:'Todo pasa por una persona',B:'El conocimiento está repartido'};
+const IDLE='Elegí un rol y pulsá sobre él para actuar. También podés reproducir la demo guiada.';
+
+let st, logs, active='B', demoRun=0;
+
+function fresh(){
+  st={};
+  for(const id of ['A','B']) st[id]={v:{...START[id]},used:new Set(),level:0,saves:0,seeds:[],floor:null,verdict:null,delta:{}};
+  logs=[];
+}
+const clamp=x=>Math.max(0,Math.min(100,x));
+const score=v=>Math.round((v.K+v.C+v.A+v.S+(100-v.D))/5);
+function addLog(t){logs.unshift(t); if(logs.length>40) logs.pop();}
+
+function apply(c,k,d){
+  let n=clamp(c.v[k]+d);
+  if(c.floor){ n = k==='D' ? Math.min(n,c.floor.D) : Math.max(n,c.floor[k]); }
+  c.delta[k]=(c.delta[k]||0)+(n-c.v[k]);
+  c.v[k]=n;
+}
+
+function completeMission(id){
+  const c=st[id];
+  const lv=LEVELS[c.level];
+  c.level++;
+  apply(c,'C',3); apply(c,'S',3);
+  c.used.clear();
+  addLog(NAMES[id]+': misión completada. Nivel '+c.level+' · '+lv.n+' → '+lv.tag+'.');
+  if(c.level===5){
+    c.saves++;
+    c.floor={K:Math.round(c.v.K*.5),C:Math.round(c.v.C*.5),A:Math.round(c.v.A*.5),S:Math.round(c.v.S*.5),D:Math.round(c.v.D+(100-c.v.D)*.5)};
+    addLog(NAMES[id]+': Save Point consolidado. Ninguna crisis podrá devolverla al punto cero.');
+  }
+}
+
+function act(id,role){
+  const c=st[id], r=ROLES[role];
+  if(c.level===5) c.level=0;
+  const rep=c.used.has(role), f=rep?0.4:1;
+  c.delta={}; c.verdict=null;
+  for(const k in r.fx) apply(c,k,Math.round(r.fx[k]*f));
+  c.used.add(role);
+  addLog(NAMES[id]+': '+r.n+' actúa'+(rep?' otra vez y rinde menos':'')+'.');
+  if(c.used.size>=3) completeMission(id);
+  render();
+}
+
+function leaveSeed(id,type){
+  const c=st[id];
+  c.seeds.push(type); c.delta={};
+  addLog(NAMES[id]+': semilla estratégica guardada ('+SEEDS[type].toLowerCase()+'). Ningún indicador cambia hoy.');
+  render();
+}
+
+function crisis(id,key){
+  const c=st[id], cr=CRISES[key];
+  if(c.level===5) c.level=0;
+  const before=score(c.v);
+  const m=(0.35+c.v.D/100)*(1-c.v.S/200);
+  const idx=c.seeds.findIndex(s=>cr.counter.includes(s));
+  const seedType=idx>=0?c.seeds[idx]:null;
+  if(idx>=0) c.seeds.splice(idx,1);
+  const f=seedType?0.25:1;
+  c.delta={};
+  for(const k in cr.hit) apply(c,k,-Math.round(cr.hit[k]*m*f));
+  if(seedType){apply(c,'S',8); apply(c,'D',-5);}
+  const after=score(c.v);
+  const keep=before>0?Math.round(after/before*100):0;
+  c.verdict={ok:keep>=70,before,after,keep,name:cr.n,seed:seedType};
+  addLog(NAMES[id]+': '+cr.n+'. Capacidad '+before+' → '+after+(seedType?' (una semilla desbloqueó una solución)':'')+'.');
+}
+
+function panelHTML(id){
+  const c=st[id], v=c.v;
+  const rows=IND.map(i=>{
+    const val=v[i.k], dl=c.delta[i.k]||0;
+    const good=i.inv?dl<0:dl>0;
+    const d=dl?'<small class="dl '+(good?'up':'down')+'">'+(dl>0?'+':'')+dl+'</small>':'';
+    const fl=c.floor?c.floor[i.k]:null;
+    return '<div class="ind'+(i.inv?' inv':'')+'"><div class="irow"><span>'+i.n+(i.note?'<em>'+i.note+'</em>':'')+'</span><span class="val">'+d+val+'%</span></div>'+
+      '<div class="bar" role="meter" aria-label="'+i.n+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+val+'"><i style="width:'+val+'%"></i>'+
+      (fl!==null?'<b class="floor" style="left:'+fl+'%"></b>':'')+'</div></div>';
+  }).join('');
+  const roles=Object.keys(ROLES).map(r=>'<li class="'+(c.used.has(r)?'on':'')+'">'+ROLES[r].s+'</li>').join('');
+  const ladder=LEVELS.map((l,i)=>'<li class="'+(i<c.level?'done':i===c.level?'now':'')+'"><span>'+(i+1)+'. '+l.n+'</span><em>'+(i<c.level?l.tag:'')+'</em></li>').join('');
+  let seeds='Sin semillas latentes.';
+  if(c.seeds.length){
+    const cnt={}; c.seeds.forEach(s=>cnt[s]=(cnt[s]||0)+1);
+    seeds='Semillas latentes: '+Object.keys(cnt).map(s=>SEEDS[s].toLowerCase()+(cnt[s]>1?' ×'+cnt[s]:'')).join('; ')+'.';
+  }
+  let ver='';
+  if(c.verdict){
+    const x=c.verdict;
+    ver='<div class="verdict '+(x.ok?'ok':'bad')+'"><strong>'+(x.ok?'La comunidad continúa funcionando':'El sistema se interrumpe')+'</strong>'+x.name+'. Capacidad '+x.before+' → '+x.after+', conserva el '+x.keep+'%.'+(x.seed?' Una semilla de legado diferido desbloqueó una solución.':'')+'</div>';
+  }
+  return '<article class="panel'+(active===id?' active':'')+'">'+
+    '<div class="phead"><h2>'+NAMES[id]+'</h2><span class="tag">'+TAGS[id]+'</span></div>'+
+    '<div class="stats"><span class="chip">Capacidad <b>'+score(v)+'</b></span><span class="chip">Autonomía colectiva <b>'+(100-v.D)+'%</b></span><span class="chip">Save Points <b>'+c.saves+'</b></span><span class="chip">Semillas <b>'+c.seeds.length+'</b></span></div>'+
+    rows+
+    '<div><p class="sub">Misión actual: '+c.used.size+'/3 roles distintos</p><ul class="roles">'+roles+'</ul></div>'+
+    '<div><p class="sub">Camino al Save Point</p><ol class="ladder">'+ladder+'</ol></div>'+
+    '<p class="seeds">'+seeds+'</p>'+ver+'</article>';
+}
+
+function render(){
+  document.getElementById('panels').innerHTML=panelHTML('A')+panelHTML('B');
+  document.getElementById('log').innerHTML=logs.map(t=>'<li>'+t+'</li>').join('');
+  document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.c===active)));
+}
+function caption(t){document.getElementById('caption').textContent=t;}
+
+/* Demo guiada */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const MISSIONS=[
+  ['arquitecto','interprete','restaurador'],
+  ['cronista','explorador','diplomatico'],
+  ['arquitecto','cronista','restaurador'],
+  ['interprete','explorador','diplomatico']
+];
+async function demo(){
+  const run=++demoRun;
+  fresh(); active='A'; render();
+  const step=async(text,fn,ms)=>{
+    if(run!==demoRun) throw 0;
+    caption(text); if(fn) fn(); render();
+    await sleep(ms||3400);
+    if(run!==demoRun) throw 0;
+  };
+  try{
+    await step('Dos comunidades enfrentan el mismo futuro. En A todo pasa por una persona. En B el conocimiento está repartido.');
+    await step('Comunidad A: el Arquitecto trabaja solo. Repite su aporte tres veces y la misión no avanza, porque ningún rol alcanza por sí solo.',()=>{active='A';for(let i=0;i<3;i++)act('A','arquitecto');},4200);
+    await step('Comunidad B: Cronista, Explorador y Diplomático colaboran. Con tres roles distintos la misión se completa y sube un nivel.',()=>{active='B';['cronista','explorador','diplomatico'].forEach(r=>act('B',r));});
+    await step('Comunidad B deja semillas estratégicas: enseña una habilidad y abre una ruta alternativa. Ningún indicador cambia hoy. El progreso es invisible.',()=>{leaveSeed('B','ensenar');leaveSeed('B','ruta');},4200);
+    await step('B completa los cinco niveles y consolida un Save Point. Las líneas oscuras marcan el piso: de ahí no vuelve a bajar.',()=>{MISSIONS.forEach(m=>m.forEach(r=>act('B',r)));},4200);
+    await step('Crisis: desaparece el líder de una comunidad. Se lanza en ambas al mismo tiempo.',()=>{crisis('A','lider');crisis('B','lider');},5200);
+    await step('El examen no es cuánto construyeron, sino cuánto puede sobrevivir sin ellos. Probá otras crisis y roles por tu cuenta.',null,300);
+  }catch(e){ if(e!==0) throw e; }
+}
+
+function init(){
+  fresh();
+  document.getElementById('rolegrid').innerHTML=Object.keys(ROLES).map(r=>{
+    const fx=ROLES[r].fx;
+    const hint=Object.keys(fx).map(k=>(fx[k]>0?'+':'')+fx[k]+' '+SHORT[k]).join(' · ');
+    return '<button class="rolebtn" type="button" data-role="'+r+'"><strong>'+ROLES[r].n+'</strong><span>'+ROLES[r].d+'</span><em>'+hint+'</em></button>';
+  }).join('');
+  document.getElementById('seedSel').innerHTML=Object.keys(SEEDS).map(s=>'<option value="'+s+'">'+SEEDS[s]+'</option>').join('');
+  document.getElementById('crisisSel').innerHTML=Object.keys(CRISES).map(s=>'<option value="'+s+'">'+CRISES[s].n+'</option>').join('');
+  document.getElementById('rolegrid').addEventListener('click',e=>{
+    const b=e.target.closest('[data-role]'); if(b) act(active,b.dataset.role);
+  });
+  document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{active=b.dataset.c;render();}));
+  document.getElementById('seedBtn').addEventListener('click',()=>leaveSeed(active,document.getElementById('seedSel').value));
+  document.getElementById('crisisBoth').addEventListener('click',()=>{const k=document.getElementById('crisisSel').value;crisis('A',k);crisis('B',k);render();});
+  document.getElementById('crisisOne').addEventListener('click',()=>{crisis(active,document.getElementById('crisisSel').value);render();});
+  document.getElementById('demoBtn').addEventListener('click',demo);
+  document.getElementById('stopBtn').addEventListener('click',()=>{demoRun++;caption(IDLE);});
+  document.getElementById('resetBtn').addEventListener('click',()=>{demoRun++;fresh();active='B';caption(IDLE);render();});
+  caption(IDLE); render();
+}
+init();
+</script>
+
+</body></html>
