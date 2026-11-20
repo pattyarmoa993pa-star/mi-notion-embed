@@ -1,0 +1,647 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Matronas Asuncenas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: columna izquierda = red de hogares (grafo) y ficha del hogar; columna derecha = evento, funciones, tu turno y bitácora. */
+:root{
+  --bg:#e8ecea; --surface:#f6f8f6; --ink:#15211f; --muted:#51605c; --line:#c7d2ce;
+  --accent:#1d6b5a; --accent-ink:#ffffff; --warn:#a8680f; --bad:#b53f2d; --good:#1f7a4d;
+  --c-mant:#3b73b8; --c-red:#2a8f6f; --c-cuid:#c05079; --c-circ:#b87d0c; --c-trans:#7a62b8;
+  --font-display:'Bricolage Grotesque','Avenir Next','Segoe UI',sans-serif;
+  --font-body:'Public Sans','Segoe UI',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1513; --surface:#15201d; --ink:#e5eeeb; --muted:#9bb0aa; --line:#2a3a36;
+    --accent:#4cc2a5; --accent-ink:#06201a; --warn:#e3a54d; --bad:#ef7a67; --good:#5ccf93;
+    --c-mant:#6aa2e6; --c-red:#4fc79e; --c-cuid:#e47fa3; --c-circ:#e8b04a; --c-trans:#a58ce6;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1513; --surface:#15201d; --ink:#e5eeeb; --muted:#9bb0aa; --line:#2a3a36;
+  --accent:#4cc2a5; --accent-ink:#06201a; --warn:#e3a54d; --bad:#ef7a67; --good:#5ccf93;
+  --c-mant:#6aa2e6; --c-red:#4fc79e; --c-cuid:#e47fa3; --c-circ:#e8b04a; --c-trans:#a58ce6;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink); font:15px/1.55 var(--font-body);
+  margin:0; padding-block:22px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+.kicker{font:500 11px/1.4 var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+h1{font:700 clamp(1.7rem,4.2vw,2.5rem)/1.05 var(--font-display);letter-spacing:-.02em;margin:0;text-wrap:balance}
+.sub{margin:6px 0 0;color:var(--muted);max-width:60ch}
+h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:1.25rem} h3{font-size:1.05rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.label{font:500 11px/1.3 var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;padding:3px;background:var(--surface);gap:2px}
+.seg button{font:500 13px var(--font-body);border:0;background:transparent;color:var(--muted);padding:7px 12px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+.btn{font:500 14px/1.2 var(--font-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px;cursor:pointer;text-align:left}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.ghost{background:transparent}
+.btn.fn{display:inline-flex;align-items:center;gap:8px}
+.btn.fn[aria-pressed="true"]{background:color-mix(in srgb,var(--fc) 22%,var(--surface));border-color:var(--fc)}
+.btn.warnish{border-color:var(--warn)}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--fc);flex:none;display:inline-block}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+
+.intro{display:flex;flex-direction:column;gap:16px;padding:24px;max-width:760px}
+.intro .scene{font:500 clamp(1.15rem,2.6vw,1.5rem)/1.35 var(--font-display);text-wrap:pretty}
+.intro .row{display:flex;flex-wrap:wrap;gap:10px}
+
+.event{background:color-mix(in srgb,var(--warn) 13%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line));border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.event .t{font:600 clamp(1.1rem,2.4vw,1.35rem)/1.3 var(--font-display);text-wrap:balance}
+.chip{display:inline-flex;align-items:center;gap:6px;font:500 12px/1.2 var(--font-mono);border:1px solid var(--line);border-radius:999px;padding:4px 9px;background:var(--surface)}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);min-width:0}
+.stat b{display:block;font:500 1.15rem/1.2 var(--font-mono);font-variant-numeric:tabular-nums;margin-top:2px}
+
+.cols{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}}
+
+svg.net{width:100%;max-width:520px;height:auto;display:block;margin:0 auto}
+.node{cursor:pointer}
+.node .ringbg{fill:none;stroke:var(--line);stroke-width:5}
+.node .ring{fill:none;stroke-width:5;stroke-linecap:round}
+.node .core{stroke:var(--surface);stroke-width:2}
+.node .ini{font:700 15px var(--font-display);fill:var(--ink);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.node .nl{font:600 12px var(--font-body);fill:var(--ink);text-anchor:middle;pointer-events:none}
+.node .ns{font:500 10px var(--font-mono);fill:var(--muted);text-anchor:middle;pointer-events:none}
+.node.sel .selring{stroke:var(--accent);stroke-width:2;stroke-dasharray:4 4;fill:none}
+.node:hover .core{stroke:var(--accent)}
+.edge{stroke:var(--accent);stroke-width:2;opacity:.55}
+.edge.hot{opacity:1;stroke-width:3}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);justify-content:center;margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--fc,var(--accent));transition:width .35s}
+.bar.carga>i{background:var(--cc)}
+.panel{display:flex;flex-direction:column;gap:12px}
+.panel .btns{display:flex;flex-wrap:wrap;gap:8px}
+.alert{border:1px solid var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--surface));border-radius:8px;padding:10px 12px;font-size:13.5px}
+.modebar{border:1px dashed var(--accent);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
+
+.gauge{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.gauge:first-of-type{border-top:0;padding-top:0}
+.gauge .nm{display:flex;align-items:center;gap:8px;font-weight:600;min-width:0}
+.gauge .v{font:500 14px var(--font-mono);font-variant-numeric:tabular-nums;text-align:right}
+.gauge .bar{grid-column:1 / -1;margin-top:6px}
+.gauge .meta{grid-column:1 / -1;font-size:12.5px;color:var(--muted)}
+.up{color:var(--good)} .down{color:var(--bad)}
+.risk{color:var(--bad);font-weight:600}
+
+.pips{display:flex;gap:6px}
+.pip{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);background:transparent}
+.pip.on{background:var(--accent)}
+.turn{display:flex;flex-direction:column;gap:12px}
+.turn .head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.turn .grp{display:flex;flex-wrap:wrap;gap:8px}
+.msg{min-height:1.5em;font-size:14px}
+.msg.good{color:var(--good)} .msg.bad{color:var(--bad)} .msg.warn{color:var(--warn)}
+.hint{font-size:12.5px;color:var(--muted)}
+
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:300px;overflow:auto}
+.log li{font-size:13.5px;display:grid;grid-template-columns:auto 1fr;gap:10px}
+.log .w{font:500 11px var(--font-mono);color:var(--muted);padding-top:2px}
+.log li.good .t{color:var(--good)} .log li.bad .t{color:var(--bad)}
+
+.end{display:flex;flex-direction:column;gap:12px;border-color:var(--accent)}
+.end dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:0}
+.end dl div{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.end dt{font:500 11px var(--font-mono);color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.end dd{margin:2px 0 0;font:500 1.05rem var(--font-mono)}
+
+details.card summary{cursor:pointer;font:600 1rem var(--font-display)}
+.tablewrap{overflow-x:auto;margin-top:12px}
+table{border-collapse:collapse;min-width:560px;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}
+th{font:500 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){.bar>i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="kicker" id="kicker"></p>
+      <h1>Matronas Asuncenas</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <div class="seg" role="group" aria-label="Capa de lectura" id="seg"></div>
+  </header>
+  <div id="root"></div>
+  <details class="card" id="mapa"></details>
+</div>
+
+<script>
+(function(){
+'use strict';
+var clamp=function(v,a,b){return Math.max(a==null?0:a,Math.min(b==null?100:b,v));};
+var FN=['mant','red','cuid','circ','trans'];
+var layer='hoy';
+var LI=function(){return layer==='hoy'?0:1;};
+
+var T={
+ hoy:{
+  kicker:'Ingeniería social · Coordinar cuando las estructuras dejan de funcionar',
+  sub:'Un edificio sin administrador. Nueve hogares y ninguna estructura que coordine. La simulación empieza cuando alguien decide actuar.',
+  fn:{
+   mant:['Lo básico','Agua, luz, limpieza y reparaciones'],
+   red:['Coordinación','Turnos, reuniones y acuerdos entre vecinos'],
+   cuid:['Cuidado y formación','Quién cuida a los chicos y les enseña a colaborar'],
+   circ:['Compras y circulación','Compras compartidas, excedentes y gastos comunes'],
+   trans:['Transmisión','Que lo que sabe uno lo sepan varios']
+  },
+  unit:'hogares', place:'el edificio',
+  scene:'Lunes, ocho de la mañana. El administrador renunció, la empresa de servicios cortó el contrato y el fondo común quedó en cero. Nadie tiene la llave del tanque. Todos miran a todos.',
+  hire:'Contratar a alguien que decida por todos',
+  hireHint:'Una sola figura decide por el edificio. Alivia las cinco funciones desde ya.',
+  holdVerb:'Asumir'
+ },
+ hist:{
+  kicker:'Paraguay de posguerra · Capacidades propias y redes de cooperación',
+  sub:'Después de la guerra de la Triple Alianza, muchas familias quedaron sin los hombres que antes ordenaban parte del trabajo. Las mujeres ya trabajaban en la economía; ahora debían sostenerla.',
+  fn:{
+   mant:['Producción','Tierras, cultivos, semillas y herramientas'],
+   red:['Redes entre mujeres','Familiares y vecinas coordinando sin una autoridad central'],
+   cuid:['Crianza y formación','Cuidar, enseñar y formar hábitos de trabajo'],
+   circ:['Comercio','Vender excedentes y conseguir herramientas'],
+   trans:['Educación','Preparar a las nuevas generaciones']
+  },
+  unit:'familias', place:'la comunidad',
+  scene:'Terminó la guerra. Muchos hombres no volvieron y las familias quedaron desarticuladas. Las tierras esperan quien las organice. Todas esperan que alguien resuelva.',
+  hire:'Volver a depender de una figura de autoridad',
+  hireHint:'Otra figura externa decide por todas. Alivia las cinco funciones desde ya.',
+  holdVerb:'Asumir'
+ }
+};
+
+var H0=[
+ {id:'elvira', n:['Elvira','Doña Elvira'], d:['Jubilada, vive con sus dos nietos.','Viuda, con dos nietos a cargo.'], vis:{cuid:2}, hid:{circ:3}, note:['llevó las cuentas de un almacén durante treinta años','administraba la venta de los excedentes de la casa']},
+ {id:'marcos', n:['Marcos','Ña Marta'], d:['Electricista, trabaja de noche.','Reparaba las herramientas de la casa.'], vis:{mant:2}, hid:{trans:3}, note:['enseñó el oficio a varios aprendices','enseñaba a sus hijos a reparar y trabajar']},
+ {id:'pilar', n:['Pilar','Ña Pilar'], d:['Cocina para vender.','Vende chipa y mandioca en el mercado.'], vis:{circ:2}, hid:{red:3}, note:['organizaba la feria del barrio','organizaba a las vendedoras del mercado']},
+ {id:'mercedes', n:['Mercedes','Doña Mercedes'], d:['Docente, con pocas horas libres.','Sabe leer y escribir.'], vis:{trans:2}, hid:{cuid:3}, note:['crió a sus hermanos menores','cuidó a niños de varias familias']},
+ {id:'juan', n:['Juan','Ña Juana'], d:['Repartidor en moto.','Lleva excedentes de pueblo en pueblo.'], vis:{circ:2}, hid:{mant:3}, note:['arregla su moto y la de sus amigos','reparaba el carro y las herramientas']},
+ {id:'casiana', n:['Casiana','Casiana'], d:['Estudiante, con su hermana menor a cargo.','Joven, con su hermana menor a cargo.'], vis:{cuid:1}, hid:{red:2}, note:['presidió el centro de estudiantes','coordinaba el trabajo de las jóvenes de la compañía']},
+ {id:'dolores', n:['Dolores','Doña Dolores'], d:['Administrativa en una oficina.','Lleva las cuentas de la familia.'], vis:{red:2}, hid:{circ:2}, note:['negocia compras al por mayor para su familia','negociaba el precio de los excedentes']},
+ {id:'rosa', n:['Rosa','Ña Rosa'], d:['Enfermera de turnos rotativos.','Cura con yuyos y cuida enfermos.'], vis:{cuid:2}, hid:{trans:3}, note:['capacitó a enfermeras nuevas','enseñaba a otras mujeres a cuidar enfermos']}
+];
+
+var EV=[
+ {f:{mant:14}, focus:'mant', t:['El administrador no volvió y nadie sabe dónde está la llave del tanque.','Los hombres no volvieron. Quedan tierras sin quién las organice.']},
+ {f:{red:14}, focus:'red', t:['Nadie se pone de acuerdo sobre quién limpia qué.','Las familias no saben a quién acudir para repartir el trabajo.']},
+ {f:{cuid:16}, focus:'cuid', t:['Hay chicos sin nadie que los cuide por las tardes.','Hay niños sin quién los cuide mientras se trabaja la tierra.']},
+ {f:{circ:16}, focus:'circ', t:['Falla el proveedor de verduras y lo que había en las heladeras no alcanza.','El mercado ya no recibe excedentes y las herramientas no llegan.']},
+ {f:{mant:18}, focus:'mant', t:['Se rompe la bomba de agua.','Una sequía arruina parte de la cosecha.']},
+ {f:{red:14,cuid:8}, focus:'red', t:['Pelea entre vecinos por turnos y ruidos. Los chicos presencian todo.','Disputa entre familias por tierras y semillas.']},
+ {f:{trans:18}, focus:'trans', t:['Llegan inquilinos nuevos y nadie sabe cómo funciona el edificio.','Los niños crecen sin ver cómo se hacen las cosas y se pierde saber.']},
+ {f:{circ:14,mant:8}, focus:'circ', t:['Suben los precios y el fondo común se achica.','Se encarecen las herramientas y las semillas.']},
+ {f:{cuid:14,trans:8}, focus:'cuid', t:['Un vecino se enferma y cuatro chicos quedan sin tarde.','Una epidemia deja varios niños sin quien los cuide.']},
+ {f:{mant:14,red:8}, focus:'mant', t:['Un temporal rompe el techo del pasillo.','Una inundación daña caminos y cultivos.']},
+ {f:{circ:14,trans:8}, focus:'circ', t:['Cierra el comercio de la esquina donde se compraba entre todos.','Se corta el camino que llevaba la producción al mercado.']},
+ {f:{mant:6,red:6,cuid:6,circ:6,trans:6}, focus:'red', t:['Cierra el año. Se ve qué quedó en pie.','Pasan los años. Se ve qué quedó en pie.']}
+];
+
+var ENDS={
+ auto:{t:['Una red que se sostiene sola','Una comunidad que se reorganizó'],
+  b:['Nadie ocupó el lugar del administrador y aun así el edificio funciona. Las capacidades ya estaban en los departamentos; hacía falta que alguien las pidiera, las conectara y las enseñara.','Nadie reemplazó a la autoridad que faltaba y aun así las familias sostuvieron producción, comercio y crianza. No aparecieron capacidades nuevas: se ampliaron y se conectaron las que ya existían.']},
+ solo:{t:['Asumiste, pero solo','Una sola mujer sosteniendo todo'],
+  b:['Sostuviste mucho y casi todo pasó por vos. Asumir es el primer paso y también su límite: una red que depende de una sola persona vuelve a tener un cuello de botella.','Una sola mujer sosteniendo todo agota a una familia. La reconstrucción dependió de que el trabajo se repartiera entre muchas, no de una sola.']},
+ figura:{t:['La figura repuesta cayó','La dependencia volvió a fallar'],
+  b:['Pusiste a alguien a decidir por todos y por un tiempo todo mejoró. Cuando esa figura falló, quienes no tenían vínculos se quedaron sin nada. Delegar la decisión no es lo mismo que construir capacidad.','Reponer la dependencia con otra figura de autoridad alivia a corto plazo. Cuando falla, vuelve la pregunta que nadie respondió: quién coordina.']},
+ pasivo:{t:['Esperar también fue una decisión','Esperar no devolvió la estructura'],
+  b:['Mientras esperabas, cada función perdió terreno. La estructura que faltaba no volvió sola.','En una sociedad desarticulada, esperar que la estructura vuelva sola no devuelve nada. Quienes actuaron primero fueron las que ya conocían el trabajo.']},
+ frag:{t:['En pie, pero frágil','Sostenida, pero frágil'],
+  b:['El edificio sigue funcionando, pero depende de pocos. Hay capacidades sin descubrir y funciones sin respaldo: la próxima crisis encuentra los mismos puntos débiles.','La comunidad sigue en pie, pero con pocas manos sosteniendo mucho. Falta transmitir lo que se sabe para que no dependa de una sola persona.']}
+};
+
+var MAP=[
+ ['Lo básico / Producción','Agua, luz, limpieza y reparaciones','Tierras, cultivos, semillas y herramientas'],
+ ['Coordinación / Redes entre mujeres','Turnos y acuerdos entre vecinos','Cooperación entre familiares y vecinas sin autoridad central'],
+ ['Cuidado y formación / Crianza','Quién cuida a los chicos mientras todos trabajan','Criar y formar hábitos de trabajo a la vez que se reconstruye'],
+ ['Compras y circulación / Comercio','Compras compartidas y excedentes','Venta de excedentes y compra de herramientas'],
+ ['Transmisión / Educación','Que el saber de uno pase a varios','Preparar a las nuevas generaciones y ampliar la educación de las niñas'],
+ ['Capacidad latente','La vecina que organizó la feria del barrio','Capacidades que la dependencia no dejaba ejercer'],
+ ['Contratar a alguien que decida','Un nuevo administrador','Otra figura de autoridad'],
+ ['Carga alta','Agotamiento y chicos cargando lo que no les toca','Colaboración que se vuelve sobrecarga y privación']
+];
+
+var S=null;
+function newGame(){
+  return {
+    phase:'intro', week:1, ap:3, apPenalty:0, acts:0,
+    F:{mant:55,red:55,cuid:55,circ:55,trans:55}, delta:null,
+    hh:H0.map(function(h){
+      var sk={},kn={},k;
+      for(k in h.vis){sk[k]=h.vis[k];kn[k]=true;}
+      for(k in h.hid){sk[k]=h.hid[k];}
+      return {id:h.id,skills:sk,known:kn,assigned:null,carga:20,links:{},rest:0,revealed:false};
+    }),
+    pl:{carga:20,held:{}}, hired:false, hiredWeeks:0, hires:0, collapsed:false,
+    passive:0, burnouts:0, quiebres:0, log:[], sel:null, mode:null, msg:null, tone:'', ending:null, event:null
+  };
+}
+function H(id){return H0.filter(function(h){return h.id===id;})[0];}
+function HH(id){return S.hh.filter(function(h){return h.id===id;})[0];}
+function nm(id,l){return H(id).n[l];}
+function skill(h,k){return h.skills[k]||0;}
+function linkCount(h){return Object.keys(h.links).length;}
+function totalLinks(){var n=0;S.hh.forEach(function(h){n+=linkCount(h);});return n/2;}
+function heldList(){return Object.keys(S.pl.held);}
+function L(f,tone){S.log.unshift({w:S.week,f:f,tone:tone||''});if(S.log.length>40)S.log.pop();}
+function say(f,tone){S.msg=f;S.tone=tone||'';}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+function applyEvent(){
+  var ev=EV[S.week-1]; S.event=ev;
+  Object.keys(ev.f).forEach(function(k){S.F[k]=clamp(S.F[k]-ev.f[k]);});
+  L(function(l){return ev.t[l];},'bad');
+}
+function startGame(wait){
+  S.phase='play'; S.week=1; S.ap=3; applyEvent();
+  say(function(l){return 'Tenés 3 acciones por semana. Elegí un hogar o asumí una función vos mismo.';});
+  if(wait){
+    L(function(l){return 'Esperaste a que alguien se hiciera cargo. Nadie lo hizo.';},'bad');
+    endWeek();
+  }
+  render();
+}
+function spend(){S.ap--;S.acts++;}
+function canAct(){return S.phase==='play'&&S.ap>0;}
+
+function assign(id,k){
+  if(!canAct())return;
+  var h=HH(id); if(!h)return;
+  if(h.rest>0){say(function(l){return nm(id,l)+' está agotado y necesita descansar.';},'warn');return;}
+  if(h.carga>=85){say(function(l){return nm(id,l)+' está al límite. Dejá que descanse antes de pedirle más.';},'warn');return;}
+  if(h.assigned===k){say(function(l){return nm(id,l)+' ya sostiene esa función.';});return;}
+  spend(); h.assigned=k;
+  if(skill(h,k)>0&&!h.known[k]){
+    h.known[k]=true; h.revealed=true;
+    var he=H(id);
+    L(function(l){return 'Capacidad latente: '+nm(id,l)+' '+he.note[l]+'. Lo hace muy bien.';},'good');
+    say(function(l){return 'Descubriste que '+nm(id,l)+' sabía hacer esto. '+he.note[l].charAt(0).toUpperCase()+he.note[l].slice(1)+'.';},'good');
+  } else {
+    say(function(l){return nm(id,l)+' ahora sostiene '+T[layer].fn[k][0].toLowerCase()+'.';});
+  }
+  render();
+}
+function release(id){
+  var h=HH(id); if(!h||!h.assigned)return;
+  h.assigned=null; say(function(l){return nm(id,l)+' descansa. Recupera carga cada semana.';}); render();
+}
+function hold(k){
+  if(S.phase!=='play')return;
+  if(S.pl.held[k]){delete S.pl.held[k];say(function(l){return 'Soltaste '+T[layer].fn[k][0].toLowerCase()+'.';});render();return;}
+  if(!canAct())return;
+  spend(); S.pl.held[k]=true;
+  say(function(l){return 'Asumiste '+T[layer].fn[k][0].toLowerCase()+'. Rinde fuerte, pero te cansa.';});
+  render();
+}
+function startMode(type){
+  if(!canAct()||!S.sel||S.sel==='p')return;
+  S.mode={type:type,from:S.sel};
+  say(function(l){return type==='connect'?'Elegí en el gráfico con quién conectar.':'Elegí en el gráfico de quién aprender.';});
+  render();
+}
+function pickTarget(id){
+  var m=S.mode; if(!m)return false;
+  if(id==='p'||id===m.from){say(function(l){return 'Elegí a otro hogar.';},'warn');render();return true;}
+  var a=HH(m.from),b=HH(id);
+  if(m.type==='connect'){
+    if(a.links[id]){say(function(l){return 'Ya están conectados.';});S.mode=null;render();return true;}
+    spend(); a.links[id]=true; b.links[m.from]=true; S.mode=null;
+    say(function(l){return 'Conectaste a '+nm(m.from,l)+' con '+nm(id,l)+'. Se cansan menos y rinden más juntos.';},'good');
+    L(function(l){return nm(m.from,l)+' y '+nm(id,l)+' ahora cooperan.';},'good');
+  } else {
+    var best=null,gap=0;
+    FN.forEach(function(k){
+      if(b.known[k]&&skill(b,k)>skill(a,k)){
+        var g=skill(b,k)-skill(a,k)+skill(b,k)*0.01;
+        if(g>gap){gap=g;best=k;}
+      }
+    });
+    if(!best){say(function(l){return nm(id,l)+' no tiene nada nuevo para enseñarle a '+nm(m.from,l)+' que se sepa todavía.';},'warn');S.mode=null;render();return true;}
+    spend(); a.skills[best]=Math.min(3,skill(a,best)+1); a.known[best]=true;
+    a.links[id]=true; b.links[m.from]=true;
+    a.carga=clamp(a.carga+6); b.carga=clamp(b.carga+6); S.mode=null;
+    var k2=best;
+    say(function(l){return nm(m.from,l)+' aprendió de '+nm(id,l)+' ('+T[layer].fn[k2][0].toLowerCase()+'). Ahora hay más gente que sabe.';},'good');
+    L(function(l){return nm(m.from,l)+' aprendió de '+nm(id,l)+': '+T[layer].fn[k2][0].toLowerCase()+'.';},'good');
+  }
+  render();return true;
+}
+function hire(){
+  if(!canAct()||S.hired)return;
+  spend(); S.hired=true; S.hiredWeeks=0; S.hires++;
+  say(function(l){return l===0?'Ahora decide una sola persona. Las cinco funciones respiran.':'Ahora decide una figura externa. Las cinco funciones respiran.';},'warn');
+  L(function(l){return l===0?'Contrataron a alguien que decide por todos.':'Se volvió a depender de una figura de autoridad.';});
+  render();
+}
+
+function endWeek(){
+  if(S.phase!=='play')return;
+  if(S.acts===0){S.passive++;}
+  var before={},k;
+  FN.forEach(function(k){before[k]=S.F[k];});
+  FN.forEach(function(k){
+    var c=0,list=S.hh.filter(function(h){return h.assigned===k&&h.rest===0;});
+    list.forEach(function(h){c+=9+7*skill(h,k);});
+    var lb=0;
+    for(var i=0;i<list.length;i++)for(var j=i+1;j<list.length;j++){if(list[i].links[list[j].id])lb+=4;}
+    c+=Math.min(12,lb);
+    if(S.pl.held[k])c+=16;
+    if(S.hired)c+=15;
+    S.F[k]=clamp(S.F[k]-11+c);
+  });
+  S.hh.forEach(function(h){
+    if(h.assigned){
+      h.carga=clamp(h.carga+11-Math.min(6,2*linkCount(h)));
+      if(h.carga>=100){
+        S.quiebres++; h.rest=2; h.assigned=null; h.carga=70;
+        L(function(l){return nm(h.id,l)+' llegó al límite y tuvo que parar dos semanas. Los chicos de la casa quedaron cargando lo que no les toca.';},'bad');
+      }
+    } else {
+      h.carga=clamp(h.carga-8);
+      if(h.rest>0)h.rest--;
+    }
+  });
+  var held=heldList();
+  if(held.length){
+    S.pl.carga=clamp(S.pl.carga+14*held.length);
+    if(S.pl.carga>=100){
+      S.burnouts++; S.pl.held={}; S.pl.carga=70; S.apPenalty=2;
+      L(function(l){return 'Te agotaste. La próxima semana tenés menos energía para actuar.';},'bad');
+    }
+  } else { S.pl.carga=clamp(S.pl.carga-8); }
+  if(S.hired){
+    S.hiredWeeks++;
+    if(S.hiredWeeks>=3){
+      S.hired=false; S.collapsed=true; S.pl.held={};
+      FN.forEach(function(k){S.F[k]=clamp(S.F[k]-30);});
+      var lost=0;
+      S.hh.forEach(function(h){if(h.assigned&&linkCount(h)<2){h.assigned=null;lost++;}});
+      L(function(l){return l===0?'La figura que decidía por todos falló y se fue. Todas las funciones cayeron. Quedaron en pie solo los hogares con vínculos.':'La figura de autoridad falló. Todas las funciones cayeron. Quedaron en pie solo las familias con vínculos.';},'bad');
+    }
+  }
+  S.delta={};
+  FN.forEach(function(k){S.delta[k]=S.F[k]-before[k];});
+  var w=S.week;
+  L(function(l){return 'Fin de la semana '+w+'. Funcionamiento promedio: '+avg()+'.';});
+  if(S.week>=12){finish();render();return;}
+  S.week++; S.ap=Math.max(1,3-S.apPenalty); S.apPenalty=0; S.acts=0; S.mode=null;
+  applyEvent();
+  say(function(l){return S.acts===0&&false?'':'Semana '+S.week+'. Alguien tiene que asumir esto.';});
+  render();
+}
+function avg(){var s=0;FN.forEach(function(k){s+=S.F[k];});return Math.round(s/FN.length);}
+function redundancy(){
+  return FN.filter(function(k){return S.hh.filter(function(h){return h.known[k]&&skill(h,k)>=2;}).length>=2;}).length;
+}
+function discovered(){return S.hh.filter(function(h){return h.revealed;}).length;}
+function finish(){
+  S.phase='end'; S.mode=null;
+  var a=avg(), lk=totalLinks(), rd=redundancy(), id;
+  if(a>=55&&lk>=7&&rd>=3)id='auto';
+  else if(S.burnouts>=1&&lk<6)id='solo';
+  else if(S.collapsed)id='figura';
+  else if(S.passive>=3)id='pasivo';
+  else id='frag';
+  S.ending={id:id,avg:a,links:lk,red:rd,disc:discovered(),passive:S.passive,quiebres:S.quiebres};
+}
+
+function cargaColor(v){return v>=85?'var(--bad)':(v>=60?'var(--warn)':'var(--good)');}
+function pos(i){
+  if(i===0)return {x:200,y:60};
+  var a=-Math.PI/2+i*2*Math.PI/9;
+  return {x:200+140*Math.cos(a),y:200+140*Math.sin(a)};
+}
+function holders(k){
+  var l=LI(),r=[];
+  S.hh.forEach(function(h){if(h.assigned===k)r.push(nm(h.id,l));});
+  if(S.pl.held[k])r.unshift('Vos');
+  return r;
+}
+
+function renderGraph(){
+  var l=LI(),svg='<svg class="net" viewBox="0 0 400 420" role="group" aria-label="Red de hogares">';
+  var idx={};S.hh.forEach(function(h,i){idx[h.id]=i+1;});
+  var done={};
+  S.hh.forEach(function(h){
+    Object.keys(h.links).forEach(function(o){
+      var key=[h.id,o].sort().join('|'); if(done[key])return; done[key]=1;
+      var p=pos(idx[h.id]),q=pos(idx[o]);
+      var hot=(S.sel===h.id||S.sel===o)?' hot':'';
+      svg+='<line class="edge'+hot+'" x1="'+p.x+'" y1="'+p.y+'" x2="'+q.x+'" y2="'+q.y+'"/>';
+    });
+  });
+  function node(id,i,name,ini,carga,fnKeys,status){
+    var p=pos(i),r=27,circ=2*Math.PI*r,sel=S.sel===id?' sel':'';
+    var fill=fnKeys.length?'color-mix(in srgb,var(--c-'+fnKeys[0]+') 30%,var(--surface))':'var(--surface)';
+    var g='<g class="node'+sel+'" data-act="sel" data-id="'+id+'" tabindex="0" role="button" aria-label="'+esc(name)+', carga '+Math.round(carga)+' de 100">';
+    g+='<circle class="selring" cx="'+p.x+'" cy="'+p.y+'" r="35" style="display:'+(S.sel===id?'block':'none')+'"/>';
+    g+='<circle class="ringbg" cx="'+p.x+'" cy="'+p.y+'" r="'+r+'"/>';
+    g+='<circle class="ring" cx="'+p.x+'" cy="'+p.y+'" r="'+r+'" stroke="'+cargaColor(carga)+'" stroke-dasharray="'+(circ*carga/100).toFixed(1)+' '+circ.toFixed(1)+'" transform="rotate(-90 '+p.x+' '+p.y+')"/>';
+    g+='<circle class="core" cx="'+p.x+'" cy="'+p.y+'" r="21" style="fill:'+fill+'"/>';
+    g+='<text class="ini" x="'+p.x+'" y="'+p.y+'">'+esc(ini)+'</text>';
+    fnKeys.slice(0,3).forEach(function(k,j){
+      g+='<circle cx="'+(p.x+22-j*12)+'" cy="'+(p.y-24)+'" r="5" style="fill:var(--c-'+k+')" stroke="var(--surface)" stroke-width="1.5"/>';
+    });
+    g+='<text class="nl" x="'+p.x+'" y="'+(p.y+45)+'">'+esc(name)+'</text>';
+    if(status)g+='<text class="ns" x="'+p.x+'" y="'+(p.y+58)+'">'+esc(status)+'</text>';
+    g+='</g>';
+    return g;
+  }
+  svg+=node('p',0,'Vos','V',S.pl.carga,heldList(),heldList().length?'asumiendo':'');
+  S.hh.forEach(function(h,i){
+    svg+=node(h.id,i+1,nm(h.id,l),nm(h.id,l).charAt(nm(h.id,l).length>6&&nm(h.id,l).indexOf(' ')>0?nm(h.id,l).indexOf(' ')+1:0),h.carga,h.assigned?[h.assigned]:[],h.rest>0?'descansa':(h.carga>=85?'al límite':''));
+  });
+  svg+='</svg>';
+  var leg='<div class="legend">';
+  FN.forEach(function(k){leg+='<span style="--fc:var(--c-'+k+')"><i class="dot"></i>'+T[layer].fn[k][0]+'</span>';});
+  leg+='</div><p class="hint" style="text-align:center;margin-top:6px">El anillo de cada hogar mide su carga. Un punto de color indica la función que sostiene.</p>';
+  return svg+leg;
+}
+
+function renderPanel(){
+  var l=LI();
+  if(!S.sel){
+    return '<div class="panel"><h3>Elegí un hogar</h3><p class="muted">Hacé clic en un hogar del gráfico para ver qué sabe hacer y pedirle que sostenga una función. Algunos saben más de lo que muestran.</p></div>';
+  }
+  if(S.sel==='p'){
+    var hl=heldList(),o='<div class="panel"><h3>Vos</h3><p class="muted">'+(hl.length?'Estás sosteniendo: '+hl.map(function(k){return T[layer].fn[k][0].toLowerCase();}).join(', ')+'.':'Todavía no asumiste ninguna función.')+'</p>';
+    o+='<div><span class="label">Tu carga</span><div class="bar carga" style="--cc:'+cargaColor(S.pl.carga)+'"><i style="width:'+S.pl.carga+'%"></i></div></div>';
+    o+='<p class="hint">Asumir una función rinde mucho, pero cada una suma 14 puntos de carga por semana. Al llegar a 100 te agotás y perdés energía para actuar.</p></div>';
+    return o;
+  }
+  var h=HH(S.sel),he=H(S.sel),o='<div class="panel"><div><h3>'+esc(he.n[l])+'</h3><p class="muted">'+esc(he.d[l])+'</p></div>';
+  o+='<div class="chips">';
+  var latent=false;
+  FN.forEach(function(k){
+    if(h.known[k]&&skill(h,k)>0)o+='<span class="chip" style="--fc:var(--c-'+k+')"><i class="dot"></i>'+T[layer].fn[k][0]+' · nivel '+skill(h,k)+'</span>';
+    if(skill(h,k)>0&&!h.known[k])latent=true;
+  });
+  if(latent)o+='<span class="chip">? algo más por descubrir</span>';
+  o+='</div>';
+  o+='<div><span class="label">Carga '+Math.round(h.carga)+'/100'+(h.rest>0?' · descansa '+h.rest+' sem':'')+'</span><div class="bar carga" style="--cc:'+cargaColor(h.carga)+'"><i style="width:'+h.carga+'%"></i></div></div>';
+  if(h.carga>=85)o+='<div class="alert">La colaboración se volvió sobrecarga. Cuando una casa llega a este punto, los chicos terminan cargando lo que le corresponde a la red.</div>';
+  var ls=Object.keys(h.links).map(function(i){return nm(i,l);});
+  o+='<p class="hint">'+(ls.length?'Conectado con: '+ls.join(', ')+'.':'Sin conexiones todavía.')+'</p>';
+  if(S.mode){
+    o+='<div class="modebar"><span>'+(S.mode.type==='connect'?'Elegí en el gráfico con quién conectar.':'Elegí en el gráfico de quién aprender.')+'</span><button class="btn ghost" data-act="cancel">Cancelar</button></div>';
+  } else {
+    o+='<div><span class="label">Pedirle que sostenga</span></div><div class="btns">';
+    FN.forEach(function(k){
+      o+='<button class="btn fn" style="--fc:var(--c-'+k+')" data-act="assign" data-k="'+k+'" aria-pressed="'+(h.assigned===k)+'"'+(!canAct()||h.assigned===k?' disabled':'')+'><i class="dot"></i>'+T[layer].fn[k][0]+'</button>';
+    });
+    o+='</div><div class="btns">';
+    if(h.assigned)o+='<button class="btn ghost" data-act="release">Dejar que descanse (gratis)</button>';
+    o+='<button class="btn" data-act="mode" data-k="connect"'+(!canAct()?' disabled':'')+'>Conectar con otro hogar</button>';
+    o+='<button class="btn" data-act="mode" data-k="learn"'+(!canAct()?' disabled':'')+'>Que aprenda de otro</button>';
+    o+='</div>';
+  }
+  return o+'</div>';
+}
+
+function renderGauges(){
+  var o='<h2 style="margin-bottom:10px">Funciones que sostienen '+T[layer].place+'</h2>';
+  FN.forEach(function(k){
+    var v=Math.round(S.F[k]),d=S.delta?Math.round(S.delta[k]):null,hs=holders(k);
+    o+='<div class="gauge" style="--fc:var(--c-'+k+')"><div class="nm"><i class="dot"></i><span>'+T[layer].fn[k][0]+'</span>'+(S.event&&S.event.focus===k&&S.phase==='play'?'<span class="chip">bajo presión</span>':'')+'</div>';
+    o+='<div class="v">'+v+(d!=null?' <span class="'+(d>=0?'up':'down')+'">'+(d>=0?'▲':'▼')+Math.abs(d)+'</span>':'')+'</div>';
+    o+='<div class="bar" role="img" aria-label="'+T[layer].fn[k][0]+' '+v+' de 100"><i style="width:'+v+'%"></i></div>';
+    o+='<div class="meta">'+T[layer].fn[k][1]+' · '+(hs.length?'La sostiene: '+esc(hs.join(', ')):'<span class="'+(v<25?'risk':'')+'">Nadie la sostiene'+(v<25?' · en riesgo':'')+'</span>')+'</div></div>';
+  });
+  return o;
+}
+
+function renderTurn(){
+  var o='<div class="turn"><div class="head"><div><span class="label">Semana '+S.week+' de 12 · Tu turno</span><div class="pips" style="margin-top:6px" aria-label="Acciones disponibles: '+S.ap+'">';
+  var tot=Math.max(S.ap+S.acts,3);
+  for(var i=0;i<tot;i++)o+='<span class="pip'+(i<S.ap?' on':'')+'"></span>';
+  o+='</div></div></div>';
+  o+='<div><span class="label">Asumir vos mismo</span></div><div class="grp">';
+  FN.forEach(function(k){
+    var on=!!S.pl.held[k];
+    o+='<button class="btn fn" style="--fc:var(--c-'+k+')" data-act="hold" data-k="'+k+'" aria-pressed="'+on+'"'+(S.phase!=='play'||(!on&&S.ap<1)?' disabled':'')+'><i class="dot"></i>'+(on?'Soltar: ':'')+T[layer].fn[k][0]+'</button>';
+  });
+  o+='</div>';
+  o+='<div><button class="btn warnish" data-act="hire"'+(!canAct()||S.hired?' disabled':'')+'>'+T[layer].hire+'</button><p class="hint" style="margin-top:6px">'+T[layer].hireHint+'</p></div>';
+  o+='<div class="grp"><button class="btn '+(S.acts>0?'primary':'')+'" data-act="end"'+(S.phase!=='play'?' disabled':'')+'>'+(S.acts>0?'Terminar la semana':'Esperar una semana sin actuar')+'</button></div>';
+  var m=S.msg?S.msg(LI()):'';
+  o+='<p class="msg '+S.tone+'" role="status" aria-live="polite">'+esc(m)+'</p></div>';
+  return o;
+}
+
+function renderLog(){
+  var l=LI(),o='<h2 style="margin-bottom:10px">Bitácora</h2><ul class="log">';
+  S.log.slice(0,14).forEach(function(e){o+='<li class="'+e.tone+'"><span class="w">S'+e.w+'</span><span class="t">'+esc(e.f(l))+'</span></li>';});
+  return o+'</ul>';
+}
+
+function renderStats(){
+  var l=LI();
+  function st(a,b){return '<div class="stat"><span class="label">'+a+'</span><b>'+b+'</b></div>';}
+  return '<div class="stats">'+
+    st('Funcionamiento',avg()+'/100')+
+    st('Vínculos',totalLinks())+
+    st('Quién decide',S.hired?'Una figura':'La red')+
+    st('Capacidades halladas',discovered()+'/8')+
+    st('Semanas sin actuar',S.passive)+'</div>';
+}
+
+function renderEnd(){
+  var e=S.ending,l=LI(),E=ENDS[e.id];
+  return '<section class="card end"><span class="label">Final · semana 12</span><h2>'+E.t[l]+'</h2><p>'+E.b[l]+'</p>'+
+    '<dl><div><dt>Funcionamiento</dt><dd>'+e.avg+'/100</dd></div><div><dt>Vínculos</dt><dd>'+e.links+'</dd></div><div><dt>Funciones con respaldo</dt><dd>'+e.red+'/5</dd></div><div><dt>Capacidades halladas</dt><dd>'+e.disc+'/8</dd></div><div><dt>Semanas sin actuar</dt><dd>'+e.passive+'</dd></div><div><dt>Hogares agotados</dt><dd>'+e.quiebres+'</dd></div></dl>'+
+    '<p class="hint">Analogía didáctica. No todas las comunidades se organizaron igual; la investigación de Gabriela Dalla-Corte Caballero sobre familias encabezadas por mujeres permite profundizar en esa reorganización.</p>'+
+    '<div><button class="btn primary" data-act="restart">Volver a empezar</button></div></section>';
+}
+
+function renderMap(){
+  var el=document.getElementById('mapa');
+  var open=el.open;
+  var o='<summary>Mapa de analogías</summary><div class="tablewrap"><table><thead><tr><th>En el juego</th><th>Hoy (edificio)</th><th>Paraguay de posguerra</th></tr></thead><tbody>';
+  MAP.forEach(function(r){o+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td></tr>';});
+  o+='</tbody></table></div>';
+  el.innerHTML=o; el.open=open;
+}
+
+function render(){
+  var a=document.activeElement,fk=null;
+  if(a&&a.dataset&&a.dataset.act)fk=a.dataset.act+':'+(a.dataset.id||a.dataset.k||a.dataset.layer||'');
+  document.getElementById('kicker').textContent=T[layer].kicker;
+  document.getElementById('sub').textContent=T[layer].sub;
+  document.getElementById('seg').innerHTML='<button data-act="layer" data-layer="hoy" aria-pressed="'+(layer==='hoy')+'">Hoy</button><button data-act="layer" data-layer="hist" aria-pressed="'+(layer==='hist')+'">Paraguay 1870</button>';
+  var root=document.getElementById('root'),o='';
+  if(S.phase==='intro'){
+    o='<section class="card intro"><span class="label">Lunes · Semana 1 de 12</span><p class="scene">'+T[layer].scene+'</p><p class="muted">Tenés tres acciones por semana. Las funciones pierden terreno solas: si nadie hace nada, no se sostienen. Podés asumir vos, pedirles a otros que asuman, conectar a las personas y enseñar lo que se sabe.</p><div class="row"><button class="btn primary" data-act="start" data-k="assume">Asumir</button><button class="btn ghost" data-act="start" data-k="wait">Esperar a ver quién se hace cargo</button></div></section>';
+  } else {
+    if(S.phase==='end')o+=renderEnd();
+    if(S.phase==='play'&&S.event){
+      o+='<section class="event" aria-live="polite"><span class="label">Semana '+S.week+' de 12 · Esto pasa ahora</span><p class="t">'+S.event.t[LI()]+'</p><div><span class="chip" style="--fc:var(--c-'+S.event.focus+')"><i class="dot"></i>'+T[layer].fn[S.event.focus][0]+' en riesgo</span></div></section>';
+    }
+    o+=renderStats();
+    o+='<div class="cols"><div class="col"><section class="card">'+renderGraph()+'</section><section class="card">'+renderPanel()+'</section></div>';
+    o+='<div class="col"><section class="card">'+renderGauges()+'</section>'+(S.phase==='play'?'<section class="card">'+renderTurn()+'</section>':'')+'<section class="card">'+renderLog()+'</section></div></div>';
+  }
+  root.innerHTML=o;
+  renderMap();
+  if(fk){
+    var nodes=document.querySelectorAll('[data-act]');
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      if(n.dataset.act+':'+(n.dataset.id||n.dataset.k||n.dataset.layer||'')===fk){if(n.focus)n.focus({preventScroll:true});break;}
+    }
+  }
+}
+
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-act]'); if(!t)return;
+  var act=t.dataset.act;
+  if(act==='layer'){layer=t.dataset.layer;render();return;}
+  if(act==='start'){startGame(t.dataset.k==='wait');return;}
+  if(act==='restart'){S=newGame();render();return;}
+  if(!S)return;
+  if(act==='sel'){
+    if(S.mode&&S.phase==='play'){if(pickTarget(t.dataset.id))return;}
+    S.sel=t.dataset.id; render(); return;
+  }
+  if(act==='assign'){assign(S.sel,t.dataset.k);return;}
+  if(act==='release'){release(S.sel);return;}
+  if(act==='mode'){startMode(t.dataset.k);return;}
+  if(act==='cancel'){S.mode=null;say(function(){return '';});render();return;}
+  if(act==='hold'){hold(t.dataset.k);return;}
+  if(act==='hire'){hire();return;}
+  if(act==='end'){endWeek();return;}
+});
+document.addEventListener('keydown',function(e){
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('g.node')){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}
+});
+
+S=newGame();
+render();
+})();
+</script>
+
+</body></html>
