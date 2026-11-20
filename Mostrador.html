@@ -1,0 +1,311 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mostrador</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Concepto: el mostrador de un negocio chico. Una operación a la izquierda, diez módulos que reaccionan a la derecha. */
+:root{
+  --bg:#E8EDE9;--surface:#F5F8F5;--ink:#13231C;--mute:#566A60;--line:#C9D4CC;
+  --accent:#0E6B58;--accent-soft:#CFE6DD;--warn:#B45309;--warn-soft:#F6E3C8;--bad:#B3261E;--bad-soft:#F6D5D1;--ok:#2F7D3B;
+  --f-display:'Bricolage Grotesque','Segoe UI',sans-serif;--f-body:'Inter',system-ui,sans-serif;--f-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1613;--surface:#16211C;--ink:#E3EDE7;--mute:#93A89C;--line:#2A3B33;--accent:#4FC3A4;--accent-soft:#17382F;--warn:#E9A04B;--warn-soft:#3A2A14;--bad:#F08A82;--bad-soft:#40201D;--ok:#7FD08A;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0E1613;--surface:#16211C;--ink:#E3EDE7;--mute:#93A89C;--line:#2A3B33;--accent:#4FC3A4;--accent-soft:#17382F;--warn:#E9A04B;--warn-soft:#3A2A14;--bad:#F08A82;--bad-soft:#40201D;--ok:#7FD08A;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(30px,6vw,48px);line-height:1.05}
+h2{font-size:20px}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+header p{max-width:62ch;color:var(--mute);margin:8px 0 0}
+.tag{display:inline-block;border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:11px;color:var(--mute);margin-right:6px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;min-width:0}
+.kpi b{display:block;font-family:var(--f-mono);font-size:19px;font-weight:500;overflow-wrap:anywhere}
+.kpi span{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+.kpi.neg b{color:var(--bad)}
+.main{display:grid;grid-template-columns:320px minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:860px){.main{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.counter{position:sticky;top:12px;display:flex;flex-direction:column;gap:12px}
+@media(max-width:860px){.counter{position:static}}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.tabs button{font:inherit;font-size:12px;padding:7px 4px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:5px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mute)}
+select,input[type=number]{font:inherit;font-family:var(--f-mono);font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:7px 8px;width:100%;min-width:0}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{font:inherit;font-weight:600;border:0;border-radius:6px;padding:10px 12px;cursor:pointer;background:var(--accent);color:var(--bg)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500}
+.btn:focus-visible,select:focus-visible,input:focus-visible,.tabs button:focus-visible,.case:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:12px;color:var(--mute);min-height:34px}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.mod{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0;position:relative;transition:box-shadow .3s,border-color .3s}
+.mod h3{font-size:14px;display:flex;gap:6px;align-items:baseline}
+.mod h3 i{font-style:normal;font-family:var(--f-mono);font-size:11px;color:var(--mute)}
+.mod .body{margin-top:8px;font-size:12px;display:flex;flex-direction:column;gap:4px}
+.mod .ln{display:flex;justify-content:space-between;gap:8px}
+.mod .ln span:first-child{color:var(--mute);min-width:0}
+.mod.hit{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.mod.focus{border-color:var(--ink)}
+.delta{position:absolute;top:8px;right:10px;font-family:var(--f-mono);font-size:11px;background:var(--accent);color:var(--bg);border-radius:4px;padding:0 6px;opacity:0;transition:opacity .3s}
+.mod.hit .delta{opacity:1}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar>div{height:100%;background:var(--accent)}
+.bar.w>div{background:var(--warn)}.bar.b>div{background:var(--bad)}
+.pill{font-size:11px;border-radius:10px;padding:0 8px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.pill.w{background:var(--warn-soft);color:var(--warn)}.pill.b{background:var(--bad-soft);color:var(--bad)}
+.two{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:20px}
+@media(max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mute);font-weight:500}
+td.r,th.r{text-align:right}
+ul.alerts{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+ul.alerts li{padding:7px 10px;border-radius:6px;background:var(--warn-soft);color:var(--ink);font-size:12px;border-left:3px solid var(--warn)}
+ul.alerts li.b{background:var(--bad-soft);border-color:var(--bad)}
+ul.alerts li.ok{background:var(--accent-soft);border-color:var(--accent)}
+.report{display:none}.report.on{display:block}
+.report h3{margin-bottom:8px}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}
+.crit{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.crit div{border-top:2px solid var(--line);padding-top:8px;font-size:12px}
+.crit div.done{border-color:var(--accent)}
+.crit b{font-family:var(--f-display);font-size:14px;display:block}
+.crit small{color:var(--mute);display:block}
+.cases{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.case{font:inherit;font-size:13px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:6px;padding:7px 12px;cursor:pointer;text-align:left}
+.case[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.layers div{border:1px dashed var(--line);border-radius:6px;padding:10px;font-size:12px}
+.layers b{display:block;font-family:var(--f-display);font-size:14px;margin-bottom:2px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div class="wrap">
+<header>
+  <div class="eyebrow"><span class="tag">Empresa ficticia</span><span class="tag">Datos simulados</span><span class="tag">Contexto: fuentes públicas de Paraguay</span></div>
+  <h1>Mostrador</h1>
+  <p>Prototipo de administración de un negocio de manera simplificada para demostración: una venta no se queda en la caja. Mueve el stock, el saldo del cliente, el presupuesto y los asientos. Registrá operaciones y mirá cómo reacciona cada área.</p>
+</header>
+<section class="kpis" id="kpis" aria-label="Indicadores del día"></section>
+<div class="main">
+  <aside class="panel counter" aria-label="Mostrador">
+    <div><div class="eyebrow">Operar</div><h2 id="opTitle">Venta</h2></div>
+    <div class="tabs" id="tabs" role="group" aria-label="Tipo de operación"></div>
+    <div id="form" style="display:flex;flex-direction:column;gap:10px"></div>
+    <button class="btn" id="go">Registrar</button>
+    <div class="hint" id="hint" role="status" aria-live="polite"></div>
+    <hr style="border:0;border-top:1px solid var(--line);width:100%;margin:0">
+    <button class="btn ghost" id="sim">Simular una semana</button>
+    <button class="btn ghost" id="close">Cerrar el mes y ver informe</button>
+    <button class="btn ghost" id="reset">Empezar de cero</button>
+  </aside>
+  <section>
+    <div class="eyebrow" style="margin-bottom:8px">Una sola base relacional · diez módulos</div>
+    <div class="mods" id="mods"></div>
+  </section>
+</div>
+<div class="two">
+  <section class="panel"><h2>Libro diario</h2><p class="hint" style="margin:2px 0 8px">Cada operación genera su asiento. Si Debe y Haber no coinciden, algo está mal cargado.</p><div class="scroll"><table id="journal"></table></div></section>
+  <section class="panel"><h2>Alertas de control</h2><ul class="alerts" id="alerts"></ul></section>
+</div>
+<section class="panel report" id="report"></section>
+<section class="panel">
+  <div class="eyebrow">Qué demuestra cada ejercicio</div>
+  <h2>Cinco casos, una misma empresa</h2>
+  <div class="cases" id="cases" role="group" aria-label="Casos"></div>
+  <div class="hint" id="caseInfo" style="min-height:0"></div>
+</section>
+<section class="panel">
+  <div class="eyebrow">Matriz de evaluación común</div>
+  <h2>Seis preguntas que la gerencia puede hacerse</h2>
+  <div class="crit" id="crit" style="margin-top:12px"></div>
+</section>
+<section class="layers" aria-label="Arquitectura">
+  <div><b>A. Datos de referencia</b>INE, BCP, DNIT, MIC e información institucional. Dan contexto: población, precios, obligaciones tributarias, tipo de empresa. No hay datos de terceros.</div>
+  <div><b>B. Modelo administrativo simulado</b>Esta empresa ficticia: clientes, proveedores, compras, ventas, presupuesto y caja generados con reglas explícitas.</div>
+  <div><b>C. Resultados analíticos</b>Indicadores, alertas e informe ejecutivo que salen solos de las operaciones registradas.</div>
+</section>
+</div>
+<script>
+const P={arroz:{n:'Arroz 5 kg',cost:28000,price:36000,min:20,s0:40},aceite:{n:'Aceite 900 ml',cost:14000,price:18500,min:15,s0:30},yerba:{n:'Yerba mate 1 kg',cost:22000,price:29000,min:15,s0:25},azucar:{n:'Azúcar 1 kg',cost:6500,price:8500,min:30,s0:60}};
+const CL={c1:'Cliente 001 · hogar',c2:'Cliente 014 · comedor',c3:'Cliente 022 · kiosco'};
+const SU={p1:{n:'Mayorista Central',t:'30 días de plazo'},p2:{n:'Distribuidora del Norte',t:'contado, 3% más barato'}};
+const BU={alquiler:{n:'Alquiler',b:1200000},energia:{n:'Energía y agua',b:450000},sueldos:{n:'Sueldos y cargas',b:3200000},transporte:{n:'Transporte',b:300000}};
+const MODS=[[1,'Empresa'],[2,'Clientes'],[3,'Proveedores'],[4,'Productos'],[5,'Personal'],[6,'Operaciones'],[7,'Inventario'],[8,'Presupuesto'],[9,'Finanzas'],[10,'Contabilidad']];
+const TYPES=[['venta','Venta'],['compra','Compra'],['gasto','Gasto'],['cobro','Cobro'],['pago','Pago']];
+const CASES=[
+ {t:'01 Registro',c:'organización',m:[6,10,2,3],e:'Base de datos organizada y diccionario de datos.',p:'Probá registrar la misma venta dos veces seguidas: el control frena el duplicado.'},
+ {t:'02 Presupuesto',c:'planificación',m:[8,10],e:'Presupuesto comparativo e informe de desviaciones.',p:'Pagá una factura de energía mayor a Gs 450.000 y mirá la desviación.'},
+ {t:'03 Compras e inventario',c:'control operativo',m:[4,7,3,6],e:'Tablero de inventario y evaluación de proveedores.',p:'Vendé hasta bajar del stock mínimo y comprá a cada proveedor: uno es más barato, el otro da plazo.'},
+ {t:'04 Seguimiento financiero',c:'seguimiento',m:[9,2,3],e:'Flujo de caja y reporte de riesgos.',p:'Vendé a crédito y compará lo que hay en caja con lo que debés pagar.'},
+ {t:'05 Resultados',c:'análisis gerencial',m:[6,8,9,10],e:'Informe ejecutivo con indicadores y recomendaciones.',p:'Simulá una semana y cerrá el mes: el informe sale de las operaciones.'}];
+const fmt=n=>Math.round(n).toLocaleString('es-PY');
+const gs=n=>'Gs '+fmt(n);
+const $=id=>document.getElementById(id);
+let S,tab='venta',focusMods=[],hitTimer,busy=false;
+function fresh(){S={cash:6000000,ar:{c1:0,c2:0,c3:0},ap:{p1:0,p2:0},stock:{},spent:{alquiler:0,energia:0,sueldos:0,transporte:0},sales:0,cmv:0,gastos:0,saved:0,cnt:{venta:0,compra:0,gasto:0,cobro:0,pago:0},journal:[],lastKey:null,dups:0,closed:false,hit:{}};
+ for(const k in P)S.stock[k]=P[k].s0;}
+const sum=o=>Object.values(o).reduce((a,b)=>a+b,0);
+const invVal=()=>Object.keys(P).reduce((a,k)=>a+S.stock[k]*P[k].cost,0);
+const supCost=(k,s)=>s==='p2'?Math.round(P[k].cost*0.97):P[k].cost;
+function entry(desc,lines){S.journal.push({n:S.journal.length+1,desc,lines});}
+function fail(msg){return{ok:false,msg};}
+function apply(type,p){
+ const q=+p.qty,a=+p.amt;
+ if(type==='venta'){
+  const pr=P[p.prod];if(!(q>0))return fail('Ingresá una cantidad mayor a cero.');
+  if(q>S.stock[p.prod])return fail('Stock insuficiente: quedan '+S.stock[p.prod]+' unidades de '+pr.n+'.');
+  const t=q*pr.price,c=q*pr.cost,cr=p.cli!=='cash';
+  S.stock[p.prod]-=q;S.sales+=t;S.cmv+=c;if(cr)S.ar[p.cli]+=t;else S.cash+=t;S.cnt.venta++;
+  entry('Venta '+q+' × '+pr.n+(cr?' a crédito':' al contado'),[[cr?'Clientes':'Caja',t,0],['Ventas',0,t],['Costo de ventas',c,0],['Mercaderías',0,c]]);
+  S.hit={6:'+1 venta',7:'−'+q+' u.',10:'asiento'};S.hit[cr?2:9]='+'+fmt(t);
+  return{ok:true,msg:'Venta registrada por '+gs(t)+'. Margen de la operación: '+gs(t-c)+'.'};}
+ if(type==='compra'){
+  const pr=P[p.prod];if(!(q>0))return fail('Ingresá una cantidad mayor a cero.');
+  const u=supCost(p.prod,p.sup),t=q*u;
+  if(p.sup==='p2'&&t>S.cash)return fail('La caja no alcanza para pagar al contado ('+gs(t)+').');
+  S.stock[p.prod]+=q;S.saved+=q*(pr.cost-u);S.cnt.compra++;
+  if(p.sup==='p1')S.ap.p1+=t;else S.cash-=t;
+  entry('Compra '+q+' × '+pr.n+' a '+SU[p.sup].n,[['Mercaderías',t,0],[p.sup==='p1'?'Proveedores':'Caja',0,t]]);
+  S.hit={6:'+1 compra',7:'+'+q+' u.',10:'asiento'};S.hit[p.sup==='p1'?3:9]=p.sup==='p1'?'+'+fmt(t):'−'+fmt(t);
+  return{ok:true,msg:'Compra registrada por '+gs(t)+(p.sup==='p1'?', a pagar en 30 días.':', pagada al contado.')};}
+ if(type==='gasto'){
+  if(!(a>0))return fail('Ingresá un monto mayor a cero.');
+  if(a>S.cash)return fail('La caja no alcanza para este pago.');
+  S.cash-=a;S.spent[p.cat]+=a;S.gastos+=a;S.cnt.gasto++;
+  entry('Gasto: '+BU[p.cat].n,[['Gastos',a,0],['Caja',0,a]]);
+  const pc=Math.round(S.spent[p.cat]/BU[p.cat].b*100);
+  S.hit={6:'+1 gasto',8:pc+'%',9:'−'+fmt(a),10:'asiento'};if(p.cat==='sueldos')S.hit[5]='pagado';
+  return{ok:true,msg:'Gasto registrado. '+BU[p.cat].n+' va en '+pc+'% de lo presupuestado.'};}
+ if(type==='cobro'){
+  if(!(a>0))return fail('Ingresá un monto mayor a cero.');
+  if(a>S.ar[p.cli])return fail('El cliente debe '+gs(S.ar[p.cli])+'. No se puede cobrar más que eso.');
+  S.ar[p.cli]-=a;S.cash+=a;S.cnt.cobro++;
+  entry('Cobro a '+CL[p.cli],[['Caja',a,0],['Clientes',0,a]]);
+  S.hit={2:'−'+fmt(a),9:'+'+fmt(a),10:'asiento'};
+  return{ok:true,msg:'Cobro registrado. Saldo del cliente: '+gs(S.ar[p.cli])+'.'};}
+ if(type==='pago'){
+  if(!(a>0))return fail('Ingresá un monto mayor a cero.');
+  if(a>S.ap[p.sup])return fail('Se debe '+gs(S.ap[p.sup])+' a este proveedor.');
+  if(a>S.cash)return fail('La caja no alcanza para este pago.');
+  S.ap[p.sup]-=a;S.cash-=a;S.cnt.pago++;
+  entry('Pago a '+SU[p.sup].n,[['Proveedores',a,0],['Caja',0,a]]);
+  S.hit={3:'−'+fmt(a),9:'−'+fmt(a),10:'asiento'};
+  return{ok:true,msg:'Pago registrado. Saldo con el proveedor: '+gs(S.ap[p.sup])+'.'};}
+}
+function read(){const v=id=>($(id)||{}).value;return{prod:v('f_prod'),qty:v('f_qty'),cli:v('f_cli'),sup:v('f_sup'),cat:v('f_cat'),amt:v('f_amt')};}
+function submit(){
+ const p=read(),key=tab+'|'+JSON.stringify(p);
+ if(key===S.lastKey){S.dups++;S.hit={};setHint('Posible registro duplicado: es idéntico al anterior y no se cargó. Cambiá algún dato si es otra operación.',true);render();return;}
+ const r=apply(tab,p);setHint(r.msg,!r.ok);
+ if(r.ok){S.lastKey=key;S.closed=false;$('report').classList.remove('on');render(true);if(tab==='cobro'||tab==='pago')renderForm();}
+}
+function setHint(m,bad){const h=$('hint');h.textContent=m;h.style.color=bad?'var(--bad)':'var(--ink)';}
+const opt=(v,t)=>'<option value="'+v+'">'+t+'</option>';
+const prodOpts=()=>Object.keys(P).map(k=>opt(k,P[k].n+' · Gs '+fmt(P[k].price))).join('');
+function renderForm(){
+ const f=$('form');let h='';
+ const fld=(l,c)=>'<label>'+l+c+'</label>';
+ if(tab==='venta')h=fld('Producto','<select id="f_prod">'+prodOpts()+'</select>')+'<div class="row2">'+fld('Cantidad','<input id="f_qty" type="number" min="1" value="5">')+fld('Cobro','<select id="f_cli">'+opt('cash','Contado')+Object.keys(CL).map(k=>opt(k,'A crédito · '+CL[k])).join('')+'</select>')+'</div>';
+ if(tab==='compra')h=fld('Producto','<select id="f_prod">'+Object.keys(P).map(k=>opt(k,P[k].n+' · costo '+fmt(P[k].cost))).join('')+'</select>')+'<div class="row2">'+fld('Cantidad','<input id="f_qty" type="number" min="1" value="20">')+fld('Proveedor','<select id="f_sup">'+Object.keys(SU).map(k=>opt(k,SU[k].n+' · '+SU[k].t)).join('')+'</select>')+'</div>';
+ if(tab==='gasto')h=fld('Categoría','<select id="f_cat">'+Object.keys(BU).map(k=>opt(k,BU[k].n)).join('')+'</select>')+fld('Monto (Gs)','<input id="f_amt" type="number" min="1" value="'+BU.alquiler.b+'">');
+ if(tab==='cobro')h=fld('Cliente','<select id="f_cli">'+Object.keys(CL).map(k=>opt(k,CL[k]+' · debe '+fmt(S.ar[k]))).join('')+'</select>')+fld('Monto (Gs)','<input id="f_amt" type="number" min="1" value="'+(Math.max(S.ar.c1,1))+'">');
+ if(tab==='pago')h=fld('Proveedor','<select id="f_sup">'+opt('p1','Mayorista Central · debe '+fmt(S.ap.p1))+opt('p2','Distribuidora del Norte · debe '+fmt(S.ap.p2))+'</select>')+fld('Monto (Gs)','<input id="f_amt" type="number" min="1" value="'+Math.max(S.ap.p1,1)+'">');
+ f.innerHTML=h;
+ if(tab==='gasto')$('f_cat').onchange=e=>{$('f_amt').value=BU[e.target.value].b};
+ if(tab==='cobro')$('f_cli').onchange=e=>{$('f_amt').value=Math.max(S.ar[e.target.value],1)};
+ if(tab==='pago')$('f_sup').onchange=e=>{$('f_amt').value=Math.max(S.ap[e.target.value],1)};
+ $('opTitle').textContent=TYPES.find(t=>t[0]===tab)[1];
+ $('tabs').innerHTML=TYPES.map(t=>'<button type="button" data-t="'+t[0]+'" aria-pressed="'+(t[0]===tab)+'">'+t[1]+'</button>').join('');
+}
+function alerts(){
+ const a=[];
+ for(const k in P){const s=S.stock[k];if(s<=P[k].min)a.push([s===0?'b':'w','Stock bajo: '+P[k].n+' tiene '+s+' (mínimo '+P[k].min+').']);}
+ for(const k in BU){const r=S.spent[k]/BU[k].b;if(r>1)a.push(['b',BU[k].n+' superó el presupuesto en '+gs(S.spent[k]-BU[k].b)+' ('+Math.round(r*100)+'%).']);else if(r>=.85)a.push(['w',BU[k].n+' ya usó '+Math.round(r*100)+'% del presupuesto.']);}
+ const ap=sum(S.ap);if(ap>S.cash)a.push(['b','Riesgo de liquidez: se debe '+gs(ap)+' a proveedores y la caja tiene '+gs(S.cash)+'.']);
+ else if(S.cash<1500000)a.push(['w','Caja baja: '+gs(S.cash)+'. Revisá cobros pendientes.']);
+ if(S.dups)a.push(['w',S.dups+' registro(s) duplicado(s) frenado(s).']);
+ if(!a.length)a.push(['ok','Sin alertas. Todo dentro de lo previsto.']);
+ return a;}
+function balance(){let d=0,h=0;S.journal.forEach(e=>e.lines.forEach(l=>{d+=l[1];h+=l[2];}));return{d,h};}
+const result=()=>S.sales-S.cmv-S.gastos;
+function modBody(i){
+ const ln=(a,b)=>'<div class="ln"><span>'+a+'</span><span class="num">'+b+'</span></div>';
+ const bar=(r,c)=>'<div class="bar '+(c||'')+'"><div style="width:'+Math.min(100,Math.round(r*100))+'%"></div></div>';
+ if(i===1)return ln('Rubro','Almacén')+ln('Zona','Concepción')+ln('Tamaño','Microempresa')+ln('Período','Mes 1')+'<span style="color:var(--mute)">Contexto de mercado y tributario: INE, MIC, DNIT.</span>';
+ if(i===2)return Object.keys(CL).map(k=>ln(CL[k].replace(' · ',' '),S.ar[k]?'<b>'+fmt(S.ar[k])+'</b>':'—')).join('');
+ if(i===3)return ln('Mayorista Central',S.ap.p1?fmt(S.ap.p1):'—')+ln('Dist. del Norte',S.ap.p2?fmt(S.ap.p2):'—')+ln('Ahorro por precio',gs(S.saved));
+ if(i===4)return Object.keys(P).map(k=>ln(P[k].n,fmt(P[k].price))).join('')+'<span style="color:var(--mute)">Precio de venta, Gs</span>';
+ if(i===5)return ln('Puestos','Dueño + 1')+ln('Sueldos del mes',fmt(BU.sueldos.b))+ln('Estado',S.spent.sueldos>=BU.sueldos.b?'<span class="pill">pagado</span>':'<span class="pill w">pendiente</span>');
+ if(i===6)return ln('Ventas',S.cnt.venta)+ln('Compras',S.cnt.compra)+ln('Gastos',S.cnt.gasto)+ln('Cobros y pagos',S.cnt.cobro+S.cnt.pago);
+ if(i===7)return Object.keys(P).map(k=>{const s=S.stock[k],r=s/(P[k].min*2),c=s<=P[k].min?(s===0?'b':'w'):'';return ln(P[k].n,s+' / mín '+P[k].min)+bar(r,c);}).join('');
+ if(i===8)return Object.keys(BU).map(k=>{const r=S.spent[k]/BU[k].b,c=r>1?'b':r>=.85?'w':'';return ln(BU[k].n,Math.round(r*100)+'%')+bar(r,c);}).join('');
+ if(i===9)return ln('Caja',gs(S.cash))+ln('Por cobrar',gs(sum(S.ar)))+ln('Por pagar',gs(sum(S.ap)));
+ if(i===10){const b=balance(),ok=b.d===b.h;return ln('Asientos',S.journal.length)+ln('Debe',fmt(b.d))+ln('Haber',fmt(b.h))+'<span class="pill'+(ok?'':' b')+'" style="align-self:flex-start">'+(ok?'Debe = Haber ✓':'No cuadra')+'</span>';}
+}
+function render(flash){
+ const res=result();
+ $('kpis').innerHTML=[['Caja',gs(S.cash),S.cash<0],['Por cobrar',gs(sum(S.ar))],['Por pagar',gs(sum(S.ap))],['Inventario a costo',gs(invVal())],['Resultado del mes',gs(res),res<0]].map(k=>'<div class="kpi'+(k[2]?' neg':'')+'"><span>'+k[0]+'</span><b>'+k[1]+'</b></div>').join('');
+ $('mods').innerHTML=MODS.map(m=>{const h=flash&&S.hit[m[0]];return'<div class="mod'+(h?' hit':'')+(focusMods.includes(m[0])?' focus':'')+'"><span class="delta">'+(h||'')+'</span><h3><i>'+String(m[0]).padStart(2,'0')+'</i>'+m[1]+'</h3><div class="body">'+modBody(m[0])+'</div></div>';}).join('');
+ if(flash){clearTimeout(hitTimer);hitTimer=setTimeout(()=>document.querySelectorAll('.mod.hit').forEach(e=>e.classList.remove('hit')),2200);}
+ const rows=S.journal.slice(-4).reverse();
+ $('journal').innerHTML=rows.length?'<thead><tr><th>N°</th><th>Cuenta</th><th class="r">Debe</th><th class="r">Haber</th></tr></thead><tbody>'+rows.map(e=>'<tr><td class="mono">'+e.n+'</td><td colspan="3"><b>'+e.desc+'</b></td></tr>'+e.lines.map(l=>'<tr><td></td><td>'+l[0]+'</td><td class="r num">'+(l[1]?fmt(l[1]):'')+'</td><td class="r num">'+(l[2]?fmt(l[2]):'')+'</td></tr>').join('')).join('')+'</tbody>':'<tbody><tr><td>Todavía no hay asientos. Registrá una venta para ver el primero.</td></tr></tbody>';
+ $('alerts').innerHTML=alerts().map(a=>'<li class="'+a[0]+'">'+a[1]+'</li>').join('');
+ crit();
+}
+function crit(){
+ const n=S.journal.length,b=balance(),mx=Math.max(...Object.keys(BU).map(k=>S.spent[k]/BU[k].b));
+ const C=[['Organización','¿La información está correctamente estructurada?',n>0,n?n+' asientos en 10 módulos enlazados.':'Sin operaciones todavía.'],
+ ['Control','¿Se pueden detectar inconsistencias?',n>0,n?(b.d===b.h?'Debe = Haber.':'No cuadra.')+' '+S.dups+' duplicado(s) frenado(s).':'Pendiente.'],
+ ['Seguimiento','¿Se puede conocer el estado de las operaciones?',n>0,'Por cobrar '+gs(sum(S.ar))+' · por pagar '+gs(sum(S.ap))+'.'],
+ ['Análisis','¿Se pueden explicar las desviaciones?',mx>0,mx>0?'Mayor uso de presupuesto: '+Math.round(mx*100)+'%.':'Sin gastos aún.'],
+ ['Decisión','¿Se proponen medidas justificadas?',S.closed,S.closed?'Recomendaciones en el informe.':'Cerrá el mes para generarlas.'],
+ ['Comunicación','¿La gerencia puede comprender los resultados?',S.closed,S.closed?'Informe de una página listo.':'Pendiente.']];
+ $('crit').innerHTML=C.map(c=>'<div class="'+(c[2]?'done':'')+'"><b>'+c[0]+'</b><small>'+c[1]+'</small>'+c[3]+'</div>').join('');
+}
+function report(){
+ const res=result(),mb=S.sales?(S.sales-S.cmv)/S.sales:0,rot=invVal()?S.cmv/invVal():0,ap=sum(S.ap),R=[];
+ if(!S.journal.length){$('report').innerHTML='<h3>Informe ejecutivo</h3><p>No hay operaciones para evaluar. Registrá algunas o usá “Simular una semana”.</p>';$('report').classList.add('on');return;}
+ Object.keys(P).filter(k=>S.stock[k]<=P[k].min).forEach(k=>{const q=P[k].min*2-S.stock[k],c1=q*P[k].cost,c2=q*supCost(k,'p2');R.push('Reponer '+q+' unidades de '+P[k].n+'. A la Distribuidora del Norte cuesta '+gs(c2)+' al contado ('+(c2<=S.cash?'la caja alcanza':'la caja no alcanza')+'); al Mayorista Central '+gs(c1)+' a 30 días, sin tocar la caja hoy.');});
+ const over=Object.keys(BU).filter(k=>S.spent[k]>BU[k].b);
+ over.forEach(k=>{const low=Object.keys(BU).filter(x=>x!==k).sort((a,b)=>S.spent[a]/BU[a].b-S.spent[b]/BU[b].b)[0];R.push(BU[k].n+' excedió el presupuesto en '+gs(S.spent[k]-BU[k].b)+'. Reasignar desde '+BU[low].n+' o ajustar el presupuesto del próximo mes.');});
+ if(res<0&&mb>0)R.push('Las ventas no cubren los gastos del mes. Con un margen bruto de '+(mb*100).toFixed(1)+'%, el punto de equilibrio está en '+gs(S.gastos/mb)+' de ventas; hoy van '+gs(S.sales)+'.');
+ if(ap>S.cash)R.push('Priorizar cobros: la caja no cubre las deudas con proveedores.');
+ const dm=Object.keys(CL).sort((a,b)=>S.ar[b]-S.ar[a])[0];if(S.ar[dm]>0)R.push('Gestionar el cobro de '+CL[dm]+': debe '+gs(S.ar[dm])+', el mayor saldo.');
+ if(S.saved>0)R.push('Comprar al contado en la Distribuidora del Norte ya ahorró '+gs(S.saved)+'. Conviene mientras la caja lo permita.');
+ if(!R.length)R.push('Sin desvíos relevantes. Mantener el ritmo de registro y control.');
+ const kp=(l,v)=>'<div class="kpi"><span>'+l+'</span><b>'+v+'</b></div>';
+ $('report').innerHTML='<div class="eyebrow">Informe ejecutivo · Mes 1</div><h3>'+(res>=0?'El mes cierra con resultado positivo':'El mes cierra con pérdida')+'</h3><div class="rgrid">'+kp('Ventas',gs(S.sales))+kp('Margen bruto',(mb*100).toFixed(1)+'%')+kp('Gastos',gs(S.gastos))+kp('Resultado',gs(res))+kp('Rotación de inventario',rot.toFixed(1)+' veces')+kp('Caja / deudas',ap?(S.cash/ap).toFixed(1)+'×':'sin deudas')+'</div><div class="eyebrow">Recomendaciones</div><ul class="alerts">'+R.map(r=>'<li class="ok">'+r+'</li>').join('')+'</ul>';
+ $('report').classList.add('on');S.closed=true;crit();
+ $('report').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+const SIM=[['venta',{prod:'arroz',qty:6,cli:'cash'}],['venta',{prod:'aceite',qty:5,cli:'c2'}],['venta',{prod:'yerba',qty:4,cli:'cash'}],['venta',{prod:'azucar',qty:12,cli:'c3'}],['compra',{prod:'arroz',qty:20,sup:'p1'}],['venta',{prod:'arroz',qty:8,cli:'c1'}],['gasto',{cat:'alquiler',amt:1200000}],['venta',{prod:'yerba',qty:10,cli:'c2'}],['venta',{prod:'azucar',qty:20,cli:'cash'}],['cobro',{cli:'c2',amt:100000}],['compra',{prod:'yerba',qty:15,sup:'p2'}],['gasto',{cat:'energia',amt:520000}],['venta',{prod:'aceite',qty:9,cli:'cash'}],['gasto',{cat:'sueldos',amt:3200000}],['pago',{sup:'p1',amt:300000}],['venta',{prod:'arroz',qty:12,cli:'cash'}]];
+function simulate(){
+ if(busy)return;busy=true;$('sim').disabled=true;let i=0;
+ (function step(){
+  if(i>=SIM.length){busy=false;$('sim').disabled=false;setHint('Semana simulada con '+SIM.length+' operaciones. Podés cerrar el mes.',false);renderForm();return;}
+  const o=SIM[i++],r=apply(o[0],o[1]);S.lastKey=null;if(r.ok){setHint(r.msg,false);render(true);}
+  setTimeout(step,650);
+ })();
+}
+function setCase(i){
+ const c=CASES[i];focusMods=(focusMods===c.m)?[]:c.m;
+ document.querySelectorAll('.case').forEach((b,j)=>b.setAttribute('aria-pressed',String(focusMods===c.m&&j===i)));
+ $('caseInfo').innerHTML=focusMods.length?'<b>Competencia: '+c.c+'.</b> Evidencia: '+c.e+' <br>Probá acá: '+c.p+' (módulos resaltados arriba)':'';
+ render();
+}
+document.addEventListener('click',e=>{
+ const t=e.target.closest('#tabs button');if(t){tab=t.dataset.t;renderForm();setHint('',false);}
+});
+$('go').onclick=submit;$('sim').onclick=simulate;$('close').onclick=report;
+$('reset').onclick=()=>{if(busy)return;fresh();focusMods=[];$('report').classList.remove('on');$('caseInfo').innerHTML='';document.querySelectorAll('.case').forEach(b=>b.setAttribute('aria-pressed','false'));setHint('Negocio reiniciado con los saldos iniciales.',false);renderForm();render();};
+$('cases').innerHTML=CASES.map((c,i)=>'<button type="button" class="case" aria-pressed="false" data-i="'+i+'">'+c.t+'</button>').join('');
+$('cases').onclick=e=>{const b=e.target.closest('.case');if(b)setCase(+b.dataset.i);};
+fresh();renderForm();render();setHint('Empezá registrando una venta. Los saldos iniciales son ficticios.',false);
+</script>
+
+</body></html>
