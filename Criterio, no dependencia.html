@@ -1,0 +1,190 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Criterio, no dependencia</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: tablero de oficina en una columna: controles arriba, medidor, grilla de tareas, frase de estado abajo. */
+:root{
+  --bg:#f3f5f6;
+  --surface:#ffffff;
+  --fg:#16212b;
+  --muted:#5a6977;
+  --line:#dce2e7;
+  --accent:#0e7490;
+  --accent-soft:#d8eef3;
+  --ok:#157a3d;
+  --ok-soft:#dcf3e4;
+  --bad:#b42318;
+  --bad-soft:#fde5e2;
+  --font-head:"Space Grotesk","Helvetica Neue",Arial,sans-serif;
+  --font-body:"Inter","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10161b;--surface:#18212a;--fg:#e8eef3;--muted:#92a2b0;--line:#2a3640;
+    --accent:#4fb8d0;--accent-soft:#17323a;--ok:#5fcf8a;--ok-soft:#173226;--bad:#f1887e;--bad-soft:#3b1d1a;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10161b;--surface:#18212a;--fg:#e8eef3;--muted:#92a2b0;--line:#2a3640;
+  --accent:#4fb8d0;--accent-soft:#17323a;--ok:#5fcf8a;--ok-soft:#173226;--bad:#f1887e;--bad-soft:#3b1d1a;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg);color:var(--fg);font-family:var(--font-body);
+  padding-block:2rem 3rem;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  line-height:1.45;
+}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:1.5rem}
+.eyebrow{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--font-head);font-size:clamp(1.9rem,5vw,2.8rem);line-height:1.1;margin:.3rem 0 .5rem;text-wrap:balance;font-weight:600}
+.sub{color:var(--muted);margin:0;max-width:52ch}
+
+.controls{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:.9rem 1rem}
+.seg{display:flex;flex-wrap:wrap;gap:.25rem;background:var(--bg);padding:.25rem;border-radius:10px;min-width:0}
+.seg button{font:inherit;font-size:.9rem;font-weight:500;border:0;background:transparent;color:var(--muted);
+  padding:.55rem .9rem;border-radius:8px;cursor:pointer;min-width:0}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.seg button:focus-visible,.sw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.me{display:flex;align-items:center;gap:.75rem}
+.avatar{position:relative;width:2.5rem;height:2.5rem;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+  display:grid;place-items:center;font-family:var(--font-head);font-weight:600;transition:opacity .3s}
+.avatar::after{content:"";position:absolute;right:-1px;bottom:-1px;width:.75rem;height:.75rem;border-radius:50%;
+  background:var(--ok);border:2px solid var(--surface);transition:background .3s}
+.me[data-present="false"] .avatar{opacity:.45}
+.me[data-present="false"] .avatar::after{background:var(--muted)}
+.me-label{font-size:.85rem;color:var(--muted);min-width:5.5rem}
+.sw{font:inherit;width:3rem;height:1.7rem;border-radius:999px;border:1px solid var(--line);background:var(--bg);
+  position:relative;cursor:pointer;padding:0;transition:background .2s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:1.3rem;height:1.3rem;border-radius:50%;
+  background:var(--muted);transition:transform .2s,background .2s}
+.sw[aria-checked="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.sw[aria-checked="true"]::after{transform:translateX(1.3rem);background:var(--accent)}
+
+.meter{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:.6rem}
+.meter-top{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}
+.meter-top span{font-size:.85rem;color:var(--muted)}
+.pct{font-family:var(--font-head);font-size:1.8rem;font-weight:600;font-variant-numeric:tabular-nums}
+.track{height:.6rem;background:var(--bg);border-radius:999px;overflow:hidden}
+.fill{height:100%;width:100%;background:var(--ok);border-radius:999px;transition:width .5s ease,background .3s}
+.fill.low{background:var(--bad)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.9rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem;
+  display:flex;flex-direction:column;gap:.8rem;min-width:0;transition:background .3s,border-color .3s}
+.card.stopped{background:var(--bad-soft);border-color:var(--bad)}
+.tag{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.title{font-weight:600;font-size:1rem;margin:0;overflow-wrap:anywhere}
+.row{display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:auto}
+.owner{font-size:.8rem;font-weight:600;padding:.25rem .6rem;border-radius:6px;background:var(--bg);color:var(--fg)}
+.owner.ia{background:var(--accent-soft);color:var(--accent)}
+.pill{font-size:.78rem;font-weight:500;display:inline-flex;align-items:center;gap:.4rem;color:var(--ok)}
+.pill::before{content:"";width:.5rem;height:.5rem;border-radius:50%;background:currentColor}
+.pill.bad{color:var(--bad)}
+.note{font-size:.78rem;color:var(--muted);min-height:1.1em}
+
+.say{font-family:var(--font-head);font-size:1.15rem;text-wrap:balance;margin:0;padding:.2rem 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Un buen puesto no depende de una persona</div>
+    <h1>Aporto criterio, no dependencia</h1>
+    <p class="sub">Cambia el modo de trabajo y mi presencia. Mira dónde queda mi aporte.</p>
+  </header>
+
+  <section class="controls" aria-label="Controles">
+    <div class="seg" role="group" aria-label="Modo de trabajo">
+      <button type="button" id="modeA" aria-pressed="false">Todo en mi cabeza</button>
+      <button type="button" id="modeB" aria-pressed="true">Microtareas + IA</button>
+    </div>
+    <div class="me" id="me" data-present="true">
+      <div class="avatar" aria-hidden="true">Yo</div>
+      <span class="me-label" id="meLabel">En la oficina</span>
+      <button type="button" class="sw" id="sw" role="switch" aria-checked="true" aria-label="Estoy en la oficina"></button>
+    </div>
+  </section>
+
+  <section class="meter" aria-live="polite">
+    <div class="meter-top"><span>Operación en marcha</span><div class="pct" id="pct">100%</div></div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+  </section>
+
+  <section class="grid" id="grid" aria-label="Tareas del puesto"></section>
+
+  <p class="say" id="say" aria-live="polite"></p>
+</div>
+
+<script>
+(function(){
+  var tasks=[
+    {t:"Rutina",n:"Conciliar facturas"},
+    {t:"Rutina",n:"Responder consultas frecuentes"},
+    {t:"Rutina",n:"Actualizar planilla semanal"},
+    {t:"Rutina",n:"Enviar recordatorios"},
+    {t:"Criterio",n:"Aprobar excepciones"},
+    {t:"Criterio",n:"Negociar con proveedores"}
+  ];
+  var state={mode:"b",present:true};
+  var grid=document.getElementById("grid");
+  var cards=tasks.map(function(task){
+    var el=document.createElement("article");el.className="card";
+    el.innerHTML='<div class="tag"></div><h2 class="title"></h2><div class="note"></div><div class="row"><span class="owner"></span><span class="pill"></span></div>';
+    el.querySelector(".tag").textContent=task.t;
+    el.querySelector(".title").textContent=task.n;
+    grid.appendChild(el);return el;
+  });
+  var says={
+    "a-true":"Todo funciona, porque estoy yo.",
+    "a-false":"Nadie sabe el paso siguiente. Todo se detiene.",
+    "b-true":"La IA cuida lo repetitivo y yo dedico mi tiempo a pensar lo que más suma.",
+    "b-false":"La IA sigue. El equipo toma el resto con su ficha."
+  };
+  function status(task){
+    if(state.mode==="a"){
+      return state.present
+        ? {owner:"Yo",ia:false,txt:"En curso",bad:false,note:""}
+        : {owner:"Nadie",ia:false,txt:"Detenida",bad:true,note:"Falta el paso a paso"};
+    }
+    if(task.t==="Rutina") return {owner:"IA",ia:true,txt:"Automática",bad:false,note:"Paso definido"};
+    return state.present
+      ? {owner:"Yo",ia:false,txt:"En curso",bad:false,note:"Ficha de 1 página"}
+      : {owner:"Equipo",ia:false,txt:"Sigue con ficha",bad:false,note:"Ficha de 1 página"};
+  }
+  function render(){
+    var running=0;
+    tasks.forEach(function(task,i){
+      var s=status(task),c=cards[i];
+      c.classList.toggle("stopped",s.bad);
+      c.querySelector(".note").textContent=s.note;
+      var o=c.querySelector(".owner");o.textContent=s.owner;o.className="owner"+(s.ia?" ia":"");
+      var p=c.querySelector(".pill");p.textContent=s.txt;p.className="pill"+(s.bad?" bad":"");
+      if(!s.bad)running++;
+    });
+    var pct=Math.round(running/tasks.length*100);
+    document.getElementById("pct").textContent=pct+"%";
+    var f=document.getElementById("fill");f.style.width=pct+"%";f.classList.toggle("low",pct<60);
+    document.getElementById("say").textContent=says[state.mode+"-"+state.present];
+    document.getElementById("modeA").setAttribute("aria-pressed",state.mode==="a");
+    document.getElementById("modeB").setAttribute("aria-pressed",state.mode==="b");
+    var sw=document.getElementById("sw");
+    sw.setAttribute("aria-checked",state.present);
+    sw.setAttribute("aria-label",state.present?"Estoy en la oficina":"Estoy ausente");
+    document.getElementById("me").setAttribute("data-present",state.present);
+    document.getElementById("meLabel").textContent=state.present?"En la oficina":"Ausente";
+  }
+  document.getElementById("modeA").addEventListener("click",function(){state.mode="a";render();});
+  document.getElementById("modeB").addEventListener("click",function(){state.mode="b";render();});
+  document.getElementById("sw").addEventListener("click",function(){state.present=!state.present;render();});
+  render();
+})();
+</script>
+
+</body></html>
