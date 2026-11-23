@@ -1,0 +1,534 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tablero de las Reinas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: barra superior, reino visible + criterios en dos columnas, banda oscura del mundo subterráneo, y revisión/bitácora al pie. */
+:root{
+  --bg:#EDF1EF;--surface:#F8FAF9;--fg:#15211F;--muted:#586864;--line:#D2DBD8;--accent:#0E6F73;--accent-fg:#fff;
+  --good:#2E7D4F;--warn:#B06F10;--bad:#B5412F;
+  --deep:#191B33;--deep2:#242749;--deepfg:#ECEBF7;--deepmuted:#A9ABCB;--deepline:#3A3E6C;--lamp:#F0B24B;
+  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B1211;--surface:#131C1A;--fg:#E6EEEC;--muted:#93A5A0;--line:#25322F;--accent:#4FB8BC;--accent-fg:#06201F;
+  --good:#5CBF86;--warn:#E0A74A;--bad:#E58270;--deep:#0E0F22;--deep2:#171936;--deepline:#2D3060;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1211;--surface:#131C1A;--fg:#E6EEEC;--muted:#93A5A0;--line:#25322F;--accent:#4FB8BC;--accent-fg:#06201F;
+  --good:#5CBF86;--warn:#E0A74A;--bad:#E58270;--deep:#0E0F22;--deep2:#171936;--deepline:#2D3060;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body);padding-block:0 40px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(1.6rem,3.2vw,2.3rem);letter-spacing:-.01em}
+h2{font-size:1.25rem}h3{font-size:1rem;font-weight:600}
+.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:.4rem .75rem;min-height:36px}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+button.sm{min-height:32px;padding:.25rem .6rem;font-size:.85rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.deep :focus-visible{outline-color:var(--lamp)}
+
+/* barra superior */
+.top{padding-block:22px 16px;display:grid;gap:14px}
+.top-row{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+.reinas{display:flex;flex-wrap:wrap;gap:6px;border:0;padding:0;margin:0;min-width:0}
+.reinas legend{padding:0;margin-bottom:6px}
+.reinas label{position:relative}
+.reinas input{position:absolute;opacity:0;inset:0}
+.reinas span{display:block;padding:.35rem .8rem;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:.88rem;cursor:pointer}
+.reinas input:checked+span{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+.reinas input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.stats{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap}
+.stat{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:.3rem .8rem;min-width:84px}
+.stat b{display:block;font:500 1.25rem var(--f-mono)}
+.steps{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.8rem;color:var(--muted)}
+.steps span{padding:.15rem .6rem;border-radius:999px;border:1px dashed var(--line)}
+.steps span.on{border-style:solid;border-color:var(--accent);color:var(--fg);background:var(--surface)}
+.steps i{width:14px;height:1px;background:var(--line)}
+.orient{margin:0;color:var(--muted);max-width:60ch}
+.banner{margin:0;padding:.55rem .8rem;border-left:3px solid var(--accent);background:var(--surface);border-radius:0 6px 6px 0;font-size:.9rem}
+
+/* tablero */
+.board{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.board{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.panel>header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.panel>header p{margin:0;color:var(--muted);font-size:.85rem}
+.sectors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:22px}
+@media (max-width:520px){.sectors{grid-template-columns:minmax(0,1fr)}}
+.sector{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--bg)}
+.srow{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.srow .num{font-size:1.4rem}
+.bar{position:relative;height:10px;background:var(--line);border-radius:5px;margin:8px 0 6px}
+.bar i{display:block;height:100%;border-radius:5px;transition:width .35s}
+.tick{position:absolute;top:-4px;width:2px;height:18px;background:var(--fg);border-radius:1px}
+.sub{margin:0;font-size:.8rem;color:var(--muted)}
+.props{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:520px){.props{grid-template-columns:minmax(0,1fr)}}
+.prop{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.prop.queued{border-color:var(--accent)}
+.prop.done{background:var(--bg)}
+.prop .meta{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font:500 .75rem var(--f-mono);padding:.1rem .45rem;border-radius:4px;background:var(--bg);border:1px solid var(--line)}
+.chip.up{color:var(--good)}.chip.dn{color:var(--bad)}
+.prop p{margin:0;font-size:.82rem;color:var(--muted)}
+.prop .state{margin-top:auto;font-size:.85rem;font-weight:600;color:var(--accent)}
+.sec-title{margin:0 0 10px}
+.crit{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+.crit li{display:grid;gap:3px}
+.crit .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.crit .q{font-size:.78rem;color:var(--muted)}
+.crit .bar{margin:2px 0}
+.spark{width:100%;height:auto;display:block;margin-top:6px}
+.spark text{font:10px var(--f-mono);fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:.78rem;color:var(--muted);margin-top:4px}
+
+/* mundo subterráneo */
+.deep{background:var(--deep);color:var(--deepfg);margin-top:26px;padding-block:26px}
+.deep .eyebrow{color:var(--lamp)}
+.deep-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.5fr);gap:26px;margin-top:14px}
+@media (max-width:860px){.deep-grid{grid-template-columns:minmax(0,1fr)}}
+.deep p.lead{margin:6px 0 0;color:var(--deepmuted);max-width:62ch}
+.net{width:100%;height:auto;max-width:380px;display:block}
+.net text{font:11px var(--f-mono);fill:var(--deepfg)}
+.k-list{display:grid;gap:8px;margin-top:12px}
+.k-row{display:grid;grid-template-columns:minmax(0,1fr) 90px 34px;gap:8px;align-items:center;font-size:.82rem;color:var(--deepmuted)}
+.k-row .bar{background:var(--deepline);margin:0;height:7px}
+.k-row .bar i{background:var(--lamp)}
+.surv{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:12px}
+.sv{background:var(--deep2);border:1px solid var(--deepline);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.sv.hidden{border-style:dashed;background:transparent;color:var(--deepmuted)}
+.sv h3{font-size:.95rem}
+.sv p{margin:0;font-size:.82rem;color:var(--deepmuted)}
+.pill{display:inline-block;font:500 .7rem var(--f-mono);padding:.1rem .5rem;border-radius:999px;border:1px solid var(--lamp);color:var(--lamp);width:fit-content}
+.pill.bad{border-color:var(--bad);color:var(--bad)}
+.sv .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.deep button{background:transparent;color:var(--deepfg);border-color:var(--deepline)}
+.deep button:hover:not(:disabled){border-color:var(--lamp)}
+.deep button.primary{background:var(--lamp);color:#241a05;border-color:var(--lamp)}
+
+/* pie */
+.foot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:26px}
+@media (max-width:860px){.foot{grid-template-columns:minmax(0,1fr)}}
+.crisis{display:grid;gap:8px}
+.crisis button{text-align:left;display:flex;flex-direction:column;gap:2px;padding:.5rem .75rem;height:auto}
+.crisis small{color:var(--muted);font-size:.78rem}
+table{border-collapse:collapse;width:100%;font-size:.85rem}
+th,td{padding:.35rem .4rem;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{font-weight:600;color:var(--muted);font-size:.75rem}
+.tbl{overflow-x:auto}
+.log{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:.84rem}
+.log li{padding-bottom:6px;border-bottom:1px solid var(--line)}
+.log b{font-family:var(--f-mono);color:var(--muted);font-weight:500;margin-right:6px}
+.verdict{border-radius:8px;padding:12px 14px;border:1px solid var(--line);margin-top:12px;font-size:.88rem}
+.verdict h3{margin-bottom:4px}
+.verdict.ok{border-color:var(--good)}.verdict.no{border-color:var(--bad)}
+.verdict ul{margin:6px 0 0;padding-left:1.1rem;color:var(--muted)}
+.note{font-size:.78rem;color:var(--muted);margin:10px 0 0}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<main>
+<div class="wrap top">
+  <div>
+    <div class="eyebrow">El reinado invisible para las masas</div>
+    <h1>Tablero de la reina</h1>
+  </div>
+  <div class="top-row">
+    <fieldset class="reinas" id="reinas"><legend class="eyebrow">Gestión de</legend></fieldset>
+    <div class="stats">
+      <div class="stat"><span class="eyebrow">Ciclo</span><b id="s-ciclo">1</b></div>
+      <div class="stat"><span class="eyebrow">Recursos</span><b id="s-rec">5</b></div>
+      <button class="primary" data-act="next" id="b-next">Avanzar ciclo</button>
+      <button data-act="reset" id="b-reset">Reiniciar</button>
+    </div>
+  </div>
+  <p class="orient" id="orient"></p>
+  <div class="steps" id="steps" aria-label="Pasos del ciclo"></div>
+  <p class="banner" id="banner" aria-live="polite"></p>
+</div>
+
+<div class="wrap board">
+  <section class="panel" aria-labelledby="h-vis">
+    <header><div><div class="eyebrow">Capa visible</div><h2 id="h-vis">Reino</h2></div>
+      <p>La marca negra indica lo que la reina esperaba tras el último ciclo.</p></header>
+    <div class="sectors" id="sectors"></div>
+    <h3 class="sec-title">Propuestas</h3>
+    <div class="props" id="props"></div>
+  </section>
+  <section class="panel" aria-labelledby="h-crit">
+    <header><div><div class="eyebrow">Evaluación</div><h2 id="h-crit">Seis criterios</h2></div></header>
+    <ul class="crit" id="crit"></ul>
+    <svg class="spark" id="spark" viewBox="0 0 320 110" role="img" aria-label="Salud media del reino por ciclo"></svg>
+    <div class="legend"><span>━ salud media real</span><span>┅ prueba sin la reina</span></div>
+    <button class="primary" style="width:100%;margin-top:14px" data-act="test" id="b-test">Prueba: la comunidad sin la reina</button>
+    <div id="verdict"></div>
+  </section>
+</div>
+
+<section class="deep" aria-labelledby="h-deep">
+  <div class="wrap">
+    <div class="eyebrow">Capa invisible</div>
+    <h2 id="h-deep">Mundo subterráneo</h2>
+    <p class="lead">Lo que sostiene el reino no se ve desde la superficie: las dependencias entre sectores, el saber acumulado y quienes lo guardan.</p>
+    <div class="deep-grid">
+      <div>
+        <svg class="net" id="net" viewBox="0 0 320 210" role="img" aria-label="Red de dependencias entre sectores"></svg>
+        <p class="sub" style="color:var(--deepmuted)" id="weak"></p>
+        <div class="k-list" id="klist"></div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+          <h3>Sobrevivientes <span class="mono" id="svcount"></span></h3>
+          <button class="primary sm" data-act="diag" id="b-diag">Diagnóstico: recorrer la comunidad</button>
+        </div>
+        <div class="surv" id="surv"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap foot">
+  <section class="panel" aria-labelledby="h-cr">
+    <header><div><div class="eyebrow">Pruebas</div><h2 id="h-cr">Provocar una crisis</h2></div></header>
+    <div class="crisis" id="crisis"></div>
+    <p class="note">Las crisis las dispara quien usa la demo. El saber local, las obras y los sobrevivientes reducen el daño.</p>
+  </section>
+  <section class="panel" aria-labelledby="h-rev">
+    <header><div><div class="eyebrow">Revisión</div><h2 id="h-rev">Esperado y ocurrido</h2></div></header>
+    <div class="tbl" id="review"></div>
+  </section>
+  <section class="panel" aria-labelledby="h-log">
+    <header><div><div class="eyebrow">Bitácora</div><h2 id="h-log">Lo que pasó</h2></div></header>
+    <ul class="log" id="log"></ul>
+  </section>
+</div>
+<div class="wrap"><p class="note">Demo con reglas simplificadas y datos de ejemplo. La partida arranca con un ciclo ya jugado.</p></div>
+</main>
+
+<script>
+/* ENGINE: datos + reglas puras (sin DOM). Se inserta tal cual en la página. */
+const SEC = ['prod','infra','com','bien'];
+const SEC_NAME = {prod:'Producción',infra:'Infraestructura',com:'Comercio y administración',bien:'Bienestar comunitario'};
+// DEP[i][j] = cuánto depende i de j
+const DEP = {
+  prod:{infra:.5,com:.3,bien:.2},
+  infra:{prod:.4,com:.3,bien:.3},
+  com:{infra:.5,prod:.5},
+  bien:{prod:.5,infra:.3,com:.2}
+};
+const REINAS = {
+  reconstruccion:{name:'Reina de la reconstrucción',orient:'Las crisis le pegan 20% menos',eventMul:.8},
+  produccion:{name:'Reina de la producción',orient:'Sus propuestas rinden 25% más en Producción',boost:'prod'},
+  cooperacion:{name:'Reina de la cooperación',orient:'Los sectores se sostienen más entre sí',pull:.35},
+  infraestructura:{name:'Reina de la infraestructura',orient:'Sus propuestas rinden 25% más en Infraestructura',boost:'infra'},
+  continuidad:{name:'Reina de la continuidad',orient:'El conocimiento se acumula 50% más rápido',kmul:1.5}
+};
+const PROPS = {
+  A:{name:'Granero comunitario',cost:3,delay:0,vis:{prod:8,bien:6,com:3},upkeep:{prod:1},shield:{sequia:.25},k:{},
+     risk:'Concentra el alimento en un punto. Si nadie sabe rotar el grano, se pierde.',time:'Inmediato'},
+  B:{name:'Caminos y puentes',cost:4,delay:1,vis:{infra:10,com:8,prod:2},upkeep:{infra:2},shield:{interrupcion:.5},k:{},
+     risk:'Exige mantenimiento constante. Sin quien conozca el terreno, se deteriora.',time:'1 ciclo'},
+  C:{name:'Escuela de oficios',cost:3,delay:2,vis:{bien:4,prod:2,infra:2},upkeep:{},shield:{perdida:.5},k:{prod:10,infra:10,com:10,bien:10},
+     risk:'Tarda en dar resultados. Rinde el doble donde ya hay un sobreviviente incorporado.',time:'2 ciclos'},
+  D:{name:'Sistema de agua',cost:4,delay:1,vis:{prod:7,bien:8,infra:3},upkeep:{prod:1,bien:1},shield:{sequia:.5},k:{},
+     risk:'Depende de infraestructura y de quien conozca las dependencias técnicas.',time:'1 ciclo'}
+};
+const SURV = {
+  agricultora:{name:'Mariela',role:'Agricultora',sec:'prod',know:'Conoce los ciclos de producción mejor que cualquier administrador.',ev:'sequia'},
+  constructor:{name:'Don Aníbal',role:'Constructor',sec:'infra',know:'Sabe qué materiales resisten las condiciones del terreno.',ev:'desastre'},
+  comerciante:{name:'Ña Pura',role:'Comerciante',sec:'com',know:'Conoce las rutas alternativas cuando una se cierra.',ev:'interrupcion'},
+  veterana:{name:'Doña Casiana',role:'Habitante experimentada',sec:'bien',know:'Recuerda cómo sobrevivió la comunidad a la crisis anterior.',ev:'any'},
+  tecnico:{name:'Eladio',role:'Técnico',sec:'infra',know:'Conoce las dependencias de la infraestructura.',ev:'perdida'}
+};
+const EVENTS = {
+  sequia:{name:'Sequía',txt:'Baja la producción agrícola y sube la demanda de agua.',dmg:{prod:-18,bien:-8}},
+  desastre:{name:'Desastre',txt:'Hay que reconstruir y reasignar recursos.',dmg:{infra:-20,bien:-10,com:-5}},
+  interrupcion:{name:'Interrupción comercial',txt:'Una ruta deja de funcionar.',dmg:{com:-22,prod:-5}},
+  perdida:{name:'Pérdida de conocimiento',txt:'Un especialista deja de estar disponible.',dmg:{}}
+};
+const STATUS_F = {oculto:1,visto:1,ignorado:1.25,consultado:.85,incorporado:.7,transmitido:.55,perdido:1.1};
+const STATUS_SCORE = {oculto:0,visto:0,ignorado:0,consultado:.3,incorporado:.6,transmitido:1,perdido:0};
+const CRIT = {
+  continuidad:'¿La comunidad puede seguir funcionando?',
+  autonomia:'¿Los habitantes pueden resolver problemas?',
+  transmision:'¿Se conservan los conocimientos?',
+  adaptacion:'¿Puede responder a nuevas crisis?',
+  cooperacion:'¿Existen relaciones entre sectores?',
+  sostenibilidad:'¿Puede mantener lo construido?'
+};
+const clamp=(x,a=0,b=100)=>Math.max(a,Math.min(b,x));
+const mean=o=>{const v=Object.values(o);return v.reduce((a,b)=>a+b,0)/v.length};
+
+function newState(reina='produccion'){
+  const s={cycle:1,budget:5,reina,h:{prod:55,infra:48,com:50,bien:45},k:{prod:15,infra:15,com:15,bien:15},
+    props:{},surv:{},history:[],log:[],drops:[],diag:false,review:null,upkeepNow:0};
+  for(const p in PROPS) s.props[p]={st:'idle',ready:0};
+  for(const v in SURV) s.surv[v]='oculto';
+  s.history.push({c:0,m:mean(s.h)});
+  return s;
+}
+const clone=s=>JSON.parse(JSON.stringify(s));
+const done=(s,id)=>s.props[id].st==='done';
+const shieldFor=(s,ev)=>{let f=1;for(const p in PROPS){if(done(s,p)&&PROPS[p].shield[ev])f*=1-PROPS[p].shield[ev]}return 1-Math.min(.8,1-f)};
+// factor del sobreviviente sobre un evento (1 = sin efecto)
+function survFactor(s,ev){
+  let f=1;
+  for(const v in SURV){
+    const sf=STATUS_F[s.surv[v]];
+    if(SURV[v].ev===ev) f*=sf; else if(SURV[v].ev==='any') f*=1-(1-sf)*.5;
+  }
+  return f;
+}
+function applyEvent(s,ev){
+  const R=REINAS[s.reina],before=mean(s.h),msgs=[];
+  // el evento revela al sobreviviente relacionado
+  for(const v in SURV) if(SURV[v].ev===ev && s.surv[v]==='oculto'){s.surv[v]='visto';msgs.push(`Salió a la luz: ${SURV[v].name}, ${SURV[v].role.toLowerCase()}.`)}
+  if(ev==='perdida'){
+    const cand=Object.keys(SURV).filter(v=>!['transmitido','perdido'].includes(s.surv[v]));
+    if(!cand.length){msgs.push('Nadie se pierde: todos los oficios ya estaban transmitidos.');}
+    else{
+      const v=cand[0],sec=SURV[v].sec;
+      s.surv[v]='perdido';
+      const loss=20*shieldFor(s,'perdida');
+      s.k[sec]=clamp(s.k[sec]-loss);
+      s.h[sec]=clamp(s.h[sec]-5*shieldFor(s,'perdida'));
+      msgs.push(`${SURV[v].name} ya no está. Nadie aprendió su oficio: el saber de ${SEC_NAME[sec]} baja ${Math.round(loss)}.`);
+    }
+  }else{
+    const sh=shieldFor(s,ev),sf=survFactor(s,ev),em=R.eventMul||1;
+    for(const sec in EVENTS[ev].dmg){
+      const d=EVENTS[ev].dmg[sec]*sh*(1-s.k[sec]/200)*sf*em;
+      s.h[sec]=clamp(s.h[sec]+d);
+      msgs.push(`${SEC_NAME[sec]} ${Math.round(d)}`);
+    }
+  }
+  const drop=before-mean(s.h);s.drops.push(drop);
+  s.log.unshift({c:s.cycle,t:`${EVENTS[ev].name}. `+msgs.join(' · ')});
+  return msgs;
+}
+const hasInc=(s,sec)=>Object.keys(SURV).some(v=>SURV[v].sec===sec&&['incorporado','transmitido'].includes(s.surv[v]));
+function pullStep(s){
+  const pull=REINAS[s.reina].pull||.25,n={};
+  for(const i of SEC){let t=0;for(const j in DEP[i])t+=DEP[i][j]*s.h[j];n[i]=s.h[i]+pull*(t-s.h[i])}
+  s.h=n;
+}
+function effDecay(s,sec){
+  let up=0;for(const p in PROPS)if(done(s,p))up+=PROPS[p].upkeep[sec]||0;
+  return (3+up*.7)*(1-Math.min(s.k[sec],100)/140);
+}
+// avanza un ciclo; auto=true => sin reina (no mueve propuestas en cola)
+function advance(s){
+  const R=REINAS[s.reina],exp={},real={};
+  for(const sec of SEC)exp[sec]=s.h[sec];
+  for(const p in PROPS){const o=s.props[p];if(o.st==='queued'){o.st='building';o.ready=s.cycle+PROPS[p].delay}}
+  const finished=[];
+  for(const p in PROPS){const o=s.props[p];if(o.st==='building'&&o.ready<=s.cycle){
+    o.st='done';finished.push(p);
+    for(const sec in PROPS[p].vis){const v=1.5*PROPS[p].vis[sec]*(R.boost===sec?1.25:1);s.h[sec]=clamp(s.h[sec]+v);exp[sec]+=v}
+    for(const sec in PROPS[p].k){const g=PROPS[p].k[sec]*(R.kmul||1)*(hasInc(s,sec)?2:1);s.k[sec]=clamp(s.k[sec]+g)}
+  }}
+  pullStep(s);
+  for(const sec of SEC)s.h[sec]=clamp(s.h[sec]-effDecay(s,sec));
+  for(const v in SURV){const st=s.surv[v],sec=SURV[v].sec;
+    if(st==='transmitido')s.k[sec]=clamp(s.k[sec]+4*(R.kmul||1));
+    else if(st==='incorporado')s.k[sec]=clamp(s.k[sec]+1.5*(R.kmul||1))}
+  for(const sec of SEC){exp[sec]=clamp(exp[sec]);real[sec]=s.h[sec]}
+  s.review={cycle:s.cycle,exp,real,finished};
+  s.log.unshift({c:s.cycle,t:finished.length?`Se completó: ${finished.map(p=>PROPS[p].name).join(', ')}.`:'Ciclo sin obras terminadas.'});
+  s.history.push({c:s.cycle,m:mean(s.h)});
+  s.cycle++;s.budget=Math.min(8,s.budget+5);s.diag=false;
+  return s.review;
+}
+function criteria(s){
+  const h=s.h,vals=Object.values(h);
+  const cont=mean(h);
+  const aut=mean(s.k);
+  const tr=100*Object.values(s.surv).reduce((a,st)=>a+STATUS_SCORE[st],0)/Object.keys(SURV).length;
+  const adap=s.drops.length?clamp(100-(s.drops.reduce((a,b)=>a+b,0)/s.drops.length)*4):null;
+  const bal=clamp(100-(Math.max(...vals)-Math.min(...vals))*1.5);
+  const cover=SEC.filter(sec=>Object.keys(PROPS).some(p=>done(s,p)&&(PROPS[p].vis[sec]||0)>=3)).length/4*100;
+  const coop=.6*bal+.4*cover;
+  const dec=mean(Object.fromEntries(SEC.map(x=>[x,effDecay(s,x)])));
+  const sost=clamp(100-dec/4*100);
+  return {continuidad:cont,autonomia:aut,transmision:tr,adaptacion:adap,cooperacion:coop,sostenibilidad:sost};
+}
+// prueba "sin la reina": 4 ciclos, sin acciones nuevas, con una crisis sorpresa en el ciclo 2
+function testSinReina(s0){
+  let best=null;
+  for(const ev of ['sequia','desastre','interrupcion','perdida']){
+    const s=clone(s0);s.log=[];const traj=[mean(s.h)];
+    for(const p in PROPS)if(s.props[p].st==='queued')s.props[p].st='idle';
+    for(let c=1;c<=4;c++){ if(c===2)applyEvent(s,ev); advance(s); traj.push(mean(s.h)); }
+    const r={ev,traj,final:mean(s.h),min:Math.min(...Object.values(s.h))};
+    if(!best||r.final<best.final)best=r;
+  }
+  best.ok=best.final>=45&&best.min>=40;
+  return best;
+}
+if(typeof module!=='undefined')module.exports={newState,advance,applyEvent,criteria,testSinReina,PROPS,SURV,clone,mean,SEC};
+
+</script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const col=v=>v>=60?'var(--good)':v>=40?'var(--warn)':'var(--bad)';
+const R0=n=>Math.round(n);
+const SH={prod:'Prod',infra:'Infra',com:'Com',bien:'Bien'};
+const CNAME={continuidad:'Continuidad',autonomia:'Autonomía',transmision:'Transmisión',adaptacion:'Adaptación',cooperacion:'Cooperación',sostenibilidad:'Sostenibilidad'};
+const STLAB={oculto:'Sin descubrir',visto:'Descubierto',consultado:'Consultado',incorporado:'Incorporado',transmitido:'Saber transmitido',ignorado:'Ignorado',perdido:'Perdido'};
+let S,TEST=null,PHASE='review';
+
+function start(reina){
+  S=newState(reina);TEST=null;
+  S.surv.agricultora='visto';S.budget-=3;S.props.A.st='queued';
+  S.log.unshift({c:1,t:'Diagnóstico: apareció Mariela, agricultora. La reina presentó el granero comunitario.'});
+  advance(S);PHASE='review';
+}
+function html(id,h){$(id).innerHTML=h}
+
+function renderTop(){
+  const R=REINAS[S.reina];
+  $('#s-ciclo').textContent=S.cycle;$('#s-rec').textContent=S.budget;
+  $('#orient').textContent=R.name+'. '+R.orient+'. Es una orientación, no un poder absoluto.';
+  const names=['Diagnóstico','Propuestas','Evaluación','Implementación','Consecuencias','Revisión'];
+  html('#steps',names.map((n,i)=>`<span class="${(PHASE==='plan')===(i<3)?'on':''}">${n}</span>`).join('<i></i>'));
+  $('#banner').textContent=S.log.length?`Ciclo ${S.log[0].c} · ${S.log[0].t}`:'';
+  $('#b-diag').disabled=S.diag||!Object.values(S.surv).includes('oculto');
+}
+function renderSectors(){
+  const rv=S.review;
+  html('#sectors',SEC.map(sec=>{
+    const v=S.h[sec],e=rv?rv.exp[sec]:null,d=e!=null?R0(v-e):0;
+    return `<article class="sector"><div class="srow"><h3>${SEC_NAME[sec]}</h3><span class="num" style="color:${col(v)}">${R0(v)}</span></div>
+    <div class="bar" role="meter" aria-label="Salud de ${SEC_NAME[sec]}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${R0(v)}"><i style="width:${v}%;background:${col(v)}"></i>${e!=null?`<b class="tick" style="left:${e}%"></b>`:''}</div>
+    <p class="sub">${e!=null?`Esperado ${R0(e)} · ahora ${R0(v)} (${d>0?'+':''}${d})`:'Sin revisión todavía'}</p></article>`}).join(''));
+}
+function renderProps(){
+  const R=REINAS[S.reina];
+  html('#props',Object.keys(PROPS).map(id=>{
+    const p=PROPS[id],o=S.props[id];
+    const eff=Object.entries(p.vis).map(([s,v])=>`<span class="chip up">${SH[s]} +${R0(1.5*v*(R.boost===s?1.25:1))}</span>`).join('');
+    const up=Object.keys(p.upkeep).map(s=>`<span class="chip dn">Mant. ${SH[s]}</span>`).join('');
+    const sk=Object.keys(p.k).length?'<span class="chip up">Saber +10 en todos</span>':'';
+    const sh=Object.entries(p.shield).map(([e,v])=>`<span class="chip">Protege: ${EVENTS[e].name} −${R0(v*100)}%</span>`).join('');
+    let st='';
+    if(o.st==='idle')st=`<button class="sm" data-act="queue" data-id="${id}" ${S.budget<p.cost?'disabled':''}>Presentar (${p.cost} recursos)</button>`;
+    else if(o.st==='queued')st=`<span class="state">Se ejecuta al avanzar el ciclo</span><button class="sm" data-act="unqueue" data-id="${id}">Retirar (+${p.cost})</button>`;
+    else if(o.st==='building')st=`<span class="state">En obra: se completa en el ciclo ${o.ready}</span>`;
+    else st=`<span class="state">Completada</span>`;
+    return `<article class="prop ${o.st}"><div><h3>${id}. ${p.name}</h3></div>
+      <div class="meta"><span>Costo ${p.cost}</span><span>Resultados: ${p.time}</span></div>
+      <div class="chips">${eff}${sk}</div><div class="chips">${up}${sh}</div>
+      <p>${esc(p.risk)}</p>${st}</article>`}).join(''));
+}
+function renderCrit(){
+  const c=criteria(S);
+  html('#crit',Object.keys(CRIT).map(k=>{
+    const v=c[k];
+    return `<li><div class="row"><h3>${CNAME[k]}</h3><span class="num" style="color:${v==null?'var(--muted)':col(v)}">${v==null?'—':R0(v)}</span></div>
+    <div class="bar" role="meter" aria-label="${CNAME[k]}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${v==null?0:R0(v)}"><i style="width:${v==null?0:v}%;background:${v==null?'transparent':col(v)}"></i></div>
+    <span class="q">${CRIT[k]}${v==null?' Se mide con la primera crisis.':''}</span></li>`}).join(''));
+  // línea de salud media
+  const H=S.history,extra=TEST?TEST.traj.slice(1):[],n=H.length+extra.length,W=320,Hh=110,x0=26,x1=W-14,y0=Hh-18,y1=10;
+  const X=i=>x0+(x1-x0)*(n<=1?0:i/(n-1)),Y=v=>y0-(y0-y1)*v/100;
+  let g='';[0,50,100].forEach(v=>g+=`<line x1="${x0}" x2="${x1}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${x0-4}" y="${Y(v)+3}" text-anchor="end">${v}</text>`);
+  const pts=H.map((p,i)=>`${X(i)},${Y(p.m)}`).join(' ');
+  const last=H.length-1;
+  let t='';
+  if(TEST){const tp=[`${X(last)},${Y(H[last].m)}`].concat(extra.map((v,i)=>`${X(last+1+i)},${Y(v)}`)).join(' ');
+    t=`<polyline points="${tp}" fill="none" stroke="${TEST.ok?'var(--good)':'var(--bad)'}" stroke-width="2" stroke-dasharray="4 4"/><circle cx="${X(n-1)}" cy="${Y(extra[extra.length-1])}" r="3.5" fill="${TEST.ok?'var(--good)':'var(--bad)'}"/><text x="${X(n-1)}" y="${Y(extra[extra.length-1])-7}" text-anchor="end">${R0(extra[extra.length-1])}</text>`}
+  html('#spark',g+`<polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"/><circle cx="${X(last)}" cy="${Y(H[last].m)}" r="3.5" fill="var(--accent)"/><text x="${X(last)}" y="${Y(H[last].m)+15}" text-anchor="middle">${R0(H[last].m)}</text>`+t+`<text x="${x0}" y="${Hh-3}">ciclo 0</text><text x="${x1}" y="${Hh-3}" text-anchor="end">${TEST?'+4 sin reina':'ciclo '+(S.cycle-1)}</text>`);
+}
+function renderDeep(){
+  const pos={prod:[60,55],infra:[260,55],com:[260,155],bien:[60,155]};
+  let e='';const pairs=[['prod','infra'],['prod','com'],['prod','bien'],['infra','com'],['infra','bien'],['com','bien']];
+  pairs.forEach(([a,b])=>{const w=((DEP[a][b]||0)+(DEP[b][a]||0));if(!w)return;
+    e+=`<line x1="${pos[a][0]}" y1="${pos[a][1]}" x2="${pos[b][0]}" y2="${pos[b][1]}" stroke="var(--lamp)" stroke-opacity=".75" stroke-width="${(w*6).toFixed(1)}" stroke-linecap="round"/>`});
+  let n='';SEC.forEach(s=>{const v=S.h[s];n+=`<circle cx="${pos[s][0]}" cy="${pos[s][1]}" r="27" fill="var(--deep)" stroke="${col(v)}" stroke-width="4"/><text x="${pos[s][0]}" y="${pos[s][1]-2}" text-anchor="middle">${SH[s]}</text><text x="${pos[s][0]}" y="${pos[s][1]+12}" text-anchor="middle" style="font-weight:500">${R0(v)}</text>`});
+  html('#net',e+n);
+  const low=SEC.slice().sort((a,b)=>S.h[a]-S.h[b])[0];
+  $('#weak').textContent=`Grosor de línea = cuánto dependen entre sí. Punto frágil ahora: ${SEC_NAME[low]}.`;
+  html('#klist',SEC.map(s=>`<div class="k-row"><span>Saber local · ${SEC_NAME[s]}</span><div class="bar" role="meter" aria-label="Saber local ${SEC_NAME[s]}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${R0(S.k[s])}"><i style="width:${S.k[s]}%"></i></div><span class="mono">${R0(S.k[s])}</span></div>`).join(''));
+}
+function renderSurv(){
+  const found=Object.values(S.surv).filter(x=>x!=='oculto').length;
+  $('#svcount').textContent=`${found}/5`;
+  html('#surv',Object.keys(SURV).map(id=>{
+    const v=SURV[id],st=S.surv[id];
+    if(st==='oculto')return `<article class="sv hidden"><h3>Habitante sin identificar</h3><p>Su conocimiento no figura en ninguna propuesta. Aparece con el diagnóstico o cuando llega una crisis.</p></article>`;
+    const evn=v.ev==='any'?'Todas las crisis (mitad de efecto)':EVENTS[v.ev].name;
+    const f=STATUS_F[st];
+    let a='';
+    if(st==='visto'||st==='ignorado')a+=`<button class="sm" data-act="consult" data-id="${id}">Consultar</button>`;
+    if(st==='consultado')a+=`<button class="sm" data-act="incorp" data-id="${id}" ${S.budget<1?'disabled':''}>Incorporar (1)</button>`;
+    if(st==='incorporado')a+=`<button class="sm primary" data-act="transm" data-id="${id}" ${S.budget<2?'disabled':''}>Crear sistema de transmisión (2)</button>`;
+    if(['visto','consultado','incorporado'].includes(st))a+=`<button class="sm" data-act="ignore" data-id="${id}">Ignorar</button>`;
+    if(st==='transmitido')a=`<span class="sub" style="color:var(--deepmuted)">Suma +4 de saber por ciclo.</span>`;
+    if(st==='perdido')a=`<span class="sub" style="color:var(--deepmuted)">Se fue sin transmitir su oficio.</span>`;
+    return `<article class="sv"><div style="display:flex;justify-content:space-between;gap:8px;align-items:start"><h3>${v.name}<br><span style="font-weight:400;font-size:.8rem;color:var(--deepmuted)">${v.role} · ${SH[v.sec]}</span></h3><span class="pill ${st==='ignorado'||st==='perdido'?'bad':''}">${STLAB[st]}</span></div>
+      <p>${esc(v.know)}</p><p class="mono">Crisis: ${evn} · daño ×${f.toFixed(2).replace('.',',')}</p><div class="acts">${a}</div></article>`}).join(''));
+}
+function renderFoot(){
+  html('#crisis',Object.keys(EVENTS).map(id=>`<button data-act="ev" data-id="${id}"><b>${EVENTS[id].name}</b><small>${EVENTS[id].txt}</small></button>`).join(''));
+  const rv=S.review;
+  if(!rv){html('#review','<p class="sub">Sin ciclos cerrados todavía.</p>');}
+  else{
+    const ma=mean(rv.exp),mb=mean(rv.real);
+    html('#review',`<table><thead><tr><th>Ciclo ${rv.cycle}</th><th>Esperado</th><th>Ocurrió</th><th>Brecha</th></tr></thead><tbody>`+
+      SEC.map(s=>`<tr><td>${SH[s]}</td><td class="num">${R0(rv.exp[s])}</td><td class="num">${R0(rv.real[s])}</td><td class="num" style="color:${rv.real[s]-rv.exp[s]<-.5?'var(--bad)':'var(--good)'}">${R0(rv.real[s]-rv.exp[s])}</td></tr>`).join('')+
+      `<tr><td><b>Media</b></td><td class="num">${R0(ma)}</td><td class="num">${R0(mb)}</td><td class="num">${R0(mb-ma)}</td></tr></tbody></table>
+      <p class="note">La brecha mide lo que la reina no veía: el desgaste y los sectores que se arrastran entre sí.</p>`);
+  }
+  html('#log',S.log.slice(0,7).map(l=>`<li><b>C${l.c}</b>${esc(l.t)}</li>`).join(''));
+}
+function renderVerdict(){
+  if(!TEST){html('#verdict','<p class="note">La reina deja de actuar. Se simulan 4 ciclos con una crisis sorpresa. La comunidad debe terminar con salud media de 45 o más y ningún sector bajo 40.</p>');return}
+  const c=criteria(S),why=[];
+  if(c.transmision<50)why.push('Pocos saberes quedaron transmitidos.');
+  if(c.autonomia<40)why.push('El saber local es bajo: nadie en los sectores sabe resolver solo.');
+  if(c.sostenibilidad<40)why.push('El mantenimiento de lo construido supera lo que la comunidad puede sostener.');
+  if(!why.length)why.push('Los sectores quedaron sin margen frente a la crisis sorpresa.');
+  html('#verdict',`<div class="verdict ${TEST.ok?'ok':'no'}"><h3>${TEST.ok?'La comunidad continúa sin la reina':'La comunidad no resiste sin la reina'}</h3>
+    <p style="margin:0">Crisis sorpresa: ${EVENTS[TEST.ev].name}. Salud media final <b class="num">${R0(TEST.final)}</b>, sector más bajo <b class="num">${R0(TEST.min)}</b>.</p>${TEST.ok?'':'<ul>'+why.map(w=>`<li>${w}</li>`).join('')+'</ul>'}</div>`);
+}
+function render(){
+  renderTop();renderSectors();renderProps();renderCrit();renderDeep();renderSurv();renderFoot();renderVerdict();
+  document.querySelectorAll('#reinas input').forEach(i=>i.checked=i.value===S.reina);
+}
+function setSurv(id,st,cost){if(S.budget<cost)return;S.budget-=cost;S.surv[id]=st;S.log.unshift({c:S.cycle,t:`${SURV[id].name}: ${STLAB[st].toLowerCase()}.`})}
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-act]');if(!b||b.disabled)return;
+  const a=b.dataset.act,id=b.dataset.id;
+  if(a!=='test')TEST=null;
+  if(a==='next'){advance(S);PHASE='review'}
+  else if(a==='reset'){start(S.reina)}
+  else if(a==='test'){TEST=testSinReina(S)}
+  else{PHASE='plan';
+    if(a==='queue'&&S.budget>=PROPS[id].cost){S.budget-=PROPS[id].cost;S.props[id].st='queued';S.log.unshift({c:S.cycle,t:`Presentó: ${PROPS[id].name}.`})}
+    else if(a==='unqueue'){S.budget+=PROPS[id].cost;S.props[id].st='idle'}
+    else if(a==='diag'){const v=Object.keys(SURV).find(k=>S.surv[k]==='oculto');if(v){S.surv[v]='visto';S.diag=true;S.log.unshift({c:S.cycle,t:`Diagnóstico: apareció ${SURV[v].name}, ${SURV[v].role.toLowerCase()}.`})}}
+    else if(a==='consult')setSurv(id,'consultado',0);
+    else if(a==='incorp')setSurv(id,'incorporado',1);
+    else if(a==='transm')setSurv(id,'transmitido',2);
+    else if(a==='ignore')setSurv(id,'ignorado',0);
+    else if(a==='ev'){applyEvent(S,id);PHASE='review'}
+  }
+  render();
+});
+document.addEventListener('change',ev=>{if(ev.target.name==='reina'){start(ev.target.value);render()}});
+(function(){
+  html('#reinas','<legend class="eyebrow">Gestión de</legend>'+Object.keys(REINAS).map((k,i)=>`<label><input type="radio" name="reina" id="r-${k}" value="${k}"><span>${REINAS[k].name.replace('Reina de la ','').replace(/^./,c=>c.toUpperCase())}</span></label>`).join(''));
+  start('produccion');render();
+})();
+</script>
+
+</body></html>
