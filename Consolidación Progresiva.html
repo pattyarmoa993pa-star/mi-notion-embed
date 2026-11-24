@@ -1,0 +1,545 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Consolidación Progresiva</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Concepto: planta del Krak en capas concéntricas (foso, murallas, patios, reducto) y, al costado, las siete lecturas de estabilidad. */
+:root{
+  --bg:#EBEEF1; --surface:#F8F9FA; --surface2:#E0E5E9; --stone:#DDE1E4;
+  --fg:#18222D; --muted:#566574; --line:#C4CCD4;
+  --ok:#2B7A4B; --warn:#9A6200; --crit:#B3362F;
+  --c-eco:#9A6A12; --c-ing:#2F5F9E; --c-log:#2E7D4F; --c-edu:#7A4BA3; --c-dip:#B23F3A; --c-adm:#0C7C8C; --c-soc:#B03A74;
+  --fh:'Space Grotesk',system-ui,sans-serif; --fb:'Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12181F; --surface:#1B242D; --surface2:#25313B; --stone:#222C35;
+  --fg:#E4EAF0; --muted:#93A2B1; --line:#33414D;
+  --ok:#5CC18A; --warn:#E0A93B; --crit:#EF7A72;
+  --c-eco:#E0B04F; --c-ing:#7FA9E0; --c-log:#6CC38F; --c-edu:#B992DD; --c-dip:#EE8A84; --c-adm:#5CC6D3; --c-soc:#E58BB8;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12181F; --surface:#1B242D; --surface2:#25313B; --stone:#222C35;
+  --fg:#E4EAF0; --muted:#93A2B1; --line:#33414D;
+  --ok:#5CC18A; --warn:#E0A93B; --crit:#EF7A72;
+  --c-eco:#E0B04F; --c-ing:#7FA9E0; --c-log:#6CC38F; --c-edu:#B992DD; --c-dip:#EE8A84; --c-adm:#5CC6D3; --c-soc:#E58BB8;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--fb);
+  padding-block:20px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--fh);margin:0;text-wrap:balance}
+h1{font-size:clamp(24px,4vw,34px);line-height:1.1;letter-spacing:-.01em}
+h2{font-size:20px;line-height:1.2}
+p{margin:0}
+.muted{color:var(--muted)}
+.lab{font:600 11px var(--fh);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;min-width:0}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+
+.top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:stretch}
+.ttl{display:flex;flex-direction:column;gap:6px;justify-content:center}
+.sub{color:var(--muted);max-width:46ch}
+.coh{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center}
+.big{font:700 54px/1 var(--fh);letter-spacing:-.02em}
+.big small{font-size:14px;font-weight:500;color:var(--muted);margin-left:6px;letter-spacing:0}
+.state{font:600 13px var(--fh);margin-top:4px}
+.subm{display:flex;flex-direction:column;gap:8px;min-width:0}
+.sm{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:12px}
+.sm b{font-weight:600}
+.bar{display:block;height:6px;background:var(--surface2);position:relative}
+.fill{display:block;height:100%}
+.pv{color:var(--muted);font-variant-numeric:tabular-nums}
+
+.turnbar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
+.order{display:flex;flex-wrap:wrap;gap:6px}
+.lead{border:1px solid var(--line);border-left:5px solid var(--cc);padding:3px 9px;font-size:12px;color:var(--muted);background:var(--surface)}
+.lead.on{color:var(--fg);font-weight:600;border-color:var(--cc);background:var(--surface2)}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pips{display:flex;gap:4px;align-items:center;font-size:12px;color:var(--muted)}
+.pip{width:12px;height:12px;border:2px solid var(--fg);display:inline-block}
+.pip.on{background:var(--fg)}
+.btn{background:var(--fg);color:var(--bg);border:1px solid var(--fg);padding:6px 12px;font-weight:600;border-radius:4px}
+.btn.alt{background:transparent;color:var(--fg);border-color:var(--line)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+
+.inherit{border-left:5px solid var(--cc);background:var(--surface);padding:10px 14px;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.inherit ul{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px}
+
+.main{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.zones{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:8px;margin-top:10px}
+.w12{grid-column:span 12}.w3{grid-column:span 3}.w4{grid-column:span 4}
+.z{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--stone);border:2px solid var(--line);border-radius:3px;padding:9px 10px;min-width:0}
+.z.solo{border-style:dashed;border-color:var(--muted)}
+.z.sel{border-color:var(--fg);border-style:solid;box-shadow:0 0 0 2px var(--fg)}
+.z.foso{background:repeating-linear-gradient(135deg,var(--stone) 0 8px,var(--surface2) 8px 16px)}
+.z.band{padding-block:7px}
+.zn{font:600 14px var(--fh)}
+.zf{font-size:11.5px;color:var(--muted);line-height:1.35}
+.zh{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center}
+.zh b{font:700 16px var(--fh);font-variant-numeric:tabular-nums}
+.zd{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.ring{display:flex;gap:6px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:8px}
+
+.chip{display:inline-block;border:1px solid var(--line);border-left:4px solid var(--cc);padding:1px 6px;font-size:11.5px;background:var(--surface)}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.origin{margin:10px 0;padding:8px 12px;border-left:3px solid var(--fg);background:var(--surface2);font-size:13px}
+.zl{margin:6px 0 0;padding:0;list-style:none;font-size:12px;display:flex;flex-direction:column;gap:3px}
+.zl li{display:flex;gap:6px;align-items:baseline}
+.decs{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.dec{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);padding:9px 11px;border-radius:3px}
+.dec.sel{border-color:var(--fg);box-shadow:0 0 0 2px var(--fg)}
+.dec[disabled]{opacity:.5;cursor:not-allowed}
+.dec b{font-family:var(--fh)}
+.dec .d{font-size:12.5px;color:var(--muted)}
+.okt{color:var(--ok);font-weight:600;font-size:13px;margin-top:8px}
+.act{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+.lec{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.lr{display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:2px 10px;align-items:center;padding-left:8px;border-left:5px solid var(--cc)}
+.lr.on{background:var(--surface2)}
+.lr .nm{font-weight:600;font-size:13px}
+.lr .cr{font-size:11.5px;color:var(--muted);grid-column:1}
+.lr .v{grid-row:1 / span 2;grid-column:2;text-align:right;font:700 16px var(--fh);font-variant-numeric:tabular-nums}
+.lr .v em{display:block;font:600 11px var(--fb);font-style:normal}
+.lr .bar{grid-column:1 / span 2;margin:3px 0 4px}
+.piso{position:absolute;left:45%;top:-3px;bottom:-3px;width:2px;background:var(--fg)}
+.pos{color:var(--ok)}.neg{color:var(--crit)}
+
+.sec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.list{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.list li{padding-bottom:8px;border-bottom:1px solid var(--line)}
+.list li:last-child{border-bottom:0;padding-bottom:0}
+.tag{display:inline-block;font:600 11px var(--fh);letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border:1px solid currentColor}
+.tag.p{color:var(--ok)}.tag.d{color:var(--crit)}.tag.w{color:var(--warn)}
+.qr{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:8px;align-items:center;width:100%;text-align:left;background:none;border:0;border-left:5px solid var(--cc);padding:4px 8px;font-size:12.5px}
+.qr.sel{background:var(--surface2)}
+.qd{margin-top:10px;font-size:13px;padding:8px 12px;background:var(--surface2)}
+details{font-size:13px}
+summary{cursor:pointer;font-weight:600;font-family:var(--fh)}
+details ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.principio{border-left:5px solid var(--fg);padding:8px 14px;font-size:14px}
+
+@media (max-width:900px){
+  .top,.main,.sec{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:620px){
+  .w3{grid-column:span 6}.w4{grid-column:span 12}
+  .coh{grid-template-columns:minmax(0,1fr)}
+  .big{font-size:44px}
+}
+@media (prefers-reduced-motion:no-preference){.fill{transition:width .3s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="ttl">
+      <p class="lab">Ingeniería social · Minecraft Education</p>
+      <h1>Consolidación Progresiva</h1>
+      <p class="sub">Liderazgo multidisciplinario sobre el Krak des Chevaliers. Cada líder recibe el Fuerte distinto a como lo dejó el anterior.</p>
+    </div>
+    <div class="card coh" id="coh"></div>
+  </header>
+
+  <section class="card turnbar" id="turnbar"></section>
+  <section id="inherit"></section>
+
+  <div class="main">
+    <div class="col">
+      <section class="card">
+        <p class="lab">Planta del Fuerte</p>
+        <p class="muted" style="font-size:12.5px;margin-top:2px">Borde punteado: la zona tiene un solo apoyo. Los círculos son las disciplinas que dejaron capas en ella.</p>
+        <div class="zones" id="zones"></div>
+        <div class="ring" id="legend"></div>
+      </section>
+      <section class="card">
+        <p class="lab">Siete lecturas de estabilidad</p>
+        <p class="muted" style="font-size:12.5px;margin-top:2px">La línea marca el piso de 45. Debajo de ese valor una disciplina deja de reconocer al Fuerte como estable.</p>
+        <div class="lec" id="lec"></div>
+      </section>
+    </div>
+    <div class="col">
+      <section class="card" id="ficha"></section>
+      <section class="card">
+        <p class="lab">Tensiones</p>
+        <div id="tens"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="sec">
+    <section class="card">
+      <p class="lab">Prueba de cuestionamiento</p>
+      <p class="muted" style="font-size:12.5px;margin-top:2px">Qué le pasa al Fuerte si se quitan las obras de un líder.</p>
+      <div id="quest" style="margin-top:10px"></div>
+    </section>
+    <section class="card">
+      <p class="lab">Resistencias</p>
+      <ul class="list" id="events"></ul>
+    </section>
+  </div>
+
+  <section class="card">
+    <p class="lab">Línea de capas</p>
+    <ul class="list" id="layers"></ul>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>Cómo funciona el tablero</summary>
+      <ol>
+        <li>Cada turno, un líder de una disciplina tiene 2 puntos de mando.</li>
+        <li>Antes de modificar una zona debe leer su razón de origen. Conservar y comprender no lo exige.</li>
+        <li>Al elegir una decisión se ve el efecto en las siete lecturas antes de confirmar.</li>
+        <li>Si dos disciplinas se oponen y ambas siguen sobre el piso, la tensión es productiva. Si una cae bajo el piso, es un conflicto destructivo.</li>
+        <li>Al pasar el mando aparece una resistencia. Las zonas con más disciplinas de apoyo la amortiguan mejor.</li>
+        <li>Coherencia = 40% piso de la lectura más débil, 25% zonas con 2 o más apoyos, 35% resiliencia ante quitar a un líder.</li>
+      </ol>
+    </details>
+  </section>
+  <p class="principio">La victoria no es un Fuerte sin críticas. Es uno que recibe cuestionamientos, identifica sus debilidades y se adapta sin perder su coherencia fundamental.</p>
+</div>
+
+<script>
+(function(){
+var PISO=45;
+var D=[
+ {id:'eco',n:'Economía',s:'Eco',c:'Sostenibilidad de recursos'},
+ {id:'ing',n:'Ingeniería',s:'Ing',c:'Resistencia estructural'},
+ {id:'log',n:'Logística',s:'Log',c:'Continuidad operativa'},
+ {id:'edu',n:'Educación',s:'Edu',c:'Transmisión del conocimiento'},
+ {id:'dip',n:'Diplomacia',s:'Dip',c:'Capacidad de negociación'},
+ {id:'adm',n:'Administración',s:'Adm',c:'Coordinación y continuidad'},
+ {id:'soc',n:'Sociología',s:'Soc',c:'Cohesión comunitaria'}];
+var DI={};D.forEach(function(d,i){DI[d.id]=d;d.i=i});
+
+var ZDEF=[
+ {id:'foso',n:'Foso',w:'w12 foso band',fn:'Obstáculo exterior que gana tiempo',main:'ing',back:['log','dip'],hp:58,o:'Cavado para obligar a los atacantes a detenerse bajo los muros, lejos de las puertas.'},
+ {id:'mext',n:'Muralla exterior',w:'w12 band',fn:'Primera capa de resistencia',main:'ing',back:['log'],hp:66,o:'Primera muralla: su trabajo es ganar tiempo para que las demás capas respondan.'},
+ {id:'puertas',n:'Puertas y mensajeros',w:'w3',fn:'Acceso y negociación',main:'dip',back:['adm','log'],hp:48,o:'El acceso quedó estrecho a propósito, para poder negociar sin abrir todo el Fuerte.'},
+ {id:'barrios',n:'Barrios intramuros',w:'w3',fn:'Vida cotidiana de quienes lo sostienen',main:'soc',back:['edu','eco'],hp:52,o:'Los barrios nacieron para que haya gente dispuesta a sostener el Fuerte cuando falle lo demás.'},
+ {id:'establos',n:'Establos y patios',w:'w3',fn:'Movimiento de carga y suministros',main:'log',back:['eco'],hp:44,o:'Patios y establos pensados para mover suministros sin cruzar el Gran Salón.'},
+ {id:'cisternas',n:'Cisternas y almacenes',w:'w3',fn:'Reserva para resistir un asedio',main:'eco',back:['log','ing'],hp:40,o:'Reserva de agua calculada para un asedio largo, no para un año normal.'},
+ {id:'mint',n:'Muralla interior y talud',w:'w12 band',fn:'Segunda capa: se puede perder la primera sin perderlo todo',main:'ing',back:['adm'],hp:62,o:'Segunda muralla con talud, construida por si la primera cedía.'},
+ {id:'salon',n:'Gran Salón',w:'w4',fn:'Decisiones y registro',main:'adm',back:['soc','edu'],hp:55,o:'Aquí se registran las decisiones, para que no dependan de la memoria de una sola persona.'},
+ {id:'capilla',n:'Capilla y aulas',w:'w4',fn:'Memoria y formación de relevos',main:'edu',back:['soc'],hp:36,o:'Espacio donde se explica por qué existe cada obra, para formar a quienes la van a continuar.'},
+ {id:'torre',n:'Torre del homenaje',w:'w4',fn:'Reducto final',main:'ing',back:['soc','adm'],hp:60,o:'Reducto acordado entre ingeniería y comunidad: nadie lo sostiene solo.',extra:'soc'}
+];
+var W={
+ eco:[1,0,1,2,2,3,0,1,1,1], ing:[3,3,1,0,0,1,3,0,0,2], log:[1,0,3,1,3,2,1,1,0,1],
+ edu:[0,0,0,1,0,0,0,2,3,1], dip:[0,1,3,1,0,0,0,1,1,1], adm:[0,0,1,1,1,1,1,3,2,2], soc:[0,0,1,3,1,1,0,2,2,2]};
+var ZI={};ZDEF.forEach(function(z,i){ZI[z.id]=i});
+
+var KEEP={id:'keep',z:'*',n:'Conservar y comprender',d:'No cambia lo de fondo. Entiendes la obra y la mantienes.',hp:4,imp:[0,0,0,2,0,1,1]};
+var DEC=[
+ {id:'f1',z:'foso',n:'Profundizar el foso',d:'Más tiempo bajo los muros, más costo de mantenerlo.',hp:14,imp:[-6,8,-4,0,-3,0,0]},
+ {id:'f2',z:'foso',n:'Sembrar el foso seco',d:'Parte del foso produce alimento y el obstáculo se reduce.',hp:-4,imp:[7,-6,3,0,0,0,3]},
+ {id:'m1',z:'mext',n:'Ampliar torres de flanqueo',d:'Cubre mejor los muros, a un costo alto.',hp:16,imp:[-8,9,-3,0,-2,0,-2]},
+ {id:'m2',z:'mext',n:'Abrir brechas controladas',d:'Pasos vigilados para mover gente y carga.',hp:-6,imp:[2,-7,6,0,5,0,0]},
+ {id:'p1',z:'puertas',n:'Cerrar el portón principal',d:'Cierra el acceso. También cierra la negociación.',hp:10,imp:[-3,8,-8,0,-9,0,-2]},
+ {id:'p2',z:'puertas',n:'Corredor de mensajeros',d:'Un canal protegido para negociar sin abrir el portón.',hp:8,imp:[0,-4,4,0,9,3,0]},
+ {id:'b1',z:'barrios',n:'Reparto de raciones',d:'Alivia a los barrios y drena las reservas.',hp:10,imp:[-7,0,0,1,0,2,9]},
+ {id:'b2',z:'barrios',n:'Consejo de vecinos',d:'Los barrios participan en las decisiones que los afectan.',hp:12,imp:[-2,0,0,3,0,4,8]},
+ {id:'e1',z:'establos',n:'Ampliar patios de maniobra',d:'Más capacidad de movimiento, menos espacio de reserva.',hp:12,imp:[-4,-3,9,0,0,0,0]},
+ {id:'e2',z:'establos',n:'Rutas de reposición',d:'Calendario fijo para reponer lo que se consume.',hp:10,imp:[2,0,7,0,0,4,0]},
+ {id:'c1',z:'cisternas',n:'Racionar el agua',d:'Las reservas duran más. La gente lo siente.',hp:8,imp:[9,0,2,0,0,0,-8]},
+ {id:'c2',z:'cisternas',n:'Excavar una nueva cisterna',d:'Más reserva, obra costosa y lenta.',hp:18,imp:[-6,6,-3,0,0,0,2]},
+ {id:'i1',z:'mint',n:'Reforzar el talud',d:'Una segunda muralla más difícil de socavar.',hp:16,imp:[-6,9,-2,0,0,0,0]},
+ {id:'i2',z:'mint',n:'Pasadizo de relevo',d:'Permite mover tropas entre capas sin exponerlas.',hp:10,imp:[0,-5,6,0,0,3,1]},
+ {id:'s1',z:'salon',n:'Archivo de decisiones',d:'Cada decisión queda escrita con su razón.',hp:12,imp:[-2,0,0,5,0,9,0]},
+ {id:'s2',z:'salon',n:'Rotar el mando cada turno',d:'Nadie acumula el control. La coordinación se complica.',hp:10,imp:[-1,0,0,2,3,-3,4]},
+ {id:'k1',z:'capilla',n:'Escuela de relevos',d:'Se forma a quienes continuarán la obra.',hp:14,imp:[-6,0,-3,9,0,0,4]},
+ {id:'k2',z:'capilla',n:'Registrar razones de origen',d:'Cada obra se acompaña de por qué se construyó así.',hp:10,imp:[0,0,-2,7,0,6,0]},
+ {id:'t1',z:'torre',n:'Guarnición permanente',d:'Defensa asegurada, a un costo fijo muy alto.',hp:14,imp:[-9,7,2,0,0,0,-3]},
+ {id:'t2',z:'torre',n:'Reducto común por consenso',d:'Todas las disciplinas acuerdan qué se protege al final.',hp:16,imp:[-5,3,0,0,4,5,5]}
+];
+var EV=[
+ {n:'Sequía prolongada',z:'cisternas',d:14,t:'El nivel de las cisternas baja más rápido de lo previsto.'},
+ {n:'Asedio al portón',z:'puertas',d:16,t:'Un enviado llega con exigencias y una fuerza detrás.'},
+ {n:'Zapadores bajo la muralla',z:'mext',d:15,t:'Excavan debajo de la muralla exterior.'},
+ {n:'Rumor de traición',z:'barrios',d:13,t:'Los barrios dudan unos de otros.'},
+ {n:'Se pierde un registro',z:'salon',d:12,t:'Un libro de decisiones desaparece.'},
+ {n:'Convoy bloqueado',z:'establos',d:14,t:'No llegan los suministros esperados.'},
+ {n:'Se marchan los maestros',z:'capilla',d:15,t:'Quienes enseñaban dejan el Fuerte.'},
+ {n:'Fuego en el foso',z:'foso',d:12,t:'El foso arde y deja de detener a nadie.'},
+ {n:'Asalto al reducto',z:'torre',d:14,t:'Un grupo intenta llegar a la torre del homenaje.'},
+ {n:'Fisura en el talud',z:'mint',d:13,t:'Una grieta se abre en la segunda muralla.'}
+];
+
+function clamp(v){return Math.max(0,Math.min(100,v))}
+function esc(s){return String(s)}
+function hc(v){return v>=60?'var(--ok)':v>=40?'var(--warn)':'var(--crit)'}
+function col(id){return 'var(--c-'+id+')'}
+
+var Z,state;
+function init(){
+  var seq=0;
+  Z=ZDEF.map(function(z){
+    var layers=[{by:z.main,r:0,dec:'Obra heredada',why:z.o,c:20,seq:seq++}];
+    if(z.extra)layers.push({by:z.extra,r:0,dec:'Obra heredada',why:z.o,c:12,seq:seq++});
+    return {id:z.id,n:z.n,w:z.w,fn:z.fn,main:z.main,back:z.back,hp:z.hp,o:z.o,layers:layers};
+  });
+  var adj={};D.forEach(function(d){adj[d.id]=0});
+  state={turn:0,pts:2,sel:'foso',read:{},pending:null,adj:adj,events:[],tens:[],lastSeen:{},inherit:null,seq:seq,seed:7,lastEv:-1,q:null};
+}
+function leader(){return D[state.turn%7]}
+function round(){return Math.floor(state.turn/7)+1}
+function zone(id){return Z[ZI[id]]}
+function getDec(id){if(id==='keep')return KEEP;for(var i=0;i<DEC.length;i++)if(DEC[i].id===id)return DEC[i];return null}
+
+function snap(){return Z.map(function(z){return {id:z.id,hp:z.hp,layers:z.layers.map(function(l){return {by:l.by,c:l.c}})}})}
+function Sall(hp,adj){
+  var o={};
+  D.forEach(function(d){
+    var s=0,t=0;
+    ZDEF.forEach(function(z,i){var w=W[d.id][i];s+=w*hp[z.id];t+=w});
+    o[d.id]=clamp(s/t+adj[d.id]);
+  });
+  return o;
+}
+function applySim(zs,adj,dec,zid,by){
+  var z=zs.filter(function(x){return x.id===zid})[0];
+  z.hp=clamp(z.hp+dec.hp);
+  z.layers.push({by:by,c:Math.max(5,dec.hp)});
+  D.forEach(function(d,i){adj[d.id]+=dec.imp[i]});
+}
+function metrics(zs,adj){
+  var hp={};zs.forEach(function(z){hp[z.id]=z.hp});
+  var S=Sall(hp,adj),piso=101,pd=null;
+  D.forEach(function(d){if(S[d.id]<piso){piso=S[d.id];pd=d}});
+  var red=zs.filter(function(z){var s={};z.layers.forEach(function(l){s[l.by]=1});return Object.keys(s).length>=2}).length;
+  var av=zs.reduce(function(a,z){return a+z.hp},0)/zs.length;
+  var drops={},maxD=0,wd=null;
+  D.forEach(function(d){
+    var hz=zs.map(function(z){
+      var loss=0,oth=false;
+      z.layers.forEach(function(l){if(l.by===d.id)loss+=l.c;else oth=true});
+      return {id:z.id,hp:Math.max(0,z.hp-loss*(oth?0.4:1)),loss:loss*(oth?0.4:1)};
+    });
+    var av2=hz.reduce(function(a,b){return a+b.hp},0)/hz.length;
+    var pct=(av-av2)/Math.max(1,av)*100;
+    drops[d.id]={av2:av2,pct:pct,hz:hz};
+    if(pct>maxD){maxD=pct;wd=d}
+  });
+  var R=clamp(100-2.5*maxD);
+  var C=Math.round(0.4*piso+0.25*(red*10)+0.35*R);
+  return {S:S,piso:piso,pd:pd,red:red,av:av,drops:drops,maxD:maxD,wd:wd,R:R,C:C};
+}
+function tensions(S0,S1,dec){
+  var L=leader(),out=[],ally=[];
+  D.forEach(function(d){
+    if(d.id===L.id)return;
+    var v=S1[d.id]-S0[d.id];
+    if(v<=-4)out.push({a:L,b:d,v:v,tipo:S1[d.id]>=PISO?'p':'d',dec:dec.n});
+    else if(v>=2)ally.push(d.n);
+  });
+  return {list:out,ally:ally};
+}
+function preview(){
+  if(!state.pending)return null;
+  var dec=getDec(state.pending),zs=snap(),adj={};
+  D.forEach(function(d){adj[d.id]=state.adj[d.id]});
+  applySim(zs,adj,dec,state.sel,leader().id);
+  var m=metrics(zs,adj);
+  return {dec:dec,m:m};
+}
+
+function supports(z){var s={};z.layers.forEach(function(l){s[l.by]=1});return Object.keys(s)}
+
+/* ---------- render ---------- */
+var el=function(id){return document.getElementById(id)};
+function render(){
+  var base=metrics(snap(),state.adj),pv=preview(),L=leader();
+  var tp=pv?tensions(base.S,pv.m.S,pv.dec):null;
+  renderCoh(base,pv);renderTurn(L);renderInherit(L);renderMap(base);renderFicha(L);
+  renderLec(base,pv,L);renderTens(tp);renderQuest(base);renderEvents();renderLayers();
+}
+function bar(v,color,extra){return '<span class="bar">'+(extra||'')+'<span class="fill" style="width:'+Math.max(0,Math.min(100,v))+'%;background:'+color+'"></span></span>'}
+function dlt(a,b){var d=Math.round(b-a);return d===0?'':'<span class="'+(d>0?'pos':'neg')+'"> '+(d>0?'+':'−')+Math.abs(d)+'</span>'}
+
+function renderCoh(m,pv){
+  var C=m.C,label=C>=70?'Coherente':C>=50?'En consolidación':'Frágil';
+  var n=pv?pv.m:null;
+  el('coh').innerHTML=
+   '<div><div class="lab">Coherencia</div><div class="big num">'+C+(n&&n.C!==C?'<small>→ '+n.C+'</small>':'<small>/ 100</small>')+'</div><div class="state">'+label+'</div></div>'+
+   '<div class="subm">'+
+   '<div class="sm"><b>Piso</b>'+bar(m.piso,hc(m.piso),'<span class="piso"></span>')+'<span class="pv">'+Math.round(m.piso)+(n?dlt(m.piso,n.piso):'')+' · '+m.pd.s+'</span></div>'+
+   '<div class="sm"><b>Redundancia</b>'+bar(m.red*10,'var(--fg)')+'<span class="pv">'+m.red+'/10 zonas'+(n&&n.red!==m.red?' → '+n.red:'')+'</span></div>'+
+   '<div class="sm"><b>Resiliencia</b>'+bar(m.R,hc(m.R))+'<span class="pv">'+Math.round(m.R)+(n?dlt(m.R,n.R):'')+' · sin '+(m.wd?m.wd.s:'—')+'</span></div>'+
+   '</div>';
+}
+function renderTurn(L){
+  var order=D.map(function(d,i){return '<span class="lead'+(d.id===L.id?' on':'')+'" style="--cc:'+col(d.id)+'">'+d.n+'</span>'}).join('');
+  var pips='';for(var i=0;i<2;i++)pips+='<span class="pip'+(i<state.pts?' on':'')+'"></span>';
+  el('turnbar').innerHTML=
+   '<div><div class="lab">Ronda '+round()+' · Turno '+(state.turn%7+1)+' de 7</div><div style="margin-top:6px">Al mando: <b style="font-family:var(--fh);font-size:18px">Líder de '+L.n+'</b></div><div class="muted" style="font-size:12.5px">Estabilidad para esta disciplina: '+L.c.toLowerCase()+'.</div></div>'+
+   '<div class="order" aria-label="Orden de relevo">'+order+'</div>'+
+   '<div class="ctl"><span class="pips" aria-label="Puntos de mando">Mando '+pips+'</span><button class="btn" data-act="end">Pasar el mando</button><button class="btn alt" data-act="reset">Reiniciar</button></div>';
+}
+function renderInherit(L){
+  var h='';
+  if(state.turn===0){
+    h='<div class="inherit" style="--cc:'+col(L.id)+'"><b>Primera lectura.</b> Recibes obras de líderes que ya no están. Antes de cambiar una zona, entiende por qué está así.</div>';
+  }else if(state.inherit){
+    var items=state.inherit.map(function(x){return '<li><b>'+x.n+'</b> <span class="num">'+x.a+' → '+x.b+'</span> <span class="'+(x.b>x.a?'pos':'neg')+'">'+(x.b>x.a?'+':'−')+Math.abs(x.b-x.a)+'</span></li>'}).join('');
+    h='<div class="inherit" style="--cc:'+col(L.id)+'"><b>Recibes el Fuerte distinto a como lo dejaste.</b>'+(items?'<ul>'+items+'</ul>':'<div class="muted">Sin cambios mayores desde tu último turno.</div>')+'</div>';
+  }
+  el('inherit').innerHTML=h;
+}
+function renderMap(base){
+  var h='';
+  Z.forEach(function(z){
+    var au=supports(z),solo=au.length<2;
+    var dots=au.map(function(a){return '<span class="dot" style="background:'+col(a)+'" title="'+DI[a].n+'"></span>'}).join('');
+    h+='<button class="z '+z.w+(solo?' solo':'')+(state.sel===z.id?' sel':'')+'" data-z="'+z.id+'" aria-pressed="'+(state.sel===z.id)+'">'+
+       '<span class="zn">'+z.n+'</span><span class="zf">'+z.fn+'</span>'+
+       '<span class="zh"><b>'+Math.round(z.hp)+'</b>'+bar(z.hp,hc(z.hp))+'</span>'+
+       '<span class="zd">'+dots+'<span>'+au.length+(au.length===1?' apoyo · frágil':' apoyos')+'</span></span></button>';
+  });
+  el('zones').innerHTML=h;
+  el('legend').innerHTML=D.map(function(d){return '<span><span class="dot" style="background:'+col(d.id)+'"></span> '+d.n+'</span>'}).join('');
+}
+function impChips(dec){
+  var h='';
+  dec.imp.forEach(function(v,i){if(Math.abs(v)>=3)h+='<span class="chip" style="--cc:'+col(D[i].id)+'">'+D[i].s+' '+(v>0?'+':'−')+Math.abs(v)+'</span>'});
+  return '<div class="chips"><span class="chip" style="--cc:var(--fg)">Zona '+(dec.hp>=0?'+':'−')+Math.abs(dec.hp)+'</span>'+h+'</div>';
+}
+function renderFicha(L){
+  var z=zone(state.sel),rd=!!state.read[z.id];
+  var back=z.back.map(function(b){return '<span class="chip" style="--cc:'+col(b)+'">'+DI[b].n+'</span>'}).join('');
+  var lay=z.layers.slice().sort(function(a,b){return a.seq-b.seq}).map(function(l){
+    return '<li><span class="dot" style="background:'+col(l.by)+'"></span><span><b>'+DI[l.by].n+'</b> · '+l.dec+' <span class="muted">('+(l.r===0?'heredada':'ronda '+l.r)+')</span></span></li>';
+  }).join('');
+  var decs=[KEEP].concat(DEC.filter(function(d){return d.z===z.id}));
+  var dh=decs.map(function(d){
+    var lock=d.id!=='keep'&&!rd;
+    return '<button class="dec'+(state.pending===d.id?' sel':'')+'" data-dec="'+d.id+'"'+(lock?' disabled':'')+'><b>'+d.n+'</b><div class="d">'+d.d+'</div>'+impChips(d)+'</button>';
+  }).join('');
+  var pend=state.pending?getDec(state.pending):null;
+  var can=pend&&state.pts>0&&(pend.id==='keep'||rd);
+  el('ficha').innerHTML=
+   '<div class="lab">Ficha de razón de origen</div><h2 style="margin-top:2px">'+z.n+'</h2><p class="muted">'+z.fn+'</p>'+
+   '<div class="chips"><span class="chip" style="--cc:'+col(z.main)+'"><b>'+DI[z.main].n+'</b> · principal</span>'+back+'</div>'+
+   '<blockquote class="origin" style="margin-inline:0">'+z.o+'</blockquote>'+
+   '<div class="lab">Capas en esta zona</div><ul class="zl">'+lay+'</ul>'+
+   (rd?'<p class="okt">Razón leída. Puedes modificar esta zona.</p>':'<div class="act"><button class="btn" data-act="read">Entiendo por qué se construyó así</button></div><p class="muted" style="font-size:12.5px;margin-top:6px">Las modificaciones se habilitan al leer la razón.</p>')+
+   '<div class="decs">'+dh+'</div>'+
+   '<div class="act"><button class="btn" data-act="confirm"'+(can?'':' disabled')+'>Confirmar decisión</button><button class="btn alt" data-act="cancel"'+(state.pending?'':' disabled')+'>Cancelar</button></div>'+
+   (state.pts<1?'<p class="muted" style="font-size:12.5px;margin-top:6px">Sin puntos de mando. Pasa el mando al siguiente líder.</p>':'');
+}
+function renderLec(base,pv,L){
+  el('lec').innerHTML=D.map(function(d){
+    var v=base.S[d.id],n=pv?pv.m.S[d.id]:null,dd=n!==null?Math.round(n-v):0;
+    return '<div class="lr'+(d.id===L.id?' on':'')+'" style="--cc:'+col(d.id)+'">'+
+      '<span class="nm">'+d.n+(d.id===L.id?' · al mando':'')+'</span><span class="v num">'+Math.round(n!==null?n:v)+(dd?'<em class="'+(dd>0?'pos':'neg')+'">'+(dd>0?'+':'−')+Math.abs(dd)+'</em>':'')+'</span>'+
+      '<span class="cr">'+d.c+'</span>'+
+      bar(n!==null?n:v,hc(n!==null?n:v),'<span class="piso"></span>')+'</div>';
+  }).join('');
+}
+function tensLine(t){
+  return '<li><b>'+t.a.n+' ↔ '+t.b.n+'</b> <span class="muted">('+t.b.s+' '+Math.round(t.v)+')</span><br>'+
+   '<span class="tag '+t.tipo+'">'+(t.tipo==='p'?'Tensión productiva':'Conflicto destructivo')+'</span> '+
+   '<span class="muted">'+(t.tipo==='p'?'Ambas siguen sobre el piso: discrepan y aun así sostienen el Fuerte.':'Esta disciplina cae bajo el piso de '+PISO+'.')+'</span></li>';
+}
+function renderTens(tp){
+  var h='';
+  if(tp){
+    h+='<p class="lab" style="margin-top:8px">Si confirmas esta decisión</p><ul class="list">';
+    if(tp.list.length)h+=tp.list.map(tensLine).join('');
+    else h+='<li>Ninguna disciplina pierde más de 3 puntos.</li>';
+    if(tp.ally.length)h+='<li><span class="muted">Coinciden:</span> '+tp.ally.join(', ')+'.</li>';
+    h+='</ul>';
+  }else h+='<p class="muted" style="margin-top:8px;font-size:13px">Elige una decisión para ver qué disciplinas coinciden y cuáles se oponen.</p>';
+  if(state.tens.length){
+    h+='<p class="lab" style="margin-top:14px">Registro</p><ul class="list">'+state.tens.slice(0,6).map(function(t){return '<li><span class="muted">R'+t.r+' · '+t.dec+'</span><br>'+tensLine(t).replace(/^<li>|<\/li>$/g,'')+'</li>'}).join('')+'</ul>';
+  }
+  el('tens').innerHTML=h;
+}
+function renderQuest(base){
+  var rows=D.map(function(d){
+    var x=base.drops[d.id],flag=x.pct>=12;
+    return '<button class="qr'+(state.q===d.id?' sel':'')+'" style="--cc:'+col(d.id)+'" data-q="'+d.id+'"><span><b>Sin '+d.n+'</b></span>'+bar(100-x.pct*2.5,flag?'var(--crit)':'var(--ok)')+'<span class="num">'+Math.round(base.av)+' → '+Math.round(x.av2)+(flag?' <span class="tag d">Punto único</span>':'')+'</span></button>';
+  }).join('');
+  var det='';
+  if(state.q){
+    var x=base.drops[state.q],fall=x.hz.filter(function(h){return h.loss>=8}).map(function(h){return zone(h.id).n+' ('+Math.round(zone(h.id).hp)+' → '+Math.round(h.hp)+')'});
+    det='<div class="qd"><b>Se cuestiona a '+DI[state.q].n+'.</b> '+(fall.length?'Zonas que más pierden: '+fall.join(', ')+'.':'Ninguna zona pierde más de 8 puntos: otras disciplinas la sostienen.')+'</div>';
+  }
+  el('quest').innerHTML='<div style="display:flex;flex-direction:column;gap:2px">'+rows+'</div>'+det+'<p class="muted" style="font-size:12px;margin-top:8px">Salud media del Fuerte antes y después de quitar las obras de ese líder. Una zona con varios apoyos pierde menos.</p>';
+}
+function renderEvents(){
+  el('events').innerHTML=state.events.length?state.events.slice(0,6).map(function(e){
+    return '<li><b>'+e.n+'</b> <span class="muted">· '+e.zn+'</span><br><span class="muted">'+e.t+'</span><br><span class="num">−'+e.real+'</span> en '+e.zn+(e.ap>1?'. '+e.ap+' disciplinas amortiguaron '+e.mit+' puntos.':'. Un solo apoyo: sin amortiguación.')+'</li>';
+  }).join(''):'<li class="muted">Aún no hubo resistencias. Aparecen al pasar el mando.</li>';
+}
+function renderLayers(){
+  var all=[];Z.forEach(function(z){z.layers.forEach(function(l){all.push({z:z,l:l})})});
+  all.sort(function(a,b){return b.l.seq-a.l.seq});
+  el('layers').innerHTML=all.slice(0,8).map(function(x){
+    return '<li><span class="dot" style="background:'+col(x.l.by)+'"></span> <b>'+DI[x.l.by].n+'</b> · '+x.z.n+' · '+x.l.dec+' <span class="muted">('+(x.l.r===0?'heredada':'ronda '+x.l.r)+')</span></li>';
+  }).join('');
+}
+
+/* ---------- acciones ---------- */
+function confirmDec(){
+  var dec=state.pending?getDec(state.pending):null;
+  if(!dec||state.pts<1)return;
+  if(dec.id!=='keep'&&!state.read[state.sel])return;
+  var base=metrics(snap(),state.adj),L=leader(),z=zone(state.sel);
+  var zs=snap(),adj={};D.forEach(function(d){adj[d.id]=state.adj[d.id]});
+  applySim(zs,adj,dec,state.sel,L.id);
+  var m=metrics(zs,adj),tp=tensions(base.S,m.S,dec);
+  tp.list.forEach(function(t){state.tens.unshift({a:t.a,b:t.b,v:t.v,tipo:t.tipo,dec:dec.n,r:round()})});
+  z.hp=clamp(z.hp+dec.hp);
+  z.layers.push({by:L.id,r:round(),dec:dec.n,why:dec.d,c:Math.max(5,dec.hp),seq:state.seq++});
+  state.adj=adj;state.pts--;
+  if(dec.id==='keep')state.read[z.id]=true;
+  state.pending=null;
+}
+function rnd(){state.seed=(state.seed*1103515245+12345)&0x7fffffff;return state.seed/0x7fffffff}
+function endTurn(){
+  var L=leader();
+  state.lastSeen[L.id]={};Z.forEach(function(z){state.lastSeen[L.id][z.id]=z.hp});
+  var weakest=Z.slice().sort(function(a,b){return a.hp-b.hp})[0];
+  var cand=EV.filter(function(e){return e.z===weakest.id});
+  var e=(rnd()<0.5&&cand.length)?cand[0]:EV[Math.floor(rnd()*EV.length)];
+  if(EV.indexOf(e)===state.lastEv)e=EV[(EV.indexOf(e)+1)%EV.length];
+  state.lastEv=EV.indexOf(e);
+  var z=zone(e.z),ap=supports(z).length,f=Math.max(0.4,1-0.2*(ap-1));
+  var real=Math.round(e.d*f),mit=e.d-real;
+  z.hp=clamp(z.hp-real);
+  state.events.unshift({n:e.n,zn:z.n,t:e.t,real:real,mit:mit,ap:ap});
+  D.forEach(function(d){state.adj[d.id]*=0.85});
+  state.turn++;state.pts=2;state.read={};state.pending=null;
+  var nl=leader(),ls=state.lastSeen[nl.id];
+  state.inherit=null;
+  if(ls){
+    state.inherit=Z.filter(function(zz){return Math.abs(Math.round(zz.hp)-Math.round(ls[zz.id]))>=3}).map(function(zz){return {n:zz.n,a:Math.round(ls[zz.id]),b:Math.round(zz.hp)}});
+  }
+}
+document.addEventListener('click',function(ev){
+  var t=ev.target.closest('[data-z],[data-dec],[data-act],[data-q]');
+  if(!t)return;
+  if(t.hasAttribute('data-z')){state.sel=t.getAttribute('data-z');state.pending=null}
+  else if(t.hasAttribute('data-dec')){var id=t.getAttribute('data-dec');state.pending=state.pending===id?null:id}
+  else if(t.hasAttribute('data-q')){var q=t.getAttribute('data-q');state.q=state.q===q?null:q}
+  else{
+    var a=t.getAttribute('data-act');
+    if(a==='read')state.read[state.sel]=true;
+    else if(a==='confirm')confirmDec();
+    else if(a==='cancel')state.pending=null;
+    else if(a==='end')endTurn();
+    else if(a==='reset')init();
+  }
+  render();
+});
+init();render();
+})();
+</script>
+
+</body></html>
