@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ingeniería Social Preventiva</title>
+<style>
+:root{--bg:#f4f5f9;--card:#fff;--tx:#1b1f2a;--mu:#5d6475;--bd:#d9dce6;--blue:#3b6fe0;--green:#43b343;--gold:#e0a912;--red:#d93c3c;--ok:#1f8f4e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12141b;--card:#1c1f2a;--tx:#eceef5;--mu:#9aa1b5;--bd:#303546;--blue:#6b95ff;--green:#5fd35f;--gold:#f2c230;--red:#ff6b6b;--ok:#4fd08a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12141b;--card:#1c1f2a;--tx:#eceef5;--mu:#9aa1b5;--bd:#303546;--blue:#6b95ff;--green:#5fd35f;--gold:#f2c230;--red:#ff6b6b;--ok:#4fd08a;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:0 0 4px}h2{font-size:1.1rem;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin:12px 0}
+.mu{color:var(--mu);font-size:.9rem}
+button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:12px;padding:12px 14px;text-align:left;width:100%;margin:6px 0}
+button:hover{border-color:var(--blue)}
+.pri{background:var(--blue);color:#fff;border-color:var(--blue);text-align:center;font-weight:600}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.board{display:flex;gap:10px;justify-content:space-around;align-items:flex-end}
+.tw{flex:1;text-align:center}
+.col{height:170px;display:flex;flex-direction:column-reverse;gap:2px;position:relative;padding:0 18%;border-bottom:3px solid var(--bd)}
+.b{flex:1;border-radius:3px;opacity:.18;transition:opacity .4s,background .4s}
+.b.on{opacity:1}
+.col .line{position:absolute;left:0;right:0;bottom:15%;border-top:2px dashed var(--red);opacity:.7}
+.v{font-weight:700;font-size:1.1rem}
+.meter{height:12px;border-radius:8px;background:var(--bd);overflow:hidden;margin-top:6px}
+.meter i{display:block;height:100%;transition:width .5s,background .5s}
+.chain{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.link{padding:4px 10px;border-radius:20px;font-size:.8rem;color:#fff}
+.sig{border-left:4px solid var(--gold);padding:6px 12px;margin:10px 0;background:var(--bg);border-radius:0 8px 8px 0}
+.fx{display:flex;gap:10px;flex-wrap:wrap;font-weight:600;margin:6px 0}
+.pos{color:var(--ok)}.neg{color:var(--red)}
+.alert{background:var(--red);color:#fff;padding:10px 14px;border-radius:10px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:.88rem}td,th{padding:6px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+.sc{overflow-x:auto}
+</style></head><body><main>
+<h1>🏛️ Ingeniería Social Preventiva</h1>
+<p class="mu">Tomas decisiones sin saber qué pasará después. ¿Podrás detectar las señales a tiempo?</p>
+<div class="card" id="board"></div>
+<div id="stage"></div>
+</main>
+<script>
+var EV=[
+{ph:"Fase 1 · Crisis económica",ctx:"Tras un conflicto, el desempleo sube y hay mucho descontento. La gente busca respuestas rápidas.",
+ sig:"Cuando alguien ofrece un culpable fácil para un problema complejo, es una señal de alarma: la crisis se usa para dividir.",
+ pat:"Hoy: discriminación sistemática y discursos de odio hacia un grupo.",
+ o:[{t:"Austeridad extrema y culpar a grupos externos",f:[-10,-25,15],r:"Los recursos mejoran un poco, pero se señala a un grupo como enemigo. La confianza entre personas se rompe."},
+    {t:"Crear redes de apoyo social y negociar acuerdos de cooperación",f:[10,15,-20],r:"Cuesta recursos, pero la gente siente que el sistema responde y coopera."}]},
+{ph:"Fase 2 · Noticias falsas",ctx:"Aparecen medios que difunden noticias falsas y polarizan a la población.",
+ sig:"Si la mentira circula más rápido que la corrección y nadie la audita, el sistema pierde su capacidad de corregirse.",
+ pat:"Hoy: desinformación y manipulación digital.",
+ o:[{t:"Ignorar el problema para no parecer que se censura",f:[-15,-20,0],r:"No hay censura, pero tampoco defensa. La polarización crece sin freno."},
+    {t:"Auditorías independientes y educación cívica",f:[15,10,-10],r:"Es lento y cuesta, pero la gente aprende a verificar y las instituciones ganan credibilidad."}]},
+{ph:"Fase 3 · Poderes de emergencia",ctx:"Un sector político pide poderes especiales y menos controles legales para resolver la crisis rápido.",
+ sig:"Lo urgente suele justificar saltarse los controles. Pregúntate: ¿quién podrá corregir errores después?",
+ pat:"Hoy: debilitamiento de controles institucionales.",
+ o:[{t:"Aprobar los poderes especiales para resolver rápido",f:[-30,-10,10],r:"La crisis parece resolverse, pero ya nadie puede frenar ni corregir al poder."},
+    {t:"Defender el equilibrio de poderes aunque sea lento",f:[20,5,-10],r:"Las soluciones tardan, pero el sistema conserva sus frenos y contrapesos."}]}];
+var RO=[["⚖️","Legislador"],["📰","Periodista"],["✊","Ciudadano/Activista"],["🗂️","Administrador"]];
+var S,$=function(i){return document.getElementById(i)};
+function cl(v){return Math.max(0,Math.min(100,v))}
+function drawBoard(){
+ var T=[["Instituciones",S.i,"var(--blue)"],["Cohesión",S.c,"var(--green)"],["Recursos",S.r,"var(--gold)"]],h="<div class='board'>";
+ T.forEach(function(x){var n=Math.max(1,Math.round(x[1]/10)),b="";
+  for(var k=0;k<10;k++)b+="<div class='b"+(k<n?" on":"")+"' style='background:"+(x[1]<=15&&x[0]!="Recursos"?"var(--red)":x[2])+"'></div>";
+  h+="<div class='tw'><div class='col'>"+b+"<div class='line'></div></div><div class='v'>"+x[1]+"%</div><div class='mu'>"+x[0]+"</div></div>"});
+ var m=Math.min(S.i,S.c);
+ h+="</div><div class='mu' style='margin-top:10px'>Margen de maniobra (cuántas alternativas te quedan): <b>"+m+"%</b> · la línea roja marca el punto de no retorno (15%)</div><div class='meter'><i style='width:"+m+"%;background:"+(m<=15?"var(--red)":m<35?"var(--gold)":"var(--ok)")+"'></i></div>";
+ if(S.log.length){h+="<div class='chain'>";S.log.forEach(function(l,k){h+="<span class='link' style='background:"+(l.g?"var(--ok)":"var(--red)")+"'>"+(k+1)+" · "+(l.g?"fortalece":"debilita")+"</span>"});h+="</div>"}
+ $("board").innerHTML=h}
+function home(){
+ S={i:50,c:50,r:50,t:0,role:"",log:[],last:null};drawBoard();
+ var h="<div class='card'><h2>1. Elige tu rol</h2><p class='mu'>Vas a decidir con la información que tendrías en ese momento. No sabrás el final.</p><div class='roles'>";
+ RO.forEach(function(r,k){h+="<button onclick='start("+k+")'>"+r[0]+" "+r[1]+"</button>"});
+ $("stage").innerHTML=h+"</div></div>"}
+function start(k){S.role=RO[k][0]+" "+RO[k][1];turn()}
+function turn(){
+ drawBoard();
+ if(S.i<=15||S.c<=15||S.t>=EV.length){return end()}
+ var e=EV[S.t],h="<div class='card'><span class='mu'>"+S.role+" · Turno "+(S.t+1)+" de "+EV.length+"</span><h2>"+e.ph+"</h2><p>"+e.ctx+"</p><p class='mu'>Decide ahora. Las consecuencias aparecerán después.</p>";
+ e.o.forEach(function(o,k){h+="<button onclick='pick("+k+")'><b>Opción "+(k+1)+":</b> "+o.t+"</button>"});
+ $("stage").innerHTML=h+"</div>"}
+function pick(k){
+ var e=EV[S.t],o=e.o[k],f=o.f;
+ S.i=cl(S.i+f[0]);S.c=cl(S.c+f[1]);S.r=cl(S.r+f[2]);
+ S.log.push({g:f[0]+f[1]>0});S.t++;drawBoard();
+ var fx=["Instituciones","Cohesión","Recursos"].map(function(n,j){return "<span class='"+(f[j]>=0?"pos":"neg")+"'>"+n+" "+(f[j]>=0?"+":"")+f[j]+"</span>"}).join("");
+ var h="<div class='card'><h2>Consecuencia</h2><p>"+o.r+"</p><div class='fx'>"+fx+"</div><div class='sig'><b>🔎 La señal que podías ver:</b> "+e.sig+"</div><p class='mu'>"+e.pat+"</p>";
+ if(S.i<=15||S.c<=15)h+="<div class='alert'>¡ALERTA CRÍTICA! El sistema ha perdido su capacidad de corregirse.</div>";
+ $("stage").innerHTML=h+"<button class='pri' onclick='turn()'>Continuar →</button></div>"}
+function end(){
+ var ok=S.i>40&&S.c>40,h="<div class='card'><h2>"+(ok?"✅ Ruta Preventiva exitosa":"💥 Colapso sistémico (Punto B alcanzado)")+"</h2><p>"+
+ (ok?"Contuviste los factores de riesgo manteniendo los controles y la cohesión social.":"Tus decisiones fueron reduciendo las alternativas hasta que la crisis se volvió irreversible.")+"</p>";
+ h+="<p class='mu'>Cadena de decisiones: cada una cambió lo que podías hacer después. Las crisis rara vez nacen de un solo error, sino de varios pequeños.</p>";
+ h+="<h2>🧠 Contra el sesgo retrospectivo</h2><p class='mu'>Hoy las señales parecen obvias porque ya viste el final. En el momento real, la opción rápida sonaba razonable. ¿Cuál te costó más ver?</p>";
+ h+="<h2>🌍 Transferencia al presente</h2><div class='sc'><table><tr><th>Fase</th><th>Patrón que puedes investigar hoy</th></tr>";
+ EV.forEach(function(e){h+="<tr><td>"+e.ph+"</td><td>"+e.pat.replace("Hoy: ","")+"</td></tr>"});
+ $("stage").innerHTML=h+"</table></div><button class='pri' onclick='home()'>Probar otro camino ↺</button></div>"}
+home();
+</script></body></html>
